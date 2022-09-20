@@ -61,7 +61,7 @@ export default function Uses() {
           </ToolsSection>
           <ToolsSection title="Development tools">
             <Tool title="VS Code">
-              My "do everything" editor.
+              My &ldquot;do everything&rdquot; editor.
             </Tool>
             <Tool title="Kitty">
               Imagine if your whole terminal was Tmux. Now imagine it was cross platform so you could keep your config in Git and your terminal was always the same everywhere? Now you understand why you need Kitty.
@@ -74,13 +74,13 @@ export default function Uses() {
           </ToolsSection>
           <ToolsSection title="Productivity">
             <Tool title="Raycast">
-              I was a long time Alfred customer. I had a lifetime powerpack subscription, I had been using it since the Beta. Raycast converted me in a single afternoon. It's that good.
+              I was a long time Alfred customer. I had a lifetime powerpack subscription, I had been using it since the Beta. Raycast converted me in a single afternoon. It&apos;s that good.
             </Tool>
             <Tool title="LogSeq">
               Markdown notes and graph connections with a focus on privacy.
             </Tool>
             <Tool title="Todoist">
-              If there's a better platform for tasks I've never found it.
+              If there&apos;s a better platform for tasks I&apos;ve never found it.
             </Tool>
           </ToolsSection>
         </div>

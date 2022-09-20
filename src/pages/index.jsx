@@ -270,7 +270,7 @@ export default function Home({ articles }) {
             Support professional, co-founder, product maltontent, & mediocre engineer.
           </h1>
           <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
-            I'm Nick (a.k.a., Birdcar), a support engineer turned product leader based in Fort Worth. I'm the co-founder and CPO of <a className="text-[#a700a0] font-bold underline underline-offset-auto" href="https://yetto.app">Yetto</a>, a support tool made <span className="font-bold">by</span> support professionals <span className="font-bold">for</span> support professionals.
+            I&apos;m Nick (a.k.a., Birdcar), a support engineer turned product leader based in Fort Worth. I&apos;m the co-founder and CPO of <a className="text-[#a700a0] font-bold underline underline-offset-auto" href="https://yetto.app">Yetto</a>, a support tool made <span className="font-bold">by</span> support professionals <span className="font-bold">for</span> support professionals.
           </p>
           <div className="mt-6 flex gap-6">
             <SocialLink
