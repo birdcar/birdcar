@@ -61,7 +61,7 @@ export default function Uses() {
           </ToolsSection>
           <ToolsSection title="Development tools">
             <Tool title="VS Code">
-              My &ldquot;do everything&rdquot; editor.
+              My &quot;do everything&quot; editor.
             </Tool>
             <Tool title="Kitty">
               Imagine if your whole terminal was Tmux. Now imagine it was cross platform so you could keep your config in Git and your terminal was always the same everywhere? Now you understand why you need Kitty.

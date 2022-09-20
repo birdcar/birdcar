@@ -9,7 +9,7 @@ const projects = [
   {
     name: 'Yetto',
     description:
-      'Probably the reason you found me. There are a lot of ways to describe it, my favorites are "An IDE for Conversations" and "A support tool for actual support work".',
+      'Probably the reason you found me. There are a lot of ways to describe what Yetto is, my favorites are "An IDE for Conversations" and "A support tool for actual support work".',
     link: { href: 'https://yetto.app', label: 'yetto.app' },
     logo: logoYetto,
   },
