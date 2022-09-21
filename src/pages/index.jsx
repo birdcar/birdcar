@@ -7,17 +7,12 @@ import { Card } from '@/components/Card'
 import { Container } from '@/components/Container'
 import {
   TwitterIcon,
-  InstagramIcon,
   GitHubIcon,
   LinkedInIcon,
-  TiktokIcon,
-  RedditIcon,
-  TwitchIcon,
-  YoutubeIcon,
 } from '@/components/SocialIcons'
-import logoYetto from '@/images/logos/billy-favicon.svg'
+import logoYetto from '@/images/logos/yetto.svg'
 import logoZapier from '@/images/logos/zapier.svg'
-import logoCointracker from '@/images/logos/cointracker.png'
+import logoCointracker from '@/images/logos/cointracker.svg'
 import logoAbstract from '@/images/logos/abstract.png'
 import logoTwilio from '@/images/logos/twilio.svg'
 import logoHeroku from '@/images/logos/heroku.svg'
@@ -105,35 +100,6 @@ function SocialLink({ icon: Icon, ...props }) {
     <Link className="group -m-1 p-1" {...props}>
       <Icon className="h-6 w-6 fill-zinc-500 transition group-hover:fill-zinc-600 dark:fill-zinc-400 dark:group-hover:fill-zinc-300" />
     </Link>
-  )
-}
-
-function Newsletter() {
-  return (
-    <form
-      action="/thank-you"
-      className="rounded-2xl border border-zinc-100 p-6 dark:border-zinc-700/40"
-    >
-      <h2 className="flex text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-        <MailIcon className="h-6 w-6 flex-none" />
-        <span className="ml-3">Stay up to date</span>
-      </h2>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        Get notified when I publish something new, and unsubscribe at any time.
-      </p>
-      <div className="mt-6 flex">
-        <input
-          type="email"
-          placeholder="Email address"
-          aria-label="Email address"
-          required
-          className="min-w-0 flex-auto appearance-none rounded-md border border-zinc-900/10 bg-white px-3 py-[calc(theme(spacing.2)-1px)] shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
-        />
-        <Button type="submit" className="ml-4 flex-none">
-          Join
-        </Button>
-      </div>
-    </form>
   )
 }
 
@@ -245,7 +211,7 @@ function Resume() {
           </li>
         ))}
       </ol>
-      <Button href="#" variant="secondary" className="group mt-6 w-full">
+      <Button href="/files/resume.pdf" variant="secondary" className="group mt-6 w-full">
         Download CV
         <ArrowDownIcon className="h-4 w-4 stroke-zinc-400 transition group-active:stroke-zinc-600 dark:group-hover:stroke-zinc-50 dark:group-active:stroke-zinc-50" />
       </Button>
@@ -258,18 +224,18 @@ export default function Home({ articles }) {
     <>
       <Head>
         <title>
-          Birdcar.dev - Support professional, co-founder, product maltontent, & mediocre engineer</title>
+          Birdcar.dev - Support professional, co-founder, engineer, and malcontent</title>
         <meta
           name="description"
           content="I'm Nick, a support engineer turned product leader based in Fort Worth. I'm the co-founder and CPO of Yetto, a support tool made by support proffessionals for support professionals."
         />
       </Head>
       <Container className="mt-9">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl text-base text-zinc-600 dark:text-zinc-400">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">
-            Support professional, co-founder, product maltontent, & mediocre engineer.
+            Support professional, co-founder, engineer, and malcontent.
           </h1>
-          <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
+          <p className="mt-6">
             I&apos;m Nick (a.k.a., Birdcar), a support engineer turned product leader based in Fort Worth. I&apos;m the co-founder and CPO of <a className="text-[#a700a0] font-bold" href="https://yetto.app">Yetto</a>, a support tool made <span className="font-bold">by</span> support professionals <span className="font-bold">for</span> support professionals.
           </p>
           <div className="mt-6 flex gap-6">
@@ -277,11 +243,6 @@ export default function Home({ articles }) {
               href="https://twitter.com/birdcar_dev"
               aria-label="Follow on Twitter"
               icon={TwitterIcon}
-            />
-            <SocialLink
-              href="https://instagram.com/birdcar_dev"
-              aria-label="Follow on Instagram"
-              icon={InstagramIcon}
             />
             <SocialLink
               href="https://github.com/birdcar"
@@ -292,26 +253,6 @@ export default function Home({ articles }) {
               href="https://linkedin.com/in/nickcannariato"
               aria-label="Follow on LinkedIn"
               icon={LinkedInIcon}
-            />
-            <SocialLink
-              href="https://www.tiktok.com/@birdcar.dev"
-              aria-label="Follow on TikTok"
-              icon={TiktokIcon}
-            />
-            <SocialLink
-              href="https://reddit.com/u/birdcar"
-              aria-label="Follow on Reddit"
-              icon={RedditIcon}
-            />
-            <SocialLink
-              href="https://twitch.com/birdcar_dev"
-              aria-label="Follow on Twitch"
-              icon={TwitchIcon}
-            />
-            <SocialLink
-              href="https://www.youtube.com/channel/UCjU_-6ohUVJfEDzxC2zqPMA"
-              aria-label="Follow on YouTube"
-              icon={YoutubeIcon}
             />
           </div>
         </div>
@@ -324,7 +265,6 @@ export default function Home({ articles }) {
             ))}
           </div>
           <div className="space-y-10 lg:pl-16 xl:pl-24">
-            <Newsletter />
             <Resume />
           </div>
         </div>

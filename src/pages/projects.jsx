@@ -3,7 +3,7 @@ import Head from 'next/head'
 
 import { Card } from '@/components/Card'
 import { SimpleLayout } from '@/components/SimpleLayout'
-import logoYetto from '@/images/logos/billy-favicon.svg'
+import logoYetto from '@/images/logos/yetto.svg'
 
 const projects = [
   {

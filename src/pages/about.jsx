@@ -7,6 +7,7 @@ import { Container } from '@/components/Container'
 import {
   TwitterIcon,
   GitHubIcon,
+  LinkedInIcon,
 } from '@/components/SocialIcons'
 import portraitImage from '@/images/portrait.jpg'
 
@@ -42,7 +43,7 @@ export default function About() {
         <title>About - Birdcar.dev</title>
         <meta
           name="description"
-          content="I’m Nick Cannariato. I live in New York City, where I design the future."
+          content="Nick Cannariato, a co-founder and malcontent living in Fort Worth, TX."
         />
       </Head>
       <Container className="mt-16 sm:mt-32">
@@ -59,28 +60,43 @@ export default function About() {
           </div>
           <div className="lg:order-first lg:row-span-2">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">
-              I&apos;m Nick Cannariato. I live in Fort Worth, where I mostly work and hang out with my kid.
+              Nick Cannariato, a co-founder and malcontent living in Fort Worth, TX.
             </h1>
             <div className="mt-6 space-y-7 text-base text-zinc-600 dark:text-zinc-400">
               <p>
-              Gotta do the absolute worst part of building a site and write about myself now 🤮
+                Mostly I just work and hang out with my kid.
               </p>
             </div>
           </div>
           <div className="lg:pl-20">
             <ul role="list">
-              <SocialLink href="https://twitter.com/birdcar_dev" icon={TwitterIcon}>
+              <SocialLink
+                href="https://twitter.com/birdcar_dev"
+                icon={TwitterIcon}
+              >
                 Follow on Twitter
               </SocialLink>
-              <SocialLink href="https://github.com/birdcar" icon={GitHubIcon} className="mt-4">
+              <SocialLink 
+                href="https://github.com/birdcar"
+                icon={GitHubIcon} 
+                className="mt-4"
+              >
                 Follow on GitHub
               </SocialLink>
+              <SocialLink
+                href="https://linkedin.com/in/nickcannariato"
+                icon={LinkedInIcon}
+                className="mt-4"
+              >
+                Connect on LinkedIn
+              </SocialLink>
+
               <SocialLink
                 href="mailto:blog@birdcar.dev"
                 icon={MailIcon}
                 className="mt-8 border-t border-zinc-100 pt-8 dark:border-zinc-700/40"
               >
-                blog@birdcar.dev
+                Shoot me an email!
               </SocialLink>
             </ul>
           </div>
