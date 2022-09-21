@@ -41,12 +41,12 @@ export default function ArticlesIndex({ articles }) {
         <title>Blog - Birdcar.dev</title>
         <meta
           name="description"
-          content="All of my long-form thoughts on programming, leadership, product design, and more, collected in chronological order."
+          content="Medium-form thoughts on support, programming, leadership, and product design"
         />
       </Head>
       <SimpleLayout
-        title="Thoughts on support, building a product, and being a co-founder"
-        intro="Sometimes I need a place to say some shit that doesn't quite fit the Yetto blog."
+        title="Thoughts on support, programming, leadership, and product design"
+        intro="I spend a lot of time saying very similar things to very different groups of people. This seemed like the right way to keep track of those things."
       >
         <div className="md:border-l md:border-zinc-100 md:pl-6 md:dark:border-zinc-700/40">
           <div className="flex max-w-3xl flex-col space-y-16">
