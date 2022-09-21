@@ -160,15 +160,15 @@ function Resume() {
       company: 'Zapier',
       title: 'API Specialist',
       logo: logoZapier,
-      start: '2017',
+      start: '2018',
       end: '2018',
     },
     {
       company: 'GitHub',
       title: 'Support Engineer',
       logo: logoGitHub,
-      start: '2015',
-      end: '2017',
+      start: '2016',
+      end: '2018',
     },
   ]
 
