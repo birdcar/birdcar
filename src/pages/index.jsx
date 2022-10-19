@@ -21,29 +21,6 @@ import { generateRssFeed } from '@/lib/generateRssFeed'
 import { getAllArticles } from '@/lib/getAllArticles'
 import { formatDate } from '@/lib/formatDate'
 
-function MailIcon(props) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path
-        d="M2.75 7.75a3 3 0 0 1 3-3h12.5a3 3 0 0 1 3 3v8.5a3 3 0 0 1-3 3H5.75a3 3 0 0 1-3-3v-8.5Z"
-        className="fill-zinc-100 stroke-zinc-400 dark:fill-zinc-100/10 dark:stroke-zinc-500"
-      />
-      <path
-        d="m4 6 6.024 5.479a2.915 2.915 0 0 0 3.952 0L20 6"
-        className="stroke-zinc-400 dark:stroke-zinc-500"
-      />
-    </svg>
-  )
-}
-
 function BriefcaseIcon(props) {
   return (
     <svg
@@ -107,7 +84,7 @@ function Resume() {
   let resume = [
     {
       company: 'Yetto',
-      title: 'CPO',
+      title: 'Co-Founder',
       logo: logoYetto,
       start: '2022',
       end: {
@@ -211,10 +188,6 @@ function Resume() {
           </li>
         ))}
       </ol>
-      <Button href="/files/resume.pdf" variant="secondary" className="group mt-6 w-full">
-        Download CV
-        <ArrowDownIcon className="h-4 w-4 stroke-zinc-400 transition group-active:stroke-zinc-600 dark:group-hover:stroke-zinc-50 dark:group-active:stroke-zinc-50" />
-      </Button>
     </div>
   )
 }
@@ -236,7 +209,7 @@ export default function Home({ articles }) {
             Support professional, co-founder, engineer, and malcontent.
           </h1>
           <p className="mt-6">
-            I&apos;m Nick (a.k.a., Birdcar), a support engineer turned product leader based in Fort Worth. I&apos;m the co-founder and CPO of <a className="text-[#a700a0] font-bold" href="https://yetto.app">Yetto</a>, a support tool made <span className="font-bold">by</span> support professionals <span className="font-bold">for</span> support professionals.
+            I&apos;m Nick (a.k.a., Birdcar), a support engineer turned product leader based in Fort Worth. I&apos;m one of the co-founders of <a className="text-[#a700a0] font-bold" href="https://yetto.app">Yetto</a>, a support tool made <span className="font-bold">by</span> support professionals <span className="font-bold">for</span> support professionals.
           </p>
           <div className="mt-6 flex gap-6">
             <SocialLink
