@@ -5,6 +5,7 @@ import { Card } from '@/components/Card'
 import { SimpleLayout } from '@/components/SimpleLayout'
 import logoYetto from '@/images/logos/yetto.svg'
 
+// @TODO: Move this to the /api/projects endpoint in next
 const projects = [
   {
     name: 'Yetto',
