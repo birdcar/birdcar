@@ -11,7 +11,7 @@ import alpinejs from "@astrojs/alpinejs";
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://example.com',
+  site: 'https://birdcar.dev',
   integrations: [mdx(), sitemap(), tailwind(), markdoc(), prefetch(), partytown(), alpinejs()],
   output: "hybrid",
   adapter: netlify()
