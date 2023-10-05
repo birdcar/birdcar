@@ -1,0 +1,27 @@
+---
+import { type CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+import FormattedDate from './FormattedDate.astro';
+---
+
+<article class="group relative flex items-center">
+  <FormattedDate
+    date={post.data.pubDate}
+    class="mr-2 min-w-min text-sm uppercase text-red-600 dark:text-red-400"
+  />
+  <h3
+    class="text-lg flex-1 font-semibold truncate group-hover:text-zinc-500 group-hover:dark:text-zinc-400"
+  >
+    {post.data.title}
+  </h3>
+  <p class="text-zinc-500 text-xs min-w-min uppercase">2 min</p>
+  <a
+    class="absolute top-0 right-0 bottom-0 left-0"
+    href={`/blog/${post.slug}`}
+    aria-label={post.data.title}></a>
+</article>

@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_DESCRIPTION } from '../consts';
+import PostListItem from '../components/PostListItem.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout>
+  <section
+    class="mx-auto my-12 max-w-4xl flex flex-col justify-center items-center border-b-2 border-zinc-300 border-opacity-30 pb-12"
+  >
+    <img
+      src="https://github.com/birdcar.png"
+      alt="Birdcar profile picture"
+      class="mb-6 h-32 w-32 rounded-lg shadow-xl shadow-zinc-200 dark:shadow-zinc-800"
+    />
+    <p class="text-center max-w-lg">
+      {SITE_DESCRIPTION}
+    </p>
+  </section>
+
+  <section class="mx-auto my-12 max-w-4xl">
+    <div class="space-y-4">
+      {posts.map((post) => <PostListItem post={post} />)}
+    </div>
+  </section>
+</BaseLayout>
