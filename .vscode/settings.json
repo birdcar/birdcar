@@ -1,4 +1,7 @@
 {
+  "files.associations": {
+    ".mdoc": "markdown"
+  },
   "[typescript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
@@ -10,5 +13,11 @@
   },
   "[markdown]": {
     "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[markdoc]": {
+    "editor.wordWrap": "bounded"
   }
 }

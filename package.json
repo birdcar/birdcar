@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@astrojs/alpinejs": "^0.3.0",
+    "@astrojs/lit": "^3.0.1",
     "@astrojs/markdoc": "^0.5.0",
     "@astrojs/mdx": "^1.0.3",
     "@astrojs/netlify": "^3.0.1",
@@ -19,17 +20,22 @@
     "@astrojs/rss": "^3.0.0",
     "@astrojs/sitemap": "^3.0.0",
     "@astrojs/tailwind": "^5.0.0",
-    "@cyberkoalastudios/og-image-generator": "^1.2.9",
+    "@phosphor-icons/web": "^2.0.3",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.6",
     "@tailwindcss/typography": "^0.5.10",
     "@types/alpinejs": "^3.0.0",
+    "@webcomponents/template-shadowroot": "^0.2.1",
     "alpinejs": "^3.0.0",
     "astro": "^3.0.12",
     "astro-embed": "^0.5.1",
+    "astro-og-canvas": "^0.2.1",
     "gyp": "^0.5.0",
+    "lit": "^2.7.0",
+    "roughjs": "^4.6.4",
     "sharp": "^0.32.6",
-    "tailwindcss": "^3.0.24"
+    "tailwindcss": "^3.0.24",
+    "wired-elements": "^3.0.0-rc.6"
   }
 }

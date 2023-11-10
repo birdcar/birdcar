@@ -1,0 +1,351 @@
+---
+title: Your metrics are bullshit
+description: What if our 'best practices' are causing most of our problems?
+published: true
+pubDate: 2023-10-5
+tags:
+  - support
+  - philosophy
+---
+
+[point to screen, look up at it]
+
+This title doesn't really get at what I'm going for, so let me edit it a bit.
+
+## Your metrics have no purpose
+
+That's a little closer, at least it's clearer what I'm trying to point out.
+
+## Your metrics are bullshit
+
+There we go
+
+[turn to audience]
+
+This is not a talk, this is an intervention. This is not a talk, this is a raw nerve.
+
+Hi, my name is Nick and I'm one of the co-founders of Yetto. Prior to that -- and more pertinent for today -- I've been a support professional in basically every type of customer support org that exists. I've done general, run-of-the-mill retail customer service; in-person computer technician work; call center support at varying levels of specialty; chat support, email-based SaaS technical support, support engineering; customer success, and for the last several years I've been building support tools.
+
+A result of this is that I've spent the last decade or more of my life being measured in ever-varying and invasive levels of granularity. For a period of time I could tell you what my average bathroom break was on a month-over-month basis to the second. I knew what my "post call work" (i.e. doing the job right) cost me personally on a moment by moment basis. I've groaned at being continually presented with the customers who needed my help most knowing it would mean I lost my preferred schedule next cycle.
+
+All of this is likely relatable to you. I think at some level we assume this is the inevitable and necessary cost of doing good support at scale. Many of us have learned to move from startup to startup trying to outrun the hellscape and get the "fun" parts of doing support.
+
+I did this too, a peek at my LinkedIn shows that I stick around to do the work I like for about a year or two and then move on before the measurement get onerous and unreasonable.
+
+About 5 years ago, I started to wonder if this was really inevitable. If what we call "metrics" were even useful. Or if the itch in the back of my brain telling me that something was wrong here was more than just the general frustration of having to work a demanding job under the stress of being continually quantified.
+
+What if some of our shared knowledge was poisonous to us? What if we've been inadvertently causing a lot of our cultural problems? What if some things we just "know" to be true, aren't.
+
+Hold that thought.
+
+I want to start you in the same place I started, with that nagging feeling and a quote that burrowed its way into my brain:
+
+> Those who believe that what you cannot quantify does not exist also believe that what you *can* quantify, **does**.
+>
+> Aaron Haspell
+
+This is from the opening pages of "The Tyranny of Metrics", and when I read it initially I didn't think much of it. In fact, it annoyed me. It seemed less like a critique than a boring observation. Like, yes, there are things we can't measure. But we can't measure them. So what does it matter?
+
+Over time though, I began to see it as a core issue in our thinking. A fatal, foundational flaw.
+
+See, there are these known and pernicious effects that come from misusing or misunderstanding numbers, especially when those numbers measure human effort and determine someone's continued employment or salary. They've been studied for decades all across professions, cultures, and economies.
+
+And as I started to dip my toe into learning from these researchers, I felt extremely seen. I started to notice us falling into each and every one of these traps. I started to see not just where, but how some of our "conventional wisdom" and "best practices" were actually killing our teams, destroying the joy of our work, and hurting our customers.
+
+I want to be clear up front that my goal today is not necessarily to give you "one surprising hack" to fix this, though I *will* be talking practically about how I think we can move forward at the end. My goal today is simple: to sow doubt in your brain that what we're doing makes sense.
+
+## Bibliography
+
+Before I get into what these issues are specifically, I have to say up front that I'll only be able to scratch the surface on the research I've done that led to this talk. On the screen right now, you'll see a somewhat random sample of the books and research papers I've consumed on this topic. The books you see here are in particular the most important things I can point you to. I have read and re-read some of these so many times that I've stopped being able to attribute ideas or specific phrases to them and they've become kind of a glob in my brain.
+
+So just as a blanket statement up front: anything I say tonight that is particularly insightful or intelligent, belongs to these folks up here. If you have a book club at work I cannot recommend reading these enough, in particular the top row.
+
+Ok, with that out of the way: let me tell you a story.
+
+The companies in this story are not real, but you've worked there.
+
+The people in this story are not real, but you know them.
+
+## Storytime
+
+You're a support professional and you've been at it for about 5 years. You got this job after leaving Starbucks years ago and have worked your way up the ranks. You're now a senior support employee at this major tech company. You're frustrated. Your leaders just told your team there was no new headcount for this year, despite losing some key folks in your org who's knowledge was invaluable. They followed that information up by saying that everyones weekly ticket quota was going up by 5 and that each person's average handle time was going to be a key focus in the next quarter. When you complain, you're told to "do more with less."
+
+You love the product and enjoy your team, but this is the last straw. You start interviewing.
+
+Eventually, through a lot of luck and more than a little stalking, you start having serious conversations with Doorkeeper, an authentication startup that just graduated YC, closed their first real round of funding, and are looking to make their first "real" support hire. They're impressed with you and your experience, and why wouldn't they be? You're charming and professional. You get the gig.
+
+For a while, this is life giving. It's stressful in the way all startups are, but you feel way more impactful than you ever have. You're an equal with the 8-ish people working on a product you all believe in. When you talk about what the customer needs, people listen. When there's debate over a particular solution, you don't always win, but you feel heard.
+
+You build a small team, collecting folks you've worked with from the diaspora of talent out of the company you left and finding a few new folks who impress you. The company is growing, your user base is growing, and you're now a team of 5 or 6 support folks. You're all killing it. The comraderee is palpable, but more than that, you're all impossibly effective. You communicate well, you solve problems as a unit. You are experts. You accomplish more as a 6 person team than teams of 12 or 20 did in your previous role.
+
+You start to think to yourself "See? This wasn't hard. What the hell was wrong with my last place?"
+
+One of the founding engineers of NPM once said "Success is a catastrophe that you survive." And unbeknownst to you, you're all about to experience catastrophe.
+
+Like so many catastrophes, it comes in the form of unbelievably good news. Your founders announce that they've just raised a $100M A-round. Bottles of champagne pop all around. There are tears. Everyone is flown to a massive party in some far flung location and you start to think this is the last job you're ever going to have.
+
+Your engineering and product teams explode. Your user base explodes. And, as I'm certain you all know is coming, your support queue explodes.
+
+For a while, you're surprised to find that this doesn't kill you. Your response times -- one of the only things you're measuring -- do slip a little; but your team rallies. You know it can't hold, but you start to think that this is still gonna be easy to solve. ***The queue continues to explode***
+
+You ask for headcount and your founders -- now more aloof and stressed than ever -- tell you that you can go ahead and hire whoever you need. ***The queue continues to explode.***
+
+You go on a hiring spree, which continues to erode your response times and resolutions. ***The queue continues to explode.***
+
+You grow from 6 to 50. You make a lot of the original folks managers, many of them taking the role for the first time. They're concerned, and inexperienced, but they want to do a good job. ***The queue continues to explode***
+
+Your new folks are struggling to learn and keep up. ***The queue continues to explode.***
+
+The formerly glowing reviews about your company's support turn nasty on the internet. ***The queue continues to explode.***
+
+Your sales team wants you to guarantee a 4 hour resolution time to enterprise customers. ***The queue continues to explode.***
+
+And then it happens.
+
+The founders drag you into a meeting and tell you that they have concerns. They're seeing complaints everywhere, they don't understand what happened.They want to see you set ambitious goals and they want to see marked improvement. They don't need to say "or else", but you hear it.
+
+You take it to your core leaders and after arguing and hashing it out you set the performance metrics you know from your last job. You structure support's day so that they spend 6-ish hours in the queue and 2ish hours on the project work that still needs doing -- after all, you are still building the org as you run it.
+
+The team doesn't take it well. Contention builds. Eventually you or one of your leaders says "We just have to do this, this is why you're hired. Just answer the tickets y'all."
+
+You don't notice the problems at first, but slack is suddenly silent. People are living in DMs and keeping their heads down. Your managers are frustrated. ***The numbers aren't looking good.***
+
+The product is changing rapidly. You no longer know when changes ship. Your docs are out of date, and no one has time to update them. ***The numbers aren't looking good.***
+
+Your backlog is in the hundreds, maybe the thousands. You keep playing whack-a-mole with new rules trying to keep people from "cherry picking". ***The numbers aren't looking good.***
+
+You fire some folks who aren't meeting their targets, a first for you. ***The numbers are stable. It's still not great.***
+
+Everyone is frustrated. Everyone is angry. Your first hire leaves, taking a job at a new AI startup as their first support hire. ***The numbers are stable. It's still not great.***
+
+Things start improving a little, you move a couple people to focus on docs. You raise the weekly ticket quota by 5. Your managers tell you that your team just works overtime to keep their numbers good. They ask for more headcount. You tell them they need to "do more with less."
+
+Was that uncomfortable to hear? A little close to home? Are you familiar with this cycle? I know I am.
+
+I used to think this was just how growth works. To get around it, I avoided any company I thought was at the end of the cycle and tried to join as early as possible.
+
+## Problems
+
+It turns out that the doom spiral I'm describing is a known result of misusing metrics and measurement. There are rules that, if you break them, destroy your team and turn you against each other in exactly this way.
+
+The way we measure support specifically breaks almost all of these rules, and there are many more than I can talk about today. But I'm gonna focus on the big ones and then talk about how I think we can get out of this doom spiral.
+
+### Goodharts Law
+
+The first is Goodhart's Law, which is summarized by the man himself as:
+
+> "Any observed statistical regularity will tend to collapse once pressure is placed upon it for control purposes."
+
+- Charles Goodhart
+
+That is a really academic-y and hard to understand explanation though. So let's simplify with the help of someone else:
+
+> "When a measure becomes a target, it ceases to be a good measure"
+
+- Marilyn Strathern
+
+Often times, we start not by trying to figure out "what kind of support is good for our users specifically?" and instead we start from the false assumption that all customers are -- broadly -- the same and therefore their support expectations are all the same. In economics there's this really flawed idea of a person named "Homo Economicus", a universal stand in for a person who always and only acts to maximize their self interest. This person doesn't exist. Neither does "Homo Cusomericus."
+
+This false belief leads us to the first mistake we make. In my opinion it's the thing that kicks off the spiral. We try to measure the wrong thing at the wrong level.
+
+We measure how many tickets someone is answering, something your customers are both unaware of and do not care about, as a proxy for our support experience and for fairness.
+
+We measure the average handle time of individuals, something users also don't care about and is highly variable.
+
+We focus on finding "magic" single numbers that tell us if our support is good or if a support professional is good.
+
+This law says that when we do that -- when we take some benign observation of how a human-centered system operates -- and make a specific value of that measurement a target or a goal: we completely destroy the usefulness and accuracy of that measurement.
+
+Why you ask? Well that leads us to our next law.
+
+### Campbell's Law
+
+> "The more any quantitative social indicator is used for social decision-making, the more subject it will be to corruption pressures and the more apt it will be to distort and corrupt the social processes it is intended to monitor."
+>
+> - Donald T. Campbell
+
+In other words, "when they use a number to determine whether you keep your job, you'll do everything -- including cheating -- to improve it."
+
+I could talk about a lot of real world examples here, but lets talk about CSAT because I think it turns the tables a bit.
+
+I've worked a lot of places, and I'm of the opinion that literally no one actually knows what their company's real CSAT rating is. The reason they don't know is because senior leaders get measured by whether that number improves or not. Often if the number doesn't improve, a change is made.
+
+This means that, like your ICs, you "cherry pick."
+
+"Oh, don't send the satisfaction survey to anyone who's gotten a refund."
+
+"Make sure we don't send a survey to anyone from that company, they hate us."
+
+This is corruption. Your support agents cherry pick to hit their ticket number. You cherry pick to keep your CSAT number.
+
+Importantly, the issue you should be seeing here isn't the cherry picking. Cherry picking is just a rational, optimal strategy for keeping your job when a number is arbitrarily used to punish you. The issue is that a number that reflects a *lot* of things that are totally outside of your control is being used to punish you.
+
+Ultimately, this corruption pressure hurts your support org, but also your customers. And that leads us to the next problem: Surrogation.
+
+### Surrogation
+
+> "The tendency for managers to lose sight of the strategic construct(s) the measures are intended to represent, and subsequently act as though the measures are the constructs"
+>
+> - "Strategy Selection, Surrogation, and Strategic Performance Measurement Systems" by Willie Choi; Gary Hecht; William B. Tayler
+
+> "a manager charged with 'delighting the customer' who uses customer satisfaction surveys to gauge strategic success may begin to see maximizing survey results as the strategy, and behave accordingly (Grizzle 2002)."
+>
+> - "Lost in translation: The effects of incentive compensation on strategy surrogation" by Willie Choi; Gary Hecht; William B. Tayler
+
+This one is mostly specific to leaders, but can apply to ICs as well.
+
+We talked about corrupting and gaming the CSAT number above, and you might ask yourself "if it's so bad why do we all do it? It's basically an industry standard!" Surrogation is the answer, that's the reason we don't question it when we should.
+
+Surrogacy leads us to think "well the number went up" and rationalize that as being the same thing as fulfulling our mandate to empathize with and serve customers.
+
+This leads us to take continual measures to keep the number up that go against our actual goal of improving customer satisfaction, because we've decided that the number *is* customer satisfaction.
+
+How many of you have a CSAT rating above 80% but would rather die than let your leadership see what they say about your product on reddit? Maybe, just maybe, that's because we've mistaken our ability to make that number go up with our *actual* customer's satisfaction.
+
+## What do we do?
+
+So what to we do? We need a way to judge ourselves but clearly this isn't working. We've all seen the cycle. We're tired, we're angry, we've seen our organizations decimated for not meeting arbitrary goals written by people who don't understand our work. What do we do?
+
+I think that we actually need to start by changing who we're trying to emulate.
+
+We spend a lot of time thinking about how we can connect better with Product, and I think for a lot of us support feels very close to product. Hell, a lot of our teams eventually move into product roles because support people are product experts.
+
+Having said that, I think at the end of the day we're actually an operations team. We don't add features or innovate the product or even resolve bugs, we keep the gears moving.
+
+If you work at a technical startup, another team that experiences this kind of doom spiral and cleans up the messes caused by Product and Engineering is your DevOps or SRE team.
+
+So, with that in mind, I'm gonna suggest that we steal from some of their learnings, apply their ways of thinking to support, and see where we end up.
+
+To that end, let's talk about some definitions.
+
+## Definitions
+
+I think most of us have heard of an SLA before -- a Service Level Agreement -- but I don't think many of you know the other two concepts that go with that, and they build on each other. Technically, and as you can see here, SLA's are the *last* brick in the wall.
+
+First, SLI or Service Level Indicator. Service Level Indicators are your "metrics." These are the raw numbers about how your system -- in this case support -- is performing. Most support metrics are (usually corrupted and over-individualized) SLIs. We'll talk about how we *should* be using these here in a sec.
+
+Second, SLO or Service Level Objective. This is your "target". This should be a number or range of numbers for a service that is measured by an SLI. In other words, if you have an SLI where your team is consistently and collectively responding to tickets within 8 hours on average, you'll have an SLO that says your 50th% response time is 9 hours. You might have expected me to say 8 just then, we'll talk about why I didn't in a moment.
+
+Finally -- literally always last and with the involvement of sales, engineering, and legal -- you have SLAs or Service Level Agreements. These are an explicit or implicit contract with your users that include the consequences of meeting or missing certain SLOs
+
+Ok so, we have these fancy new definitions. Great, how do we *do* anything with them? Like I said, my primary goal today was to sew doubt in what we *have* been doing, but lemme close by giving you some ways you can build systems that avoid the doom spiral.
+
+### Start with objectives
+
+In the definition slide I started by defining SLIs, but I actually think -- and the SRE book I recommend taught me this -- that when you're designing the system for measuring and understanding your service level, you should start with your Objectives, and explicitly *avoid* thinking about what you can measure first.
+
+The reason for this is that if you start with what you can measure you end up in surrogation land. You forget that you only picked a specific number because it happened to be easy to measure even though it wasn't a direct measurement of your goal.
+
+So the place you start is objectives, and come up with your objectives by starting with *your* users realities and core needs.
+
+I worked at GitHub, if we had primarily done phone support every developer I know would have revolted. The emails they want were, quite frankly, terse. They want to tell you about an issue and then they don't want to hear back from you -- period -- unless the thing is fixed. And you can litterally just send back "heard" or "fixed, thanks" and they'll be stoked as hell with that experience.
+
+Our goals there are gonna be way different than yours probably. Your customers are *yours*. Think about them, not about your competition or industry trends.
+
+How do they want to be talked to? What are their actual expectations for response times? What channels do they *actually* care about, and *how much* do they care about those channels? If you don't know the answer to those questions, start by asking *them*.
+
+#### Keep it simple
+
+Next, and this is important, keep it simple. Don't try to say "we want every user to feel whole in their soul after contacting us" or "we want every user's effort to be as low as possible." Do something simpler like "95% of users who write to support for a non-blocking issue should get a response in no longer than 9 hours." You know what non-blocking issues are, you can keep a list. Ideally you'd keep that list publicly so your users know what to expect.
+
+#### Avoid Absolutes
+
+Notice how precice and caveated the example I just gave you was? That's on purpose. It is tempting to provide absolutes like "Everyone gets a response in 4 hours" or some such. But all systems have limits. No system can scale infinitely. Your support team is not a bunch of cogs you can replace who all have the same skills, gifts, and speed of responses.
+
+#### Have as few as possible
+
+This is related to but distinct from keep it simple. You want simple objectives in that you want simple things your users care about, but you *also* want as few of them as possible. In general I would say one is two few and four is too many to start.
+
+#### Perfection can wait
+
+Finally, perfection can wait. You *will not* get this right the first time. You should adjust these objectives up, down, or blow them up entirely and start over as you learn more. Always remember that last years numbers mean absolutely fucking nothing if you grew by 25% year over year. Don't aim for perfect, aim for progress.
+
+Related to this: your goal isn't a set of objectives that you have to work overtime to keep, your goal is an error budget.
+
+If you know you can respond to everyone in 8 hours, set your SLO for 80% of responses to 9 hours. That gives you buffer to experiment on ways of winning the war against tickets rather than fighting little battles and eventually losing as you grow. we'll talk more about that in a sec.
+
+### Figure out how you'll know
+
+Ok, we have some objectives, now you need to figure out how you know if you've met them. This is where you start thinking about SLIs and metrics. And the rules here are:
+
+#### Track fewer, more meaningful indicators.
+
+An SLO *can* have multiple SLIs associated with it, but I'm gonna humbly suggest that, to start, you associate your SLOs with specific SLIs.
+
+Additionally, wherever possible, those SLIs should not be proxies for what you're trying to measure.
+
+In other words, if you take the "80% of requests get a response in 9 hours" example, that has a direct measurement you can use.
+
+This isn't always possible, but especially at first it's going to be important so your team can see how they're directly affecting things together and begin thinking as a team.
+
+#### Distributions are better than averages
+
+You have probably noticed me saying things like "80% of responses" or "the 50th percentile." This is because you want to start thinking in distributions and you want to run as far as you possibly can from averages.
+
+Averages are evil. They are neat and clean and underneath that abstraction hides all the nuance and information you actually need.
+
+For example, if Jeff Bezos walks into this room and we take an average, we're all billionaires. Does that reflect reality? If I then took that average and said "Ok, so, now everyone has to give 10million dollars to charity every day until they die", does that feel doable to you? Did the average help us understand who's really got the resources to do anything? Do you feel enlightened by that average? Or did it just lie to you and make everything worse?
+
+What you want are distributions. "99.9% of people in this room are worth $80k, and 0.01% are worth $161b"
+
+Distributions group data, they show you outliers, they enligten and give you way more information.
+
+Use distributions, avoid averages.
+
+#### Resist corruption
+
+None of this means anything or avoids any of the hellscape if you cherry pick these numbers. You have to count *everything*, it's the only way you'll know the truth.
+
+### Nuke your leaderboards
+
+Finally, and most importantly, nuke your leaderboards. Support is a whole team activity, just like your application is a "whole infrastructure" activity. Your ops team, if they really wanted to, *could* figure out which of their servers is the most productive and give it a gold start while throwing side eye at other servers. But what the fuck do our customers care about a single server?
+
+Apple used to drill into the genius bar employees that if they wanted to they could replace the entire genius bar with a vending machine that spits out replacements and reads the warranty off the device. They don't, because what they're paying us for is to fix the relationship that customer has *with Apple.*
+
+Obvious cult-comparisions aside -- and I can for sure make them -- they're right. Your customer is not reacting to their experience with just support. They're not even reacting to their experience with the wait time or the individual support professional they're talking to. They're reacting to their relationship with your product and your company being broken.
+
+They do not care how many tickets each person is answering, or even what your total headcount is. They just want help.
+
+So:
+
+#### Hide your individualzed data
+
+The *only* people who should be seeing individualized data are the direct managers of the specific folks they manage and individual worker themselves.
+
+I'm going to say that again.
+
+If you are not managing the person or the person who the data is about, you should be seeing team-level distribution data about *the system*. You do not have enough context to not make wildly awful judgements about individualized data, and neither do the workers themselves.
+
+Hiding that data will make the next bits possible and bring teamwork back to your org
+
+#### Prioritize celebrating team success, not individual achievement
+
+Your objectives are team level and org level because that's how your customers experience your support, at the *team* level.
+
+So celebrate the team working together to solve a problem. One person answered 400 tickets that day because someone else hopped out of the queue to do crisis communication and a third person was writing user facing docs to stop the deluge of tickets from coming in. Celebrate them all for communicating and working together to solve the problem and meet the objectives.
+
+#### Focus on team-based, differentiated solutions
+
+Now that objectives aren't individualized, it's not terrifying or career ending to hop out of the queue and try to solve root issues, you just have to talk to your team to make sure you're hitting the objective. When you brainstorm and lead on trying to meet these goals, remember that fairness is a myth. Sometimes people are gonna like and be good at answering tickets and hate being a lliason to product. Other folks are gonna absolutely have a knack for writing docs that keep users from opening tickets.
+
+Let them, focus on enabling team players to act on their strengths, not coming up with some kind of uber-support person that does everything well.
+
+#### Trust your professionals, push back on your leaders
+
+Finally, and I think most importantly, your support professionals know what they're doing. They know what's wrong with the product and the queue. They know the big picture things that will provide relief if they just had the time to focus on anything other than the constantly ticking clock and the health of their individual Zendesk explore dashboard.
+
+Listen to them.
+
+Your leadership has likely never done support work in their life. The last time the founders did support they were an unknown YC product and the support that they did was awful. They have absolutely no idea what they're talking about and you know it. We all do.
+
+Push back on them, educate them. Say no when they're asking for something that will rebuild the hellscape you tore down.
+
+I know that last point is scary, I know that there's a lot that could go wrong. I know that the temptation to fold and just do what they ask and not have an uncomfortable, contentious relationship with your peers and leaders is ever present.
+
+I really wish there was something I could recommend that would help...
+
+### Unionize
+
+but unfortunately I just can't think of anything. I leave it to you. ✊🏽
+
+That's my talk. I'm `@birdcar` in the slack community if you want to talk to me. Thank you so much.

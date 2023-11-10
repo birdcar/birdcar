@@ -1,0 +1,55 @@
+---
+interface Props {
+  level: number;
+  id: string;
+}
+const { id, level } = Astro.props;
+---
+
+{
+  level == 1 && (
+    <h1 id={id} transition:animate="slide">
+      <slot />
+    </h1>
+  )
+}
+
+{
+  level == 2 && (
+    <h2 id={id}>
+      <slot />
+    </h2>
+  )
+}
+
+{
+  level == 3 && (
+    <h3 id={id}>
+      <slot />
+    </h3>
+  )
+}
+
+{
+  level == 4 && (
+    <h4 id={id}>
+      <slot />
+    </h4>
+  )
+}
+
+{
+  level == 5 && (
+    <h5 id={id}>
+      <slot />
+    </h5>
+  )
+}
+
+{
+  level == 6 && (
+    <h6 id={id}>
+      <slot />
+    </h6>
+  )
+}

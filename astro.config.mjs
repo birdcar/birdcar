@@ -1,18 +1,18 @@
 import { defineConfig } from 'astro/config';
-import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwind from "@astrojs/tailwind";
 import markdoc from "@astrojs/markdoc";
 import netlify from "@astrojs/netlify/functions";
 import prefetch from "@astrojs/prefetch";
 import partytown from "@astrojs/partytown";
-
 import alpinejs from "@astrojs/alpinejs";
+
+import lit from "@astrojs/lit";
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://birdcar.dev',
-  integrations: [mdx(), sitemap(), tailwind(), markdoc(), prefetch(), partytown(), alpinejs()],
+  integrations: [sitemap(), tailwind(), prefetch(), partytown(), alpinejs(), lit(), markdoc()],
   output: "hybrid",
-  adapter: netlify()
+  adapter: netlify(),
 });

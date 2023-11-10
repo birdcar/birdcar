@@ -7,13 +7,23 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
 <BaseLayout>
+  {heroImage && <img src={heroImage} />}
   <article
     class="mx-auto my-12 prose prose-zinc dark:prose-invert lg:prose-lg xl:prose-xl 2xl:prose-2xl"
   >
-    <header>
-      <h1>{title}</h1>
+    <header class="flex flex-col">
+      <h1 transition:animate="slide">{title}</h1>
+      <p class="not-prose text-lg -mt-5">{description}</p>
+      <p>Published: <time datetime={pubDate.toISOString()}>{pubDate}</time></p>
+      {
+        updatedDate && (
+          <p>
+            Updated:{' '}
+            <time datetime={updatedDate.toISOString()}>{updatedDate}</time>
+          </p>
+        )
+      }
     </header>
-    {description}
     <slot />
   </article>
 </BaseLayout>

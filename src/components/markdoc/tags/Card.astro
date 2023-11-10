@@ -1,0 +1,16 @@
+---
+interface Props {
+  fill?: string;
+  elevation?: number;
+}
+
+const { elevation, fill } = Astro.props;
+---
+
+<wired-card elevation={elevation} fill={fill}>
+  <slot />
+</wired-card>
+
+<script>
+  import { WiredCard } from 'wired-elements';
+</script>

@@ -1,0 +1,19 @@
+---
+interface Props {
+  href: string;
+  title: string;
+}
+const { href, title } = Astro.props;
+---
+
+<wired-link href={href} elevation="2"><slot /></wired-link>
+
+<style>
+  :root {
+    --wired-link-decoration-color: red;
+  }
+</style>
+
+<script>
+  import { WiredLink } from 'wired-elements';
+</script>

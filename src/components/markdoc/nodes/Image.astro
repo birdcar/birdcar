@@ -1,0 +1,16 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  title?: string;
+}
+
+const { src, alt } = Astro.props;
+---
+
+<wired-image class="not-prose w-full" elevation="3" src={src} alt={alt}
+></wired-image>
+
+<script>
+  import { WiredImage } from 'wired-elements';
+</script>
