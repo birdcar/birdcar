@@ -1,0 +1,23 @@
+---
+import { getCollection, render } from 'astro:content';
+import Post from '../../layouts/Post.astro';
+import { getPostMetadata } from '../../lib/markdown';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => {
+    return import.meta.env.PROD ? !data.draft : true;
+  });
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const metadata = await getPostMetadata(post.body!);
+---
+
+<Post title={post.data.title} date={post.data.date} metadata={metadata}>
+  <Content />
+</Post>
