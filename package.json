@@ -15,10 +15,12 @@
     "@aws-sdk/client-s3": "^3.1007.0",
     "@birdcar/markdown": "^0.0.3",
     "astro": "6.0.2",
+    "gsap": "^3.14.2",
     "hast-util-from-html": "^2.0.3",
     "katex": "^0.16.38",
     "mime-types": "^3.0.2",
     "remark-parse": "^11.0.0",
+    "rough-notation": "^0.5.1",
     "unified": "^11.0.0",
     "unist-util-visit": "^5.1.0"
   },
