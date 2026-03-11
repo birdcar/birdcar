@@ -3,3 +3,6 @@ dist/
 .astro/
 .vite/
 *.log
+.env
+images/**
+!images/.gitkeep

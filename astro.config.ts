@@ -10,6 +10,7 @@ import { rehypeBfmInclude } from './src/lib/rehype/include';
 import { rehypeBfmQuery } from './src/lib/rehype/query';
 import { rehypeBfmEmbed } from './src/lib/rehype/embed';
 import { createBlogQueryResolver } from './src/lib/rehype/query-resolver';
+import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 
 // Compose BFM plugins individually — skip frontmatter (Astro handles it)
 // and footnotes (Astro's built-in remark-gfm handles them).
@@ -29,6 +30,9 @@ export default defineConfig({
       [rehypeBfmInclude, { basePath: process.cwd() }],
       [rehypeBfmQuery, { resolver: createBlogQueryResolver(process.cwd() + '/src/content') }],
       rehypeBfmEmbed,
+      ...(process.env.CDN_BASE_URL
+        ? [[rehypeImageCdn, { cdnBaseUrl: process.env.CDN_BASE_URL }]]
+        : []),
     ] as any,
     remarkRehype: {
       handlers: {
@@ -39,6 +43,13 @@ export default defineConfig({
     },
     shikiConfig: {
       theme: 'github-dark',
+    },
+  },
+  vite: {
+    server: {
+      fs: {
+        allow: ['images'],
+      },
     },
   },
 });
