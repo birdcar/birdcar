@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getAllTags } from '../../lib/posts';
+
+const tagCounts = await getAllTags();
+const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+---
+<Base title="Tags — birdcar">
+  <main>
+    <h1>Tags</h1>
+    <ul>
+      {sortedTags.map(([tag, count]) => (
+        <li>
+          <a href={`/tags/${tag}/`}>#{tag}</a> ({count})
+        </li>
+      ))}
+    </ul>
+  </main>
+</Base>

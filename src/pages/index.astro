@@ -1,26 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
+import PostList from '../components/PostList.astro';
+import { getPublishedPosts } from '../lib/posts';
 
-const posts = await getCollection('blog', ({ data }) => {
-  return import.meta.env.PROD ? !data.draft : true;
-});
-const sorted = posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const posts = await getPublishedPosts();
+const recentPosts = posts.slice(0, 5);
 ---
-
-<Base title="birdcar.dev">
+<Base title="birdcar">
   <main>
-    <h1>birdcar.dev</h1>
+    <h1>birdcar</h1>
+    <p>Developer blog.</p>
     <h2>Recent Posts</h2>
-    <ul>
-      {sorted.map((post) => (
-        <li>
-          <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-          <time datetime={post.data.date.toISOString()}>
-            {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-          </time>
-        </li>
-      ))}
-    </ul>
+    <PostList posts={recentPosts} />
+    <a href="/blog/">All posts →</a>
   </main>
 </Base>
