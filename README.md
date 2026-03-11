@@ -8,11 +8,23 @@ I write about software at [birdcar.dev](https://www.birdcar.dev) using [Birdcar 
 
 <div align="center">
 
-![GitHub Stats](https://github-readme-stats.vercel.app/api?username=birdcar&show_icons=true&theme=catppuccin_mocha&hide_border=true&count_private=true)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api?username=birdcar&show_icons=true&theme=github_dark&hide_border=true&count_private=true" />
+  <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api?username=birdcar&show_icons=true&theme=default&hide_border=true&count_private=true" />
+  <img alt="GitHub Stats" src="https://github-readme-stats.vercel.app/api?username=birdcar&show_icons=true&theme=default&hide_border=true&count_private=true" />
+</picture>
 
-![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=birdcar&layout=compact&theme=catppuccin_mocha&hide_border=true&langs_count=8)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/top-langs/?username=birdcar&layout=compact&theme=github_dark&hide_border=true&langs_count=8" />
+  <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api/top-langs/?username=birdcar&layout=compact&theme=default&hide_border=true&langs_count=8" />
+  <img alt="Top Languages" src="https://github-readme-stats.vercel.app/api/top-langs/?username=birdcar&layout=compact&theme=default&hide_border=true&langs_count=8" />
+</picture>
 
-![GitHub Streak](https://github-readme-streak-stats.herokuapp.com?user=birdcar&theme=catppuccin-mocha&hide_border=true)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-streak-stats.herokuapp.com?user=birdcar&theme=github-dark-blue&hide_border=true" />
+  <source media="(prefers-color-scheme: light)" srcset="https://github-readme-streak-stats.herokuapp.com?user=birdcar&theme=default&hide_border=true" />
+  <img alt="GitHub Streak" src="https://github-readme-streak-stats.herokuapp.com?user=birdcar&theme=default&hide_border=true" />
+</picture>
 
 </div>
 
