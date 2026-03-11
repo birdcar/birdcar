@@ -1,17 +1,26 @@
 ---
 import Base from '../layouts/Base.astro';
 import PostList from '../components/PostList.astro';
+import HeroDecoration from '../components/HeroDecoration.astro';
 import { getPublishedPosts } from '../lib/posts';
 
 const posts = await getPublishedPosts();
 const recentPosts = posts.slice(0, 5);
 ---
-<Base title="birdcar">
-  <main>
-    <h1>birdcar</h1>
-    <p>Developer blog.</p>
-    <h2>Recent Posts</h2>
+<Base title="birdcar" description="Developer blog by birdcar. Writing about software, systems, and the craft of building things.">
+  <section class="hero" style="position: relative;">
+    <HeroDecoration />
+    <p class="hero__eyebrow">developer blog</p>
+    <h1 class="hero__title">Building software,<br /><em>writing about it.</em></h1>
+    <p class="hero__description">
+      Thoughts on software engineering, systems design, and the tools
+      that make it all work. Written in Birdcar Flavored Markdown, naturally.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="section-heading">Recent Posts</h2>
     <PostList posts={recentPosts} />
-    <a href="/blog/">All posts →</a>
-  </main>
+    <a href="/blog/" class="view-all">All posts <span aria-hidden="true">&rarr;</span></a>
+  </section>
 </Base>

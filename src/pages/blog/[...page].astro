@@ -12,10 +12,12 @@ export const getStaticPaths = (async ({ paginate }) => {
 
 const { page } = Astro.props;
 ---
-<Base title="Blog — birdcar">
-  <main>
-    <h1>Blog</h1>
-    <PostList posts={page.data} />
-    <Pagination page={page} />
-  </main>
+<Base title="Blog — birdcar" description="All blog posts.">
+  <section class="hero">
+    <p class="hero__eyebrow">blog</p>
+    <h1 class="hero__title">All <em>posts.</em></h1>
+  </section>
+
+  <PostList posts={page.data} />
+  <Pagination page={page} />
 </Base>

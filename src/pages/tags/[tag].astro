@@ -18,9 +18,12 @@ export const getStaticPaths = (async () => {
 
 const { tag, posts } = Astro.props;
 ---
-<Base title={`#${tag} — birdcar`}>
-  <main>
-    <h1>#{tag}</h1>
-    <PostList posts={posts} />
-  </main>
+<Base title={`#${tag} — birdcar`} description={`Posts tagged with #${tag}.`}>
+  <section class="hero">
+    <p class="hero__eyebrow">tagged</p>
+    <h1 class="hero__title"><em>#{tag}</em></h1>
+  </section>
+
+  <PostList posts={posts} />
+  <a href="/tags/" class="view-all"><span aria-hidden="true">&larr;</span> All tags</a>
 </Base>

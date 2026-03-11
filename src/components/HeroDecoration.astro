@@ -1,0 +1,72 @@
+---
+/**
+ * Subtle geometric SVG decoration for hero sections.
+ * Renders floating dots and lines in Catppuccin accent colors.
+ */
+---
+<div class="hero-decoration" aria-hidden="true">
+  <svg class="hero-decoration__svg" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Scattered dots -->
+    <circle cx="50" cy="40" r="3" fill="var(--ctp-mauve)" opacity="0.3" />
+    <circle cx="350" cy="60" r="4" fill="var(--ctp-teal)" opacity="0.25" />
+    <circle cx="320" cy="180" r="3" fill="var(--ctp-pink)" opacity="0.2" />
+    <circle cx="80" cy="250" r="5" fill="var(--ctp-blue)" opacity="0.2" />
+    <circle cx="370" cy="280" r="3" fill="var(--ctp-peach)" opacity="0.25" />
+    <circle cx="200" cy="20" r="2" fill="var(--ctp-lavender)" opacity="0.3" />
+    <circle cx="150" cy="270" r="3" fill="var(--ctp-green)" opacity="0.2" />
+
+    <!-- Geometric lines -->
+    <line x1="30" y1="100" x2="80" y2="100" stroke="var(--ctp-surface2)" stroke-width="1" opacity="0.3" />
+    <line x1="340" y1="120" x2="390" y2="120" stroke="var(--ctp-surface2)" stroke-width="1" opacity="0.2" />
+    <line x1="60" y1="200" x2="60" y2="240" stroke="var(--ctp-surface2)" stroke-width="1" opacity="0.2" />
+
+    <!-- Small cross marks -->
+    <g opacity="0.2" stroke="var(--ctp-overlay1)" stroke-width="1">
+      <line x1="360" y1="30" x2="370" y2="40" />
+      <line x1="370" y1="30" x2="360" y2="40" />
+    </g>
+    <g opacity="0.15" stroke="var(--ctp-overlay1)" stroke-width="1">
+      <line x1="30" y1="160" x2="40" y2="170" />
+      <line x1="40" y1="160" x2="30" y2="170" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .hero-decoration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .hero-decoration__svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-decoration__svg circle {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .hero-decoration__svg circle:nth-child(2n) {
+      animation-delay: -2s;
+      animation-duration: 8s;
+    }
+
+    .hero-decoration__svg circle:nth-child(3n) {
+      animation-delay: -4s;
+      animation-duration: 7s;
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+</style>

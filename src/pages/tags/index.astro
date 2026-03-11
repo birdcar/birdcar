@@ -5,15 +5,19 @@ import { getAllTags } from '../../lib/posts';
 const tagCounts = await getAllTags();
 const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 ---
-<Base title="Tags — birdcar">
-  <main>
-    <h1>Tags</h1>
-    <ul>
-      {sortedTags.map(([tag, count]) => (
-        <li>
-          <a href={`/tags/${tag}/`}>#{tag}</a> ({count})
-        </li>
-      ))}
-    </ul>
-  </main>
+<Base title="Tags — birdcar" description="Browse posts by tag.">
+  <section class="hero">
+    <p class="hero__eyebrow">browse by topic</p>
+    <h1 class="hero__title">All <em>tags.</em></h1>
+  </section>
+
+  <ul class="tags-grid">
+    {sortedTags.map(([tag, count]) => (
+      <li>
+        <a href={`/tags/${tag}/`}>
+          #{tag} <span class="tag-count">{count}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
 </Base>
