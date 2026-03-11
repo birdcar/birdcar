@@ -1,0 +1,21 @@
+name: Update README with latest blog posts
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update blog posts
+        uses: gautamkrishnar/blog-post-workflow@v1
+        with:
+          feed_list: "https://www.birdcar.dev/rss.xml"
+          max_post_count: 5
+          template: "- [$title]($url) — $date"
+          date_format: "MMM d, yyyy"
+          comment_tag_name: "BLOG-POST-LIST"
