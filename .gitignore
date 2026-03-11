@@ -6,3 +6,5 @@ dist/
 .env
 images/**
 !images/.gitkeep
+.playwright-mcp/
+.claude/skills/
