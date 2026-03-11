@@ -27,6 +27,8 @@ This text has ~~strikethrough~~ formatting applied.
 
 ## BFM Directives
 
+### Callouts
+
 @callout type=info
 This is an informational callout block. It should render as a styled aside element with appropriate visual treatment.
 @endcallout
@@ -35,9 +37,32 @@ This is an informational callout block. It should render as a styled aside eleme
 Be careful with this operation — it cannot be undone.
 @endcallout
 
+@callout type=tip
+Here's a helpful tip for working with BFM directives.
+@endcallout
+
+### Details
+
 @details summary="Click to expand"
 This content is hidden by default and revealed when the user interacts with the summary element. Useful for lengthy code examples or supplementary information.
 @enddetails
+
+### Figures
+
+@figure src="https://placehold.co/600x400" alt="Placeholder image"
+A caption describing the figure above.
+@endfigure
+
+### Asides
+
+@aside title="Did you know?"
+Asides are useful for tangential information that complements the main content without interrupting the flow.
+@endaside
+
+### Table of Contents
+
+@toc depth=2
+@endtoc
 
 ## Footnotes
 
@@ -48,7 +73,9 @@ Birdcar Flavored Markdown supports footnotes[^1] for supplementary information. 
 
 ## Mentions and Hashtags
 
-Hey @birdcar, this post is tagged with #testing and #bfm for validation purposes. Mentions like @github should render as inline elements.
+Hey @birdcar, this post is tagged with #testing and #bfm for validation purposes.
+
+Platform mentions: @github:octocat, @twitter:birdcar, @bluesky:birdcar.dev, @mastodon:birdcar@fosstodon.org, @npm:unified, @linkedin:birdcar, and @unknown:somebody (unrecognized platform).
 
 ## Extended Task Lists
 
@@ -59,6 +86,27 @@ Hey @birdcar, this post is tagged with #testing and #bfm for validation purposes
 - [-] Irrelevant task — no longer needed
 - [o] Event — something that happened
 - [!] Priority task — needs attention
+
+## Math
+
+@math
+E = mc^2
+@endmath
+
+@math label=quadratic
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+@endmath
+
+## Embeds
+
+@embed https://www.youtube.com/watch?v=dQw4w9WgXcQ
+A classic example of an embedded video.
+@endembed
+
+## Queried Posts
+
+@query tag=bfm sort=date-desc limit=5
+@endquery
 
 ## Code Blocks
 
