@@ -1,10 +1,21 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
 interface Props {
   title: string;
   description?: string;
 }
 
 const { title, description } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/blog/', label: 'Blog' },
+  { href: '/about/', label: 'About' },
+  { href: '/tags/', label: 'Tags' },
+];
 ---
 
 <!doctype html>
@@ -14,14 +25,69 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    <link rel="alternate" type="application/rss+xml" title="birdcar.dev" href="/rss.xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <ClientRouter />
   </head>
   <body>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/blog/">Blog</a>
-      <a href="/about/">About</a>
-      <a href="/tags/">Tags</a>
-    </nav>
-    <slot />
+    <div class="accent-bar" aria-hidden="true" transition:name="accent-bar" transition:persist></div>
+
+    <header class="site-header" transition:name="nav" transition:animate="none">
+      <a href="/" class="site-header__logo">birdcar<span class="site-header__tld">.dev</span></a>
+      <nav aria-label="Main navigation">
+        <ul class="site-header__nav">
+          {navLinks.map(({ href, label }) => (
+            <li>
+              <a
+                href={href}
+                aria-current={currentPath === href || (href !== '/' && currentPath.startsWith(href)) ? 'page' : undefined}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+
+    <main class="page" transition:name="page-content">
+      <slot />
+    </main>
+
+    <footer class="site-footer" transition:name="footer" transition:animate="none">
+      <p>&copy; {new Date().getFullYear()} birdcar. Built with <a href="https://astro.build">Astro</a>.</p>
+    </footer>
+
+    <script src="../scripts/animations.ts"></script>
+    <script>
+      import { navigate } from 'astro:transitions/client';
+
+      const navOrder = ['/', '/blog/', '/about/', '/tags/'];
+
+      function getDepth(path: string): number {
+        const idx = navOrder.indexOf(path);
+        if (idx >= 0) return idx;
+        return path.split('/').filter(Boolean).length + 10;
+      }
+
+      document.addEventListener('astro:before-preparation', (e: any) => {
+        const from = getDepth(e.from.pathname);
+        const to = getDepth(e.to.pathname);
+        if (to < from) {
+          document.documentElement.classList.add('transition-back');
+        } else {
+          document.documentElement.classList.remove('transition-back');
+        }
+      });
+
+      document.addEventListener('astro:after-transition', () => {
+        document.documentElement.classList.remove('transition-back');
+      });
+    </script>
   </body>
 </html>
