@@ -42,13 +42,13 @@ export default defineConfig({
       } as any,
     },
     shikiConfig: {
-      theme: 'github-dark',
+      theme: 'catppuccin-mocha',
     },
   },
   vite: {
     server: {
       fs: {
-        allow: ['images'],
+        strict: false,
       },
     },
   },
