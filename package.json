@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "bun run scripts/sync-images.ts && astro build",
+    "build:ci": "astro build",
     "check": "astro check",
     "preview": "astro preview",
     "sync-images": "bun run scripts/sync-images.ts"
