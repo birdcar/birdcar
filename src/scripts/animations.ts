@@ -1,11 +1,16 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { computePosition, offset, flip, shift, arrow } from '@floating-ui/dom';
 import { annotate } from 'rough-notation';
 import type { RoughAnnotation } from 'rough-notation/lib/model';
 
 gsap.registerPlugin(ScrollTrigger);
 
 let shownAnnotations: RoughAnnotation[] = [];
+let tocObserver: IntersectionObserver | null = null;
+let activePopover: HTMLElement | null = null;
+let popoverCleanup: (() => void) | null = null;
+let popoverDismissHandler: ((e: MouseEvent) => void) | null = null;
 
 function cleanup() {
   for (const a of shownAnnotations) {
@@ -17,6 +22,15 @@ function cleanup() {
   // only injects keyframes once. View transition swaps remove the <style>
   // from the DOM but the reference persists, so reset it to force re-injection.
   delete (window as any).__rno_kf_s;
+
+  tocObserver?.disconnect();
+  tocObserver = null;
+
+  dismissFootnotePopover();
+  if (popoverDismissHandler) {
+    document.removeEventListener('click', popoverDismissHandler);
+    popoverDismissHandler = null;
+  }
 }
 
 function css(name: string): string {
@@ -34,6 +48,7 @@ function refreshAnnotations() {
   }
   ScrollTrigger.refresh();
 }
+
 
 function initGSAPAnimations() {
   const heroEyebrow = document.querySelector('.hero__eyebrow');
@@ -135,12 +150,14 @@ function initRoughNotations(animate = true) {
   const peach = css('--ctp-peach');
   const lavender = css('--ctp-lavender');
   const red = css('--ctp-red');
+  const yellow = css('--ctp-yellow');
+  const flamingo = css('--ctp-flamingo');
 
   const heroEm = document.querySelector('.hero__title em');
   if (heroEm) {
     const a = annotate(heroEm as HTMLElement, {
       type: 'highlight',
-      color: sapphire + '40',
+      color: yellow + '55',
       animate,
       animationDuration: animate ? 1200 : 0,
       multiline: true,
@@ -197,12 +214,13 @@ function initRoughNotations(animate = true) {
 
   document.querySelectorAll('.prose blockquote').forEach((el) => {
     const a = annotate(el as HTMLElement, {
-      type: 'box',
-      color: peach,
+      type: 'bracket',
+      color: flamingo,
       strokeWidth: 2,
-      padding: 6,
+      padding: 8,
       animate,
       animationDuration: animate ? 700 : 0,
+      brackets: ['left', 'right'],
     });
     observeAndShow(el as HTMLElement, a, animate);
   });
@@ -252,6 +270,172 @@ function observeAndShow(el: HTMLElement, annotation: RoughAnnotation, animate: b
   observer.observe(el);
 }
 
+function initTocScrollSpy() {
+  const toc = document.querySelector('.toc');
+  if (!toc) return;
+
+  const tocLinks = toc.querySelectorAll<HTMLAnchorElement>('a[href^="#"]');
+  if (!tocLinks.length) return;
+
+  const headingMap = new Map<string, HTMLAnchorElement>();
+  for (const link of tocLinks) {
+    const id = link.getAttribute('href')?.slice(1);
+    if (id) headingMap.set(id, link);
+  }
+
+  const headings = Array.from(headingMap.keys())
+    .map((id) => document.getElementById(id))
+    .filter(Boolean) as HTMLElement[];
+
+  if (!headings.length) return;
+
+  tocObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          for (const link of tocLinks) link.classList.remove('toc--active');
+          headingMap.get(entry.target.id)?.classList.add('toc--active');
+        }
+      }
+    },
+    { rootMargin: '0px 0px -70% 0px', threshold: 0 },
+  );
+
+  for (const heading of headings) tocObserver.observe(heading);
+}
+
+/* ── Footnote Popovers (Floating UI + GSAP) ──────────────────────────── */
+
+function dismissFootnotePopover() {
+  if (!activePopover) return;
+  const pop = activePopover;
+  activePopover = null;
+  popoverCleanup?.();
+  popoverCleanup = null;
+
+  gsap.to(pop, {
+    opacity: 0,
+    y: -4,
+    duration: 0.15,
+    ease: 'power2.in',
+    onComplete: () => pop.remove(),
+  });
+}
+
+async function positionPopover(ref: HTMLElement, popover: HTMLElement, arrowEl: HTMLElement) {
+  const { x, y, placement, middlewareData } = await computePosition(ref, popover, {
+    placement: 'bottom',
+    middleware: [
+      offset(12),
+      flip({ fallbackPlacements: ['top'] }),
+      shift({ padding: 12 }),
+      arrow({ element: arrowEl }),
+    ],
+  });
+
+  Object.assign(popover.style, { left: `${x}px`, top: `${y}px` });
+
+  const side = placement.split('-')[0] as 'top' | 'bottom';
+  const arrowX = middlewareData.arrow?.x;
+  const arrowY = middlewareData.arrow?.y;
+
+  const staticSide = { top: 'bottom', bottom: 'top' }[side] as string;
+  Object.assign(arrowEl.style, {
+    left: arrowX != null ? `${arrowX}px` : '',
+    top: arrowY != null ? `${arrowY}px` : '',
+    [staticSide]: '-6px',
+    // Rotate arrow based on which side the popover is on
+    transform: side === 'top' ? 'rotate(225deg)' : 'rotate(45deg)',
+  });
+}
+
+function initFootnotePopovers() {
+  const refs = document.querySelectorAll<HTMLAnchorElement>('a[data-footnote-ref]');
+  if (!refs.length) return;
+
+  const pillColors = [
+    css('--ctp-sapphire'),
+    css('--ctp-mauve'),
+    css('--ctp-peach'),
+    css('--ctp-green'),
+    css('--ctp-pink'),
+    css('--ctp-teal'),
+    css('--ctp-lavender'),
+    css('--ctp-flamingo'),
+  ];
+
+  refs.forEach((ref, i) => {
+    const color = pillColors[i % pillColors.length];
+    ref.style.background = color;
+  });
+
+  const footnotesSection = document.querySelector('.footnotes');
+  if (footnotesSection) footnotesSection.classList.add('footnotes--has-popovers');
+
+  for (const ref of refs) {
+    ref.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      if (activePopover && activePopover.dataset.fnId === ref.getAttribute('href')?.slice(1)) {
+        dismissFootnotePopover();
+        return;
+      }
+
+      dismissFootnotePopover();
+
+      const targetId = ref.getAttribute('href')?.slice(1);
+      if (!targetId) return;
+
+      const footnoteLi = document.getElementById(targetId);
+      if (!footnoteLi) return;
+
+      const popover = document.createElement('div');
+      popover.className = 'footnote-popover';
+      popover.dataset.fnId = targetId;
+
+      // Clone child nodes from the footnote (same-page trusted content)
+      for (const child of footnoteLi.childNodes) {
+        popover.appendChild(child.cloneNode(true));
+      }
+
+      const arrowEl = document.createElement('div');
+      arrowEl.className = 'footnote-popover__arrow';
+      popover.appendChild(arrowEl);
+
+      document.body.appendChild(popover);
+      activePopover = popover;
+
+      // Position with Floating UI, then animate in with GSAP
+      positionPopover(ref, popover, arrowEl).then(() => {
+        popover.classList.add('is-visible');
+        gsap.fromTo(popover,
+          { opacity: 0, y: 4 },
+          { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' },
+        );
+      });
+
+      // Update position on scroll/resize
+      const update = () => {
+        if (activePopover === popover) positionPopover(ref, popover, arrowEl);
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update, { passive: true });
+      popoverCleanup = () => {
+        window.removeEventListener('scroll', update);
+        window.removeEventListener('resize', update);
+      };
+    });
+  }
+
+  popoverDismissHandler = (e: MouseEvent) => {
+    if (!activePopover) return;
+    const target = e.target as HTMLElement;
+    if (activePopover.contains(target) || target.closest('a[data-footnote-ref]')) return;
+    dismissFootnotePopover();
+  };
+  document.addEventListener('click', popoverDismissHandler);
+}
+
 function init() {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -267,6 +451,9 @@ function init() {
       requestAnimationFrame(refreshAnnotations);
     });
   });
+
+  initTocScrollSpy();
+  initFootnotePopovers();
 }
 
 document.addEventListener('astro:before-swap', cleanup);

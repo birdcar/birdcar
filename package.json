@@ -15,6 +15,7 @@
     "@astrojs/rss": "^4.0.17",
     "@aws-sdk/client-s3": "^3.1007.0",
     "@birdcar/markdown": "^0.0.3",
+    "@floating-ui/dom": "^1.7.6",
     "astro": "6.0.2",
     "gsap": "^3.14.2",
     "hast-util-from-html": "^2.0.3",

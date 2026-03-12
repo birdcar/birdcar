@@ -95,7 +95,7 @@
 
   /* Layout */
   --max-width: 72rem;
-  --content-width: 48rem;
+  --content-width: 42rem;
   --radius: 0.5rem;
   --radius-sm: 0.25rem;
   --radius-lg: 0.75rem;
@@ -459,9 +459,9 @@ a:hover {
   display: inline-block;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  color: var(--ctp-green);
+  background: color-mix(in srgb, var(--ctp-green) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-green) 20%, transparent);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
@@ -469,9 +469,9 @@ a:hover {
 }
 
 .tag-list__item a:hover {
-  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: color-mix(in srgb, var(--ctp-green) 20%, transparent);
+  border-color: var(--ctp-green);
+  color: var(--ctp-green);
 }
 
 /* --- Tags Index Page ----------------------------------------------------- */
@@ -488,9 +488,9 @@ a:hover {
   gap: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--ctp-green);
+  background: color-mix(in srgb, var(--ctp-green) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-green) 15%, transparent);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius);
   transition: all var(--transition-fast);
@@ -498,8 +498,8 @@ a:hover {
 }
 
 .tags-grid li a:hover {
-  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
+  border-color: var(--ctp-green);
   transform: translateY(-1px);
 }
 
@@ -562,6 +562,7 @@ a:hover {
 .article {
   max-width: var(--content-width);
   margin: 0 auto;
+  position: relative;
 }
 
 .article__header {
@@ -593,7 +594,7 @@ a:hover {
   color: var(--color-text-muted);
 }
 
-.article__meta span::before {
+.article__meta > span::before {
   content: '\b7';
   margin-right: var(--space-4);
   color: var(--color-border);
@@ -634,6 +635,7 @@ a:hover {
 /* Paragraph */
 .prose p {
   color: var(--color-text-muted);
+  font-size: var(--text-lg);
   line-height: 1.75;
 }
 
@@ -696,12 +698,15 @@ a:hover {
 
 /* Blockquotes */
 .prose blockquote {
-  border-left: 3px solid var(--color-accent);
-  padding: var(--space-4) var(--space-6);
-  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  position: relative;
+  border: none;
+  padding: var(--space-6) var(--space-8);
+  margin-left: calc(-1 * var(--space-4));
+  margin-right: calc(-1 * var(--space-4));
   color: var(--color-text-muted);
   font-style: italic;
+  font-size: var(--text-lg);
+  line-height: 1.8;
 }
 
 .prose blockquote p {
@@ -728,6 +733,8 @@ a:hover {
 .prose ol {
   padding-left: 1.5em;
   color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: 1.75;
 }
 
 .prose ul {
@@ -859,36 +866,37 @@ a:hover {
 
 /* --- Details / Disclosure ------------------------------------------------ */
 .prose details {
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius);
+  border: none;
+  border-left: 3px solid var(--ctp-peach);
+  border-radius: 0;
   padding: 0;
   overflow: hidden;
+  margin: var(--space-6) 0;
 }
 
 .prose details summary {
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-4);
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--color-text);
   cursor: pointer;
-  background: var(--color-bg-raised);
   list-style: none;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  transition: background var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
 .prose details summary:hover {
-  background: var(--color-bg-surface);
+  color: var(--ctp-peach);
 }
 
 .prose details summary::before {
   content: '\25B8';
   font-size: var(--text-xs);
   transition: transform var(--transition-fast);
-  color: var(--color-accent);
+  color: var(--ctp-peach);
 }
 
 .prose details[open] summary::before {
@@ -918,15 +926,27 @@ a:hover {
   text-align: center;
 }
 
-/* --- Asides -------------------------------------------------------------- */
+/* --- Asides (Tufte-style sidenotes) -------------------------------------- */
 .prose aside:not(.callout) {
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius);
-  padding: var(--space-6);
-  margin: var(--space-6) 0;
+  border-left: 3px solid var(--ctp-teal);
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-6) 0 var(--space-6) var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+@media (min-width: 62rem) {
+  .prose aside:not(.callout) {
+    position: absolute;
+    right: calc(-1 * (var(--space-8) + 14rem));
+    width: 14rem;
+    margin: 0;
+    padding: 0 0 0 var(--space-4);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+  }
 }
 
 .aside__title {
@@ -935,15 +955,21 @@ a:hover {
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: var(--space-3);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  font-variant: small-caps;
+  font-style: normal;
+}
+
+@media (min-width: 62rem) {
+  .aside__title {
+    font-size: var(--text-xs);
+  }
 }
 
 /* --- Table of Contents --------------------------------------------------- */
 .toc {
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius);
-  padding: var(--space-6);
+  border-left: 3px solid var(--ctp-sapphire);
+  padding: var(--space-2) 0 var(--space-2) var(--space-6);
   margin: var(--space-6) 0;
 }
 
@@ -955,7 +981,7 @@ a:hover {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-text-dim);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
   display: block;
 }
 
@@ -970,26 +996,64 @@ a:hover {
 
 .toc li {
   padding: var(--space-1) 0;
+  position: relative;
 }
 
 .toc a {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  display: inline-block;
 }
 
 .toc a:hover {
-  color: var(--color-accent);
+  color: var(--ctp-sapphire);
+  transform: translateX(2px);
+}
+
+.toc a.toc--active {
+  color: var(--ctp-sapphire);
+  font-weight: 600;
+}
+
+.toc li > a::before {
+  content: counter(toc-depth, decimal) '.';
+  counter-increment: toc-depth;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  margin-right: var(--space-2);
+  opacity: 0.6;
+}
+
+.toc > ul {
+  counter-reset: toc-depth;
+}
+
+.toc ul ul {
+  counter-reset: toc-depth;
+}
+
+/* Ensure TOC overrides .prose list styles */
+.prose .toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.prose .toc ul ul {
+  padding-left: var(--space-6);
+}
+
+.prose .toc li {
+  padding-left: 0;
 }
 
 /* --- Math (KaTeX) -------------------------------------------------------- */
 .math {
   margin: var(--space-6) 0;
-  padding: var(--space-6);
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius);
+  padding: var(--space-6) var(--space-8);
+  border-left: 3px solid var(--ctp-lavender);
   overflow-x: auto;
   text-align: center;
 }
@@ -1004,6 +1068,7 @@ a:hover {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--color-text-dim);
+  opacity: 0.5;
 }
 
 /* Inline math */
@@ -1029,11 +1094,13 @@ a:hover {
 
 .embed p,
 .embed figcaption {
-  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+  padding: 0 var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-text-dim);
   font-style: italic;
-  background: var(--color-bg-raised);
+  text-align: center;
+  background: none;
 }
 
 /* --- Query Results ------------------------------------------------------- */
@@ -1044,6 +1111,31 @@ a:hover {
 .query-results ul {
   list-style: none;
   padding: 0;
+}
+
+/* Query results reuse .post-list__item styles — no custom card CSS needed */
+
+.query__empty {
+  color: var(--color-text-dim);
+  font-style: italic;
+  padding: var(--space-4) 0;
+}
+
+/* Override .prose list styles for query post-lists and tag-lists */
+.prose ul.post-list,
+.prose ul.tag-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.prose .post-list__item,
+.prose .tag-list__item {
+  padding-left: 0;
+}
+
+.prose .post-list__item + .post-list__item,
+.prose .tag-list__item + .tag-list__item {
+  margin-top: 0;
 }
 
 /* --- Footnotes ----------------------------------------------------------- */
@@ -1071,20 +1163,31 @@ a:hover {
   color: var(--color-text-dim);
 }
 
-/* Footnote reference (superscript) */
+/* Footnote reference (superscript pill) */
 .prose sup a,
 .prose a[data-footnote-ref] {
   font-family: var(--font-mono);
-  font-size: 0.75em;
-  color: var(--color-accent);
+  font-size: 0.65em;
   text-decoration: none;
   vertical-align: super;
-  padding: 0 0.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 0.3em;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1;
+  transition: filter var(--transition-fast);
+  /* Default color — overridden per-footnote by JS */
+  color: var(--color-bg);
+  background: var(--ctp-sapphire);
 }
 
 .prose sup a:hover,
 .prose a[data-footnote-ref]:hover {
-  color: var(--color-accent-hover);
+  filter: brightness(1.15);
 }
 
 /* Footnote backref */
@@ -1092,6 +1195,64 @@ a:hover {
   text-decoration: none;
   color: var(--color-accent);
   font-size: 0.85em;
+}
+
+/* De-emphasize bottom footnotes when popovers are active */
+.footnotes--has-popovers {
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+}
+
+.footnotes--has-popovers:hover {
+  opacity: 1;
+}
+
+/* Footnote popover (positioned by Floating UI) */
+.footnote-popover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  width: max-content;
+  max-width: 380px;
+  min-width: 260px;
+  padding: var(--space-6) var(--space-8);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.footnote-popover.is-visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.footnote-popover__arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  transform: rotate(45deg);
+}
+
+.footnote-popover p {
+  margin: 0;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.footnote-popover a[data-footnote-backref] {
+  display: none;
 }
 
 /* ==========================================================================
@@ -1102,8 +1263,8 @@ a:hover {
 .mention {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--color-link);
-  background: color-mix(in srgb, var(--color-link) 8%, transparent);
+  color: var(--ctp-mauve);
+  background: color-mix(in srgb, var(--ctp-mauve) 12%, transparent);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-sm);
   text-decoration: none;
@@ -1112,8 +1273,8 @@ a:hover {
 }
 
 a.mention:hover {
-  background: color-mix(in srgb, var(--color-link) 15%, transparent);
-  color: var(--color-link-hover);
+  background: color-mix(in srgb, var(--ctp-mauve) 20%, transparent);
+  color: var(--ctp-pink);
 }
 
 .mention--github { color: var(--ctp-text); background: color-mix(in srgb, var(--ctp-text) 8%, transparent); }
@@ -1133,13 +1294,13 @@ a.mention:hover {
 .hashtag {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--color-accent);
+  color: var(--ctp-yellow);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 .hashtag:hover {
-  color: var(--color-accent-hover);
+  color: var(--ctp-peach);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

@@ -24,6 +24,7 @@ export function createBlogQueryResolver(contentDir: string) {
         url: `/blog/${slug}/`,
         date: new Date(frontmatter.date || 0),
         tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
+        description: frontmatter.description || undefined,
       };
 
       // Apply filters
