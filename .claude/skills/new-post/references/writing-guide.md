@@ -81,7 +81,14 @@ Dense narrative paragraph
 |-----------|-------|-----------|
 | `@aside title="Epigraph"` | Very top, before any content | 0–1 per post |
 | `@aside title="About..."` | Top, after epigraph if present | 0–1 per post |
+| `@callout` | Inline where reader needs an alert, tip, or warning | 0–3 per post |
 | `@details` | Mid-post, for optional deep-dives | 0–2 per post |
+| `@figure` | Wherever an image needs a caption | As needed |
+| `@math` | Wherever formulas support the argument | Rare in blog posts |
+| `@embed` | Where external media is referenced | 0–1 per post |
+| `@toc` | Top of long posts (3,000+ words) | 0–1 per post |
+| `@query` | End of post for related reading | 0–1 per post |
+| Footnotes | Inline references with definitions at bottom | 0–6 per post |
 | Blockquotes | Anywhere evidence supports the argument | As needed |
 
 ## Frontmatter
