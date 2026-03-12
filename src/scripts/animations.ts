@@ -13,6 +13,10 @@ function cleanup() {
   }
   shownAnnotations = [];
   ScrollTrigger.getAll().forEach((t) => t.kill());
+  // rough-notation caches its <style> element in window.__rno_kf_s and
+  // only injects keyframes once. View transition swaps remove the <style>
+  // from the DOM but the reference persists, so reset it to force re-injection.
+  delete (window as any).__rno_kf_s;
 }
 
 function css(name: string): string {
