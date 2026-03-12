@@ -38,7 +38,7 @@ I write about software at [birdcar.dev](https://www.birdcar.dev) using [Birdcar 
 
 #### Latest blog posts
 
-<!-- BLOG-POST-LIST:START -->- [Building with Astro](https://birdcar.dev/blog/second-post/) — 000 11, 2026- [Testing BFM Features](https://birdcar.dev/blog/test-post/) — 000 10, 2026<!-- BLOG-POST-LIST:END -->
+<!-- BLOG-POST-LIST:START -->- [Your metrics are bullshit](https://birdcar.dev/blog/your-metrics-are-bullshit/) — 000 1, 2024- [Yetto values: Joy Matters](https://birdcar.dev/blog/joy-matters/) — 000 24, 2024- [Data is a curse](https://birdcar.dev/blog/data-is-a-curse/) — 000 26, 2023- [You&#39;re already doing all hands support](https://birdcar.dev/blog/youre-already-doing-all-hands-support/) — 000 14, 2023- [Stop giving me take homes](https://birdcar.dev/blog/stop-giving-me-take-homes/) — 000 31, 2023<!-- BLOG-POST-LIST:END -->
 
 ---
 
