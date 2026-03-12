@@ -7,4 +7,4 @@ dist/
 images/**
 !images/.gitkeep
 .playwright-mcp/
-.claude/skills/
+.claude/skills/ui-ux-pro-max
