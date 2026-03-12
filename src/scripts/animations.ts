@@ -5,21 +5,33 @@ import type { RoughAnnotation } from 'rough-notation/lib/model';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let shownAnnotations: RoughAnnotation[] = [];
+
+function cleanup() {
+  for (const a of shownAnnotations) {
+    a.remove();
+  }
+  shownAnnotations = [];
+  ScrollTrigger.getAll().forEach((t) => t.kill());
+}
 
 function css(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-if (!prefersReducedMotion) {
-  initGSAPAnimations();
-  initRoughNotations();
-} else {
-  initRoughNotations(false);
+function refreshAnnotations() {
+  for (const a of shownAnnotations) {
+    if (a.isShowing()) {
+      a.animate = false;
+      a.hide();
+      a.show();
+      a.animate = true;
+    }
+  }
+  ScrollTrigger.refresh();
 }
 
 function initGSAPAnimations() {
-  // --- Hero entrance: staggered fade-up ---
   const heroEyebrow = document.querySelector('.hero__eyebrow');
   const heroTitle = document.querySelector('.hero__title');
   const heroDescription = document.querySelector('.hero__description');
@@ -37,7 +49,6 @@ function initGSAPAnimations() {
     });
   }
 
-  // --- Article header entrance ---
   const articleHeader = document.querySelector('.article__header');
   if (articleHeader) {
     gsap.set(articleHeader, { opacity: 0, y: 25 });
@@ -50,7 +61,6 @@ function initGSAPAnimations() {
     });
   }
 
-  // --- Post list items: staggered scroll reveal ---
   const postItems = document.querySelectorAll('.post-list__item');
   if (postItems.length) {
     gsap.set(postItems, { opacity: 0, y: 20 });
@@ -68,7 +78,6 @@ function initGSAPAnimations() {
     });
   }
 
-  // --- Tags grid: stagger in ---
   const tagItems = document.querySelectorAll('.tags-grid li');
   if (tagItems.length) {
     gsap.set(tagItems, { opacity: 0, scale: 0.9 });
@@ -86,7 +95,6 @@ function initGSAPAnimations() {
     });
   }
 
-  // --- Nav entrance: only on first visit this session ---
   const nav = document.querySelector('.site-header');
   if (nav && !sessionStorage.getItem('nav-animated')) {
     gsap.set(nav, { opacity: 0, y: -15 });
@@ -100,7 +108,6 @@ function initGSAPAnimations() {
     sessionStorage.setItem('nav-animated', '1');
   }
 
-  // --- Section headings: fade in ---
   const sectionHeadings = document.querySelectorAll('.section-heading');
   if (sectionHeadings.length) {
     gsap.set(sectionHeadings, { opacity: 0, y: 10 });
@@ -118,29 +125,13 @@ function initGSAPAnimations() {
   }
 }
 
-const shownAnnotations: RoughAnnotation[] = [];
-
-function refreshAnnotations() {
-  for (const a of shownAnnotations) {
-    if (a.isShowing()) {
-      a.animate = false;
-      a.hide();
-      a.show();
-      a.animate = true;
-    }
-  }
-  ScrollTrigger.refresh();
-}
-
 function initRoughNotations(animate = true) {
   const sapphire = css('--ctp-sapphire');
   const teal = css('--ctp-teal');
   const peach = css('--ctp-peach');
   const lavender = css('--ctp-lavender');
   const red = css('--ctp-red');
-  const mauve = css('--ctp-mauve');
 
-  // --- Hero accent text: highlight ---
   const heroEm = document.querySelector('.hero__title em');
   if (heroEm) {
     const a = annotate(heroEm as HTMLElement, {
@@ -158,7 +149,6 @@ function initRoughNotations(animate = true) {
     }
   }
 
-  // --- Reading time: box annotation ---
   const readingTime = document.querySelector('.article__reading-time');
   if (readingTime) {
     const a = annotate(readingTime as HTMLElement, {
@@ -177,7 +167,6 @@ function initRoughNotations(animate = true) {
     }
   }
 
-  // --- Prose h2: bracket on scroll ---
   document.querySelectorAll('.prose h2').forEach((el) => {
     const a = annotate(el as HTMLElement, {
       type: 'bracket',
@@ -191,7 +180,6 @@ function initRoughNotations(animate = true) {
     observeAndShow(el as HTMLElement, a, animate);
   });
 
-  // --- Prose h3: underline on scroll ---
   document.querySelectorAll('.prose h3').forEach((el) => {
     const a = annotate(el as HTMLElement, {
       type: 'underline',
@@ -203,7 +191,6 @@ function initRoughNotations(animate = true) {
     observeAndShow(el as HTMLElement, a, animate);
   });
 
-  // --- Blockquotes: box on scroll (contrasting with the sapphire accent border) ---
   document.querySelectorAll('.prose blockquote').forEach((el) => {
     const a = annotate(el as HTMLElement, {
       type: 'box',
@@ -216,7 +203,6 @@ function initRoughNotations(animate = true) {
     observeAndShow(el as HTMLElement, a, animate);
   });
 
-  // --- Task items: strike-through for done ---
   document.querySelectorAll('.task-item--done').forEach((el) => {
     const a = annotate(el as HTMLElement, {
       type: 'strike-through',
@@ -228,7 +214,6 @@ function initRoughNotations(animate = true) {
     observeAndShow(el as HTMLElement, a, animate);
   });
 
-  // --- Task items: crossed-off for irrelevant ---
   document.querySelectorAll('.task-item--irrelevant').forEach((el) => {
     const a = annotate(el as HTMLElement, {
       type: 'crossed-off',
@@ -263,8 +248,22 @@ function observeAndShow(el: HTMLElement, annotation: RoughAnnotation, animate: b
   observer.observe(el);
 }
 
-document.querySelectorAll('details').forEach((details) => {
-  details.addEventListener('toggle', () => {
-    requestAnimationFrame(refreshAnnotations);
+function init() {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!prefersReducedMotion) {
+    initGSAPAnimations();
+    initRoughNotations();
+  } else {
+    initRoughNotations(false);
+  }
+
+  document.querySelectorAll('details').forEach((details) => {
+    details.addEventListener('toggle', () => {
+      requestAnimationFrame(refreshAnnotations);
+    });
   });
-});
+}
+
+document.addEventListener('astro:before-swap', cleanup);
+document.addEventListener('astro:page-load', init);
