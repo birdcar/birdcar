@@ -38,8 +38,7 @@ I write about software at [birdcar.dev](https://www.birdcar.dev) using [Birdcar 
 
 #### Latest blog posts
 
-<!-- BLOG-POST-LIST:START -->
-<!-- BLOG-POST-LIST:END -->
+<!-- BLOG-POST-LIST:START -->- [Building with Astro](https://birdcar.dev/blog/second-post/) — 000 11, 2026- [Testing BFM Features](https://birdcar.dev/blog/test-post/) — 000 10, 2026<!-- BLOG-POST-LIST:END -->
 
 ---
 
