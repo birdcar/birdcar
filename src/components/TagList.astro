@@ -4,10 +4,24 @@ interface Props {
 }
 
 const { tags } = Astro.props;
+
+const tagColors = [
+  'green', 'teal', 'sapphire', 'blue', 'lavender', 'mauve', 'pink', 'peach', 'yellow', 'sky'
+];
+
+function colorForTag(tag: string): string {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = ((hash << 5) - hash + tag.charCodeAt(i)) | 0;
+  }
+  return tagColors[Math.abs(hash) % tagColors.length];
+}
 ---
 
 <ul class="tag-list">
   {tags.map((tag) => (
-    <li class="tag-list__item"><a href={`/tags/${tag}/`}>#{tag}</a></li>
+    <li class="tag-list__item">
+      <a href={`/tags/${tag}/`} data-tag-color={colorForTag(tag)}>#{tag}</a>
+    </li>
   ))}
 </ul>

@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
-import PostList from '../../components/PostList.astro';
+import { PostList } from '../../components/PostCard';
 import Pagination from '../../components/Pagination.astro';
 import { getPublishedPosts } from '../../lib/posts';
 
@@ -18,6 +18,6 @@ const { page } = Astro.props;
     <h1 class="hero__title">All <em>posts.</em></h1>
   </section>
 
-  <PostList posts={page.data} />
+  <PostList client:load posts={page.data} />
   <Pagination page={page} />
 </Base>

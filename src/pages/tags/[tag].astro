@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
-import PostList from '../../components/PostList.astro';
+import { PostList } from '../../components/PostCard';
 import { getPublishedPosts } from '../../lib/posts';
 
 export const getStaticPaths = (async () => {
@@ -24,6 +24,6 @@ const { tag, posts } = Astro.props;
     <h1 class="hero__title"><em>#{tag}</em></h1>
   </section>
 
-  <PostList posts={posts} />
+  <PostList client:load posts={posts} />
   <a href="/tags/" class="view-all"><span aria-hidden="true">&larr;</span> All tags</a>
 </Base>

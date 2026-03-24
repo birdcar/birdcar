@@ -4,6 +4,18 @@ import { getAllTags } from '../../lib/posts';
 
 const tagCounts = await getAllTags();
 const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+
+const tagColors = [
+  'green', 'teal', 'sapphire', 'blue', 'lavender', 'mauve', 'pink', 'peach', 'yellow', 'sky'
+];
+
+function colorForTag(tag: string): string {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = ((hash << 5) - hash + tag.charCodeAt(i)) | 0;
+  }
+  return tagColors[Math.abs(hash) % tagColors.length];
+}
 ---
 <Base title="Tags — birdcar" description="Browse posts by tag.">
   <section class="hero">
@@ -14,7 +26,7 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
   <ul class="tags-grid">
     {sortedTags.map(([tag, count]) => (
       <li>
-        <a href={`/tags/${tag}/`}>
+        <a href={`/tags/${tag}/`} data-tag-color={colorForTag(tag)}>
           #{tag} <span class="tag-count">{count}</span>
         </a>
       </li>

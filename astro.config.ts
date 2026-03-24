@@ -13,12 +13,14 @@ import { rehypeBfmEmbed } from './src/lib/rehype/embed';
 import { createBlogQueryResolver } from './src/lib/rehype/query-resolver';
 import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 
+import react from '@astrojs/react';
+
 // Compose BFM plugins individually — skip frontmatter (Astro handles it)
 // and footnotes (Astro's built-in remark-gfm handles them).
 export default defineConfig({
   site: 'https://birdcar.dev',
   output: 'static',
-  integrations: [sitemap()],
+  integrations: [sitemap(), react()],
   markdown: {
     remarkPlugins: [
       remarkBfmDirectives as any,

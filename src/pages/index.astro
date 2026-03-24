@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import PostList from '../components/PostList.astro';
+import { PostList } from '../components/PostCard';
 import { getPublishedPosts } from '../lib/posts';
 
 const posts = await getPublishedPosts();
@@ -18,7 +18,7 @@ const recentPosts = posts.slice(0, 5);
 
   <section>
     <h2 class="section-heading">Recent Posts</h2>
-    <PostList posts={recentPosts} />
+    <PostList client:load posts={recentPosts} />
     <a href="/blog/" class="view-all">All posts <span aria-hidden="true">&rarr;</span></a>
   </section>
 </Base>
