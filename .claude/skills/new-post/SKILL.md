@@ -92,7 +92,35 @@ Read `${CLAUDE_SKILL_DIR}/references/framework-guide.md` now (required before sc
 
 ### Step 2B: Map Narrative
 
-Read `${CLAUDE_SKILL_DIR}/references/frameworks/{selected-framework}.md`. Framework filenames use kebab-case: lowercase, replace spaces with hyphens. Specific mappings: "Three-Act Structure" → `three-act.md`, "Freytag's Pyramid" → `freytags-pyramid.md`, "Story Circle" → `story-circle.md`, "In Medias Res" → `in-medias-res.md`, "Comedian's Set" → `comedians-set.md`. For any framework not listed here: lowercase, spaces to hyphens, keep "The" prefix (e.g., "The Spiral" → `the-spiral.md`, "The Dialectic" → `the-dialectic.md`).
+Read `${CLAUDE_SKILL_DIR}/references/frameworks/{filename}` using this lookup table:
+
+| Framework | Filename |
+|---|---|
+| Three-Act Structure | `three-act.md` |
+| Freytag's Pyramid | `freytags-pyramid.md` |
+| Story Circle | `story-circle.md` |
+| Kishotenketsu | `kishotenketsu.md` |
+| Sisyphean Arc | `sisyphean-arc.md` |
+| Kafkaesque Labyrinth | `kafkaesque-labyrinth.md` |
+| Existential Awakening | `existential-awakening.md` |
+| Stranger's Report | `strangers-report.md` |
+| The Waiting | `the-waiting.md` |
+| The Metamorphosis | `the-metamorphosis.md` |
+| Catch-22 | `catch-22.md` |
+| Comedian's Set | `comedians-set.md` |
+| In Medias Res | `in-medias-res.md` |
+| The Spiral | `the-spiral.md` |
+| The Rashomon | `the-rashomon.md` |
+| Reverse Chronology | `reverse-chronology.md` |
+| The Sparkline | `the-sparkline.md` |
+| Nested Loops | `nested-loops.md` |
+| The Petal | `the-petal.md` |
+| Converging Ideas | `converging-ideas.md` |
+| The False Start | `the-false-start.md` |
+| The Socratic Path | `socratic-path.md` |
+| The Dialectic | `the-dialectic.md` |
+| The Jeremiad | `the-jeremiad.md` |
+| The Montaigne | `the-montaigne.md` |
 
 **From brain dump/transcript/draft**: Use the extracted structural outline to map content to framework phases. Present the mapping.
 
