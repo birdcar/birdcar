@@ -42,7 +42,7 @@
   --color-border-subtle: var(--ctp-surface1);
   --color-text: var(--ctp-text);
   --color-text-muted: var(--ctp-subtext1);
-  --color-text-dim: var(--ctp-overlay1);
+  --color-text-dim: var(--ctp-overlay2);
   --color-accent: var(--ctp-sapphire);
   --color-accent-hover: var(--ctp-sky);
   --color-link: var(--ctp-blue);
@@ -57,13 +57,35 @@
   --color-tip: var(--ctp-teal);
 
   /* Task state colors */
-  --color-task-open: var(--ctp-overlay1);
+  --color-task-open: var(--ctp-overlay2);
   --color-task-done: var(--ctp-green);
   --color-task-scheduled: var(--ctp-blue);
   --color-task-migrated: var(--ctp-mauve);
   --color-task-irrelevant: var(--ctp-surface2);
   --color-task-event: var(--ctp-yellow);
   --color-task-priority: var(--ctp-red);
+
+  /* Mention brand colors (mode-aware) */
+  --color-mention-twitter: #1D9BF0;
+  --color-mention-bluesky: #0085FF;
+  --color-mention-mastodon: #858AFA;
+  --color-mention-npm: #CB3837;
+  --color-mention-linkedin: #0A66C2;
+
+  /* Tag accent colors — direct palette refs in dark, overridden in light */
+  --color-tag-green: var(--ctp-green);
+  --color-tag-teal: var(--ctp-teal);
+  --color-tag-sapphire: var(--ctp-sapphire);
+  --color-tag-blue: var(--ctp-blue);
+  --color-tag-lavender: var(--ctp-lavender);
+  --color-tag-mauve: var(--ctp-mauve);
+  --color-tag-pink: var(--ctp-pink);
+  --color-tag-peach: var(--ctp-peach);
+  --color-tag-yellow: var(--ctp-yellow);
+  --color-tag-sky: var(--ctp-sky);
+
+  /* Inline code color */
+  --color-inline-code: var(--ctp-peach);
 
   /* Typography scale (1.25 ratio) */
   --font-heading: 'Archivo', system-ui, sans-serif;
@@ -135,6 +157,54 @@
     --ctp-base: #eff1f5;
     --ctp-mantle: #e6e9ef;
     --ctp-crust: #dce0e8;
+
+    /*
+     * Accessible semantic overrides for light mode.
+     * Raw Latte accents are saturated mid-tones that fail WCAG AA (4.5:1)
+     * on the near-white base (#eff1f5). These darkened values pass AA.
+     */
+    --color-text-dim: #636572;
+    --color-accent: #0e7a8d;
+    --color-accent-hover: #0480a0;
+    --color-link: #1a56d6;
+    --color-link-hover: #4c5bc4;
+
+    /* Callout palette — darkened for AA on light bg */
+    --color-info: #047da0;
+    --color-warning: #9a6410;
+    --color-success: #2e7a1f;
+    --color-tip: #117075;
+    --color-note: #7030c9;
+    --color-danger: #b80d31;
+
+    /* Task state — darkened for AA */
+    --color-task-done: #2e7a1f;
+    --color-task-scheduled: #1a56d6;
+    --color-task-migrated: #7030c9;
+    --color-task-event: #9a6410;
+    --color-task-priority: #b80d31;
+
+    /* Mention brand colors — darkened for light bg */
+    --color-mention-twitter: #0d72b8;
+    --color-mention-bluesky: #0063c4;
+    --color-mention-mastodon: #5a5ec8;
+    --color-mention-npm: #a82c2b;
+    --color-mention-linkedin: #084e99;
+
+    /* Tag accent colors — darkened for AA on #eff1f5 */
+    --color-tag-green: #2e7a1f;
+    --color-tag-teal: #117075;
+    --color-tag-sapphire: #0e7a8d;
+    --color-tag-blue: #1a56d6;
+    --color-tag-lavender: #4c5bc4;
+    --color-tag-mauve: #7030c9;
+    --color-tag-pink: #b44a96;
+    --color-tag-peach: #b94a08;
+    --color-tag-yellow: #9a6410;
+    --color-tag-sky: #047da0;
+
+    /* Inline code — darkened for AA */
+    --color-inline-code: #b94a08;
   }
 }
 
@@ -588,7 +658,7 @@ a:hover {
 }
 
 .post-card__tag {
-  --tag-color: var(--ctp-green);
+  --tag-color: var(--color-tag-green);
   display: inline-block;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -599,16 +669,16 @@ a:hover {
   border-radius: var(--radius-sm);
 }
 
-.post-card__tag[data-tag-color="green"]     { --tag-color: var(--ctp-green); }
-.post-card__tag[data-tag-color="teal"]      { --tag-color: var(--ctp-teal); }
-.post-card__tag[data-tag-color="sapphire"]  { --tag-color: var(--ctp-sapphire); }
-.post-card__tag[data-tag-color="blue"]      { --tag-color: var(--ctp-blue); }
-.post-card__tag[data-tag-color="lavender"]  { --tag-color: var(--ctp-lavender); }
-.post-card__tag[data-tag-color="mauve"]     { --tag-color: var(--ctp-mauve); }
-.post-card__tag[data-tag-color="pink"]      { --tag-color: var(--ctp-pink); }
-.post-card__tag[data-tag-color="peach"]     { --tag-color: var(--ctp-peach); }
-.post-card__tag[data-tag-color="yellow"]    { --tag-color: var(--ctp-yellow); }
-.post-card__tag[data-tag-color="sky"]       { --tag-color: var(--ctp-sky); }
+.post-card__tag[data-tag-color="green"]     { --tag-color: var(--color-tag-green); }
+.post-card__tag[data-tag-color="teal"]      { --tag-color: var(--color-tag-teal); }
+.post-card__tag[data-tag-color="sapphire"]  { --tag-color: var(--color-tag-sapphire); }
+.post-card__tag[data-tag-color="blue"]      { --tag-color: var(--color-tag-blue); }
+.post-card__tag[data-tag-color="lavender"]  { --tag-color: var(--color-tag-lavender); }
+.post-card__tag[data-tag-color="mauve"]     { --tag-color: var(--color-tag-mauve); }
+.post-card__tag[data-tag-color="pink"]      { --tag-color: var(--color-tag-pink); }
+.post-card__tag[data-tag-color="peach"]     { --tag-color: var(--color-tag-peach); }
+.post-card__tag[data-tag-color="yellow"]    { --tag-color: var(--color-tag-yellow); }
+.post-card__tag[data-tag-color="sky"]       { --tag-color: var(--color-tag-sky); }
 
 .post-card__accent-bar {
   position: absolute;
@@ -648,7 +718,7 @@ a:hover {
 }
 
 .tag-list__item a {
-  --tag-color: var(--ctp-green);
+  --tag-color: var(--color-tag-green);
   display: inline-block;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -666,16 +736,16 @@ a:hover {
   border-color: var(--tag-color);
 }
 
-.tag-list__item a[data-tag-color="green"]     { --tag-color: var(--ctp-green); }
-.tag-list__item a[data-tag-color="teal"]      { --tag-color: var(--ctp-teal); }
-.tag-list__item a[data-tag-color="sapphire"]  { --tag-color: var(--ctp-sapphire); }
-.tag-list__item a[data-tag-color="blue"]      { --tag-color: var(--ctp-blue); }
-.tag-list__item a[data-tag-color="lavender"]  { --tag-color: var(--ctp-lavender); }
-.tag-list__item a[data-tag-color="mauve"]     { --tag-color: var(--ctp-mauve); }
-.tag-list__item a[data-tag-color="pink"]      { --tag-color: var(--ctp-pink); }
-.tag-list__item a[data-tag-color="peach"]     { --tag-color: var(--ctp-peach); }
-.tag-list__item a[data-tag-color="yellow"]    { --tag-color: var(--ctp-yellow); }
-.tag-list__item a[data-tag-color="sky"]       { --tag-color: var(--ctp-sky); }
+.tag-list__item a[data-tag-color="green"]     { --tag-color: var(--color-tag-green); }
+.tag-list__item a[data-tag-color="teal"]      { --tag-color: var(--color-tag-teal); }
+.tag-list__item a[data-tag-color="sapphire"]  { --tag-color: var(--color-tag-sapphire); }
+.tag-list__item a[data-tag-color="blue"]      { --tag-color: var(--color-tag-blue); }
+.tag-list__item a[data-tag-color="lavender"]  { --tag-color: var(--color-tag-lavender); }
+.tag-list__item a[data-tag-color="mauve"]     { --tag-color: var(--color-tag-mauve); }
+.tag-list__item a[data-tag-color="pink"]      { --tag-color: var(--color-tag-pink); }
+.tag-list__item a[data-tag-color="peach"]     { --tag-color: var(--color-tag-peach); }
+.tag-list__item a[data-tag-color="yellow"]    { --tag-color: var(--color-tag-yellow); }
+.tag-list__item a[data-tag-color="sky"]       { --tag-color: var(--color-tag-sky); }
 
 /* --- Tags Index Page ----------------------------------------------------- */
 .tags-grid {
@@ -686,7 +756,7 @@ a:hover {
 }
 
 .tags-grid li a {
-  --tag-color: var(--ctp-green);
+  --tag-color: var(--color-tag-green);
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
@@ -707,16 +777,16 @@ a:hover {
   transform: translateY(-2px);
 }
 
-.tags-grid li a[data-tag-color="green"]     { --tag-color: var(--ctp-green); }
-.tags-grid li a[data-tag-color="teal"]      { --tag-color: var(--ctp-teal); }
-.tags-grid li a[data-tag-color="sapphire"]  { --tag-color: var(--ctp-sapphire); }
-.tags-grid li a[data-tag-color="blue"]      { --tag-color: var(--ctp-blue); }
-.tags-grid li a[data-tag-color="lavender"]  { --tag-color: var(--ctp-lavender); }
-.tags-grid li a[data-tag-color="mauve"]     { --tag-color: var(--ctp-mauve); }
-.tags-grid li a[data-tag-color="pink"]      { --tag-color: var(--ctp-pink); }
-.tags-grid li a[data-tag-color="peach"]     { --tag-color: var(--ctp-peach); }
-.tags-grid li a[data-tag-color="yellow"]    { --tag-color: var(--ctp-yellow); }
-.tags-grid li a[data-tag-color="sky"]       { --tag-color: var(--ctp-sky); }
+.tags-grid li a[data-tag-color="green"]     { --tag-color: var(--color-tag-green); }
+.tags-grid li a[data-tag-color="teal"]      { --tag-color: var(--color-tag-teal); }
+.tags-grid li a[data-tag-color="sapphire"]  { --tag-color: var(--color-tag-sapphire); }
+.tags-grid li a[data-tag-color="blue"]      { --tag-color: var(--color-tag-blue); }
+.tags-grid li a[data-tag-color="lavender"]  { --tag-color: var(--color-tag-lavender); }
+.tags-grid li a[data-tag-color="mauve"]     { --tag-color: var(--color-tag-mauve); }
+.tags-grid li a[data-tag-color="pink"]      { --tag-color: var(--color-tag-pink); }
+.tags-grid li a[data-tag-color="peach"]     { --tag-color: var(--color-tag-peach); }
+.tags-grid li a[data-tag-color="yellow"]    { --tag-color: var(--color-tag-yellow); }
+.tags-grid li a[data-tag-color="sky"]       { --tag-color: var(--color-tag-sky); }
 
 .tags-grid .tag-count {
   font-size: var(--text-xs);
@@ -882,8 +952,8 @@ a:hover {
 .prose :not(pre) > code {
   font-family: var(--font-mono);
   font-size: 0.875em;
-  color: var(--ctp-peach);
-  background: color-mix(in srgb, var(--ctp-peach) 10%, transparent);
+  color: var(--color-inline-code);
+  background: color-mix(in srgb, var(--color-inline-code) 10%, transparent);
   padding: 0.15em 0.4em;
   border-radius: var(--radius-sm);
   border: 1px solid color-mix(in srgb, var(--ctp-peach) 15%, transparent);
@@ -1396,8 +1466,8 @@ a:hover {
   line-height: 1;
   transition: filter var(--transition-fast);
   /* Default color — overridden per-footnote by JS */
-  color: var(--color-bg);
-  background: var(--ctp-sapphire);
+  color: #fff;
+  background: var(--color-accent);
 }
 
 .prose sup a:hover,
@@ -1494,28 +1564,28 @@ a.mention:hover {
 
 .mention--github { color: var(--ctp-text); background: color-mix(in srgb, var(--ctp-text) 8%, transparent); }
 .mention--github:hover { background: color-mix(in srgb, var(--ctp-text) 15%, transparent); }
-.mention--twitter { color: #1D9BF0; background: rgba(29, 155, 240, 0.08); }
-.mention--twitter:hover { background: rgba(29, 155, 240, 0.15); }
-.mention--bluesky { color: #0085FF; background: rgba(0, 133, 255, 0.08); }
-.mention--bluesky:hover { background: rgba(0, 133, 255, 0.15); }
-.mention--mastodon { color: #858AFA; background: rgba(133, 138, 250, 0.08); }
-.mention--mastodon:hover { background: rgba(133, 138, 250, 0.15); }
-.mention--npm { color: #CB3837; background: rgba(203, 56, 55, 0.08); }
-.mention--npm:hover { background: rgba(203, 56, 55, 0.15); }
-.mention--linkedin { color: #0A66C2; background: rgba(10, 102, 194, 0.08); }
-.mention--linkedin:hover { background: rgba(10, 102, 194, 0.15); }
+.mention--twitter { color: var(--color-mention-twitter); background: color-mix(in srgb, var(--color-mention-twitter) 8%, transparent); }
+.mention--twitter:hover { background: color-mix(in srgb, var(--color-mention-twitter) 15%, transparent); }
+.mention--bluesky { color: var(--color-mention-bluesky); background: color-mix(in srgb, var(--color-mention-bluesky) 8%, transparent); }
+.mention--bluesky:hover { background: color-mix(in srgb, var(--color-mention-bluesky) 15%, transparent); }
+.mention--mastodon { color: var(--color-mention-mastodon); background: color-mix(in srgb, var(--color-mention-mastodon) 8%, transparent); }
+.mention--mastodon:hover { background: color-mix(in srgb, var(--color-mention-mastodon) 15%, transparent); }
+.mention--npm { color: var(--color-mention-npm); background: color-mix(in srgb, var(--color-mention-npm) 8%, transparent); }
+.mention--npm:hover { background: color-mix(in srgb, var(--color-mention-npm) 15%, transparent); }
+.mention--linkedin { color: var(--color-mention-linkedin); background: color-mix(in srgb, var(--color-mention-linkedin) 8%, transparent); }
+.mention--linkedin:hover { background: color-mix(in srgb, var(--color-mention-linkedin) 15%, transparent); }
 
 /* --- Hashtags ------------------------------------------------------------ */
 .hashtag {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--ctp-yellow);
+  color: var(--color-tag-yellow);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 .hashtag:hover {
-  color: var(--ctp-peach);
+  color: var(--color-tag-peach);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1560,7 +1630,7 @@ a.mention:hover {
   content: '\2713';
   background: var(--color-task-done);
   border-color: var(--color-task-done);
-  color: var(--color-bg);
+  color: #fff;
 }
 .task-item--done {
   color: var(--color-text-dim);
