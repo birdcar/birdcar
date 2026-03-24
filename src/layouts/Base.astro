@@ -6,10 +6,76 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedDate?: Date;
+  modifiedDate?: Date;
+  tags?: string[];
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  type = 'website',
+  publishedDate,
+  modifiedDate,
+  tags,
+} = Astro.props;
+
 const currentPath = Astro.url.pathname;
+const canonicalURL = new URL(currentPath, Astro.site).href;
+const defaultDescription = 'Developer blog by birdcar. Writing about software, systems, and the craft of building things.';
+const metaDescription = description || defaultDescription;
+const ogImage = image
+  ? new URL(image, Astro.site).href
+  : new URL('/og-default.png', Astro.site).href;
+
+const jsonLd: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'birdcar.dev',
+    url: 'https://birdcar.dev',
+    description: defaultDescription,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Nick Cannariato',
+    url: 'https://birdcar.dev',
+    sameAs: [
+      'https://github.com/birdcar',
+    ],
+  },
+];
+
+if (type === 'article') {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description: metaDescription,
+    image: ogImage,
+    datePublished: publishedDate?.toISOString(),
+    dateModified: (modifiedDate ?? publishedDate)?.toISOString(),
+    author: {
+      '@type': 'Person',
+      name: 'Nick Cannariato',
+      url: 'https://birdcar.dev',
+    },
+    publisher: {
+      '@type': 'Person',
+      name: 'Nick Cannariato',
+      url: 'https://birdcar.dev',
+    },
+    keywords: tags?.join(', '),
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalURL,
+    },
+  });
+}
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -26,7 +92,38 @@ const navLinks = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
-    {description && <meta name="description" content={description} />}
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:type" content={type} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="birdcar.dev" />
+    {type === 'article' && publishedDate && (
+      <meta property="article:published_time" content={publishedDate.toISOString()} />
+    )}
+    {type === 'article' && modifiedDate && (
+      <meta property="article:modified_time" content={modifiedDate.toISOString()} />
+    )}
+    {type === 'article' && tags?.map(tag => (
+      <meta property="article:tag" content={tag} />
+    ))}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- JSON-LD Structured Data -->
+    {jsonLd.map(schema => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
+
     <link rel="alternate" type="application/rss+xml" title="birdcar.dev" href="/rss.xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

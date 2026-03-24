@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.17",
+    "@astrojs/sitemap": "^3.7.1",
     "@aws-sdk/client-s3": "^3.1007.0",
     "@birdcar/markdown": "^0.0.3",
     "@floating-ui/dom": "^1.7.6",
@@ -21,7 +22,9 @@
     "hast-util-from-html": "^2.0.3",
     "katex": "^0.16.38",
     "mime-types": "^3.0.2",
+    "rehype-stringify": "^10.0.1",
     "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
     "rough-notation": "^0.5.1",
     "unified": "^11.0.0",
     "unist-util-visit": "^5.1.0"

@@ -22,6 +22,14 @@ const allTags = [...new Set([
 ])];
 ---
 
-<Post title={post.data.title} date={post.data.date} metadata={metadata} tags={allTags}>
+<Post
+  title={post.data.title}
+  description={post.data.description}
+  image={post.data.image}
+  date={post.data.date}
+  updated={post.data.updated}
+  metadata={metadata}
+  tags={allTags}
+>
   <Content />
 </Post>

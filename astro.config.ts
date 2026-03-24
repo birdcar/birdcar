@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import sitemap from '@astrojs/sitemap';
 import { remarkBfmDirectives } from '@birdcar/markdown/directives';
 import { remarkBfmTasks } from '@birdcar/markdown/tasks';
 import { remarkBfmModifiers } from '@birdcar/markdown/modifiers';
@@ -17,6 +18,7 @@ import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 export default defineConfig({
   site: 'https://birdcar.dev',
   output: 'static',
+  integrations: [sitemap()],
   markdown: {
     remarkPlugins: [
       remarkBfmDirectives as any,
