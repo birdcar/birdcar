@@ -9,7 +9,7 @@ tags:
 ---
 
 @aside title="Originally published"
-This originally appeared on the Yetto blog on 2023-07-26. Co-authored with [Nick Cannariato](https://www.linkedin.com/in/birdcar/).
+This originally appeared on the Yetto blog on 2023-07-26. Co-authored with [Brian Levine](https://www.linkedin.com/in/brian-a-levine).
 @endaside
 
 Customer support teams, like most teams now, rely on data for decision making. We move forward based on what we think the data shows us. Our understanding of our business and our customers is often driven by what our data tells us. We think data can tell us an unbiased story about our products, our businesses, our teams, our employees, and our customers.
