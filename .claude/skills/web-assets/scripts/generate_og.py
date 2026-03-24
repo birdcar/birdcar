@@ -33,11 +33,12 @@ BRAND_SAPPHIRE = "#74c7ec"
 
 FONT_CACHE_DIR = Path.home() / ".cache" / "birdcar-fonts"
 ARCHIVO_TTF_URL = (
-    "https://github.com/Omnibus-Type/Archivo/raw/master/fonts/ttf/Archivo-Bold.ttf"
+    "https://fonts.gstatic.com/s/archivo/v25/"
+    "k3k6o8UDI-1M0wlSV9XAw6lQkqWY8Q82sJaRE-NWIDdgffTT0zRp8A.ttf"
 )
 SPACE_GROTESK_TTF_URL = (
-    "https://github.com/floriankarsten/space-grotesk/raw/master/fonts/ttf/"
-    "SpaceGrotesk-Regular.ttf"
+    "https://fonts.gstatic.com/s/spacegrotesk/v22/"
+    "V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj7oUUsj.ttf"
 )
 
 # Layout constants (mirrors references/brand.md OG layout spec)
