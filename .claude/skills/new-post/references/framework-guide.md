@@ -28,6 +28,9 @@ Decision engine for selecting a narrative framework for a blog post. Used during
 | 20 | Converging Ideas | Rhetorical | Separate threads that merge into a single conclusion | `interdisciplinary`, `synthesis`, `multi-topic` |
 | 21 | The False Start | Rhetorical | Begin with a conventional approach, then reveal why it fails | `refactoring`, `paradigm-shift`, `myth-busting` |
 | 22 | The Socratic Path | Rhetorical | Drive the post through questions the reader is already asking | `educational`, `interactive` |
+| 23 | The Dialectic (Hegel) | Rhetorical | Engage an opposing argument seriously, then synthesize a new position | `rebuttal`, `nuanced-take`, `disagreement` |
+| 24 | The Jeremiad | Moral | Invoke shared ideals, show the community's fall, call for return | `industry-critique`, `values`, `prescriptive` |
+| 25 | The Montaigne | Moral | Exploratory personal essay that discovers its argument through writing | `personal`, `philosophical`, `values` |
 
 ## 2. Auto-Suggest Decision Matrix
 
@@ -39,6 +42,8 @@ Decision engine for selecting a narrative framework for a blog post. Used during
 | Provocative | Existential | Absurdist |
 | Storytelling | Foundational | Non-linear |
 | Technical | Non-linear | Foundational |
+| Reflective/Personal | Moral | Foundational |
+| Provocative + Prescriptive | Moral | Rhetorical |
 | Educational + Storytelling | Foundational | Non-linear |
 | Provocative + Storytelling | Existential | Absurdist |
 
@@ -46,14 +51,14 @@ Decision engine for selecting a narrative framework for a blog post. Used during
 
 | Length Tier | Max Complexity | Excluded Frameworks |
 |-------------|---------------|-------------------|
-| Short (800-1500) | Low | Freytag's Pyramid, Story Circle (full 8-step), Nested Loops, The Spiral, Reverse Chronology |
+| Short (800-1500) | Low | Freytag's Pyramid, Story Circle (full 8-step), Nested Loops, The Spiral, Reverse Chronology, The Jeremiad (needs room for prophets) |
 | Medium (1500-3000) | Medium | Nested Loops (risky, needs tight control) |
 | Long (3000-5000) | High | Comedian's Set (hard to sustain in prose), In Medias Res (impact fades at length) |
 
 Complexity ratings:
-- **Low**: Three-Act, Kishotenketsu, In Medias Res, Comedian's Set, The False Start, The Petal
-- **Medium**: Story Circle, Sparkline, Socratic Path, Converging Ideas, Catch-22, Sisyphean Arc, Stranger's Report, The Metamorphosis, The Waiting
-- **High**: Freytag's Pyramid, Nested Loops, The Spiral, The Rashomon, Reverse Chronology, Kafkaesque Labyrinth, Existential Awakening
+- **Low**: Three-Act, Kishotenketsu, In Medias Res, Comedian's Set, The False Start, The Petal, The Montaigne
+- **Medium**: Story Circle, Sparkline, Socratic Path, Converging Ideas, Catch-22, Sisyphean Arc, Stranger's Report, The Metamorphosis, The Waiting, The Dialectic
+- **High**: Freytag's Pyramid, Nested Loops, The Spiral, The Rashomon, Reverse Chronology, Kafkaesque Labyrinth, Existential Awakening, The Jeremiad
 
 ### Readership Adjustment
 
@@ -64,16 +69,20 @@ Complexity ratings:
 | General tech audience | Medium | Favor Foundational and Rhetorical. Minimize assumed context. |
 | Mixed/broad | Medium | Favor low-complexity frameworks. Every section must stand alone. |
 
+Moral family note: Moral frameworks work across all readership levels but require the writer to be a credible member of the community being addressed. Leaders/managers readership pairs well with the Jeremiad (they control the levers). Technical practitioners pair well with the Dialectic and Montaigne (shared context for nuanced positions).
+
 ### Topic Type Signals
 
 | Topic Type | Strong Signal Frameworks | Rationale |
 |------------|------------------------|-----------|
-| Support Engineering | Sisyphean Arc, Catch-22, Story Circle | Recurring struggle, impossible constraints, transformation arcs |
+| Support Engineering | Sisyphean Arc, Catch-22, Story Circle, The Jeremiad | Recurring struggle, impossible constraints, transformation arcs, betrayed ideals |
 | Developer Tools | The False Start, Sparkline, In Medias Res | "Old way was wrong", vision-casting, demo-first hooks |
 | Product | Sparkline, Converging Ideas, The Petal | Persuasion, synthesis, multi-example proof |
 | Technical Deep-dive | The Spiral, Freytag's Pyramid, Story Circle | Layered depth, classical arc, transformation journey |
-| Career/Growth | Existential Awakening, Three-Act, Nested Loops | Freedom of choice, clean arc, layered personal stories |
+| Career/Growth | Existential Awakening, Three-Act, Nested Loops, The Montaigne | Freedom of choice, clean arc, layered personal stories, exploratory reflection |
 | Incident/Postmortem | Reverse Chronology, In Medias Res, Stranger's Report | Work backward from outcome, start in the action, detached analysis |
+| Culture/Values | The Jeremiad, The Montaigne, The Dialectic | Community indictment, personal philosophy, engaging disagreement |
+| Industry Practices | The Jeremiad, The Dialectic, Catch-22 | Betrayed ideals, nuanced rebuttal, impossible constraints |
 
 ### Code-Heavy Adjustment
 
@@ -103,6 +112,9 @@ When `code_heavy` is true, deprioritize frameworks that lack natural code insert
 | Converging Ideas | Medium | Code threads that merge |
 | The False Start | High | Show the wrong code, then the right code |
 | The Socratic Path | High | Code answers each question |
+| The Dialectic | Medium | Code in antithesis (demonstrating your counter-experience) |
+| The Jeremiad | Low | Narrative-driven; code would undercut the moral register |
+| The Montaigne | Low | Personal and exploratory; code breaks the reflective tone |
 
 ## 3. Scoring Algorithm
 
@@ -129,11 +141,17 @@ If top score is ≤3, flag weak match and ask the user to describe their post's 
 - **The Spiral + Socratic Path**: Each spiral pass answers a deeper question
 - **The Petal + Converging Ideas**: Independent examples that merge in conclusion
 - **Three-Act + The False Start**: Act 1 is the false start, the break becomes the Act 1/2 boundary
+- **Jeremiad + Sisyphean Arc**: The fall section uses Sisyphean repetition to build moral weight
+- **Dialectic + Nested Loops**: Nest the dialectic inside a personal framing story
+- **Montaigne + Kishotenketsu**: The Montaigne's exploratory tone with Kishotenketsu's twist as the discovery moment
 
 ### Combinations to Avoid
 - **Nested Loops + The Spiral**: Confusion about going deeper vs resolving outer stories
 - **Reverse Chronology + Kishotenketsu**: Running backward removes the twist's surprise
 - **Kafkaesque Labyrinth + Socratic Path**: Disorientation vs clarity work against each other
+- **Dialectic + The False Start**: The False Start frames the thesis as *wrong*; the Dialectic requires the thesis to be genuinely strong
+- **Jeremiad + Comedian's Set**: Moral weight and irreverence undercut each other
+- **Montaigne + Sparkline**: The Sparkline's deliberate oscillation shows through the Montaigne's exploratory surface
 
 ## 5. Family Overviews
 
@@ -146,3 +164,5 @@ If top score is ≤3, flag weak match and ask the user to describe their post's 
 **Non-linear**: Break chronological order to serve comprehension. Rearrange time, perspective, or depth.
 
 **Rhetorical**: Persuasion engines. Move readers from one position to another through deliberate structural choices.
+
+**Moral**: Driven by personal conviction and ethical commitment rather than persuasion technique. The writer speaks from within a community, accountable to shared values. The Jeremiad indicts the community for betraying its ideals; the Montaigne explores what the writer actually believes through honest inquiry. Both require the writer to have genuine stakes in the outcome.
