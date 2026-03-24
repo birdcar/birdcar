@@ -2,11 +2,12 @@
 name: new-post
 description: >-
   Creates blog posts for birdcar.dev from brain dumps, transcripts, existing drafts, or from scratch.
-  Uses 22 narrative frameworks to structure long-form writing in Nick's voice with BFM directives.
+  Uses 25 narrative frameworks to structure long-form writing in Nick's voice with BFM directives.
   Use when the user asks to "write a blog post", "create a new post", "turn this into a blog post",
   "draft a post about", or wants to structure writing for birdcar.dev.
-  Do NOT use for editing existing published posts, light copy edits to existing drafts,
-  managing the Astro site, or creating presentations (use the talks repo's new-talk skill for slides).
+  Do NOT use for editing existing published posts, light copy edits or polish of existing drafts
+  (only use for restructuring or rewriting drafts), managing the Astro site, or creating
+  presentations (use the talks repo's new-talk skill for slides).
 argument-hint: [topic or path to source material]
 ---
 
@@ -21,12 +22,16 @@ Create structured, voice-consistent blog posts for birdcar.dev using narrative f
 - Read `${CLAUDE_SKILL_DIR}/references/voice.md` before generating any content — voice consistency is non-negotiable
 - Read `${CLAUDE_SKILL_DIR}/references/writing-guide.md` before generating content — it defines pacing and density rules
 - All generated posts MUST have `draft: true` in frontmatter — publishing is a separate decision
-- Generated content should be 90%+ complete — mark genuinely missing content with `[TODO: ...]` only where the input is vague
+- Only insert `[TODO: ...]` markers for personal anecdotes or specific real-world examples that require information only Nick can provide. Everything else should be fully written.
 - For large inputs (>2,000 words), delegate extraction to a Haiku subagent via Agent tool with this prompt: "Extract from the following text: (1) topic area, (2) dominant tone (Educational/Provocative/Storytelling/Technical), (3) key message in one sentence, (4) approximate word count, (5) programming languages mentioned, (6) structural outline (8 bullet points max). Return only these six items."
+- If the framework file for a selected framework does not exist, fall back to Three-Act Structure and tell the user.
+- If you are uncertain whether a passage sounds like Nick, read specific sections from `src/content/blog/your-metrics-are-bullshit.md` or `src/content/blog/joy-matters.md` as voice calibration anchors.
 
 ## Stage 0: Entry Path
 
-Use `AskUserQuestion` to determine input type:
+If the user provided source material (brain dump, transcript, draft, or file path) with the command invocation, **skip this stage** and infer the entry path from the content type.
+
+Otherwise, use `AskUserQuestion` to determine input type:
 
 | Option | Description | Next Stage |
 |--------|-------------|------------|
@@ -34,8 +39,6 @@ Use `AskUserQuestion` to determine input type:
 | "I have a transcript" | Talk recording, podcast, interview | Stage 1-T |
 | "I have an existing draft" | Rough draft that needs restructuring | Stage 1-D |
 | "Starting from scratch" | Interactive topic exploration | Stage 1 |
-
-If the user provided source material with the command invocation, infer the entry path from the content type.
 
 ## Stage 1-B: Brain Dump Analysis
 
@@ -49,33 +52,34 @@ If the user provided source material with the command invocation, infer the entr
 
 1. Collect transcript (file path or inline)
 2. Extract same parameters as 1-B, plus: estimate written word count (transcripts run ~130 words/min spoken; blog posts are denser)
-3. Present inferences for confirmation
-4. Collect: working title, target readership, word count tier
+3. For transcripts >2,000 words, delegate extraction to a Haiku subagent (see Critical Rules)
+4. Present inferences for confirmation
+5. Collect: working title, target readership, word count tier
 
 ## Stage 1-D: Existing Draft Analysis
 
 1. Read the draft file
-2. Identify current structure (or lack thereof), topic, tone, message
-3. Use `AskUserQuestion`: "What do you want to change?"
+2. Extract: topic area, tone, key message, current word count, code languages, structural outline
+3. For drafts >2,000 words, delegate extraction to a Haiku subagent (see Critical Rules)
+4. Identify current structure (or lack thereof)
+5. Use `AskUserQuestion`: "What do you want to change?"
    - Restructure with a narrative framework
-   - Tighten the prose
+   - Tighten the prose and sharpen the voice
    - Expand sections
    - All of the above
-4. Extract parameters from the draft for framework selection
+6. Extract parameters from the draft for framework selection
 
 ## Stage 1: From Scratch
 
 Use `AskUserQuestion` in batched calls (1-2 rounds):
 
-**Round 1**: Title (working), key message ("What's the one thing readers should remember?"), tone (Educational, Provocative, Storytelling, Technical), readership (Technical practitioners, Leaders/managers, General tech audience, Mixed)
+**Round 1**: Title (working), key message ("What's the one thing readers should remember?"), tone (Educational, Provocative, Storytelling, Technical, Reflective/Personal), readership (Technical practitioners, Leaders/managers, General tech audience, Mixed)
 
-**Round 2**: Word count tier (Short 800-1500, Medium 1500-3000, Long 3000-5000), topic area (Support Engineering, Developer Tools, Product, Technical Deep-dive, Career/Growth, Other), code examples needed (yes/no, which languages)
+**Round 2**: Word count tier (Short 800-1500, Medium 1500-3000, Long 3000-5000), topic area (Support Engineering, Developer Tools, Product, Technical Deep-dive, Career/Growth, Culture/Values, Industry Practices, Other), code examples needed (yes/no, which languages)
 
 If user says "I don't know" to key message, ask: "What problem are you reacting to?" or "What surprised you about this topic?"
 
 ## Stage 2: Narrative Framework
-
-Read `${CLAUDE_SKILL_DIR}/references/framework-guide.md`.
 
 ### Step 2A: Select Framework
 
@@ -88,7 +92,7 @@ Read `${CLAUDE_SKILL_DIR}/references/framework-guide.md` now (required before sc
 
 ### Step 2B: Map Narrative
 
-Read `${CLAUDE_SKILL_DIR}/references/frameworks/{selected-framework}.md`. Framework filenames use kebab-case: "Three-Act Structure" → `three-act.md`, "Freytag's Pyramid" → `freytags-pyramid.md`, "Story Circle" → `story-circle.md`, "In Medias Res" → `in-medias-res.md`. All others: lowercase, replace spaces with hyphens, drop "The" prefix for files starting with "The" (e.g., "The Spiral" → `the-spiral.md`).
+Read `${CLAUDE_SKILL_DIR}/references/frameworks/{selected-framework}.md`. Framework filenames use kebab-case: lowercase, replace spaces with hyphens. Specific mappings: "Three-Act Structure" → `three-act.md`, "Freytag's Pyramid" → `freytags-pyramid.md`, "Story Circle" → `story-circle.md`, "In Medias Res" → `in-medias-res.md`, "Comedian's Set" → `comedians-set.md`. For any framework not listed here: lowercase, spaces to hyphens, keep "The" prefix (e.g., "The Spiral" → `the-spiral.md`, "The Dialectic" → `the-dialectic.md`).
 
 **From brain dump/transcript/draft**: Use the extracted structural outline to map content to framework phases. Present the mapping.
 
@@ -98,32 +102,87 @@ Read `${CLAUDE_SKILL_DIR}/references/frameworks/{selected-framework}.md`. Framew
 
 Use `AskUserQuestion`: "Looks good, generate the post" / "Adjust structure" / "Try a different framework" / "Combine with another framework"
 
+**Combining frameworks**: Pick a primary framework for overall structure and a secondary for a single section that needs a different shape. Note both in the outline and in the Stage 4 summary. Check the Combination Notes in both framework files before combining.
+
 ## Stage 3: Content Generation
 
 Read `${CLAUDE_SKILL_DIR}/references/voice.md` and `${CLAUDE_SKILL_DIR}/references/writing-guide.md` before writing. Consult `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` for directive syntax.
 
-### Step 3A: Write the Post
+### Step 3A: Pre-Generation Voice Checklist
 
-**Slug**: Derive from the working title: lowercase, replace spaces with hyphens, remove special characters and stop words ("a", "the", "of", "in", "and"). Maximum 6 words. Example: "Why Your Support Metrics Are Bullshit" → `support-metrics-are-bullshit`.
+Before writing any prose, internalize these voice gates. Apply them to every section:
 
-Use `Write` to create `src/content/blog/{slug}.md`:
+1. **Opening test**: Does each section open with an assertion, a narrative beat, or a question? Never a topic sentence, definition, or "In this section..." framing.
+2. **Perspective check**: Am I using the right perspective for this section? Second-person "you" for scenarios and reader immersion, first-person "I" for personal experience and direct opinion, "we" for industry-level critique. Switch deliberately between sections.
+3. **Header check**: Is every H2 header a statement, question, or provocation? Never a descriptive label. Wrong: "The Problem", "Solution Overview", "Conclusion". Right: "Welcome to the doom cycle", "You're not gonna make the world a better place".
+4. **Sentence mode**: Does this section need subordinating structure (analytical, building a case), additive structure (narrative, experience unfolding), or satiric structure (calling bullshit, subverting expectation)? Choose deliberately per section. This is a worldview choice, not just a tonal one.
+5. **First/last sentence weight**: The first sentence of each section should establish a world and create hunger for what follows (Fish's "angle of lean"). The last sentence should land with full rhetorical weight even extracted from context.
+6. **Shape and ring**: Read key sentences for both logical architecture (shape) and sonic quality (ring). If a sentence has the right argument but sounds flat, rework the rhythm. If it sounds good but means nothing, rework the logic.
+7. **The turn**: Does each section have at least one sentence with a pivot, reversal, or subversion? Build turns into sentences, especially at section boundaries.
 
-**Frontmatter**: Use the schema defined in `${CLAUDE_SKILL_DIR}/references/writing-guide.md` (Frontmatter section). Always set `draft: true`. Set `date` to today's date in `YYYY-MM-DD` format.
+### Step 3B: Write the Post
 
-**Content**: Follow the framework mapping from Stage 2. Write in Nick's voice per `voice.md`. Use BFM directives where narratively appropriate. Target the chosen word count tier.
+**Slug**: Derive a 4-6 word slug that captures the topic. Lowercase, hyphens between words. Examples: "Why Your Support Metrics Are Bullshit" → `support-metrics-are-bullshit`. "Yetto values: Joy Matters" → `joy-matters`.
 
-### Step 3B: Content Depth
+**Frontmatter**:
+```yaml
+---
+title: "Post Title"
+description: "One-line hook for RSS and meta tags — not a summary, but a reason to click"
+date: YYYY-MM-DD
+tags:
+  - tag1
+  - tag2
+draft: true
+---
+```
 
-- **Brain dump / transcript / draft paths**: 90-95% complete. Content drawn from source material.
-- **From scratch**: 85-90% complete. `[TODO: ...]` for personal anecdotes and specific examples only.
+Use existing tags when they fit (support, metrics, culture, hiring, values, data). Set `date` to today. Always `draft: true`.
+
+**Content**: Follow the framework mapping from Stage 2. Apply the voice checklist from Step 3A to every section. Use BFM directives where narratively appropriate. Target the chosen word count tier.
+
+Write the file with `Write` to `src/content/blog/{slug}.md`. All subsequent revisions overwrite the same file path.
+
+### Step 3C: Humanization Audit
+
+After drafting the complete post, run a two-pass audit before presenting to the user. This is mandatory — do not skip it.
+
+**Pass 1 — Guardrail scan**: Re-read the "Don't (AI-Slop Guardrails)" section of `${CLAUDE_SKILL_DIR}/references/voice.md`. Check the draft against every rule:
+
+- Scan for any word or phrase from the blacklist. Replace or restructure every hit.
+- Scan for em dashes. Replace with commas, periods, parentheses, or restructure.
+- Scan for copula avoidance ("serves as", "stands as", "functions as"). Replace with "is".
+- Scan for negative parallelisms ("not just X, it's Y", "not only...but also"). Rewrite directly.
+- Scan for tricolon abuse (groups of exactly three). Vary to two or four items.
+- Scan for synonym cycling (same concept called different names in adjacent sentences). Pick one term.
+- Scan for filler phrases ("in order to", "due to the fact that", "it is important to note"). Cut or compress.
+- Check that no section opens with thesis, meta-commentary, or invitation phrasing.
+- Check that the closing doesn't mirror the opening or end with an inspirational platitude.
+- Check for generic transitions between sections ("Furthermore", "Additionally", "Moving on").
+
+**Pass 2 — Soul check**: Ask yourself: "What makes this sound like an AI wrote it?" Answer honestly, then fix what you find. Look for:
+
+- Every sentence the same length and structure (vary rhythm: short punchy sentences after long narrative ones)
+- Neutral reporting without opinions (Nick has opinions — add them)
+- No acknowledgment of uncertainty or mixed feelings where they'd be genuine
+- No first-person where it would be natural
+- No humor, edge, or personality
+- Sections that could appear in any blog post about this topic (make them specific to Nick's experience and perspective)
+
+After both passes, the draft is ready for Stage 4.
 
 ## Stage 4: Review
 
 Present: word count, framework used, section summary, BFM directives used.
 
-Use `AskUserQuestion`: "Adjust structure" / "Adjust tone" / "Expand sections" / "Cut sections" / "Looks great!"
+Use `AskUserQuestion`:
+- "Adjust structure" — ask which sections to restructure
+- "Adjust tone" — re-read the Tone & Register and Sentence Craft sections of `voice.md`, then ask: "More direct and confrontational, or more narrative and observational?"
+- "Expand sections" — ask which section(s) to expand via `AskUserQuestion`
+- "Cut sections" — ask which section(s) to cut
+- "Looks great!"
 
-Iterate on requested changes. After each revision, re-present the `AskUserQuestion` options. On "Looks great!" or after three revision cycles (whichever comes first), confirm the file path and remind the user it's saved as `draft: true`.
+After each revision, re-run the humanization audit (Step 3C) on changed sections, then re-present the options. On "Looks great!" or after three revision cycles (whichever comes first), confirm the file path and remind the user it's saved as `draft: true`.
 
 ## Error Handling
 
@@ -131,11 +190,14 @@ Iterate on requested changes. After each revision, re-present the `AskUserQuesti
 - **"I don't know" to key message**: Ask "What problem frustrates you?" or "What do you wish people understood?"
 - **No framework fits**: Try combining two. Fallback: Three-Act Structure
 - **Source material is too short**: Ask for more context or switch to "from scratch" path
+- **Framework file not found**: Fall back to Three-Act Structure and notify the user
 
 ## References
 
-- `${CLAUDE_SKILL_DIR}/references/voice.md` — Nick's writing voice profile
+- `${CLAUDE_SKILL_DIR}/references/voice.md` — Nick's writing voice profile (including AI-slop guardrails)
 - `${CLAUDE_SKILL_DIR}/references/writing-guide.md` — Blog pacing, density, and structure guide
-- `${CLAUDE_SKILL_DIR}/references/framework-guide.md` — 22 framework auto-suggest algorithm
+- `${CLAUDE_SKILL_DIR}/references/framework-guide.md` — 25 framework auto-suggest algorithm
 - `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` — BFM directive catalog
-- `${CLAUDE_SKILL_DIR}/references/frameworks/{name}.md` — Individual framework references (22 files)
+- `${CLAUDE_SKILL_DIR}/references/frameworks/{name}.md` — Individual framework references (25 files)
+- `src/content/blog/your-metrics-are-bullshit.md` — Voice calibration anchor (long-form jeremiad)
+- `src/content/blog/joy-matters.md` — Voice calibration anchor (personal/philosophical montaigne)
