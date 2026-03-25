@@ -28,9 +28,12 @@ const currentPath = Astro.url.pathname;
 const canonicalURL = new URL(currentPath, Astro.site).href;
 const defaultDescription = 'Developer blog by birdcar. Writing about software, systems, and the craft of building things.';
 const metaDescription = description || defaultDescription;
+const blogSlugMatch = currentPath.match(/^\/blog\/([^/]+)\/?$/);
 const ogImage = image
   ? new URL(image, Astro.site).href
-  : new URL('/og-default.png', Astro.site).href;
+  : blogSlugMatch
+    ? new URL(`/og/${blogSlugMatch[1]}.png`, Astro.site).href
+    : new URL('/og-default.png', Astro.site).href;
 
 const jsonLd: Record<string, unknown>[] = [
   {

@@ -18,6 +18,7 @@
     "@aws-sdk/client-s3": "^3.1007.0",
     "@birdcar/markdown": "^0.0.3",
     "@floating-ui/dom": "^1.7.6",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "astro": "6.0.2",
@@ -32,6 +33,7 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "rough-notation": "^0.5.1",
+    "satori": "^0.26.0",
     "unified": "^11.0.0",
     "unist-util-visit": "^5.1.0"
   },

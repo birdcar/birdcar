@@ -6,5 +6,6 @@ dist/
 .env
 images/**
 !images/.gitkeep
+public/og/
 .playwright-mcp/
 .claude/skills/ui-ux-pro-max
