@@ -4,40 +4,17 @@ import { Resvg } from '@resvg/resvg-js';
 import { getCollection } from 'astro:content';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 
-const FONT_CACHE_DIR = join(homedir(), '.cache', 'birdcar-fonts');
-const FONT_CDN = 'https://fonts.googleapis.com/css2';
+const FONTS_DIR = join(process.cwd(), 'src', 'assets', 'fonts');
 
 let fontCache: { archivo: Buffer; spaceGrotesk: Buffer } | null = null;
 
-async function downloadFont(family: string, weight: number, filename: string): Promise<Buffer> {
-  const cssUrl = `${FONT_CDN}?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`;
-  const cssRes = await fetch(cssUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' },
-  });
-  const css = await cssRes.text();
-  const match = css.match(/src:\s*url\(([^)]+)\)/);
-  if (!match) throw new Error(`Could not extract font URL for ${family} ${weight}`);
-  const fontRes = await fetch(match[1]);
-  const buf = Buffer.from(await fontRes.arrayBuffer());
-  const { mkdir, writeFile } = await import('node:fs/promises');
-  await mkdir(FONT_CACHE_DIR, { recursive: true });
-  await writeFile(join(FONT_CACHE_DIR, filename), buf);
-  return buf;
-}
-
 async function loadFonts() {
   if (fontCache) return fontCache;
-  let archivo: Buffer;
-  let spaceGrotesk: Buffer;
-  try {
-    archivo = await readFile(join(FONT_CACHE_DIR, 'Archivo-Bold.ttf'));
-    spaceGrotesk = await readFile(join(FONT_CACHE_DIR, 'SpaceGrotesk-Regular.ttf'));
-  } catch {
-    archivo = await downloadFont('Archivo', 700, 'Archivo-Bold.ttf');
-    spaceGrotesk = await downloadFont('Space Grotesk', 400, 'SpaceGrotesk-Regular.ttf');
-  }
+  const [archivo, spaceGrotesk] = await Promise.all([
+    readFile(join(FONTS_DIR, 'Archivo-Bold.ttf')),
+    readFile(join(FONTS_DIR, 'SpaceGrotesk-Regular.ttf')),
+  ]);
   fontCache = { archivo, spaceGrotesk };
   return fontCache;
 }
