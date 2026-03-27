@@ -240,8 +240,28 @@ GFM task lists with additional status markers.
 ```
 
 **When to use**:
+- **Actionable takeaways** at the end of a post or section, where plain bullets feel too flat and numbered lists feel too prescriptive
+- **`[!]` Priority items** for the one or two things the reader absolutely must remember
+- **`[ ]` Open tasks** for concrete "do this Monday" action items
+- **`[x]` Completed items** in narrative context to show progress or resolution (e.g., in a retrospective or before/after section)
+- **`[-]` Cancelled items** for approaches you tried and abandoned (good in debugging or postmortem posts)
+- **`[>]` Scheduled items** for future work or deferred decisions
 - Project status updates or progress tracking posts
-- Checklists with nuanced states
+
+**When NOT to use**:
+- As a substitute for prose argument (weave points into the text narratively when possible)
+- For simple lists where plain bullets or numbered items work fine
+- More than one task list per post (dilutes impact)
+
+**Blog examples**:
+```markdown
+## What to do Monday
+
+- [!] Stop measuring individual ticket counts. Measure team-level distributions instead.
+- [ ] Audit your current SLIs. Are they measuring what customers care about?
+- [ ] Ask your team: "What would you fix if you had two hours outside the queue?"
+- [-] Don't bother with CSAT benchmarks from other companies. Your customers are yours.
+```
 
 ## GFM Features
 

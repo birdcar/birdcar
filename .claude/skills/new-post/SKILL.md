@@ -19,7 +19,7 @@ Create structured, voice-consistent blog posts for birdcar.dev using narrative f
 
 - Only use these tools: `AskUserQuestion`, `Read`, `Write`, `Agent`. Do not use Bash, WebFetch, or any other tool.
 - Use `AskUserQuestion` for all interactive steps — plain text questions can't capture structured responses
-- Read `${CLAUDE_SKILL_DIR}/references/voice.md` before generating any content — voice consistency is non-negotiable
+- **Voice loading order**: Read `~/.config/bat-kol/style.md` (base voice), then `${CLAUDE_SKILL_DIR}/references/voice.md` (blog supplement). Both are required before generating content.
 - Read `${CLAUDE_SKILL_DIR}/references/writing-guide.md` before generating content — it defines pacing and density rules
 - All generated posts MUST have `draft: true` in frontmatter — publishing is a separate decision
 - Only insert `[TODO: ...]` markers for personal anecdotes or specific real-world examples that require information only Nick can provide. Everything else should be fully written.
@@ -134,7 +134,7 @@ Use `AskUserQuestion`: "Looks good, generate the post" / "Adjust structure" / "T
 
 ## Stage 3: Content Generation
 
-Read `${CLAUDE_SKILL_DIR}/references/voice.md` and `${CLAUDE_SKILL_DIR}/references/writing-guide.md` before writing. Consult `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` for directive syntax.
+Read `~/.config/bat-kol/style.md` (base voice), `${CLAUDE_SKILL_DIR}/references/voice.md` (blog supplement), and `${CLAUDE_SKILL_DIR}/references/writing-guide.md` before writing. Consult `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` for directive syntax.
 
 ### Step 3A: Pre-Generation Voice Checklist
 
@@ -171,33 +171,21 @@ Use existing tags when they fit (support, metrics, culture, hiring, values, data
 
 Write the file with `Write` to `src/content/blog/{slug}.md`. All subsequent revisions overwrite the same file path.
 
-### Step 3C: Humanization Audit
+### Step 3C: Humanization Audit (Writer-Editor Agent)
 
-After drafting the complete post, run a two-pass audit before presenting to the user. This is mandatory — do not skip it.
+After drafting the complete post, delegate the humanization audit to a Sonnet subagent via the Agent tool. This is mandatory.
 
-**Pass 1 — Guardrail scan**: Re-read the "Don't (AI-Slop Guardrails)" section of `${CLAUDE_SKILL_DIR}/references/voice.md`. Check the draft against every rule:
+**Agent prompt**: Read `${CLAUDE_SKILL_DIR}/references/writer-editor-prompt.md` for the full agent instructions. Spawn the agent with this prompt:
 
-- Scan for any word or phrase from the blacklist. Replace or restructure every hit.
-- Scan for em dashes. Replace with commas, periods, parentheses, or restructure.
-- Scan for copula avoidance ("serves as", "stands as", "functions as"). Replace with "is".
-- Scan for negative parallelisms ("not just X, it's Y", "not only...but also"). Rewrite directly.
-- Scan for tricolon abuse (groups of exactly three). Vary to two or four items.
-- Scan for synonym cycling (same concept called different names in adjacent sentences). Pick one term.
-- Scan for filler phrases ("in order to", "due to the fact that", "it is important to note"). Cut or compress.
-- Check that no section opens with thesis, meta-commentary, or invitation phrasing.
-- Check that the closing doesn't mirror the opening or end with an inspirational platitude.
-- Check for generic transitions between sections ("Furthermore", "Additionally", "Moving on").
+> You are a writing editor. Read these files in order:
+> 1. `~/.config/bat-kol/style.md` (base voice profile)
+> 2. `${CLAUDE_SKILL_DIR}/references/voice.md` (blog voice supplement)
+> 3. `${CLAUDE_SKILL_DIR}/references/humanizer-rules.md` (anti-AI pattern checklist)
+> 4. `${CLAUDE_SKILL_DIR}/references/writer-editor-prompt.md` (your full instructions)
+>
+> Then read the draft at `src/content/blog/{slug}.md` and run all four audit passes described in the writer-editor prompt. Return the complete revised draft with the audit summary appended.
 
-**Pass 2 — Soul check**: Ask yourself: "What makes this sound like an AI wrote it?" Answer honestly, then fix what you find. Look for:
-
-- Every sentence the same length and structure (vary rhythm: short punchy sentences after long narrative ones)
-- Neutral reporting without opinions (Nick has opinions — add them)
-- No acknowledgment of uncertainty or mixed feelings where they'd be genuine
-- No first-person where it would be natural
-- No humor, edge, or personality
-- Sections that could appear in any blog post about this topic (make them specific to Nick's experience and perspective)
-
-After both passes, the draft is ready for Stage 4.
+After the agent returns, write the revised draft to the same file path. If the audit summary shows remaining concerns, address them before presenting to the user.
 
 ## Stage 4: Review
 
@@ -222,10 +210,13 @@ After each revision, re-run the humanization audit (Step 3C) on changed sections
 
 ## References
 
-- `${CLAUDE_SKILL_DIR}/references/voice.md` — Nick's writing voice profile (including AI-slop guardrails)
+- `~/.config/bat-kol/style.md` — Nick's base writing voice (trained from real samples, canonical source)
+- `${CLAUDE_SKILL_DIR}/references/voice.md` — Blog-specific voice supplement (perspective, tone, Fish craft, BFM patterns)
 - `${CLAUDE_SKILL_DIR}/references/writing-guide.md` — Blog pacing, density, and structure guide
 - `${CLAUDE_SKILL_DIR}/references/framework-guide.md` — 25 framework auto-suggest algorithm
-- `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` — BFM directive catalog
+- `${CLAUDE_SKILL_DIR}/references/bfm-reference.md` — BFM directive catalog (includes extended task lists)
+- `${CLAUDE_SKILL_DIR}/references/humanizer-rules.md` — 25-pattern anti-AI checklist (Wikipedia + bat-kol anti-slop)
+- `${CLAUDE_SKILL_DIR}/references/writer-editor-prompt.md` — Writer-editor agent instructions (4-pass humanization audit)
 - `${CLAUDE_SKILL_DIR}/references/frameworks/{name}.md` — Individual framework references (25 files)
 - `src/content/blog/your-metrics-are-bullshit.md` — Voice calibration anchor (long-form jeremiad)
 - `src/content/blog/joy-matters.md` — Voice calibration anchor (personal/philosophical montaigne)
