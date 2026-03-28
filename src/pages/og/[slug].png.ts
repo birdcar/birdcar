@@ -277,7 +277,9 @@ function ogTemplate(title: string, description?: string) {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getCollection('blog', ({ data }) => {
-    return import.meta.env.PROD ? !data.draft : true;
+    if (!import.meta.env.PROD) return true;
+    if (data.draft) return false;
+    return data.date <= new Date();
   });
   return posts.map((post) => ({
     params: { slug: post.id },
