@@ -38,7 +38,7 @@ I write about software at [birdcar.dev](https://www.birdcar.dev) using [Birdcar 
 
 #### Latest blog posts
 
-<!-- BLOG-POST-LIST:START -->- [The other side of empathy](https://birdcar.dev/blog/the-other-side-of-empathy/) — Sep 25, 2024- [Your metrics are bullshit](https://birdcar.dev/blog/your-metrics-are-bullshit/) — May 1, 2024- [Yetto values: Joy Matters](https://birdcar.dev/blog/joy-matters/) — Jan 24, 2024- [Data is a curse](https://birdcar.dev/blog/data-is-a-curse/) — Jul 26, 2023- [You&#39;re already doing all hands support](https://birdcar.dev/blog/youre-already-doing-all-hands-support/) — Jun 14, 2023<!-- BLOG-POST-LIST:END -->
+<!-- BLOG-POST-LIST:START -->- [Six months of talking to a machine](https://birdcar.dev/blog/six-months-talking-to-a-machine/) — Apr 3, 2026- [The other side of empathy](https://birdcar.dev/blog/the-other-side-of-empathy/) — Sep 25, 2024- [Your metrics are bullshit](https://birdcar.dev/blog/your-metrics-are-bullshit/) — May 1, 2024- [Yetto values: Joy Matters](https://birdcar.dev/blog/joy-matters/) — Jan 24, 2024- [Data is a curse](https://birdcar.dev/blog/data-is-a-curse/) — Jul 26, 2023<!-- BLOG-POST-LIST:END -->
 
 ---
 
