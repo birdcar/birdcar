@@ -563,6 +563,13 @@ button.site-header__mobile-link {
   padding: calc(5rem + var(--space-8)) var(--space-6) var(--space-16);
 }
 
+/* Keep every direct child aligned to the reading column, centered in the page.
+   The hero decoration escapes so its dots can still bleed across full width. */
+.page > *:not(.hero-decoration) {
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+
 /* --- Hero Section -------------------------------------------------------- */
 .hero {
   padding: var(--space-16) 0 var(--space-24);
@@ -657,7 +664,11 @@ button.site-header__mobile-link {
 }
 
 .post-card__link {
-  display: block;
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  column-gap: var(--space-5);
+  row-gap: var(--space-2);
+  align-items: baseline;
   padding: var(--space-6);
   color: inherit;
   text-decoration: none;
@@ -667,14 +678,15 @@ button.site-header__mobile-link {
   z-index: 1;
 }
 
+/* Flatten the header wrapper so its children participate in the card grid.
+   Keeps the JSX shape without adding another grid layer. */
 .post-card__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-6);
+  display: contents;
 }
 
 .post-card__title {
+  grid-column: 2;
+  grid-row: 1;
   font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-weight: 600;
@@ -683,26 +695,32 @@ button.site-header__mobile-link {
 }
 
 .post-card__date {
+  grid-column: 1;
+  grid-row: 1;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--color-text-dim);
   white-space: nowrap;
-  flex-shrink: 0;
+  text-align: right;
+  padding-top: 0.3rem;
 }
 
 .post-card__description {
+  grid-column: 2;
+  grid-row: 2;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   line-height: 1.6;
-  margin-top: var(--space-2);
 }
 
 .post-card__tags {
+  grid-column: 2;
+  grid-row: 3;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-top: var(--space-1);
 }
 
 .post-card__tag {
@@ -828,15 +846,33 @@ button.site-header__mobile-link {
 @media (max-width: 640px) {
   .post-card__link {
     padding: var(--space-4);
-  }
-
-  .post-card__header {
-    flex-direction: column;
-    gap: var(--space-1);
+    grid-template-columns: 1fr;
+    row-gap: var(--space-1);
   }
 
   .post-card__date {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: left;
+    padding-top: 0;
     font-size: var(--text-xs);
+  }
+
+  .post-card__title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .post-card__description {
+    grid-column: 1;
+    grid-row: 3;
+    margin-top: var(--space-1);
+  }
+
+  .post-card__tags {
+    grid-column: 1;
+    grid-row: 4;
+    margin-top: var(--space-2);
   }
 }
 
@@ -2148,7 +2184,7 @@ a.mention:hover {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     var(--ctp-red),
@@ -2159,6 +2195,7 @@ a.mention:hover {
     var(--ctp-blue),
     var(--ctp-mauve)
   );
+  opacity: 0.8;
   z-index: 100;
 }
 
