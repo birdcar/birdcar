@@ -1,7 +1,7 @@
 /* ==========================================================================
    birdcar.dev — Design System
    Catppuccin Mocha (dark) / Latte (light)
-   Archivo (headings) · Space Grotesk (body) · JetBrains Mono (code)
+   Archivo (headings) · Literata (body) · JetBrains Mono (code)
    ========================================================================== */
 
 /* --- Custom Properties --------------------------------------------------- */
@@ -89,7 +89,7 @@
 
   /* Typography scale (1.25 ratio) */
   --font-heading: 'Archivo', system-ui, sans-serif;
-  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Literata', Charter, Georgia, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --text-xs: 0.75rem;
@@ -236,6 +236,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   min-height: 100vh;
+  font-optical-sizing: auto;
 }
 
 /* Subtle dot grid background */

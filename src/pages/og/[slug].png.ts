@@ -7,15 +7,15 @@ import { join } from 'node:path';
 
 const FONTS_DIR = join(process.cwd(), 'src', 'assets', 'fonts');
 
-let fontCache: { archivo: Buffer; spaceGrotesk: Buffer } | null = null;
+let fontCache: { archivo: Buffer; literata: Buffer } | null = null;
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const [archivo, spaceGrotesk] = await Promise.all([
+  const [archivo, literata] = await Promise.all([
     readFile(join(FONTS_DIR, 'Archivo-Bold.ttf')),
-    readFile(join(FONTS_DIR, 'SpaceGrotesk-Regular.ttf')),
+    readFile(join(FONTS_DIR, 'Literata-Regular.ttf')),
   ]);
-  fontCache = { archivo, spaceGrotesk };
+  fontCache = { archivo, literata };
   return fontCache;
 }
 
@@ -183,7 +183,7 @@ function ogTemplate(title: string, description?: string) {
       props: {
         style: {
           display: 'flex',
-          fontFamily: 'Space Grotesk',
+          fontFamily: 'Literata',
           fontWeight: 400,
           fontSize: 16,
           color: colors.sapphire,
@@ -217,7 +217,7 @@ function ogTemplate(title: string, description?: string) {
       props: {
         style: {
           display: 'flex',
-          fontFamily: 'Space Grotesk',
+          fontFamily: 'Literata',
           fontWeight: 400,
           fontSize: 26,
           color: colors.subtext1,
@@ -296,7 +296,7 @@ export const GET: APIRoute = async ({ props }) => {
     height: 630,
     fonts: [
       { name: 'Archivo', data: fonts.archivo, weight: 700, style: 'normal' },
-      { name: 'Space Grotesk', data: fonts.spaceGrotesk, weight: 400, style: 'normal' },
+      { name: 'Literata', data: fonts.literata, weight: 400, style: 'normal' },
     ],
   });
 
