@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import HeroDecoration from '../components/HeroDecoration.astro';
+---
+<Base title="404 — birdcar" description="This page doesn't exist. It might have, once, in a different branch.">
+  <section class="hero" style="position: relative;">
+    <HeroDecoration />
+    <p class="hero__eyebrow">404</p>
+    <h1 class="hero__title" data-hero-variant="not-found">
+      That post is <em>hiding.</em>
+    </h1>
+    <p class="hero__description">
+      And winning. Either the URL lost a character in transit, or the post never
+      existed. Neither says anything about you.
+    </p>
+  </section>
+
+  <section class="not-found-actions" aria-label="Where to go from here">
+    <button type="button" class="view-all not-found-search" data-opens-search aria-label="Search posts">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <span>Search the archive</span>
+    </button>
+    <a href="/blog/" class="not-found-link">All posts <span aria-hidden="true">&rarr;</span></a>
+    <a href="/" class="not-found-link">Home</a>
+  </section>
+
+  <script is:inline>
+    (() => {
+      const btn = document.querySelector('[data-opens-search]');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('birdcar:open-search'));
+      });
+    })();
+  </script>
+</Base>

@@ -74,6 +74,13 @@ export default function SiteKeybinds() {
     setActiveIndex(0);
   }, [query, isOpen]);
 
+  // Imperative open via custom event (used by mobile nav + 404 page)
+  useEffect(() => {
+    const onOpen = () => setIsOpen(true);
+    document.addEventListener("birdcar:open-search", onOpen);
+    return () => document.removeEventListener("birdcar:open-search", onOpen);
+  }, []);
+
   // Global shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

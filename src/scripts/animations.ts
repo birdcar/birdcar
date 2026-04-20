@@ -192,6 +192,12 @@ function initRoughNotations(animate = true) {
         padding: [4, 8],
         animationDuration: animate ? 900 : 0,
       },
+      'not-found': {
+        type: 'crossed-off',
+        color: red,
+        strokeWidth: 2,
+        animationDuration: animate ? 1100 : 0,
+      },
     };
     const cfg = variantConfig[variant] ?? variantConfig.flagship;
     const a = annotate(heroEm, { ...cfg, animate });
