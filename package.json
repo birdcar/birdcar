@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "bun run scripts/sync-images.ts && astro build",
-    "build:ci": "astro build",
+    "build": "bun run scripts/sync-images.ts && astro build && bun run scripts/post-build.ts",
+    "build:ci": "astro build && bun run scripts/post-build.ts",
     "check": "astro check",
     "preview": "astro preview",
     "sync-images": "bun run scripts/sync-images.ts"
@@ -42,7 +42,10 @@
     "@types/katex": "^0.16.8",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^25.4.0",
+    "@types/turndown": "^5.0.6",
     "bun-types": "^1.3.10",
+    "node-html-parser": "^7.1.0",
+    "turndown": "^7.2.4",
     "typescript": "^5.4.0"
   }
 }
