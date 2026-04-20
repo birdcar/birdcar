@@ -3,7 +3,9 @@ import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import { PostList } from '../../components/PostCard';
 import Pagination from '../../components/Pagination.astro';
-import { getPublishedPosts } from '../../lib/posts';
+import TagList from '../../components/TagList.astro';
+import FollowBlock from '../../components/FollowBlock.astro';
+import { getPublishedPosts, getAllTags } from '../../lib/posts';
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = await getPublishedPosts();
@@ -11,13 +13,27 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;
+const tagCounts = await getAllTags();
+const topTags = [...tagCounts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 8)
+  .map(([tag]) => tag);
+const isFirstPage = page.currentPage === 1;
 ---
 <Base title="Blog — birdcar" description="All blog posts.">
   <section class="hero">
     <p class="hero__eyebrow">blog</p>
-    <h1 class="hero__title">All <em>posts.</em></h1>
+    <h1 class="hero__title" data-hero-variant="underline">All <em>posts.</em></h1>
   </section>
 
-  <PostList client:load posts={page.data} />
+  {isFirstPage && topTags.length > 0 && (
+    <section class="tag-filter" aria-label="Browse posts by topic">
+      <p class="tag-filter__label">Browse by topic</p>
+      <TagList tags={topTags} />
+    </section>
+  )}
+
+  <PostList client:load posts={page.data} featuredFirst={isFirstPage} />
   <Pagination page={page} />
+  {isFirstPage && <FollowBlock variant="index" />}
 </Base>

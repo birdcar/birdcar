@@ -21,7 +21,7 @@ const { tag, posts } = Astro.props;
 <Base title={`#${tag} — birdcar`} description={`Posts tagged with #${tag}.`}>
   <section class="hero">
     <p class="hero__eyebrow">tagged</p>
-    <h1 class="hero__title"><em>#{tag}</em></h1>
+    <h1 class="hero__title" data-hero-variant="box"><em>#{tag}</em></h1>
   </section>
 
   <PostList client:load posts={posts} />

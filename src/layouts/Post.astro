@@ -1,6 +1,7 @@
 ---
 import Base from './Base.astro';
 import TagList from '../components/TagList.astro';
+import FollowBlock from '../components/FollowBlock.astro';
 import type { DocumentMetadata } from '@birdcar/markdown';
 
 interface Props {
@@ -43,5 +44,6 @@ const formattedDate = date.toLocaleDateString('en-US', {
     <div class="prose">
       <slot />
     </div>
+    <FollowBlock variant="post" />
   </article>
 </Base>

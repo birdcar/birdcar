@@ -153,15 +153,48 @@ function initRoughNotations(animate = true) {
   const yellow = css('--ctp-yellow');
   const flamingo = css('--ctp-flamingo');
 
-  const heroEm = document.querySelector('.hero__title em');
-  if (heroEm) {
-    const a = annotate(heroEm as HTMLElement, {
-      type: 'highlight',
-      color: yellow + '55',
-      animate,
-      animationDuration: animate ? 1200 : 0,
-      multiline: true,
-    });
+  const heroTitle = document.querySelector<HTMLElement>('.hero__title');
+  const heroEm = heroTitle?.querySelector<HTMLElement>('em') ?? null;
+  if (heroTitle && heroEm) {
+    const variant = heroTitle.dataset.heroVariant ?? 'flagship';
+    const variantConfig: Record<string, Parameters<typeof annotate>[1]> = {
+      flagship: {
+        type: 'highlight',
+        color: yellow + '55',
+        animationDuration: animate ? 1200 : 0,
+        multiline: true,
+      },
+      underline: {
+        type: 'underline',
+        color: teal,
+        strokeWidth: 3,
+        animationDuration: animate ? 900 : 0,
+      },
+      circle: {
+        type: 'circle',
+        color: peach,
+        strokeWidth: 2,
+        padding: 8,
+        animationDuration: animate ? 1100 : 0,
+      },
+      bracket: {
+        type: 'bracket',
+        color: lavender,
+        strokeWidth: 3,
+        padding: 6,
+        brackets: ['left', 'right'],
+        animationDuration: animate ? 900 : 0,
+      },
+      box: {
+        type: 'box',
+        color: flamingo,
+        strokeWidth: 2,
+        padding: [4, 8],
+        animationDuration: animate ? 900 : 0,
+      },
+    };
+    const cfg = variantConfig[variant] ?? variantConfig.flagship;
+    const a = annotate(heroEm, { ...cfg, animate });
     if (animate) {
       setTimeout(() => { a.show(); shownAnnotations.push(a); }, 900);
     } else {

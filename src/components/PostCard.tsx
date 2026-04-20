@@ -26,14 +26,15 @@ interface Post {
 interface PostCardProps {
   post: Post;
   index: number;
+  featured?: boolean;
 }
 
-export default function PostCard({ post, index }: PostCardProps) {
+export default function PostCard({ post, index, featured = false }: PostCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.li
-      className="post-card"
+      className={featured ? "post-card post-card--featured" : "post-card"}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
@@ -85,13 +86,19 @@ export default function PostCard({ post, index }: PostCardProps) {
 
 interface PostListProps {
   posts: Post[];
+  featuredFirst?: boolean;
 }
 
-export function PostList({ posts }: PostListProps) {
+export function PostList({ posts, featuredFirst = false }: PostListProps) {
   return (
     <ul className="post-list">
       {posts.map((post, i) => (
-        <PostCard key={post.id} post={post} index={i} />
+        <PostCard
+          key={post.id}
+          post={post}
+          index={i}
+          featured={featuredFirst && i === 0}
+        />
       ))}
     </ul>
   );
