@@ -1,9 +1,10 @@
 ---
 interface Props {
   tags: string[];
+  activeTag?: string;
 }
 
-const { tags } = Astro.props;
+const { tags, activeTag } = Astro.props;
 
 const tagColors = [
   'green', 'teal', 'sapphire', 'blue', 'lavender', 'mauve', 'pink', 'peach', 'yellow', 'sky'
@@ -19,9 +20,16 @@ function colorForTag(tag: string): string {
 ---
 
 <ul class="tag-list">
-  {tags.map((tag) => (
-    <li class="tag-list__item">
-      <a href={`/tags/${tag}/`} data-tag-color={colorForTag(tag)}>#{tag}</a>
-    </li>
-  ))}
+  {tags.map((tag) => {
+    const isActive = tag === activeTag;
+    return (
+      <li class="tag-list__item">
+        <a
+          href={`/tags/${tag}/`}
+          data-tag-color={colorForTag(tag)}
+          aria-current={isActive ? 'page' : undefined}
+        >#{tag}</a>
+      </li>
+    );
+  })}
 </ul>

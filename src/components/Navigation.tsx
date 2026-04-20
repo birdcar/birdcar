@@ -104,6 +104,29 @@ export default function Navigation({ currentPath, navLinks }: NavigationProps) {
                   {label}
                 </motion.a>
               ))}
+              <motion.button
+                type="button"
+                className="site-header__mobile-link site-header__mobile-search"
+                onClick={() => {
+                  setIsOpen(false);
+                  // Let the overlay unmount before opening the modal
+                  requestAnimationFrame(() => {
+                    document.dispatchEvent(new CustomEvent("birdcar:open-search"));
+                  });
+                }}
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ delay: navLinks.length * 0.1 + 0.15 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: 8, verticalAlign: "-4px" }}>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                Search
+              </motion.button>
             </nav>
           </motion.div>
         )}

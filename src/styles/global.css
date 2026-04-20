@@ -443,6 +443,25 @@ a:hover {
   color: var(--color-accent);
 }
 
+button.site-header__mobile-link {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.site-header__mobile-search svg {
+  opacity: 0.7;
+}
 
 .mobile-close-btn {
   position: absolute;
@@ -846,6 +865,45 @@ a:hover {
 .tag-list__item a:hover {
   background: color-mix(in srgb, var(--tag-color) 20%, transparent);
   border-color: var(--tag-color);
+}
+
+.tag-list__item a[aria-current="page"] {
+  background: var(--tag-color);
+  color: var(--color-bg);
+  border-color: var(--tag-color);
+  font-weight: 600;
+}
+
+.tag-list__item a[aria-current="page"]:hover {
+  background: var(--tag-color);
+  color: var(--color-bg);
+  filter: brightness(1.05);
+}
+
+.tag-filter--detail .tag-filter__label strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* --- Tag Breadcrumbs ----------------------------------------------------- */
+.tag-breadcrumbs {
+  display: flex;
+  gap: var(--space-6);
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.tag-breadcrumbs__link {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.tag-breadcrumbs__link:hover {
+  color: var(--color-accent);
 }
 
 .tag-list__item a[data-tag-color="green"]     { --tag-color: var(--color-tag-green); }
