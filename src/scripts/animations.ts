@@ -145,7 +145,6 @@ function initGSAPAnimations() {
 }
 
 function initRoughNotations(animate = true) {
-  const sapphire = css('--ctp-sapphire');
   const teal = css('--ctp-teal');
   const peach = css('--ctp-peach');
   const lavender = css('--ctp-lavender');
@@ -203,24 +202,6 @@ function initRoughNotations(animate = true) {
     const a = annotate(heroEm, { ...cfg, animate });
     if (animate) {
       setTimeout(() => { a.show(); shownAnnotations.push(a); }, 900);
-    } else {
-      a.show();
-      shownAnnotations.push(a);
-    }
-  }
-
-  const readingTime = document.querySelector('.article__reading-time');
-  if (readingTime) {
-    const a = annotate(readingTime as HTMLElement, {
-      type: 'box',
-      color: teal,
-      strokeWidth: 1,
-      padding: [2, 6],
-      animate,
-      animationDuration: animate ? 600 : 0,
-    });
-    if (animate) {
-      setTimeout(() => { a.show(); shownAnnotations.push(a); }, 600);
     } else {
       a.show();
       shownAnnotations.push(a);

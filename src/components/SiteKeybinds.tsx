@@ -168,8 +168,10 @@ export default function SiteKeybinds() {
         type="button"
         className="search-cue"
         onClick={() => setIsOpen(true)}
-        aria-label="Search posts"
+        aria-label="Search posts (press slash or command-K)"
+        title="Search — press / or ⌘K"
       >
+        <kbd>⌘K</kbd>
         <kbd>/</kbd>
         <span>search</span>
       </button>
