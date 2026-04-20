@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions';
 import HeroDecoration from '../components/HeroDecoration.astro';
 import Navigation from '../components/Navigation';
+import SiteKeybinds from '../components/SiteKeybinds';
 import '../styles/global.css';
 
 interface Props {
@@ -148,6 +149,8 @@ const navLinks = [
       <HeroDecoration />
       <slot />
     </main>
+
+    <SiteKeybinds client:idle />
 
     <footer class="site-footer" transition:name="footer" transition:animate="none">
       <div class="site-footer__links">
