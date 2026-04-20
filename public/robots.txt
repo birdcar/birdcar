@@ -2,6 +2,7 @@
 
 User-agent: *
 Allow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Sitemap: https://birdcar.dev/sitemap-index.xml
 
 # AI crawlers — allowed for AEO visibility
@@ -42,6 +43,8 @@ Allow: /
 # Blocked — aggressive crawlers with low value
 User-agent: Bytespider
 Disallow: /
+Content-Signal: search=no, ai-input=no, ai-train=no
 
 User-agent: PetalBot
 Disallow: /
+Content-Signal: search=no, ai-input=no, ai-train=no
