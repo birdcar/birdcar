@@ -40,6 +40,7 @@ export default function SiteKeybinds() {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Lazy-load the index the first time the user triggers the modal
@@ -52,7 +53,10 @@ export default function SiteKeybinds() {
         if (!cancelled) setEntries(data);
       })
       .catch(() => {
-        if (!cancelled) setEntries([]);
+        if (!cancelled) {
+          setLoadError(true);
+          setEntries([]);
+        }
       });
     return () => {
       cancelled = true;
@@ -121,10 +125,45 @@ export default function SiteKeybinds() {
         cards[nextIdx]?.focus();
         cards[nextIdx]?.scrollIntoView({ block: "center", behavior: "smooth" });
       }
+
+      // n/p on article slug pages for next/prev post chronologically
+      if (
+        !isOpen &&
+        !isTypingTarget(e.target) &&
+        (e.key === "n" || e.key === "p" || e.key === "N" || e.key === "P")
+      ) {
+        const slugMatch = window.location.pathname.match(/^\/blog\/([^/]+)\/?$/);
+        if (!slugMatch) return;
+        const currentSlug = slugMatch[1];
+        e.preventDefault();
+
+        const go = (data: Entry[]) => {
+          const sorted = [...data].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          );
+          const idx = sorted.findIndex((entry) => entry.id === currentSlug);
+          if (idx === -1) return;
+          const delta = e.key === "n" || e.key === "N" ? -1 : 1;
+          const target = sorted[idx + delta];
+          if (target) window.location.href = `/blog/${target.id}/`;
+        };
+
+        if (entries) {
+          go(entries);
+        } else {
+          fetch("/search-index.json")
+            .then((res) => res.json())
+            .then((data: Entry[]) => {
+              setEntries(data);
+              go(data);
+            })
+            .catch(() => {});
+        }
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isOpen]);
+  }, [isOpen, entries]);
 
   // Focus input when modal opens
   useEffect(() => {
@@ -226,10 +265,15 @@ export default function SiteKeybinds() {
             </div>
 
             <ul className="search-modal__results" role="listbox">
-              {entries === null && (
+              {entries === null && !loadError && (
                 <li className="search-modal__empty">Loading…</li>
               )}
-              {entries !== null && results.length === 0 && (
+              {loadError && (
+                <li className="search-modal__empty search-modal__empty--error">
+                  Couldn't load the archive. Refresh and try again.
+                </li>
+              )}
+              {!loadError && entries !== null && results.length === 0 && (
                 <li className="search-modal__empty">
                   {query.trim()
                     ? `Nothing matching “${query}”.`
@@ -276,6 +320,10 @@ export default function SiteKeybinds() {
               <span>
                 <kbd>j</kbd>
                 <kbd>k</kbd> next/prev on blog
+              </span>
+              <span>
+                <kbd>n</kbd>
+                <kbd>p</kbd> next/prev post
               </span>
             </div>
           </motion.div>

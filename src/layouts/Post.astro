@@ -34,6 +34,7 @@ const formattedDate = date.toLocaleDateString('en-US', {
   <article class="article">
     <header class="article__header">
       <h1 class="article__title">{title}</h1>
+      <p class="article__byline">by <a href="/about/">Nick Cannariato</a></p>
       <div class="article__meta">
         <time datetime={date.toISOString()}>{formattedDate}</time>
         <span>{metadata.computed.readingTime} min read</span>

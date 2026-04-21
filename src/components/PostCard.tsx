@@ -1,17 +1,4 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-
-const TAG_COLORS = [
-  "green", "teal", "sapphire", "blue", "lavender", "mauve", "pink", "peach", "yellow", "sky",
-] as const;
-
-function colorForTag(tag: string): string {
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = ((hash << 5) - hash + tag.charCodeAt(i)) | 0;
-  }
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
-}
 
 interface Post {
   id: string;
@@ -30,8 +17,6 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, index, featured = false }: PostCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <motion.li
       className={featured ? "post-card post-card--featured" : "post-card"}
@@ -39,14 +24,7 @@ export default function PostCard({ post, index, featured = false }: PostCardProp
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
       whileHover={{ y: -3 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
     >
-      <motion.div
-        className="post-card__accent-bar"
-        animate={{ opacity: isHovered ? 1 : 0 }}
-        transition={{ duration: 0.25 }}
-      />
       <a href={`/blog/${post.id}/`} className="post-card__link">
         <div className="post-card__header">
           <h3 className="post-card__title">{post.data.title}</h3>
@@ -72,9 +50,7 @@ export default function PostCard({ post, index, featured = false }: PostCardProp
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.08 + i * 0.05 + 0.2 }}
               >
-                <span className="post-card__tag" data-tag-color={colorForTag(tag)}>
-                  #{tag}
-                </span>
+                <span className="post-card__tag">#{tag}</span>
               </motion.li>
             ))}
           </ul>

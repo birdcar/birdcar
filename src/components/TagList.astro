@@ -5,18 +5,6 @@ interface Props {
 }
 
 const { tags, activeTag } = Astro.props;
-
-const tagColors = [
-  'green', 'teal', 'sapphire', 'blue', 'lavender', 'mauve', 'pink', 'peach', 'yellow', 'sky'
-];
-
-function colorForTag(tag: string): string {
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = ((hash << 5) - hash + tag.charCodeAt(i)) | 0;
-  }
-  return tagColors[Math.abs(hash) % tagColors.length];
-}
 ---
 
 <ul class="tag-list">
@@ -26,7 +14,6 @@ function colorForTag(tag: string): string {
       <li class="tag-list__item">
         <a
           href={`/tags/${tag}/`}
-          data-tag-color={colorForTag(tag)}
           aria-current={isActive ? 'page' : undefined}
         >#{tag}</a>
       </li>
