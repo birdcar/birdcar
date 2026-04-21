@@ -9,3 +9,4 @@ images/**
 public/og/
 .playwright-mcp/
 .claude/skills/ui-ux-pro-max
+.claude/scheduled_tasks.lock
