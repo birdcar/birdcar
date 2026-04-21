@@ -251,15 +251,8 @@ body::before {
 }
 
 ::selection {
-  background-color: var(--color-accent);
-  color: var(--ctp-crust);
-}
-
-@media (prefers-color-scheme: light) {
-  ::selection {
-    background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
-    color: inherit;
-  }
+  background-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: inherit;
 }
 
 /* Focus ring */
@@ -622,9 +615,8 @@ button.site-header__mobile-link {
   color: var(--color-text);
 }
 
-.hero__title[data-hero-variant="flagship"] em {
-  color: var(--ctp-peach);
-}
+/* Flagship em inherits --color-text from .hero__title em — the yellow
+   highlight is the emphasis mark, the text stays in the heading's voice. */
 
 .hero__title[data-hero-variant="underline"] em {
   color: var(--ctp-sapphire);
