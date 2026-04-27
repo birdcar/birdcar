@@ -26,8 +26,7 @@
     {
       "binding": "LEADS_DB",
       "database_name": "birdcar-leads",
-      // Run `bunx wrangler d1 create birdcar-leads` and paste the returned id.
-      "database_id": "TODO_LEADS_DB_ID",
+      "database_id": "f1171af3-16bb-4440-ad4a-a80b4f750041",
       "migrations_dir": "./migrations"
     }
   ],
