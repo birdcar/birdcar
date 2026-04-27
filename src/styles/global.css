@@ -15,7 +15,7 @@
   /* Ink */
   --ink:          #1A1814;
   --ink-2:        #4A453D;
-  --ink-3:        #7A7368;
+  --ink-3:        #6B645A;   /* metadata, dates, captions — tuned for WCAG AA on both paper surfaces (5.2:1 on --paper, 4.8:1 on --paper-2) */
   --ink-4:        #A89F90;
 
   /* Lines */
@@ -286,6 +286,33 @@ button { font-family: inherit; }
 .bc-nav-link.is-current,
 .bc-nav-link[aria-current="page"] { color: var(--clay); }
 
+/* Mobile drawer toggle — hidden above 640px */
+.bc-mast-toggle {
+  display: none;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 0;
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.bc-mast-toggle:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 4px;
+  border-radius: 1px;
+}
+.bc-mast-toggle-icon { display: block; }
+.bc-mast-toggle-x { display: none; }
+.bc-mast[data-mobile-open="true"] .bc-mast-toggle-bars { display: none; }
+.bc-mast[data-mobile-open="true"] .bc-mast-toggle-x { display: inline; }
+.bc-mast-toggle-label { letter-spacing: -0.005em; }
+.bc-nav-wrap { display: contents; }
+
 /* Footer */
 .bc-footer { margin-top: var(--s-9); }
 .bc-rule-double {
@@ -302,7 +329,7 @@ button { font-family: inherit; }
 .bc-footer-brand { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--ink); }
 .bc-footer-tag   { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
 .bc-footer-link  { font-family: var(--sans); font-size: 14px; color: var(--ink-2); text-decoration: none; }
-.bc-footer-link:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
+.bc-footer-link:where(:hover, :active) { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
 .bc-footer-meta  { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
 
 /* ============================================================
@@ -329,11 +356,29 @@ button { font-family: inherit; }
 .bc-btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule-strong); }
 .bc-btn-secondary:hover { background: var(--paper-2); color: var(--ink); text-decoration: none; }
 .bc-btn-secondary:active { transform: translateY(1px); }
+
+/* Touch-only press emphasis — :hover doesn't fire on tap, and a 1px shift is
+   imperceptible on a phone. Bump press feedback to 2px for touch devices. */
+@media (hover: none) {
+  .bc-btn-primary:active,
+  .bc-btn-secondary:active { transform: translateY(2px); }
+}
 .bc-btn-link {
   background: transparent; color: var(--clay); padding: 11px 0;
   text-decoration: underline; text-underline-offset: 3px;
 }
 .bc-btn-link:hover { color: var(--clay-2); }
+
+.bc-btn:disabled,
+.bc-btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+.bc-btn-primary:disabled,
+.bc-btn-primary[aria-busy="true"] {
+  background: var(--ink-3);
+  color: var(--paper);
+}
 
 /* ============================================================
    Page chrome
@@ -464,7 +509,7 @@ button { font-family: inherit; }
   color: var(--ink); text-decoration: none;
   border-bottom: 1px solid var(--rule);
 }
-.bc-portrait-links a:hover { color: var(--clay); border-bottom-color: var(--clay); }
+.bc-portrait-links a:where(:hover, :active) { color: var(--clay); border-bottom-color: var(--clay); }
 
 .bc-now { border-top: 1px solid var(--rule); padding-top: var(--s-3); }
 .bc-now-label {
@@ -516,8 +561,8 @@ button { font-family: inherit; }
 }
 .bc-postlist > :last-child .bc-post-row,
 .bc-post-row:last-child { border-bottom: 1px solid var(--rule); }
-.bc-post-row:hover { background: var(--paper-2); text-decoration: none; }
-.bc-post-row:hover .bc-post-title { color: var(--clay); }
+.bc-post-row:where(:hover, :active) { background: var(--paper-2); text-decoration: none; }
+.bc-post-row:where(:hover, :active) .bc-post-title { color: var(--clay); }
 .bc-post-date  { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
 .bc-post-title { font-family: var(--serif); font-size: 19px; color: var(--ink); }
 .bc-post-tag   { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
@@ -705,7 +750,7 @@ button { font-family: inherit; }
   color: var(--ink-3);
 }
 .bc-pagination a { color: var(--ink); text-decoration: none; }
-.bc-pagination a:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
+.bc-pagination a:where(:hover, :active) { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Tags grid */
 .bc-tags-grid {
@@ -725,8 +770,8 @@ button { font-family: inherit; }
   color: var(--ink);
   text-decoration: none;
 }
-.bc-tags-grid a:hover { color: var(--clay); }
-.bc-tags-grid a:hover .bc-tag-count { color: var(--clay); }
+.bc-tags-grid a:where(:hover, :active) { color: var(--clay); }
+.bc-tags-grid a:where(:hover, :active) .bc-tag-count { color: var(--clay); }
 .bc-tag-count { color: var(--ink-3); font-size: 12px; }
 
 /* Form */
@@ -756,6 +801,24 @@ button { font-family: inherit; }
   flex-wrap: wrap;
 }
 .bc-form-or { font-family: var(--sans); font-size: 14px; color: var(--ink-3); }
+.bc-form-error {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--err);
+  padding: var(--s-3) var(--s-4);
+  border-left: 2px solid var(--err);
+  background: var(--paper-2);
+}
+.bc-field input[aria-invalid="true"],
+.bc-field textarea[aria-invalid="true"] {
+  border-color: var(--err);
+}
+.bc-field-error {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--err);
+  margin-top: 2px;
+}
 
 /* 404 */
 .bc-notfound-actions {
@@ -767,7 +830,7 @@ button { font-family: inherit; }
   font-size: 13px;
 }
 .bc-notfound-actions a { color: var(--ink); text-decoration: none; }
-.bc-notfound-actions a:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
+.bc-notfound-actions a:where(:hover, :active) { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ============================================================
    BFM directive treatments
@@ -1110,17 +1173,102 @@ sup a, .footnote-ref, .footnote-backref {
   .bc-post-head h1 { font-size: 32px; }
   .bc-twocol       { grid-template-columns: 1fr; gap: var(--s-5); }
   .bc-hero-grid    { grid-template-columns: 1fr; gap: var(--s-5); }
-  .bc-hero-aside   { flex-direction: row; gap: var(--s-5); align-items: flex-start; }
-  .bc-now          { flex: 1; border-top: 0; padding-top: 0; }
+
+  /* Hero aside collapses to a single column under the lede; the portrait card
+     (which repeats Nick's name from the lede) is hidden so mobile readers
+     aren't told the same thing twice in 80 vertical pixels. The "Now" status
+     card stays — it's the one time-sensitive signal. */
+  .bc-hero-aside   { flex-direction: column; gap: var(--s-5); align-items: stretch; }
+  .bc-portrait     { display: none; }
+  .bc-now          { border-top: 1px solid var(--rule); padding-top: var(--s-3); }
+
   .bc-post-row     { grid-template-columns: 1fr; gap: 4px; }
   .bc-page-wrap    { padding: var(--s-5) var(--s-4) var(--s-7); }
   .bc-hr           { margin: var(--s-7) 0; }
   .bc-field-row    { flex-direction: column; }
+
+  /* Long-line code blocks two-finger-scroll inside a one-finger-scroll page.
+     Wrap instead of overflow under 720px. */
+  .bc-prose pre,
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: visible;
+  }
+
+  /* Tap targets — 44px min-height (WCAG 2.5.5, Apple HIG) for chrome links
+     that were previously sized for cursor precision. */
+  .bc-nav-link,
+  .bc-footer-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .bc-filter {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+  .bc-pagination a,
+  .bc-pagination span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .bc-portrait-links { gap: var(--s-3); }
+  .bc-portrait-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 2px;
+  }
+
+  /* Footer right-alignment looks orphaned when the meta column wraps below
+     the link column on phones. */
+  .bc-footer-meta { text-align: left; }
+
   /* On narrow viewports, collapse the prose grid so figures don't try to
      escape. All children live in the prose column. */
   .bc-prose { grid-template-columns: 1fr; }
   .bc-prose > .bfm-figure[data-width="wide"],
   .bc-prose > .bfm-figure[data-width="full"] { grid-column: 1 / -1; max-width: 100%; }
+}
+
+/* Mobile drawer — under 640px the inline nav doesn't fit alongside the brand
+   mark + 5 items + 24px gaps, so we collapse it behind a "Menu" button.
+   Drawer fade is the system's allowed 160ms motion. */
+@media (max-width: 640px) {
+  .bc-mast {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0;
+  }
+  .bc-mast-toggle { display: inline-flex; }
+  .bc-nav-wrap {
+    display: block;
+    flex-basis: 100%;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height var(--dur) var(--ease),
+                opacity var(--dur) var(--ease);
+  }
+  .bc-mast[data-mobile-open="true"] .bc-nav-wrap {
+    max-height: 320px;
+    opacity: 1;
+  }
+  .bc-nav {
+    flex-direction: column;
+    gap: 0;
+    margin-top: var(--s-3);
+    padding: 0;
+  }
+  .bc-nav li { border-top: 1px solid var(--rule); }
+  .bc-nav-link {
+    display: block;
+    padding-block: 12px;
+    min-height: 44px;
+    width: 100%;
+  }
 }
 
 /* Reduced motion */

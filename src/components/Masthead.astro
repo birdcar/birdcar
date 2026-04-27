@@ -6,10 +6,10 @@ interface Props {
 const { currentPath } = Astro.props;
 
 const NAV = [
-  { href: '/',       label: 'Home' },
-  { href: '/about/', label: 'About' },
-  { href: '/work/',  label: 'Work' },
-  { href: '/writing/',  label: 'Writing' },
+  { href: '/',         label: 'Home' },
+  { href: '/about/',   label: 'About' },
+  { href: '/work/',    label: 'Work' },
+  { href: '/writing/', label: 'Writing' },
   { href: '/contact/', label: 'Contact' },
 ];
 
@@ -19,9 +19,34 @@ function isCurrent(href: string): boolean {
 }
 ---
 
-<header class="bc-mast">
+<header class="bc-mast" data-mobile-open="false">
   <a href="/" class="bc-brand">Birdcar<span class="bc-brand-dot">.</span></a>
-  <nav aria-label="Main navigation">
+
+  <button
+    type="button"
+    class="bc-mast-toggle"
+    aria-expanded="false"
+    aria-controls="primary-nav"
+    aria-label="Open menu"
+  >
+    <svg
+      class="bc-mast-toggle-icon"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="square"
+      aria-hidden="true"
+    >
+      <path class="bc-mast-toggle-bars" d="M3 6 H17 M3 10 H17 M3 14 H17" />
+      <path class="bc-mast-toggle-x" d="M5 5 L15 15 M15 5 L5 15" />
+    </svg>
+    <span class="bc-mast-toggle-label">Menu</span>
+  </button>
+
+  <nav id="primary-nav" class="bc-nav-wrap" aria-label="Main navigation">
     <ul class="bc-nav">
       {NAV.map(({ href, label }) => (
         <li>
@@ -35,3 +60,30 @@ function isCurrent(href: string): boolean {
     </ul>
   </nav>
 </header>
+
+<script>
+  const mast = document.querySelector<HTMLElement>('.bc-mast');
+  const toggle = mast?.querySelector<HTMLButtonElement>('.bc-mast-toggle');
+  if (mast && toggle) {
+    const setOpen = (open: boolean) => {
+      mast.dataset.mobileOpen = String(open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+    toggle.addEventListener('click', () => {
+      setOpen(mast.dataset.mobileOpen !== 'true');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && mast.dataset.mobileOpen === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node | null;
+      if (mast.dataset.mobileOpen === 'true' && target && !mast.contains(target)) {
+        setOpen(false);
+      }
+    });
+  }
+</script>
