@@ -138,17 +138,28 @@ small, .t-small { font-size: var(--t-small); line-height: var(--lh-small); }
   letter-spacing: -0.005em;
 }
 
+/* Local deviation from the design spec: links default to ink with a muted
+   underline, darker clay on hover, regular clay for the active/current page.
+   No `a:visited` rule — that would outrank class-scoped color overrides
+   (.bc-nav-link, .bc-link-arrow, etc) and shadow them after first click. */
 a {
-  color: var(--clay);
+  color: var(--ink);
   text-decoration: underline;
   text-decoration-thickness: 1px;
+  text-decoration-color: var(--rule-strong);
   text-underline-offset: 3px;
   transition: text-decoration-thickness var(--dur-fast) var(--ease),
+              text-decoration-color var(--dur-fast) var(--ease),
               text-underline-offset var(--dur-fast) var(--ease),
               color var(--dur-fast) var(--ease);
 }
-a:hover { color: var(--clay-2); text-decoration-thickness: 2px; text-underline-offset: 2px; }
-a:visited { color: var(--clay); }
+a:hover {
+  color: var(--clay-2);
+  text-decoration-color: var(--clay-2);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+a:active { color: var(--clay); text-decoration-color: var(--clay); }
 a:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; border-radius: 1px; }
 
 code, kbd, samp, pre {
@@ -254,20 +265,26 @@ button { font-family: inherit; }
   color: var(--ink);
   text-decoration: none;
 }
-.bc-brand:hover { color: var(--ink); text-decoration: none; }
+.bc-brand:hover { color: var(--clay-2); text-decoration: none; }
+.bc-brand:hover .bc-brand-dot { color: var(--clay-2); }
 .bc-brand-dot { color: var(--clay); }
 .bc-nav { display: flex; gap: var(--s-5); flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
 .bc-nav li { margin: 0; }
 .bc-nav-link {
   font-family: var(--sans);
   font-size: 14px;
-  color: var(--ink-2);
+  color: var(--ink);
   text-decoration: none;
   padding: 4px 0;
 }
-.bc-nav-link:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 4px; }
+.bc-nav-link:hover {
+  color: var(--clay-2);
+  text-decoration: underline;
+  text-decoration-color: var(--clay-2);
+  text-underline-offset: 4px;
+}
 .bc-nav-link.is-current,
-.bc-nav-link[aria-current="page"] { color: var(--ink); }
+.bc-nav-link[aria-current="page"] { color: var(--clay); }
 
 /* Footer */
 .bc-footer { margin-top: var(--s-9); }
@@ -697,7 +714,6 @@ button { font-family: inherit; }
   flex-wrap: wrap;
 }
 .bc-form-or { font-family: var(--sans); font-size: 14px; color: var(--ink-3); }
-.bc-form-or a { color: var(--clay); }
 
 /* 404 */
 .bc-notfound-actions {
@@ -985,11 +1001,11 @@ sup a, .footnote-ref, .footnote-backref {
 
 /* @mention / #hashtag */
 .bfm-mention {
-  color: var(--clay);
+  color: var(--ink);
   text-decoration: none;
   font-style: normal;
 }
-.bfm-mention:hover { text-decoration: underline; }
+.bfm-mention:hover { color: var(--clay); text-decoration: underline; }
 .bfm-mention .at { color: var(--ink-3); }
 .bfm-hashtag {
   display: inline-block;
