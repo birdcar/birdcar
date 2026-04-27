@@ -1,0 +1,37 @@
+---
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+
+const NAV = [
+  { href: '/',       label: 'Home' },
+  { href: '/about/', label: 'About' },
+  { href: '/work/',  label: 'Work' },
+  { href: '/writing/',  label: 'Writing' },
+  { href: '/contact/', label: 'Contact' },
+];
+
+function isCurrent(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
+---
+
+<header class="bc-mast">
+  <a href="/" class="bc-brand">Birdcar<span class="bc-brand-dot">.</span></a>
+  <nav aria-label="Main navigation">
+    <ul class="bc-nav">
+      {NAV.map(({ href, label }) => (
+        <li>
+          <a
+            href={href}
+            class={`bc-nav-link${isCurrent(href) ? ' is-current' : ''}`}
+            aria-current={isCurrent(href) ? 'page' : undefined}
+          >{label}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+</header>

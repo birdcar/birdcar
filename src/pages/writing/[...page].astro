@@ -1,0 +1,68 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import { getPublishedPosts, getAllTags } from '../../lib/posts';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getPublishedPosts();
+  return paginate(posts, { pageSize: 20 });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const tagCounts = await getAllTags();
+const topTags = [...tagCounts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 8)
+  .map(([tag]) => tag);
+const isFirstPage = page.currentPage === 1;
+---
+
+<Base
+  title="Writing — Birdcar"
+  description="Posts on consulting, the tools I build, and the stranger corners of being a solutions engineer."
+>
+  <div class="bc-page">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Writing</div>
+      <h1>Everything, so far.</h1>
+      <p class="bc-lede">
+        I write about consulting work, the tools I build, and the stranger
+        corners of being a solutions engineer. Filter by tag if you want only
+        one of those.
+      </p>
+    </header>
+
+    {isFirstPage && topTags.length > 0 && (
+      <div class="bc-filterbar" aria-label="Filter posts by tag">
+        <a href="/writing/" class="bc-filter is-active">all</a>
+        {topTags.map(t => (
+          <a href={`/tags/${t}/`} class="bc-filter">{t}</a>
+        ))}
+      </div>
+    )}
+
+    <ul class="bc-postlist">
+      {page.data.map(p => {
+        const dateIso = p.data.date.toISOString().slice(0, 10);
+        const tag = p.allTags[0] ?? '';
+        return (
+          <li>
+            <a href={`/writing/${p.id}/`} class="bc-post-row">
+              <span class="bc-post-date">{dateIso}</span>
+              <span class="bc-post-title">{p.data.title}</span>
+              <span class="bc-post-tag">{tag}</span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+
+    {(page.url.prev || page.url.next) && (
+      <nav class="bc-pagination" aria-label="Pagination">
+        {page.url.prev ? <a href={page.url.prev}>← Newer</a> : <span></span>}
+        <span>Page {page.currentPage} of {page.lastPage}</span>
+        {page.url.next ? <a href={page.url.next}>Older →</a> : <span></span>}
+      </nav>
+    )}
+  </div>
+</Base>

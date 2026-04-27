@@ -1,24 +1,146 @@
 ---
 import Base from '../layouts/Base.astro';
-import { PostList } from '../components/PostCard';
 import { getPublishedPosts } from '../lib/posts';
 
 const posts = await getPublishedPosts();
 const recentPosts = posts.slice(0, 5);
----
-<Base title="birdcar" description="Developer blog by birdcar. Writing about software, systems, and the craft of building things.">
-  <section class="hero">
-    <p class="hero__eyebrow">developer blog</p>
-    <h1 class="hero__title" data-hero-variant="flagship">Building software,<br /><em>writing about it.</em></h1>
-    <p class="hero__description">
-      Thoughts on software engineering, systems design, and the tools
-      that make it all work. Written in Birdcar Flavored Markdown, naturally.
-    </p>
-  </section>
 
-  <section>
-    <h2 class="section-heading">Lately</h2>
-    <PostList client:load posts={recentPosts} />
-    <a href="/blog/" class="view-all">All posts <span aria-hidden="true">&rarr;</span></a>
-  </section>
+const CLIENT_TYPES = [
+  'CPA firms',
+  'Mortgage brokers',
+  'Realtors',
+  'Property mgmt',
+  'Local agencies',
+];
+---
+
+<Base
+  title="Birdcar — internal tools and automations for small businesses in Fort Worth"
+  description="Nick Cannariato builds internal tools and automations for small businesses in Fort Worth. Project-based, 4–12 weeks, fixed scope."
+>
+  <div class="bc-page-home">
+    <section class="bc-hero">
+      <div class="bc-hero-grid">
+        <div class="bc-hero-text">
+          <h1 class="bc-display">
+            I build internal tools and automations for small businesses in Fort Worth.
+          </h1>
+          <p class="bc-lede">
+            I'm Nick Cannariato. By day I'm a solutions engineer at <a href="https://workos.com" target="_blank" rel="noopener">WorkOS</a>.
+            On the side I take on a small number of consulting projects for local
+            firms — usually CPAs, mortgage brokers, realtors, and operators in the
+            $1–20M range — building the kind of internal tools that turn a wall of
+            sticky notes into a single review queue.
+          </p>
+          <div class="bc-trust-strip">
+            <span class="bc-trust-label">I work with</span>
+            <span class="bc-trust-tags">
+              {CLIENT_TYPES.map((c, i) => (
+                <>
+                  {i > 0 && <span class="bc-trust-sep">·</span>}
+                  <span>{c}</span>
+                </>
+              ))}
+            </span>
+          </div>
+        </div>
+        <aside class="bc-hero-aside">
+          <div class="bc-portrait">
+            <div class="bc-portrait-frame">
+              <div class="bc-portrait-fallback" aria-hidden="true">
+                <span class="bc-portrait-initials">NC</span>
+              </div>
+              <img
+                src="https://github.com/birdcar.png"
+                alt="Nick Cannariato"
+                class="bc-portrait-img"
+                loading="lazy"
+                width="112"
+                height="140"
+              />
+            </div>
+            <div class="bc-portrait-cap">Nick Cannariato · Fort Worth, TX</div>
+            <div class="bc-portrait-links">
+              <a href="https://github.com/birdcar" target="_blank" rel="noopener">GitHub</a>
+              <span aria-hidden="true">·</span>
+              <a href="/rss.xml">RSS</a>
+            </div>
+          </div>
+          <div class="bc-now">
+            <div class="bc-now-label">Now</div>
+            <p>Solutions engineering at WorkOS. Writing here when something's worth writing.</p>
+            <div class="bc-now-stamp">Updated {new Date().toISOString().slice(0, 10)}</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <hr class="bc-hr" />
+
+    <section class="bc-section">
+      <h2>How I work with clients</h2>
+      <div class="bc-twocol">
+        <div>
+          <p class="bc-body">
+            Project-based. Four to twelve weeks. Fixed scope, fixed price. I write
+            the proposal; you approve it; I build the thing.
+          </p>
+          <p class="bc-body">
+            Most engagements start with a paid two-week discovery — I sit with
+            your team, learn the actual workflow, and write a short document
+            describing what I'd build and what it would cost. If the numbers
+            don't work, we stop there and you keep the document.
+          </p>
+        </div>
+        <div class="bc-aside-table">
+          <div class="bc-aside-row"><span class="bc-mono">Engagement</span><span>Project, fixed price</span></div>
+          <div class="bc-aside-row"><span class="bc-mono">Length</span><span>4–12 weeks</span></div>
+          <div class="bc-aside-row"><span class="bc-mono">Discovery</span><span>2 weeks, paid</span></div>
+          <div class="bc-aside-row"><span class="bc-mono">Capacity</span><span>~3 clients / year</span></div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="bc-hr" />
+
+    <section class="bc-section">
+      <div class="bc-section-head">
+        <h2>Recent writing</h2>
+        <a href="/writing/" class="bc-link-arrow">All writing ↗</a>
+      </div>
+      {recentPosts.length === 0 ? (
+        <p class="muted">No posts yet.</p>
+      ) : (
+        <ul class="bc-postlist">
+          {recentPosts.map(p => {
+            const dateIso = p.data.date.toISOString().slice(0, 10);
+            const tag = p.allTags[0] ?? '';
+            return (
+              <li>
+                <a href={`/writing/${p.id}/`} class="bc-post-row">
+                  <span class="bc-post-date">{dateIso}</span>
+                  <span class="bc-post-title">{p.data.title}</span>
+                  <span class="bc-post-tag">{tag}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+
+    <hr class="bc-hr" />
+
+    <section class="bc-section bc-cta">
+      <h2>Working on something?</h2>
+      <p class="bc-body">
+        If you've got a workflow that's mostly held together with spreadsheets
+        and goodwill, I'd like to hear about it. Email is the best way to reach me.
+      </p>
+      <div class="bc-cta-row">
+        <a href="/contact/" class="bc-btn bc-btn-primary">Email me</a>
+        <a href="/work/" class="bc-btn bc-btn-secondary">See the kinds of things I build</a>
+      </div>
+    </section>
+  </div>
 </Base>

@@ -1,9 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
-import { PostList } from '../../components/PostCard';
-import TagList from '../../components/TagList.astro';
-import { getPublishedPosts, getAllTags } from '../../lib/posts';
+import { getPublishedPosts } from '../../lib/posts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPublishedPosts();
@@ -18,31 +16,35 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { tag, posts } = Astro.props;
-const tagCounts = await getAllTags();
-const topTags = [...tagCounts.entries()]
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 8)
-  .map(([t]) => t);
-const activeInTop = topTags.includes(tag);
-const displayTags = activeInTop ? topTags : [tag, ...topTags].slice(0, 8);
 ---
-<Base title={`#${tag} — birdcar`} description={`Posts tagged with #${tag}.`}>
-  <section class="hero">
-    <p class="hero__eyebrow">tagged</p>
-    <h1 class="hero__title" data-hero-variant="box"><em>#{tag}</em></h1>
-  </section>
 
-  <section class="tag-filter tag-filter--detail" aria-label="Browse other topics">
-    <p class="tag-filter__label">
-      Filtering by <strong>#{tag}</strong> · {posts.length} post{posts.length === 1 ? '' : 's'} · <a href="/blog/" class="tag-filter__clear">clear</a>
-    </p>
-    <TagList tags={displayTags} activeTag={tag} />
-  </section>
+<Base
+  title={`#${tag} — Birdcar`}
+  description={`Posts tagged with #${tag}.`}
+>
+  <div class="bc-page">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">tagged · {posts.length} post{posts.length === 1 ? '' : 's'}</div>
+      <h1>#{tag}</h1>
+      <p class="bc-lede">
+        Posts filed under <code>{tag}</code>. <a href="/writing/">All writing →</a>
+      </p>
+    </header>
 
-  <PostList client:load posts={posts} />
-
-  <nav class="tag-breadcrumbs" aria-label="Tag navigation">
-    <a href="/blog/" class="tag-breadcrumbs__link"><span aria-hidden="true">&larr;</span> All posts</a>
-    <a href="/tags/" class="tag-breadcrumbs__link">All tags</a>
-  </nav>
+    <ul class="bc-postlist">
+      {posts.map(p => {
+        const dateIso = p.data.date.toISOString().slice(0, 10);
+        const primary = p.allTags[0] ?? tag;
+        return (
+          <li>
+            <a href={`/writing/${p.id}/`} class="bc-post-row">
+              <span class="bc-post-date">{dateIso}</span>
+              <span class="bc-post-title">{p.data.title}</span>
+              <span class="bc-post-tag">{primary}</span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
 </Base>

@@ -7,239 +7,41 @@ import { join } from 'node:path';
 
 const FONTS_DIR = join(process.cwd(), 'src', 'assets', 'fonts');
 
-let fontCache: { archivo: Buffer; literata: Buffer } | null = null;
+let fontCache: { serif: Buffer; serifBold: Buffer; mono: Buffer } | null = null;
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const [archivo, literata] = await Promise.all([
-    readFile(join(FONTS_DIR, 'Archivo-Bold.ttf')),
-    readFile(join(FONTS_DIR, 'Literata-Regular.ttf')),
+  const [serif, serifBold, mono] = await Promise.all([
+    readFile(join(FONTS_DIR, 'SourceSerif4-Regular.ttf')),
+    readFile(join(FONTS_DIR, 'SourceSerif4-Bold.ttf')),
+    readFile(join(FONTS_DIR, 'JetBrainsMono-Regular.ttf')),
   ]);
-  fontCache = { archivo, literata };
+  fontCache = { serif, serifBold, mono };
   return fontCache;
 }
 
-// Catppuccin Mocha palette
 const colors = {
-  base: '#1e1e2e',
-  mantle: '#181825',
-  surface0: '#313244',
-  surface1: '#45475a',
-  surface2: '#585b70',
-  text: '#cdd6f4',
-  subtext1: '#bac2de',
-  overlay1: '#7f849c',
-  sapphire: '#74c7ec',
-  blue: '#89b4fa',
-  lavender: '#b4befe',
-  mauve: '#cba6f7',
-  pink: '#f5c2e7',
-  flamingo: '#f2cdcd',
-  teal: '#94e2d5',
-  green: '#a6e3a1',
-  peach: '#fab387',
-  yellow: '#f9e2af',
+  paper: '#F7F3EC',
+  ink: '#1A1814',
+  ink2: '#4A453D',
+  ink3: '#7A7368',
+  rule: '#D9D1BE',
+  clay: '#B8442B',
 };
 
-function dot(x: number, y: number, r: number, color: string, opacity: number): any {
-  return {
-    type: 'div',
-    props: {
-      style: {
-        position: 'absolute',
-        left: x - r,
-        top: y - r,
-        width: r * 2,
-        height: r * 2,
-        borderRadius: '50%',
-        backgroundColor: color,
-        opacity,
-      },
-      children: '',
-    },
-  };
-}
-
-function line(x: number, y: number, width: number, height: number, opacity: number): any {
-  return {
-    type: 'div',
-    props: {
-      style: {
-        position: 'absolute',
-        left: x,
-        top: y,
-        width,
-        height,
-        backgroundColor: colors.surface2,
-        opacity,
-      },
-      children: '',
-    },
-  };
-}
-
-function cross(x: number, y: number, size: number, opacity: number): any[] {
-  return [
-    {
-      type: 'div',
-      props: {
-        style: {
-          position: 'absolute',
-          left: x - size / 2,
-          top: y,
-          width: size,
-          height: 1,
-          backgroundColor: colors.overlay1,
-          opacity,
-          transform: 'rotate(45deg)',
-        },
-        children: '',
-      },
-    },
-    {
-      type: 'div',
-      props: {
-        style: {
-          position: 'absolute',
-          left: x - size / 2,
-          top: y,
-          width: size,
-          height: 1,
-          backgroundColor: colors.overlay1,
-          opacity,
-          transform: 'rotate(-45deg)',
-        },
-        children: '',
-      },
-    },
-  ];
-}
-
-function dotGrid(): any[] {
-  const dots: any[] = [];
-  const spacing = 32;
-  for (let x = 0; x < 1200; x += spacing) {
-    for (let y = 0; y < 630; y += spacing) {
-      dots.push({
-        type: 'div',
-        props: {
-          style: {
-            position: 'absolute',
-            left: x,
-            top: y,
-            width: 2,
-            height: 2,
-            borderRadius: '50%',
-            backgroundColor: colors.surface1,
-            opacity: 0.3,
-          },
-          children: '',
-        },
-      });
-    }
-  }
-  return dots;
-}
-
-function ogTemplate(title: string, description?: string) {
-  const decorations: any[] = [
-    ...dotGrid(),
-
-    // Scattered colored dots
-    dot(75, 42, 5, colors.mauve, 0.3),
-    dot(1050, 63, 6, colors.teal, 0.25),
-    dot(300, 21, 4, colors.lavender, 0.3),
-    dot(720, 37, 5, colors.pink, 0.25),
-    dot(930, 16, 4, colors.peach, 0.2),
-    dot(150, 147, 6, colors.blue, 0.2),
-    dot(525, 126, 6, colors.green, 0.2),
-    dot(825, 168, 5, colors.mauve, 0.2),
-    dot(1125, 137, 4, colors.teal, 0.15),
-    dot(120, 294, 8, colors.blue, 0.15),
-    dot(960, 315, 5, colors.pink, 0.15),
-    dot(450, 357, 6, colors.peach, 0.12),
-    dot(1110, 368, 5, colors.lavender, 0.1),
-    dot(225, 441, 4, colors.green, 0.1),
-    dot(750, 473, 5, colors.mauve, 0.08),
-
-    // Geometric lines
-    line(45, 105, 75, 1, 0.3),
-    line(1020, 126, 120, 1, 0.2),
-    line(90, 231, 1, 50, 0.2),
-    line(600, 84, 75, 1, 0.2),
-    line(375, 210, 60, 1, 0.15),
-    line(900, 263, 1, 50, 0.12),
-
-    // Cross marks
-    ...cross(1090, 35, 14, 0.2),
-    ...cross(50, 178, 14, 0.15),
-    ...cross(680, 275, 14, 0.12),
-    ...cross(300, 400, 14, 0.1),
-  ];
-
-  const textContent: any[] = [
-    {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          fontFamily: 'Literata',
-          fontWeight: 400,
-          fontSize: 16,
-          color: colors.sapphire,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
-        },
-        children: 'birdcar.dev',
-      },
-    },
-    {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          fontFamily: 'Archivo',
-          fontWeight: 700,
-          fontSize: 64,
-          color: colors.text,
-          lineHeight: 1.05,
-          letterSpacing: '-0.03em',
-          marginTop: 16,
-        },
-        children: title,
-      },
-    },
-  ];
-
-  if (description) {
-    textContent.push({
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          fontFamily: 'Literata',
-          fontWeight: 400,
-          fontSize: 26,
-          color: colors.subtext1,
-          marginTop: 24,
-          lineHeight: 1.5,
-        },
-        children: description,
-      },
-    });
-  }
-
+function ogTemplate(title: string, slug: string, tag?: string): any {
+  const eyebrow = (tag || 'writing').toUpperCase();
   return {
     type: 'div',
     props: {
       style: {
         display: 'flex',
         flexDirection: 'column',
-        position: 'relative',
         width: 1200,
         height: 630,
-        backgroundColor: colors.base,
-        overflow: 'hidden',
+        backgroundColor: colors.paper,
+        position: 'relative',
+        fontFamily: 'SourceSerif4',
       },
       children: [
         {
@@ -247,27 +49,97 @@ function ogTemplate(title: string, description?: string) {
           props: {
             style: {
               display: 'flex',
-              width: '100%',
-              height: 6,
-              background: `linear-gradient(135deg, ${colors.sapphire}, ${colors.mauve}, ${colors.pink})`,
+              flexDirection: 'column',
+              flex: 1,
+              padding: '80px 80px 0 80px',
+              justifyContent: 'center',
             },
-            children: '',
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'JetBrainsMono',
+                    fontWeight: 400,
+                    fontSize: 18,
+                    color: colors.clay,
+                    letterSpacing: 4,
+                    marginBottom: 28,
+                  },
+                  children: eyebrow,
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'SourceSerif4',
+                    fontWeight: 700,
+                    fontSize: title.length > 60 ? 64 : 76,
+                    lineHeight: 1.05,
+                    letterSpacing: '-0.025em',
+                    color: colors.ink,
+                    maxWidth: 1040,
+                  },
+                  children: title,
+                },
+              },
+            ],
           },
         },
-        ...decorations,
         {
           type: 'div',
           props: {
             style: {
               display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              flex: 1,
-              padding: '60px 80px 60px 80px',
-              position: 'relative',
-              zIndex: 1,
+              height: 1,
+              backgroundColor: colors.rule,
+              margin: '0 80px',
             },
-            children: textContent,
+            children: '',
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              height: 80,
+              padding: '0 80px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'SourceSerif4',
+                    fontWeight: 700,
+                    fontSize: 32,
+                    color: colors.ink,
+                    letterSpacing: '-0.015em',
+                  },
+                  children: 'Birdcar',
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'JetBrainsMono',
+                    fontWeight: 400,
+                    fontSize: 14,
+                    color: colors.ink3,
+                  },
+                  children: `birdcar.dev/writing/${slug}`,
+                },
+              },
+            ],
           },
         },
       ],
@@ -283,27 +155,32 @@ export const getStaticPaths: GetStaticPaths = async () => {
   });
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { title: post.data.title, description: post.data.description },
+    props: {
+      title: post.data.title,
+      slug: post.id,
+      tag: post.data.tags?.[0],
+    },
   }));
 };
 
 export const GET: APIRoute = async ({ props }) => {
-  const { title, description } = props as { title: string; description?: string };
+  const { title, slug, tag } = props as { title: string; slug: string; tag?: string };
   const fonts = await loadFonts();
 
-  const svg = await satori(ogTemplate(title, description), {
+  const svg = await satori(ogTemplate(title, slug, tag), {
     width: 1200,
     height: 630,
     fonts: [
-      { name: 'Archivo', data: fonts.archivo, weight: 700, style: 'normal' },
-      { name: 'Literata', data: fonts.literata, weight: 400, style: 'normal' },
+      { name: 'SourceSerif4', data: fonts.serif, weight: 400, style: 'normal' },
+      { name: 'SourceSerif4', data: fonts.serifBold, weight: 700, style: 'normal' },
+      { name: 'JetBrainsMono', data: fonts.mono, weight: 400, style: 'normal' },
     ],
   });
 
   const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
   const png = resvg.render().asPng();
 
-  return new Response(png, {
+  return new Response(png as unknown as BodyInit, {
     headers: { 'Content-Type': 'image/png' },
   });
 };

@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Contact — Birdcar"
+  description="Email is the best way to reach me. hi@birdcar.dev."
+>
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Contact</div>
+      <h1>Email is the best way.</h1>
+    </header>
+
+    <div class="bc-prose">
+      <p class="bc-lede">
+        The fastest way to reach me is <a href="mailto:hi@birdcar.dev">hi@birdcar.dev</a>.
+        I read everything and reply within a few business days.
+      </p>
+      <p>
+        If you'd rather use a form, this one goes to the same inbox. Tell me a
+        paragraph or two about what's slow. The more specific you are, the more
+        useful my reply will be.
+      </p>
+    </div>
+
+    <form class="bc-form" method="post" action="mailto:hi@birdcar.dev" enctype="text/plain">
+      <div class="bc-field-row">
+        <label class="bc-field">
+          <span class="bc-field-label">Your name</span>
+          <input type="text" name="name" required />
+        </label>
+        <label class="bc-field">
+          <span class="bc-field-label">Email</span>
+          <input type="email" name="email" required />
+        </label>
+      </div>
+      <label class="bc-field">
+        <span class="bc-field-label">What are you trying to fix?</span>
+        <textarea name="message" rows="5" required></textarea>
+      </label>
+      <div class="bc-form-actions">
+        <button type="submit" class="bc-btn bc-btn-primary">Send</button>
+        <span class="bc-form-or">or just email <a href="mailto:hi@birdcar.dev">hi@birdcar.dev</a></span>
+      </div>
+    </form>
+  </div>
+</Base>

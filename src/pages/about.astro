@@ -1,95 +1,73 @@
 ---
 import Base from '../layouts/Base.astro';
-import HeroDecoration from '../components/HeroDecoration.astro';
 ---
-<Base title="About — birdcar" description="About birdcar, the developer behind this blog.">
-  <section class="hero" style="position: relative;">
-    <HeroDecoration />
-    <p class="hero__eyebrow">about</p>
-    <h1 class="hero__title" data-hero-variant="circle">Hi, I'm <em>birdcar.</em></h1>
-  </section>
 
-  <div class="about-content">
-    <div class="about-profile">
-      <img
-        src="https://github.com/birdcar.png"
-        alt="A human with a beard, on a cliff, pretending he knows what he's doing"
-        class="about-profile__image"
-        width="160"
-        height="160"
-        loading="eager"
-      />
-    </div>
-    <p>
-      I'm a software engineer who cares about building systems that are
-      well-crafted, maintainable, and thoughtful. This blog is where I write
-      about the things I learn along the way.
-    </p>
-    <p>
-      This site is built with <a href="https://astro.build">Astro</a> and
-      rendered using <a href="https://github.com/birdcar/markdown-spec">Birdcar Flavored Markdown</a>,
-      a superset of CommonMark with directives, extended task lists, mentions,
-      hashtags, and more.
-    </p>
+<Base
+  title="About — Birdcar"
+  description="A short, honest version. I'm Nick Cannariato. Birdcar is a nickname I've had for long enough that it's the name on my email."
+>
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">About</div>
+      <h1>A short, honest version.</h1>
+    </header>
 
-    <section class="about-currently" aria-labelledby="about-currently-heading">
-      <p class="about-currently__eyebrow">currently into</p>
-      <h2 id="about-currently-heading" class="about-currently__heading">The setup, the vibe.</h2>
-      <ul class="about-currently__list">
-        <li>
-          <span class="about-currently__label">Editor</span>
-          <span class="about-currently__value">Neovim, with <a href="https://github.com/birdcar/bfm.nvim">bfm.nvim</a> because I wrote the grammar and I use the grammar</span>
-        </li>
-        <li>
-          <span class="about-currently__label">Writing stack</span>
-          <span class="about-currently__value">Astro, BFM, Catppuccin Mocha at night, Latte during the day, the machine decides</span>
-        </li>
-        <li>
-          <span class="about-currently__label">Preferred beverage</span>
-          <span class="about-currently__value">Coffee, black, reheated once more than is reasonable</span>
-        </li>
-        <li>
-          <span class="about-currently__label">Currently learning</span>
-          <span class="about-currently__value">How to write something I'm still proud of three months later</span>
-        </li>
-      </ul>
-    </section>
-
-    <section class="about-elsewhere" aria-labelledby="about-elsewhere-heading">
-      <p class="about-elsewhere__eyebrow">where else</p>
-      <h2 id="about-elsewhere-heading" class="about-elsewhere__heading">Not on social. Sorry.</h2>
-      <p class="about-elsewhere__body">
-        I post here, the feed catches everything. Code's on GitHub. If you actually need to reach me, the tools I build have repos with an issues tab — open one and say hi.
+    <div class="bc-prose">
+      <p>
+        I'm Nick Cannariato. Birdcar is a nickname I've been called for long
+        enough that it's the name on my email, my domain, and most things I sign.
       </p>
-      <div class="about-elsewhere__actions">
-        <a href="https://github.com/birdcar" target="_blank" rel="noopener noreferrer" class="about-elsewhere__action">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-            <path d="M9 18c-4.51 2-5-2-7-2" />
-          </svg>
-          <span>GitHub</span>
-        </a>
-        <a href="/rss.xml" class="about-elsewhere__action about-elsewhere__action--primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 11a9 9 0 0 1 9 9" />
-            <path d="M4 4a16 16 0 0 1 16 16" />
-            <circle cx="5" cy="19" r="1" />
-          </svg>
-          <span>RSS</span>
-        </a>
-      </div>
-    </section>
+      <p>
+        I'm a solutions engineer at <a href="https://workos.com" target="_blank" rel="noopener">WorkOS</a>.
+        The job is real engineering — I write code, file PRs, and own a corner of
+        the product — but my title has "support" in it on purpose. I like sitting
+        next to the customer's problem. The best engineers I know all spent some
+        time there.
+      </p>
+      <p>
+        On the side, I take on a small number of consulting projects for
+        businesses in and around Fort Worth. The practice is new — I'm being
+        deliberately slow about it. Most of my clients are CPAs, mortgage brokers,
+        realtors, or operators running businesses between one and twenty million
+        in revenue. They have spreadsheets that have gotten too important to be
+        spreadsheets. I build the thing that replaces the spreadsheet.
+      </p>
+
+      <h2>What I care about</h2>
+      <p>
+        I care about software that respects the person using it. Most
+        small-business software is sold by salespeople to people who don't have
+        time to evaluate it. The result is usually fine and rarely good. I think
+        a careful person, working closely with the team that will actually use
+        the tool, can do much better in eight weeks than a procurement process
+        can do in eight months.
+      </p>
+      <p>
+        I write at <a href="/writing/">birdcar.dev/writing</a>. I'm, against my
+        better judgment, on LinkedIn.
+      </p>
+
+      <h2>Where I am</h2>
+      <p>Fort Worth, Texas. Central time. I take meetings in person if you're nearby.</p>
+
+      <h2>The setup</h2>
+      <ul>
+        <li><strong>Editor.</strong> Neovim, with <a href="https://github.com/birdcar/bfm.nvim">bfm.nvim</a> because I wrote the grammar and I use the grammar.</li>
+        <li><strong>Writing stack.</strong> Astro and <a href="https://github.com/birdcar/markdown-spec">Birdcar Flavored Markdown</a>. The site is plain HTML once it's built.</li>
+        <li><strong>Coffee.</strong> Black, reheated once more than is reasonable.</li>
+        <li><strong>Currently learning.</strong> How to write something I'm still proud of three months later.</li>
+      </ul>
+    </div>
   </div>
 
   <script is:inline>
-    // Hi, dev. If you're reading this, thanks for poking around.
     console.log(
       "%cbirdcar.dev",
-      "font: 600 18px/1 'JetBrains Mono', monospace; color: #74c7ec; padding: 8px 0;",
+      "font: 600 18px/1 'JetBrains Mono', monospace; color: #B8442B; padding: 8px 0;",
     );
     console.log(
       "%cnice of you to check. the feed is at /rss.xml. code is at github.com/birdcar.",
-      "font: 12px/1.4 'JetBrains Mono', monospace; color: #a6adc8;",
+      "font: 12px/1.4 'JetBrains Mono', monospace; color: #7A7368;",
     );
   </script>
 </Base>

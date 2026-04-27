@@ -13,15 +13,16 @@ export async function GET(context: APIContext) {
         title: post.data.title,
         pubDate: post.data.date,
         description: post.data.description ?? '',
-        link: `/blog/${post.id}/`,
+        link: `/writing/${post.id}/`,
         content: html,
       };
     })
   );
 
   return rss({
-    title: 'birdcar',
-    description: 'Developer blog by Nick Cannariato. Writing about software, systems, and the craft of building things.',
+    title: 'Birdcar',
+    description:
+      "Nick Cannariato's writing on internal tools, consulting, solutions engineering, and the small stuff.",
     site: context.site!,
     items,
     xmlns: {
