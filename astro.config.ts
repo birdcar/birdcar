@@ -10,6 +10,8 @@ import { rehypeBfmMath } from './src/lib/rehype/math';
 import { rehypeBfmInclude } from './src/lib/rehype/include';
 import { rehypeBfmQuery } from './src/lib/rehype/query';
 import { rehypeBfmEmbed } from './src/lib/rehype/embed';
+import { rehypeBfmFigureSrc } from './src/lib/rehype/figure-src';
+import { rehypeBfmChart } from './src/lib/rehype/chart';
 import { createBlogQueryResolver } from './src/lib/rehype/query-resolver';
 import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 
@@ -33,6 +35,8 @@ export default defineConfig({
       rehypeBfmMath,
       [rehypeBfmInclude, { basePath: process.cwd() }],
       [rehypeBfmQuery, { resolver: createBlogQueryResolver(process.cwd() + '/src/content') }],
+      [rehypeBfmFigureSrc, { basePath: process.cwd() }],
+      [rehypeBfmChart, { basePath: process.cwd() }],
       rehypeBfmEmbed,
       ...(process.env.CDN_BASE_URL
         ? [[rehypeImageCdn, { cdnBaseUrl: process.env.CDN_BASE_URL }]]

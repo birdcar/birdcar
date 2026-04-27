@@ -36,6 +36,9 @@ I ask Claude Code to build something. It builds it. The output looks reasonable.
 
 The 52 loops break down roughly like this: about 20 were genuine logic errors where the generated code did the wrong thing. About 15 were integration failures where the code worked in isolation but broke when connected to real systems, databases, APIs, authentication layers. About 10 were subtle specification mismatches where Claude Code built what I asked for instead of what I meant. The rest were edge cases that nobody would catch without production traffic.
 
+@figure kind=chart type=bar src=./data/bug-fix-loops.json width=wide caption="Most loops were logic and integration failures, not edge cases."
+@endfigure
+
 None of these are surprising. They're the same bugs humans write. The difference is in the *feeling*. When I write a bug myself, I have a mental model of the code that includes the bug. I know what I was thinking when I wrote it, so I can reason about where the thinking went wrong. When Claude Code writes a bug, I don't have that mental model. I have to build it retroactively, reading code I didn't write to understand decisions I didn't make. That's closer to debugging a colleague's code than debugging your own, and it requires a different set of skills.
 
 ## The gap in the mental model
@@ -51,6 +54,10 @@ My dozens of scope-expansion follow-ups tell the same story from a different ang
 ## What the numbers actually show
 
 If I'm honest about what six months of data tells me, it's this: AI coding assistants make the easy parts trivially easy and leave the hard parts exactly as hard as they were.
+
+@callout type=key
+The generation step got faster. The verification step expanded to fill the time the generation step saved. The total time per feature didn't move much; the bottleneck did.
+@endcallout
 
 Scaffolding a project? Trivial. Generating boilerplate? Instant. Writing tests for well-defined functions? Handled. Converting a Python script to TypeScript? Fifteen minutes, and honestly pretty good. These are the tasks that take time but don't take *thought*, and the AI eats them for breakfast.
 

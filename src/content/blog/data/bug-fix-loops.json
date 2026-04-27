@@ -1,0 +1,12 @@
+{
+  "x": "category",
+  "series": [
+    { "key": "count", "label": "loops" }
+  ],
+  "data": [
+    { "category": "logic",       "count": 20 },
+    { "category": "integration", "count": 15 },
+    { "category": "spec",        "count": 10 },
+    { "category": "edge cases",  "count": 7  }
+  ]
+}

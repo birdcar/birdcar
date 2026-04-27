@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <!-- Boxes -->
+  <g font-family="JetBrains Mono, monospace" font-size="12" fill="#1A1814">
+    <rect x="20"  y="70" width="120" height="60" fill="#EFE9DD" stroke="#1A1814" stroke-width="1.5" rx="2" />
+    <text x="80"  y="105" text-anchor="middle">.md source</text>
+
+    <rect x="180" y="70" width="120" height="60" fill="#EFE9DD" stroke="#1A1814" stroke-width="1.5" rx="2" />
+    <text x="240" y="100" text-anchor="middle">remark</text>
+    <text x="240" y="116" text-anchor="middle" font-size="10" fill="#7A7368">@directives</text>
+
+    <rect x="340" y="70" width="120" height="60" fill="#EFE9DD" stroke="#B8442B" stroke-width="2.5" rx="2" />
+    <text x="400" y="100" text-anchor="middle" fill="#B8442B">rehype</text>
+    <text x="400" y="116" text-anchor="middle" font-size="10" fill="#7A7368">resolve src,</text>
+
+    <rect x="500" y="70" width="80"  height="60" fill="#1A1814" rx="2" />
+    <text x="540" y="105" text-anchor="middle" fill="#F7F3EC">html</text>
+  </g>
+
+  <!-- Arrows -->
+  <g stroke="#1A1814" stroke-width="1.5" fill="#1A1814">
+    <line x1="140" y1="100" x2="170" y2="100" />
+    <polygon points="170,100 165,97 165,103" />
+    <line x1="300" y1="100" x2="330" y2="100" />
+    <polygon points="330,100 325,97 325,103" />
+    <line x1="460" y1="100" x2="490" y2="100" />
+    <polygon points="490,100 485,97 485,103" />
+  </g>
+</svg>

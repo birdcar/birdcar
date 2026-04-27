@@ -10,6 +10,9 @@ draft: false
 
 I keep a file called `history.jsonl` on my laptop. I didn't put it there. Claude Code did, logging every prompt I've sent since October. The other day I counted the lines: 3,976. Six months, almost four thousand requests, across a dozen projects and at least five programming languages. That's roughly 23 prompts per day if you average it, though [averages lie](/writing/your-metrics-are-bullshit/), and I should know better than to trust them.
 
+@figure kind=chart type=line src=./data/six-months-prompts.json width=wide caption="Monthly prompt count, October through March."
+@endfigure
+
 I wasn't looking for this file. I was looking for something else entirely, the way you find an old journal in a drawer when you're hunting for a screwdriver. But once I started reading, I couldn't stop. Not because the prompts were interesting on their own. Most of them are mundane. But the *shape* of them, the way they change from October to March, told a story I hadn't noticed while I was living it.
 
 ## The long-message era

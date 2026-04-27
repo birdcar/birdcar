@@ -84,11 +84,17 @@ export function directiveBlock(state: any, node: DirectiveBlockNode) {
     const caption = paramString(node, 'caption');
     const width = paramString(node, 'width') || 'prose';
     const kind = paramString(node, 'kind');
+    const src = paramString(node, 'src');
+    const alt = paramString(node, 'alt');
+    const chartType = paramString(node, 'type');
     const props: Record<string, unknown> = {
       class: 'bfm-figure',
       'data-width': width,
     };
     if (kind) props['data-kind'] = kind;
+    if (src) props['data-src'] = src;
+    if (alt) props['data-alt'] = alt;
+    if (chartType) props['data-type'] = chartType;
     const children: unknown[] = [...childNodes];
     if (caption) {
       children.push({
