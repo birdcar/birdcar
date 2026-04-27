@@ -8,7 +8,7 @@ tags:
 draft: false
 ---
 
-I keep a file called `history.jsonl` on my laptop. I didn't put it there. Claude Code did, logging every prompt I've sent since October. The other day I counted the lines: 3,976. Six months, almost four thousand requests, across a dozen projects and at least five programming languages. That's roughly 23 prompts per day if you average it, though [averages lie](/blog/your-metrics-are-bullshit/), and I should know better than to trust them.
+I keep a file called `history.jsonl` on my laptop. I didn't put it there. Claude Code did, logging every prompt I've sent since October. The other day I counted the lines: 3,976. Six months, almost four thousand requests, across a dozen projects and at least five programming languages. That's roughly 23 prompts per day if you average it, though [averages lie](/writing/your-metrics-are-bullshit/), and I should know better than to trust them.
 
 I wasn't looking for this file. I was looking for something else entirely, the way you find an old journal in a drawer when you're hunting for a screwdriver. But once I started reading, I couldn't stop. Not because the prompts were interesting on their own. Most of them are mundane. But the *shape* of them, the way they change from October to March, told a story I hadn't noticed while I was living it.
 
@@ -26,7 +26,7 @@ Thirty-three prompts in October. Six in November. Then almost 200 in December an
 
 I don't remember making a conscious decision to change how I worked. That's what interests me about reading the history. The shift happened gradually, prompt by prompt, as I accumulated evidence that the tool could carry more weight. There wasn't a moment where I thought "okay, I trust this now." There was just a slow erosion of the hedging. I stopped specifying file paths for things it already knew about. I stopped explaining context it could infer. I started writing prompts that assumed a shared understanding we'd built over weeks.
 
-By January I'm building a [plugin ecosystem](/blog/the-tools-that-build-the-tools/). Custom skills, custom commands, custom hooks. I'm not asking Claude Code to help me do my work. I'm asking it to help me build tools that change how I do my work. That's a different relationship entirely.
+By January I'm building a [plugin ecosystem](/writing/the-tools-that-build-the-tools/). Custom skills, custom commands, custom hooks. I'm not asking Claude Code to help me do my work. I'm asking it to help me build tools that change how I do my work. That's a different relationship entirely.
 
 ## Trust encodes as brevity
 
@@ -52,7 +52,7 @@ I want to be honest about the parts I haven't figured out.
 
 I worry about the exploration I'm not doing. When I wrote code by hand, I stumbled into things. I'd be implementing a feature and notice an edge case, or discover a library function I didn't know existed, or realize the data model was wrong in a way that only became visible when I tried to wire things up. Some of my best architectural insights came from the friction of implementation. When you delegate the friction, do you lose the insights?
 
-I don't know. The history file is full of [bug-fix loops](/blog/your-ai-wrote-a-bug/), moments where Claude Code did the thing wrong and I had to dig in and course-correct. Those moments are still learning moments. But they're reactive, not exploratory. I'm finding bugs, not finding ideas.
+I don't know. The history file is full of [bug-fix loops](/writing/your-ai-wrote-a-bug/), moments where Claude Code did the thing wrong and I had to dig in and course-correct. Those moments are still learning moments. But they're reactive, not exploratory. I'm finding bugs, not finding ideas.
 
 There's also the language question. I've written meaningful code in Laravel, Next.js, Python, and Rust over these six months. That's a breadth I wouldn't have attempted without an AI assistant. But the depth is different. I can direct a Rust implementation. I can read one. Can I *think* in Rust? I'm not sure I can, and I'm not sure this tool is teaching me to. It's teaching me to think *about* Rust, which is useful but isn't the same thing.
 

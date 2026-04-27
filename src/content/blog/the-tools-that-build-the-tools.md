@@ -48,7 +48,7 @@ This is the part most people don't see. The productivity story around AI coding 
 
 I went back through my history and looked at prompts that were pure setup. Context-setting and convention-reminding prompts that didn't produce any artifact. They were 15-20% of my total prompts in October and November. By January, as I used Claude Code for more complex tasks, the percentage was climbing toward 25%. A quarter of my prompts were about telling the tool how to do its job, not about the job itself.
 
-This is the same pattern I've [written about in support organizations](/blog/your-metrics-are-bullshit/). The metric that looks good (prompts per day, tickets per hour) hides the metric that matters (what percentage of effort goes to the actual work versus the machinery around it). The volume goes up, and you feel productive, and the overhead goes up too, and you don't notice because you're busy feeling productive.
+This is the same pattern I've [written about in support organizations](/writing/your-metrics-are-bullshit/). The metric that looks good (prompts per day, tickets per hour) hides the metric that matters (what percentage of effort goes to the actual work versus the machinery around it). The volume goes up, and you feel productive, and the overhead goes up too, and you don't notice because you're busy feeling productive.
 
 ## What could be: the multiplier nobody's measuring
 

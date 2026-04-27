@@ -24,7 +24,7 @@ There's a narrative around AI coding assistants that goes something like this: d
 
 And it's true, in the same way that saying "a car goes 80 miles per hour" is true. It omits the traffic, the fuel stops, the wrong turns, the flat tire in New Mexico, and the hour you spent in a rest stop parking lot arguing with Google Maps. The destination speed is real. The journey speed is different.
 
-I've been [tracking my Claude Code usage](/blog/six-months-talking-to-a-machine/) for six months now. Buried in those almost four thousand prompts are 52 distinct bug-fix loops. Moments where Claude Code generated something, I accepted it, and then reality intervened. That's roughly one bug for every 75 prompts, or about two per week. Some were trivial. Some cost me hours.
+I've been [tracking my Claude Code usage](/writing/six-months-talking-to-a-machine/) for six months now. Buried in those almost four thousand prompts are 52 distinct bug-fix loops. Moments where Claude Code generated something, I accepted it, and then reality intervened. That's roughly one bug for every 75 prompts, or about two per week. Some were trivial. Some cost me hours.
 
 Let me stop telling you the productivity story. Let me tell you the bug story instead.
 
@@ -56,7 +56,7 @@ Scaffolding a project? Trivial. Generating boilerplate? Instant. Writing tests f
 
 Designing an architecture that will hold up under real usage? Exactly as hard. Catching the integration bug that only manifests when two subsystems interact under load? Harder, actually, because you have less intuition about code you didn't write. Knowing when the generated code is subtly wrong in a way the tests won't catch? That's a skill, and it's a new skill, and nobody's teaching it.
 
-The 10x claim measures the easy parts. "Look how fast I generated this CRUD API!" Yes, you did. The CRUD API was never the bottleneck. The bottleneck was understanding the domain well enough to know which CRUD operations your users actually need, and what happens when two of them run concurrently, and where the validation belongs, and which error messages are helpful versus which ones will [generate support tickets](/blog/your-metrics-are-bullshit/).
+The 10x claim measures the easy parts. "Look how fast I generated this CRUD API!" Yes, you did. The CRUD API was never the bottleneck. The bottleneck was understanding the domain well enough to know which CRUD operations your users actually need, and what happens when two of them run concurrently, and where the validation belongs, and which error messages are helpful versus which ones will [generate support tickets](/writing/your-metrics-are-bullshit/).
 
 Those questions didn't get easier. They got more important, because the AI removed all the other reasons to slow down and think.
 

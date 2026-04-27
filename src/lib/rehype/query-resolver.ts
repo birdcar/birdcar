@@ -21,7 +21,7 @@ export function createBlogQueryResolver(contentDir: string) {
       const slug = file.replace(/\.md$/, '');
       const entry: QueryResult = {
         title: frontmatter.title || slug,
-        url: `/blog/${slug}/`,
+        url: `/writing/${slug}/`,
         date: new Date(frontmatter.date || 0),
         tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
         description: frontmatter.description || undefined,
