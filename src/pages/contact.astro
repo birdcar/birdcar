@@ -1,5 +1,38 @@
 ---
+import { actions, isInputError } from 'astro:actions';
 import Base from '../layouts/Base.astro';
+
+export const prerender = false;
+
+const result = Astro.getActionResult(actions.contact.send);
+const delivered = result?.data?.delivered === true;
+
+let formError: string | null = null;
+const fieldErrors: Record<string, string | undefined> = {};
+
+if (result?.error) {
+  if (isInputError(result.error)) {
+    for (const [field, messages] of Object.entries(result.error.fields)) {
+      if (Array.isArray(messages) && messages.length > 0) {
+        fieldErrors[field] = messages[0];
+      }
+    }
+    formError = 'A couple of things to fix below.';
+  } else {
+    formError = result.error.message;
+  }
+}
+
+const submittedFields =
+  result && !delivered
+    ? ((result.error as { fields?: Record<string, unknown> } | undefined)?.fields ?? null)
+    : null;
+
+const initial = {
+  name: typeof submittedFields?.name === 'string' ? submittedFields.name : '',
+  email: typeof submittedFields?.email === 'string' ? submittedFields.email : '',
+  message: typeof submittedFields?.message === 'string' ? submittedFields.message : '',
+};
 ---
 
 <Base
@@ -24,25 +57,88 @@ import Base from '../layouts/Base.astro';
       </p>
     </div>
 
-    <form class="bc-form" method="post" action="mailto:hi@birdcar.dev" enctype="text/plain">
-      <div class="bc-field-row">
-        <label class="bc-field">
-          <span class="bc-field-label">Your name</span>
-          <input type="text" name="name" required />
-        </label>
-        <label class="bc-field">
-          <span class="bc-field-label">Email</span>
-          <input type="email" name="email" required />
-        </label>
+    {delivered ? (
+      <div class="bc-form-ok" role="status" aria-live="polite">
+        <div class="bc-mono-eyebrow">Sent</div>
+        <h2>Got it. I'll be in touch within a few business days.</h2>
+        <p class="bc-body">
+          If you don't hear back, email <a href="mailto:hi@birdcar.dev">hi@birdcar.dev</a> directly —
+          sometimes things get caught.
+        </p>
       </div>
-      <label class="bc-field">
-        <span class="bc-field-label">What are you trying to fix?</span>
-        <textarea name="message" rows="5" required></textarea>
-      </label>
-      <div class="bc-form-actions">
-        <button type="submit" class="bc-btn bc-btn-primary">Send</button>
-        <span class="bc-form-or">or just email <a href="mailto:hi@birdcar.dev">hi@birdcar.dev</a></span>
-      </div>
-    </form>
+    ) : (
+      <form class="bc-form" method="POST" action={actions.contact.send} data-contact-form>
+        {formError && (
+          <div class="bc-form-error" role="alert">{formError}</div>
+        )}
+        <div class="bc-field-row">
+          <label class="bc-field">
+            <span class="bc-field-label">Your name</span>
+            <input
+              type="text"
+              name="name"
+              required
+              autocomplete="name"
+              value={initial.name}
+              aria-invalid={fieldErrors.name ? 'true' : undefined}
+            />
+            {fieldErrors.name && (
+              <span class="bc-field-error">{fieldErrors.name}</span>
+            )}
+          </label>
+          <label class="bc-field">
+            <span class="bc-field-label">Email</span>
+            <input
+              type="email"
+              name="email"
+              required
+              autocomplete="email"
+              value={initial.email}
+              aria-invalid={fieldErrors.email ? 'true' : undefined}
+            />
+            {fieldErrors.email && (
+              <span class="bc-field-error">{fieldErrors.email}</span>
+            )}
+          </label>
+        </div>
+        <label class="bc-field">
+          <span class="bc-field-label">What are you trying to fix?</span>
+          <textarea
+            name="message"
+            rows="5"
+            required
+            aria-invalid={fieldErrors.message ? 'true' : undefined}
+            set:text={initial.message}
+          ></textarea>
+          {fieldErrors.message && (
+            <span class="bc-field-error">{fieldErrors.message}</span>
+          )}
+        </label>
+        <div class="bc-form-actions">
+          <button type="submit" class="bc-btn bc-btn-primary" data-submit>
+            <span data-submit-label>Send</span>
+            <span data-submit-pending hidden>Sending…</span>
+          </button>
+          <span class="bc-form-or">or just email <a href="mailto:hi@birdcar.dev">hi@birdcar.dev</a></span>
+        </div>
+      </form>
+    )}
   </div>
+
+  <script>
+    const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+    const submit = form?.querySelector<HTMLButtonElement>('[data-submit]');
+    const labelIdle = submit?.querySelector<HTMLElement>('[data-submit-label]');
+    const labelPending = submit?.querySelector<HTMLElement>('[data-submit-pending]');
+    if (form && submit && labelIdle && labelPending) {
+      form.addEventListener('submit', () => {
+        if (!form.checkValidity()) return;
+        submit.disabled = true;
+        submit.setAttribute('aria-busy', 'true');
+        form.setAttribute('aria-busy', 'true');
+        labelIdle.hidden = true;
+        labelPending.hidden = false;
+      });
+    }
+  </script>
 </Base>

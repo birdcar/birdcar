@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import cloudflare from '@astrojs/cloudflare';
 import { remarkBfmDirectives } from '@birdcar/markdown/directives';
 import { remarkBfmTasks } from '@birdcar/markdown/tasks';
 import { remarkBfmModifiers } from '@birdcar/markdown/modifiers';
@@ -20,6 +21,9 @@ import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 export default defineConfig({
   site: 'https://birdcar.dev',
   output: 'static',
+  adapter: cloudflare({
+    imageService: 'compile',
+  }),
   integrations: [sitemap()],
   markdown: {
     remarkPlugins: [
@@ -56,6 +60,11 @@ export default defineConfig({
       fs: {
         strict: false,
       },
+    },
+    ssr: {
+      // Native bindings + Node-only deps used solely by prerendered routes
+      // (the OG image generator). Keep them out of the worker bundle.
+      external: ['@resvg/resvg-js', 'satori', '@aws-sdk/client-s3'],
     },
   },
 });

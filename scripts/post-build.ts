@@ -1,12 +1,10 @@
 /// <reference types="bun-types" />
-import { readdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import TurndownService from 'turndown';
 import { parse } from 'node-html-parser';
 
 const DIST_DIR = join(process.cwd(), 'dist');
-const WORKER_SRC = join(process.cwd(), 'scripts', 'cf-worker.js');
-const WORKER_DEST = join(DIST_DIR, '_worker.js');
 
 async function walkHtml(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -71,17 +69,12 @@ async function generateMarkdown(): Promise<{ written: number; skipped: number }>
   return { written, skipped };
 }
 
-async function copyWorker(): Promise<void> {
-  await copyFile(WORKER_SRC, WORKER_DEST);
-}
-
 async function main(): Promise<void> {
   const start = Date.now();
   const { written, skipped } = await generateMarkdown();
-  await copyWorker();
   const elapsed = ((Date.now() - start) / 1000).toFixed(2);
   console.log(
-    `post-build: wrote ${written} .md files (skipped ${skipped}), copied _worker.js in ${elapsed}s`,
+    `post-build: wrote ${written} .md files (skipped ${skipped}) in ${elapsed}s`,
   );
 }
 

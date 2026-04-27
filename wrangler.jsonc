@@ -1,0 +1,39 @@
+// Source wrangler config for birdcar.dev. The Astro Cloudflare adapter
+// merges this into dist/server/wrangler.json at build time, so KV bindings
+// and env vars declared here flow through to the deployed worker.
+//
+// First-time setup:
+//   bun run cf:bootstrap
+//
+// That script provisions the SESSION KV namespaces (prod + preview) and
+// fills in the IDs below. Until those IDs are set, Astro Actions session
+// storage falls back to an in-memory store that doesn't survive the
+// post-action redirect, so /contact will silently fail to render the
+// success state. Don't deploy without them.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "birdcar-blog",
+  "compatibility_date": "2026-04-15",
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      // Filled in by scripts/cf-bootstrap.ts
+      "id": "603299c683204b0c8e3bb5c9fdd6353e",
+      "preview_id": "7e88a386405143d6b3c6125957fcdcbe"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "LEADS_DB",
+      "database_name": "birdcar-leads",
+      // Run `bunx wrangler d1 create birdcar-leads` and paste the returned id.
+      "database_id": "TODO_LEADS_DB_ID",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    // WORKER_PULL_TOKEN is set as a secret via:
+    //   bunx wrangler secret put WORKER_PULL_TOKEN
+    // Generate locally with: openssl rand -hex 32
+  }
+}
