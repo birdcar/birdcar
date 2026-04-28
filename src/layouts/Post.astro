@@ -29,20 +29,20 @@ const readingTime = metadata.computed.readingTime;
   tags={tags}
 >
   <article class="bc-post">
-    <header class="bc-post-head">
-      <div class="bc-post-meta">
-        <time datetime={date.toISOString()}>{dateIso}</time>
-        {primaryTag && <><span class="sep">·</span><span>{primaryTag}</span></>}
-        {readingTime && <><span class="sep">·</span><span>{readingTime} min read</span></>}
-        {updatedIso && updatedIso !== dateIso && (
-          <><span class="sep">·</span><span>updated {updatedIso}</span></>
-        )}
-      </div>
-      <h1>{title}</h1>
-      {description && <p class="bc-lede">{description}</p>}
-    </header>
-
     <div class="bc-prose">
+      <header class="bc-post-head">
+        <div class="bc-post-meta">
+          <time datetime={date.toISOString()}>{dateIso}</time>
+          {primaryTag && <><span class="sep">·</span><span>{primaryTag}</span></>}
+          {readingTime && <><span class="sep">·</span><span>{readingTime} min read</span></>}
+          {updatedIso && updatedIso !== dateIso && (
+            <><span class="sep">·</span><span>updated {updatedIso}</span></>
+          )}
+        </div>
+        <h1>{title}</h1>
+        {description && <p class="bc-lede">{description}</p>}
+      </header>
+
       <slot />
 
       <hr class="bc-hr" />
