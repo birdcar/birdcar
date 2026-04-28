@@ -20,6 +20,10 @@ const ROOT = process.cwd();
 const POSTS_DIR = join(ROOT, 'src', 'content', 'blog');
 const FONTS_DIR = join(ROOT, 'src', 'assets', 'fonts');
 const OUT_DIR = join(ROOT, 'public', 'og');
+const PUBLIC_DIR = join(ROOT, 'public');
+
+const SITE_OG_TITLE = 'Internal tools and automations for small businesses.';
+const SITE_OG_SUBTITLE = 'Project-based engagements in Dallas/Fort Worth.';
 
 const colors = {
   paper: '#F7F3EC',
@@ -197,6 +201,194 @@ function ogTemplate(title: string, slug: string, tag?: string): unknown {
   };
 }
 
+// Site-wide default OG card (1200x630). Used as the fallback for any
+// page without a per-post OG. Mirrors the post layout structure so a
+// shared visual language across cards.
+function siteOgTemplate(title: string, subtitle: string): unknown {
+  return {
+    type: 'div',
+    props: {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: 1200,
+        height: 630,
+        backgroundColor: colors.paper,
+        position: 'relative',
+        fontFamily: 'SourceSerif4',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              padding: '80px 80px 0 80px',
+              justifyContent: 'center',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'JetBrainsMono',
+                    fontWeight: 400,
+                    fontSize: 18,
+                    color: colors.clay,
+                    letterSpacing: 4,
+                    marginBottom: 28,
+                  },
+                  children: 'BIRDCAR.DEV',
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'SourceSerif4',
+                    fontWeight: 700,
+                    fontSize: 72,
+                    lineHeight: 1.05,
+                    letterSpacing: '-0.025em',
+                    color: colors.ink,
+                    maxWidth: 1040,
+                    marginBottom: 24,
+                  },
+                  children: title,
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'SourceSerif4',
+                    fontWeight: 400,
+                    fontSize: 32,
+                    lineHeight: 1.3,
+                    color: colors.ink3,
+                    maxWidth: 1040,
+                  },
+                  children: subtitle,
+                },
+              },
+            ],
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              height: 1,
+              backgroundColor: colors.rule,
+              margin: '0 80px',
+            },
+            children: '',
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              height: 80,
+              padding: '0 80px',
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'SourceSerif4',
+                    fontWeight: 700,
+                    fontSize: 32,
+                    color: colors.ink,
+                    letterSpacing: '-0.015em',
+                  },
+                  children: 'Birdcar',
+                },
+              },
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    fontFamily: 'JetBrainsMono',
+                    fontWeight: 400,
+                    fontSize: 14,
+                    color: colors.ink3,
+                  },
+                  children: 'birdcar.dev',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+}
+
+// 1200x1200 square card. Used as the Organization.logo in JSON-LD and
+// as a generic social avatar. Big clay B on cream + small wordmark.
+function squareLogoTemplate(): unknown {
+  return {
+    type: 'div',
+    props: {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 1200,
+        height: 1200,
+        backgroundColor: colors.paper,
+        fontFamily: 'SourceSerif4',
+      },
+      children: [
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              fontFamily: 'SourceSerif4',
+              fontWeight: 700,
+              fontSize: 720,
+              lineHeight: 1,
+              color: colors.clay,
+              letterSpacing: '-0.04em',
+              marginBottom: 24,
+            },
+            children: 'B',
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              fontFamily: 'SourceSerif4',
+              fontWeight: 700,
+              fontSize: 80,
+              color: colors.ink,
+              letterSpacing: '-0.02em',
+            },
+            children: 'Birdcar',
+          },
+        },
+      ],
+    },
+  };
+}
+
 async function loadFonts() {
   const [serif, serifBold, mono] = await Promise.all([
     readFile(join(FONTS_DIR, 'SourceSerif4-Regular.ttf')),
@@ -206,22 +398,22 @@ async function loadFonts() {
   return { serif, serifBold, mono };
 }
 
-async function renderPng(
-  title: string,
-  slug: string,
-  tag: string | undefined,
+async function renderTemplate(
+  template: unknown,
+  width: number,
+  height: number,
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ): Promise<Buffer> {
-  const svg = await satori(ogTemplate(title, slug, tag) as Parameters<typeof satori>[0], {
-    width: 1200,
-    height: 630,
+  const svg = await satori(template as Parameters<typeof satori>[0], {
+    width,
+    height,
     fonts: [
       { name: 'SourceSerif4', data: fonts.serif, weight: 400, style: 'normal' },
       { name: 'SourceSerif4', data: fonts.serifBold, weight: 700, style: 'normal' },
       { name: 'JetBrainsMono', data: fonts.mono, weight: 400, style: 'normal' },
     ],
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: width } });
   return Buffer.from(resvg.render().asPng());
 }
 
@@ -234,10 +426,26 @@ async function main(): Promise<void> {
   const fonts = await loadFonts();
   let written = 0;
   for (const post of visible) {
-    const png = await renderPng(post.title, post.slug, post.tag, fonts);
+    const png = await renderTemplate(ogTemplate(post.title, post.slug, post.tag), 1200, 630, fonts);
     await writeFile(join(OUT_DIR, `${post.slug}.png`), png);
     written++;
   }
+  // Site-wide assets — fallback OG card (used by Base.astro for any
+  // non-post page) plus legacy og-image.png / twitter-image.png aliases
+  // for crawlers that probe those well-known paths, plus the square
+  // logo referenced by JSON-LD Organization.logo.
+  const sitePng = await renderTemplate(
+    siteOgTemplate(SITE_OG_TITLE, SITE_OG_SUBTITLE),
+    1200,
+    630,
+    fonts,
+  );
+  await writeFile(join(PUBLIC_DIR, 'og-default.png'), sitePng);
+  await writeFile(join(PUBLIC_DIR, 'og-image.png'), sitePng);
+  await writeFile(join(PUBLIC_DIR, 'twitter-image.png'), sitePng);
+  const squarePng = await renderTemplate(squareLogoTemplate(), 1200, 1200, fonts);
+  await writeFile(join(PUBLIC_DIR, 'og-square.png'), squarePng);
+  written += 4;
   const elapsed = ((Date.now() - start) / 1000).toFixed(2);
   console.log(`generate-og: rendered ${written} OG image(s) in ${elapsed}s`);
 }
