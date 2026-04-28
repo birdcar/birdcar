@@ -12,6 +12,9 @@ const CLIENT_TYPES = [
   'Property mgmt',
   'Local agencies',
 ];
+
+// Bump by hand when the Now copy below changes.
+const NOW_UPDATED = '2026-04-28';
 ---
 
 <Base
@@ -28,8 +31,8 @@ const CLIENT_TYPES = [
           <p class="bc-lede">
             I'm Nick Cannariato. By day I'm a solutions engineer at <a href="https://workos.com" target="_blank" rel="noopener">WorkOS</a>.
             On the side I take on a small number of consulting projects for local
-            firms — usually CPAs, mortgage brokers, realtors, and operators in the
-            $100k–2M range — building the kind of internal tools that turn a wall of
+            firms (usually CPAs, mortgage brokers, realtors, and operators in the
+            $100k–2M range). I build the kind of internal tools that turn a wall of
             sticky notes into a single review queue.
           </p>
           <div class="bc-trust-strip">
@@ -45,6 +48,7 @@ const CLIENT_TYPES = [
               ))}
             </span>
           </div>
+          <a href="/contact/" class="bc-hero-cue">Tell me what you're working on ↗</a>
         </div>
         <aside class="bc-hero-aside">
           <div class="bc-portrait">
@@ -74,7 +78,7 @@ const CLIENT_TYPES = [
           <div class="bc-now">
             <div class="bc-now-label">Now</div>
             <p>Solutions engineering at WorkOS. Writing here when something's worth writing.</p>
-            <div class="bc-now-stamp">Updated {new Date().toISOString().slice(0, 10)}</div>
+            <div class="bc-now-stamp">Updated {NOW_UPDATED}</div>
           </div>
         </aside>
       </div>
