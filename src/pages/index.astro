@@ -15,7 +15,7 @@ const CLIENT_TYPES = [
 ---
 
 <Base
-  title="Birdcar — internal tools and automations for small businesses in Fort Worth"
+  title="Birdcar — internal tools and automations for small businesses in Dallas/Fort Worth"
   description="Nick Cannariato builds internal tools and automations for small businesses in Dallas/Fort Worth. Project-based, 4–12 weeks, fixed scope."
 >
   <div class="bc-page-home">
@@ -36,10 +36,10 @@ const CLIENT_TYPES = [
             <span class="bc-trust-label">I work with</span>
             <span class="bc-trust-tags">
               {CLIENT_TYPES.map((c, i) => (
-                <>
-                  {i > 0 && <span class="bc-trust-sep">·</span>}
+                <span class="bc-trust-tag">
+                  {i > 0 && <span class="bc-trust-sep" aria-hidden="true">·</span>}
                   <span>{c}</span>
-                </>
+                </span>
               ))}
             </span>
           </div>
@@ -59,7 +59,7 @@ const CLIENT_TYPES = [
                 height="140"
               />
             </div>
-            <div class="bc-portrait-cap">Nick Cannariato · Fort Worth, TX</div>
+            <div class="bc-portrait-cap">Nick Cannariato · Dallas/Fort Worth</div>
             <div class="bc-portrait-links">
               <a href="https://github.com/birdcar" target="_blank" rel="noopener">GitHub</a>
               <span aria-hidden="true">·</span>
