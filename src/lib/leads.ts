@@ -1,16 +1,18 @@
-import { asc, eq, inArray, sql } from 'drizzle-orm';
-import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
+import { eq, sql } from 'drizzle-orm';
+import type { D1Database } from '@cloudflare/workers-types';
 import { getDb } from '../db/client';
 import { leads, type Lead } from '../db/schema';
+import type { Env } from '../types';
 
-export interface CloudflareEnv {
-  LEADS_DB: D1Database;
-  WORKER_PULL_TOKEN?: string;
-  SESSION?: KVNamespace;
-}
+/**
+ * Re-export of the runtime env type for code paths that previously imported
+ * `CloudflareEnv` from this file. Kept as a type alias for transitional
+ * compatibility; new code should import `Env` from `../types` directly.
+ */
+export type CloudflareEnv = Env;
 
-export function getEnv(locals: App.Locals): CloudflareEnv | null {
-  return (locals as { runtime?: { env?: CloudflareEnv } }).runtime?.env ?? null;
+export function getEnv(locals: App.Locals): Env | null {
+  return (locals as { runtime?: { env?: Env } }).runtime?.env ?? null;
 }
 
 export async function insertLead(
@@ -37,32 +39,13 @@ export async function insertLead(
   });
 }
 
-/**
- * Select pending leads, then mark them processing in a separate UPDATE.
- *
- * D1 doesn't support multi-statement transactions, and Drizzle's builder
- * doesn't expose `UPDATE ... WHERE id IN (SELECT ... LIMIT n) RETURNING *`.
- * Two queries with a small race window is fine for a single n8n poller.
- */
-export async function claimPendingLeads(
+export async function getLeadById(
   d1: D1Database,
-  limit = 50,
-): Promise<Lead[]> {
+  id: string,
+): Promise<Lead | null> {
   const db = getDb(d1);
-  const pending = await db
-    .select({ id: leads.id })
-    .from(leads)
-    .where(eq(leads.status, 'pending'))
-    .orderBy(asc(leads.submittedAt))
-    .limit(limit);
-  if (pending.length === 0) return [];
-  const ids = pending.map((row) => row.id);
-  const claimed = await db
-    .update(leads)
-    .set({ status: 'processing', updatedAt: sql`(datetime('now'))` })
-    .where(inArray(leads.id, ids))
-    .returning();
-  return claimed;
+  const [row] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  return row ?? null;
 }
 
 export type LeadPatch = Partial<

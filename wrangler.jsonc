@@ -33,9 +33,40 @@
       "migrations_dir": "./migrations"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LEAD_TRIAGE",
+        "class_name": "LeadTriageAgent"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "name": "lead-triage-workflow",
+      "binding": "LEAD_TRIAGE_WORKFLOW",
+      "class_name": "LeadTriageWorkflow"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["LeadTriageAgent"]
+    }
+  ],
   "vars": {
     // WORKER_PULL_TOKEN is set as a secret via:
     //   bunx wrangler secret put WORKER_PULL_TOKEN
     // Generate locally with: openssl rand -hex 32
+    // Kept as the auth on PATCH /api/leads/[id] until Phase 2's WorkOS gate.
   }
 }

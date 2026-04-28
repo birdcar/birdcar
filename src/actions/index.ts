@@ -1,6 +1,7 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 import { getEnv, insertLead } from '../lib/leads';
+import { getTriageAgent } from '../lib/agent-stub';
 
 export const server = {
   contact: {
@@ -50,6 +51,16 @@ export const server = {
             code: 'INTERNAL_SERVER_ERROR',
             message: "I couldn't save that. Email hi@birdcar.dev directly and I'll see it.",
           });
+        }
+
+        // Queue triage on the agent. Non-blocking: a transient agent failure
+        // does not break the form submit. The cron sweep on the agent picks
+        // up any leads that stay in `pending` longer than the threshold.
+        try {
+          const agent = await getTriageAgent(env);
+          await agent.queueLead(id);
+        } catch (err) {
+          console.warn(`[contact.send] triage queue failed for ${id}:`, err);
         }
 
         return { delivered: true, id } as const;
