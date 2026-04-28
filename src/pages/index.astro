@@ -37,8 +37,10 @@ const CLIENT_TYPES = [
             <span class="bc-trust-tags">
               {CLIENT_TYPES.map((c, i) => (
                 <span class="bc-trust-tag">
-                  {i > 0 && <span class="bc-trust-sep" aria-hidden="true">·</span>}
                   <span>{c}</span>
+                  {i < CLIENT_TYPES.length - 1 && (
+                    <span class="bc-trust-sep" aria-hidden="true">·</span>
+                  )}
                 </span>
               ))}
             </span>
@@ -59,7 +61,10 @@ const CLIENT_TYPES = [
                 height="140"
               />
             </div>
-            <div class="bc-portrait-cap">Nick Cannariato · Dallas/Fort Worth</div>
+            <div class="bc-portrait-cap">
+              <div>Nick Cannariato</div>
+              <div>Dallas/Fort Worth</div>
+            </div>
             <div class="bc-portrait-links">
               <a href="https://github.com/birdcar" target="_blank" rel="noopener">GitHub</a>
               <span aria-hidden="true">·</span>
