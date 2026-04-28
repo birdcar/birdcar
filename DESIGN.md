@@ -54,7 +54,20 @@ Loaded from Google Fonts via `@import` in `global.css`. Static `.ttf` files for 
 | `--t-small` | 15px | 1.50 | Secondary copy. |
 | `--t-meta` | 13px | 1.40 | Dates, tags, captions. |
 
-Headings use letter-spacing -0.01em to -0.025em (display) and `text-wrap: balance`. Body uses `text-wrap: pretty`. Body line-length is capped at 64ch (~580px). Long-form posts use the same prose width; figures break out to wider tiers.
+Headings use letter-spacing -0.01em to -0.025em (display) and `text-wrap: balance`. Body uses `text-wrap: pretty`.
+
+### Line length
+
+Body line-length caps at **76ch (~720px)** via `--w-prose`. This is wider than the print convention (Bringhurst recommends 45–75ch with 66ch ideal; Baymard's research finds 50–75ch optimal) but inside the upper acceptable band of every modern guideline that accounts for screen reading: Butterick's *Practical Typography* (45–90ch), WCAG 1.4.8 Level AAA (≤80ch), and the actual practice of editorial reading sites (NYT articles, Stripe Press, Simon Willison's blog all run in this band on desktop).
+
+The decision is deliberate. A 64ch column was tried and reverted because it forced 130px+ of asymmetric inset on chrome pages (`/about`, `/contact`) and 66px misalignment under every post head; the eye retracking the misaligned left rail across pages was the larger readability cost. Per Principle 2 of `PRODUCT.md` ("the reading experience is the product"), we optimized for the actual reading geometry across the whole site, not for column width as an isolated metric.
+
+Two compensating choices keep 76ch comfortable in practice:
+
+- **Generous line-height.** Body runs at 1.55, well above the 1.4 default. Wider lines are forgiving when vertical tracking is relaxed.
+- **Source Serif 4 at 18px.** A screen-tuned literary serif at a comfortable reading size. The same width in a sans at 16px would feel longer.
+
+Mobile narrows to a single full-width column with the page padding the only side margin; line lengths fall back inside the 50–65ch sweet spot automatically.
 
 ## Spacing
 
@@ -68,12 +81,12 @@ A 4px base, used as 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 128 (`--s-1` thro
 ## Layout
 
 - Single column on the public site. Masthead is left-aligned, never centered.
-- Page max-width 960px (chrome), content max-width 720px (body), prose width 64ch (long-form).
+- Page max-width 960px (chrome). Content and prose share `--w-content` (720px ≈ 76ch); body and long-form posts run on the same column so head and body left rails align across every page.
 - Nav lives in the masthead; no sticky nav, no fixed header.
 - Footer is plain text, left-aligned, separated from content by a double-rule.
 - Forms are full-width within the content column, labels above fields, no floating labels.
 
-**Width tiers for post figures.** `prose` (64ch) default, `wide` (820px) for diagrams and long code, `full` (960px) for hero comparison images. Set via `data-width` on `.bfm-figure`.
+**Single-column model.** Figures, code blocks, and embeds fit inside the prose column (`--w-content`, 720px). The earlier breakout grid (`prose` / `wide` / `full` tiers via `data-width` on `.bfm-figure`) was retired in `dbfaf33` because it created head/body misalignment everywhere it was used. Code blocks already overflow horizontally on long lines; charts already render at `width: 100%`. `data-width` attributes in BFM markup are now no-ops, slated for removal in the rehype pipeline.
 
 ## Borders, rules, corners
 
