@@ -7,6 +7,13 @@ on:
     - cron: '0 14 * * *' # Daily at 9am CT — publishes future-dated posts
   workflow_dispatch:
 
+# Force Node 24 for any third-party action whose action.yml still
+# declares `using: node20`. Notably cloudflare/wrangler-action@v3
+# ships on Node 20 until they cut v4. Drop this when every action
+# below advertises node24 natively.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,11 +21,11 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
 
       - uses: oven-sh/setup-bun@v2
         with:
