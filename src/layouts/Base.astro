@@ -1,6 +1,7 @@
 ---
 import Masthead from '../components/Masthead.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import { buildSchemaGraph, serializeSchemaGraph } from '../lib/jsonld';
 import '../styles/global.css';
 
 interface Props {
@@ -26,7 +27,7 @@ const {
 const currentPath = Astro.url.pathname;
 const canonicalURL = new URL(currentPath, Astro.site).href;
 const defaultDescription =
-  "Nick Cannariato builds internal tools and automations for small businesses in Fort Worth. Project-based, 4–12 weeks, fixed scope.";
+  "Nick Cannariato builds internal tools and automations for small businesses in Dallas/Fort Worth. Project-based, 4–12 weeks, fixed scope.";
 const metaDescription = description || defaultDescription;
 const postSlugMatch = currentPath.match(/^\/writing\/([^/]+)\/?$/);
 const ogImage = image
@@ -35,58 +36,19 @@ const ogImage = image
     ? new URL(`/og/${postSlugMatch[1]}.png`, Astro.site).href
     : new URL('/og-default.png', Astro.site).href;
 
-const jsonLd: Record<string, unknown>[] = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'birdcar.dev',
-    url: 'https://birdcar.dev',
-    description: defaultDescription,
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: 'Nick Cannariato',
-    alternateName: 'Birdcar',
-    url: 'https://birdcar.dev',
-    jobTitle: 'Product engineer & consultant',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Fort Worth',
-      addressRegion: 'TX',
-      addressCountry: 'US',
-    },
-    email: 'hi@birdcar.dev',
-    sameAs: ['https://github.com/birdcar'],
-  },
-];
-
-if (type === 'article') {
-  jsonLd.push({
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: title,
+const jsonLd = serializeSchemaGraph(
+  buildSchemaGraph({
+    pathname: currentPath,
+    canonicalURL,
+    title,
     description: metaDescription,
-    image: ogImage,
-    datePublished: publishedDate?.toISOString(),
-    dateModified: (modifiedDate ?? publishedDate)?.toISOString(),
-    author: {
-      '@type': 'Person',
-      name: 'Nick Cannariato',
-      url: 'https://birdcar.dev',
-    },
-    publisher: {
-      '@type': 'Person',
-      name: 'Nick Cannariato',
-      url: 'https://birdcar.dev',
-    },
-    keywords: tags?.join(', '),
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': canonicalURL,
-    },
-  });
-}
+    ogImage,
+    type,
+    publishedDate,
+    modifiedDate,
+    tags,
+  }),
+);
 ---
 
 <!doctype html>
@@ -125,10 +87,8 @@ if (type === 'article') {
     <meta name="twitter:description" content={metaDescription} />
     <meta name="twitter:image" content={ogImage} />
 
-    <!-- JSON-LD Structured Data -->
-    {jsonLd.map(schema => (
-      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
-    ))}
+    <!-- JSON-LD Structured Data — see src/lib/jsonld.ts for the @graph -->
+    <script type="application/ld+json" set:html={jsonLd} />
 
     <link rel="alternate" type="application/rss+xml" title="birdcar.dev" href="/rss.xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
