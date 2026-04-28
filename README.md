@@ -38,7 +38,13 @@ I write about software at [birdcar.dev](https://www.birdcar.dev) using [Birdcar 
 
 #### Latest blog posts
 
-<!-- BLOG-POST-LIST:START -->- [Your AI wrote a bug](https://birdcar.dev/blog/your-ai-wrote-a-bug/) — Apr 17, 2026- [The tools that build the tools](https://birdcar.dev/blog/the-tools-that-build-the-tools/) — Apr 10, 2026- [Six months of talking to a machine](https://birdcar.dev/blog/six-months-talking-to-a-machine/) — Apr 3, 2026- [The other side of empathy](https://birdcar.dev/blog/the-other-side-of-empathy/) — Sep 25, 2024- [Your metrics are bullshit](https://birdcar.dev/blog/your-metrics-are-bullshit/) — May 1, 2024<!-- BLOG-POST-LIST:END -->
+<!-- BLOG-POST-LIST:START -->
+- [Your AI wrote a bug](https://birdcar.dev/writing/your-ai-wrote-a-bug/) — Apr 17, 2026
+- [The tools that build the tools](https://birdcar.dev/writing/the-tools-that-build-the-tools/) — Apr 10, 2026
+- [Six months of talking to a machine](https://birdcar.dev/writing/six-months-talking-to-a-machine/) — Apr 3, 2026
+- [The other side of empathy](https://birdcar.dev/writing/the-other-side-of-empathy/) — Sep 25, 2024
+- [Your metrics are bullshit](https://birdcar.dev/writing/your-metrics-are-bullshit/) — May 1, 2024
+<!-- BLOG-POST-LIST:END -->
 
 ---
 

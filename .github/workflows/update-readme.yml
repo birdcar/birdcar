@@ -11,11 +11,22 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-      - name: Update blog posts
-        uses: gautamkrishnar/blog-post-workflow@v1
+
+      - uses: oven-sh/setup-bun@v2
         with:
-          feed_list: "https://www.birdcar.dev/rss.xml"
-          max_post_count: 5
-          template: "- [$title]($url) — $date"
-          date_format: "mmm d, yyyy"
-          comment_tag_name: "BLOG-POST-LIST"
+          bun-version: latest
+
+      - name: Refresh blog post list from RSS
+        run: bun run scripts/update-readme.ts
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet README.md; then
+            echo "No changes to README."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(readme): Refresh blog post list"
+          git push
