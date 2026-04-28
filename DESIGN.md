@@ -69,6 +69,17 @@ Two compensating choices keep 76ch comfortable in practice:
 
 Mobile narrows to a single full-width column with the page padding the only side margin; line lengths fall back inside the 50–65ch sweet spot automatically.
 
+### Casing
+
+Sentence case for everything that reads as content: headings, page titles, button labels, navigation, body copy, post tags. Title Case Looks Like A Brochure. Proper nouns and the brand mark `Birdcar` are the exceptions.
+
+Mono micro-eyebrows are a separate typographic register. They follow one rule:
+
+- **Standalone eyebrow labels are uppercase tracked.** `NOW` on the home, `ABOUT THIS POST` on essays. Letter-spacing 1–1.5px, mono, ink-3 or clay. The label is its own sub-section marker, not a sentence; the uppercase signals "this is a label" the way a small caps date stamp does in print.
+- **Inline labels share the case of the line they sit on.** The home's trust strip ("I work with: CPA firms, Mortgage brokers, Realtors, Property mgmt, Local agencies") runs in sentence case throughout because the tags it introduces are sentence case content. Mid-line case shifts read as inconsistency, not hierarchy.
+
+If a future micro-eyebrow could go either way, ask: does it stand alone as a sub-section marker, or does it sit inline with content? Standalone → uppercase. Inline → match the content.
+
 ## Spacing
 
 A 4px base, used as 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 128 (`--s-1` through `--s-10`).
