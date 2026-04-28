@@ -13,6 +13,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "birdcar",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "compatibility_date": "2026-04-15",
   "kv_namespaces": [
     {
