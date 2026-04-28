@@ -33,7 +33,9 @@ const readingTime = metadata.computed.readingTime;
       <header class="bc-post-head">
         <div class="bc-post-meta">
           <time datetime={date.toISOString()}>{dateIso}</time>
-          {primaryTag && <><span class="sep">·</span><span>{primaryTag}</span></>}
+          {primaryTag && (
+            <><span class="sep">·</span><a href={`/tags/${primaryTag}/`}>{primaryTag}</a></>
+          )}
           {readingTime && <><span class="sep">·</span><span>{readingTime} min read</span></>}
           {updatedIso && updatedIso !== dateIso && (
             <><span class="sep">·</span><span>updated {updatedIso}</span></>
@@ -47,7 +49,7 @@ const readingTime = metadata.computed.readingTime;
 
       <hr class="bc-hr" />
       <p class="bc-mono-eyebrow">
-        ← <a href="/writing/">back to writing</a>
+        <a href="/writing/">← back to writing</a>
       </p>
     </div>
   </article>
