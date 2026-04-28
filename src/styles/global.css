@@ -61,7 +61,7 @@
   /* Layout */
   --w-content: 720px;
   --w-page:    960px;
-  --w-prose:   76ch;
+  --w-prose:   var(--w-content);
 
   /* Radii / borders */
   --r-1: 2px;
