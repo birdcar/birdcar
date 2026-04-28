@@ -69,9 +69,12 @@
   --bw:  1px;
 
   /* Motion (sparing) */
-  --ease:     cubic-bezier(0.2, 0, 0, 1);
-  --dur-fast: 120ms;
-  --dur:      160ms;
+  --ease:           cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur-fast:       120ms;
+  --dur:            160ms;
+  --dur-paint:      280ms;
+  --dur-rule:       520ms;
 }
 
 /* Box-sizing reset */
@@ -593,6 +596,15 @@ button { font-family: inherit; }
 .bc-post-row:last-child { border-bottom: 1px solid var(--rule); }
 .bc-post-row:where(:hover, :active) { background: var(--paper-2); text-decoration: none; }
 .bc-post-row:where(:hover, :active) .bc-post-title { color: var(--clay); }
+/* Title nudges right on hover, like a typewriter advancing into the row.
+   Transform-based so the grid layout doesn't shift; pairs with the tint. */
+.bc-post-title {
+  transition: transform var(--dur) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
+}
+.bc-post-row:where(:hover, :focus-visible) .bc-post-title {
+  transform: translateX(6px);
+}
 .bc-post-date  { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
 .bc-post-title { font-family: var(--serif); font-size: 19px; color: var(--ink); }
 .bc-post-tag   { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
@@ -1165,6 +1177,55 @@ sup a, .footnote-ref, .footnote-backref {
 .task-list-item[data-state="cancelled"]::before { content: "–"; color: var(--ink-3); }
 .task-list-item[data-state="blocked"]::before  { content: "◐"; color: var(--warn); }
 .task-list-item[data-state="urgent"]::before   { content: "!"; color: var(--err); }
+
+/* ============================================================
+   Motion — paint reveal & first-load stagger
+
+   The brief otherwise reads "animation defaults to none." This is
+   the curated exception: a one-time stagger on the home hero plus
+   a scaleX draw of section hairlines, tied to first paint. No
+   scroll triggers, no parallax, no layout-property animation —
+   transform/opacity only, ease-out-quart.
+
+   Everything is gated behind prefers-reduced-motion: no-preference,
+   so reduced-motion users see the static page they had before.
+   Because the rules live outside the media query, those users
+   never even see the `from` keyframe state.
+   ============================================================ */
+
+@keyframes bc-paint-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes bc-hairline-draw {
+  from { transform: scaleX(0); }
+}
+
+.bc-hr,
+.bc-rule-double { transform-origin: left; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bc-hero .bc-display,
+  .bc-hero .bc-lede,
+  .bc-hero .bc-trust-strip,
+  .bc-hero .bc-hero-cue,
+  .bc-hero .bc-portrait,
+  .bc-hero .bc-now {
+    animation: bc-paint-reveal var(--dur-paint) var(--ease-out-quart) both;
+  }
+  .bc-hero .bc-display      { animation-delay: 0ms; }
+  .bc-hero .bc-portrait     { animation-delay: 60ms; }
+  .bc-hero .bc-lede         { animation-delay: 110ms; }
+  .bc-hero .bc-now          { animation-delay: 170ms; }
+  .bc-hero .bc-trust-strip  { animation-delay: 220ms; }
+  .bc-hero .bc-hero-cue     { animation-delay: 320ms; }
+
+  .bc-hr,
+  .bc-rule-double {
+    animation: bc-hairline-draw var(--dur-rule) var(--ease-out-quart) both;
+  }
+  .bc-hr          { animation-delay: 480ms; }
+  .bc-rule-double { animation-delay: 600ms; }
+}
 
 /* ============================================================
    Responsive
