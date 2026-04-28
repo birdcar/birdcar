@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 22px 28px; box-sizing: border-box; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+  .yes, .no { font-family: var(--serif); font-size: 16px; line-height: 1.5; color: var(--ink); }
+  .lbl { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .yes-lbl { color: var(--ok); }
+  .no-lbl { color: var(--err); }
+  .no { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+</style></head>
+<body><div class="card"><div class="row">
+  <div><div class="lbl yes-lbl">Yes</div><div class="yes">I build internal tools for small businesses.</div></div>
+  <div><div class="lbl no-lbl">No</div><div class="no">I empower SMBs to unlock excellence.</div></div>
+  <div><div class="lbl yes-lbl">Yes</div><div class="yes">Four to twelve weeks. Fixed scope.</div></div>
+  <div><div class="lbl no-lbl">No</div><div class="no">Flexible engagement models 🚀</div></div>
+  <div><div class="lbl yes-lbl">Yes</div><div class="yes">Recent writing</div></div>
+  <div><div class="lbl no-lbl">No</div><div class="no">Latest Insights From The Blog</div></div>
+</div></div></body></html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 24px 28px; box-sizing: border-box; }
+  .row { display: flex; gap: 28px; align-items: center; }
+  .item { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .swatch { width: 80px; height: 60px; background: var(--paper-2); border: 1px solid var(--rule); }
+  .name { font-family: var(--mono); font-size: 11px; color: var(--ink); }
+  .lbl { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+  .note { font-family: var(--sans); font-size: 13px; color: var(--ink-2); margin-top: 18px; font-style: italic; }
+</style></head>
+<body><div class="card">
+  <div class="row">
+    <div class="item"><div class="swatch" style="border-radius:0"></div><div class="name">0</div><div class="lbl">default — most things</div></div>
+    <div class="item"><div class="swatch" style="border-radius:2px"></div><div class="name">--r-1 · 2px</div><div class="lbl">buttons, fields</div></div>
+    <div class="item"><div class="swatch" style="border-radius:4px"></div><div class="name">--r-2 · 4px</div><div class="lbl">code blocks</div></div>
+  </div>
+  <div class="note">No pills. Nothing rounded-2xl. The corners are essentially square.</div>
+</div></body></html>

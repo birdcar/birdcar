@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 22px 28px; box-sizing: border-box; }
+  .figure { margin: 0 0 18px; }
+  .fig-img { width: 100%; height: 140px; background: var(--paper-2); border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: 1px; }
+  .cap { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  .cap em { font-style: italic; }
+  .cap .n { font-style: normal; color: var(--ink-2); margin-right: 8px; }
+
+  .tabs { border-bottom: 1px solid var(--rule); display: flex; gap: 16px; margin-top: 20px; }
+  .tab { font-family: var(--mono); font-size: 12px; padding: 8px 0; color: var(--ink-3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; text-transform: uppercase; letter-spacing: 1px; }
+  .tab.is-active { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab-body { font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); padding: 12px 0; }
+</style></head>
+<body><div class="card">
+  <div class="figure">
+    <div class="fig-img">[ SCREENSHOT · review queue · 820 × 440 ]</div>
+    <div class="cap"><span class="n">Fig. 1</span><em>The review queue replacing the spreadsheet, end of season two.</em></div>
+  </div>
+  <div class="tabs">
+    <span class="tab is-active">Plain English</span>
+    <span class="tab">The technical version</span>
+  </div>
+  <div class="tab-body">Eighty returns a week land in one queue. The senior reviewer stamps them, and a CSV goes back to the firm's spreadsheet at end of day.</div>
+</div></body></html>

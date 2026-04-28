@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 24px 28px; box-sizing: border-box; }
+  .callout { padding: 14px 18px; background: var(--paper-2); margin-bottom: 12px; border-left: 2px solid var(--ink-3); }
+  .callout.key  { border-left-color: var(--clay); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.tip  { border-left-color: var(--ok); }
+  .callout.tldr { border-left-color: var(--ink); }
+  .eb { font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .eb.note { color: var(--ink-3); }
+  .eb.key  { color: var(--clay); }
+  .eb.warn { color: var(--warn); }
+  .eb.tip  { color: var(--ok); }
+  .eb.tldr { color: var(--ink); }
+  .body { font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); }
+</style></head>
+<body><div class="card">
+  <div class="callout"><div class="eb note">Note</div><div class="body">Drake exports tab-delimited by default. Set the delimiter in the export config, not the import.</div></div>
+  <div class="callout key"><div class="eb key">Key takeaway</div><div class="body">The export is harder than the import.</div></div>
+  <div class="callout warn"><div class="eb warn">Watch out</div><div class="body">Column order changes year to year — version it once, near the top of your script.</div></div>
+  <div class="callout tip"><div class="eb tip">Tip</div><div class="body">A weekly email with the day's stamps as a CSV attachment is the simplest export surface that works.</div></div>
+  <div class="callout tldr"><div class="eb tldr">TL;DR</div><div class="body">Spend half your budget on export. The rest is engineering shaped, but export is what gets used.</div></div>
+</div></body></html>

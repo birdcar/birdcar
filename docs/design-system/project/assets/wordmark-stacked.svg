@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="240" height="140">
+  <text x="120" y="78" text-anchor="middle" font-family="&#39;Source Serif 4&#39;, &#39;Iowan Old Style&#39;, Georgia, serif" font-weight="700" font-size="68" letter-spacing="-1.4" fill="#1A1814">Birdcar</text>
+  <line x1="90" y1="96" x2="150" y2="96" stroke="#B8442B" stroke-width="1.5"></line>
+  <text x="120" y="118" text-anchor="middle" font-family="&#39;JetBrains Mono&#39;, &#39;SF Mono&#39;, Menlo, monospace" font-weight="500" font-size="12" letter-spacing="2" fill="#4A453D">FORT WORTH · TX</text>
+</svg>

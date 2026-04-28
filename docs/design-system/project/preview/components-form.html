@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 22px 28px; box-sizing: border-box; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-family: var(--sans); font-size: 13px; color: var(--ink-2); margin-bottom: 4px; }
+  .field input, .field textarea {
+    width: 100%; box-sizing: border-box; font-family: var(--serif); font-size: 16px;
+    padding: 10px 12px; border: 1px solid #BFB59E; background: var(--paper); border-radius: 2px; color: var(--ink);
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #B8442B; }
+  .row { display: flex; gap: 12px; }
+  .row .field { flex: 1; }
+</style></head>
+<body><div class="card">
+  <div class="row">
+    <div class="field"><label>Your name</label><input type="text" value="Sarah Whitman"></div>
+    <div class="field"><label>Email</label><input type="email" value="sarah@whitmancpa.com"></div>
+  </div>
+  <div class="field"><label>What are you trying to fix?</label><textarea rows="2">Tax review queue across two RAs.</textarea></div>
+</div></body></html>

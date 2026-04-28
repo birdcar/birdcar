@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 22px 28px; box-sizing: border-box; }
+  svg { display: block; }
+  .cap { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-top: 8px; max-width: 580px; font-style: italic; }
+</style></head>
+<body><div class="card">
+  <svg viewBox="0 0 600 220" width="600" height="220">
+    <!-- axes -->
+    <line x1="50" y1="180" x2="560" y2="180" stroke="#D9D1BE" stroke-width="1"/>
+    <line x1="50" y1="20"  x2="50"  y2="180" stroke="#D9D1BE" stroke-width="1"/>
+    <!-- y labels -->
+    <text x="42" y="184" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">0</text>
+    <text x="42" y="104" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">40</text>
+    <text x="42" y="24"  text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">80</text>
+    <!-- x labels -->
+    <text x="80"  y="200" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">W1</text>
+    <text x="200" y="200" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">W4</text>
+    <text x="320" y="200" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">W8</text>
+    <text x="440" y="200" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">W12</text>
+    <!-- context series (ink-3) -->
+    <polyline fill="none" stroke="#7A7368" stroke-width="1.5" points="80,150 140,148 200,144 260,140 320,138 380,134 440,130 500,128"/>
+    <text x="510" y="132" font-family="JetBrains Mono, monospace" font-size="11" fill="#7A7368">peer firms</text>
+    <!-- comparator (clay) -->
+    <polyline fill="none" stroke="#B8442B" stroke-width="1.5" points="80,140 140,135 200,128 260,118 320,98 380,80 440,62 500,50"/>
+    <text x="510" y="54" font-family="JetBrains Mono, monospace" font-size="11" fill="#B8442B">after rewrite</text>
+    <!-- primary (ink) -->
+    <polyline fill="none" stroke="#1A1814" stroke-width="2.5" points="80,148 140,142 200,134 260,126 320,114 380,102 440,90 500,78"/>
+    <text x="510" y="82" font-family="JetBrains Mono, monospace" font-size="11" fill="#1A1814">throughput</text>
+  </svg>
+  <div class="cap">Throughput doubled after the export rewrite — peer firms held flat over the same window.</div>
+</div></body></html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 24px 28px; box-sizing: border-box; }
+  .row { display: flex; gap: 16px; }
+  .swatch { flex: 1; }
+  .chip { height: 60px; border-radius: 2px; margin-bottom: 6px; }
+  .name { font-family: var(--mono); font-size: 11px; color: var(--ink); }
+  .hex  { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .use  { font-family: var(--sans); font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .note { font-family: var(--sans); font-size: 12px; color: var(--ink-3); margin-bottom: 16px; font-style: italic; }
+</style></head>
+<body><div class="card">
+  <div class="note">Used very sparingly — this is an editorial site, not an app.</div>
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:#3F6B43"></div><div class="name">--ok</div><div class="hex">#3F6B43</div><div class="use">Form success</div></div>
+    <div class="swatch"><div class="chip" style="background:#A8741A"></div><div class="name">--warn</div><div class="hex">#A8741A</div><div class="use">Caution</div></div>
+    <div class="swatch"><div class="chip" style="background:#8E2F1B"></div><div class="name">--err</div><div class="hex">#8E2F1B</div><div class="use">Validation error</div></div>
+    <div class="swatch"><div class="chip" style="background:#D9D1BE; border:1px solid #BFB59E"></div><div class="name">--rule</div><div class="hex">#D9D1BE</div><div class="use">Hairlines, dividers</div></div>
+    <div class="swatch"><div class="chip" style="background:#BFB59E"></div><div class="name">--rule-strong</div><div class="hex">#BFB59E</div><div class="use">Field borders</div></div>
+  </div>
+</div></body></html>

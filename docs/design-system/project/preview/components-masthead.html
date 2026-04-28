@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  .card { padding: 24px 32px; box-sizing: border-box; }
+  .mast { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+  .brand { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+  .brand .dot { color: var(--clay); }
+  nav { display: flex; gap: 22px; }
+  nav a { font-family: var(--sans); font-size: 14px; color: var(--ink-2); text-decoration: none; }
+  nav a:hover { color: var(--clay); text-decoration: underline; text-underline-offset: 3px; }
+  nav a.current { color: var(--ink); }
+  .lbl { font-family: var(--mono); font-size: 10px; color: var(--ink-3); margin-top: 12px; text-transform: uppercase; letter-spacing: 1px; }
+</style></head>
+<body><div class="card">
+  <div class="mast">
+    <div class="brand">Birdcar<span class="dot">.</span></div>
+    <nav>
+      <a href="#" class="current">Home</a>
+      <a href="#">About</a>
+      <a href="#">Work</a>
+      <a href="#">Writing</a>
+      <a href="#">Contact</a>
+    </nav>
+  </div>
+  <div class="lbl">Masthead · left-aligned brand · sentence-case nav · hairline rule</div>
+</div></body></html>
