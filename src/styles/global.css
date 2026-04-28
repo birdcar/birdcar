@@ -462,11 +462,18 @@ button { font-family: inherit; }
   flex-shrink: 0; white-space: nowrap;
 }
 .bc-trust-tags {
-  color: var(--ink); display: flex; gap: var(--s-3);
+  color: var(--ink); display: flex;
   flex-wrap: wrap; align-items: baseline;
 }
-.bc-trust-tags > span { white-space: nowrap; }
-.bc-trust-sep { color: var(--clay); padding: 0 2px; }
+/* Each tag pairs its leading separator with the label so the dot can never
+   strand on its own line and the wrap always happens on a real boundary. */
+.bc-trust-tag {
+  display: inline-flex; align-items: baseline;
+  gap: var(--s-3);
+  white-space: nowrap;
+  padding-right: var(--s-3);
+}
+.bc-trust-sep { color: var(--clay); }
 
 .bc-hero-aside {
   display: flex; flex-direction: column; gap: var(--s-5);
@@ -511,7 +518,11 @@ button { font-family: inherit; }
 }
 .bc-portrait-links a:where(:hover, :active) { color: var(--clay); border-bottom-color: var(--clay); }
 
-.bc-now { border-top: 1px solid var(--rule); padding-top: var(--s-3); }
+/* No border on desktop — the portrait, meta, and Now block read as one
+   identity card; the mono "NOW" eyebrow does the visual separation.
+   Mobile reinstates a hairline (see narrow-viewport block below) where
+   the rail collapses and the cue is needed. */
+.bc-now { margin-top: var(--s-3); }
 .bc-now-label {
   font-family: var(--mono); font-size: 10px; color: var(--clay);
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;
@@ -1151,7 +1162,7 @@ sup a, .footnote-ref, .footnote-backref {
      card stays — it's the one time-sensitive signal. */
   .bc-hero-aside   { flex-direction: column; gap: var(--s-5); align-items: stretch; }
   .bc-portrait     { display: none; }
-  .bc-now          { border-top: 1px solid var(--rule); padding-top: var(--s-3); }
+  .bc-now          { border-top: 1px solid var(--rule); padding-top: var(--s-3); margin-top: 0; }
 
   .bc-post-row     { grid-template-columns: 1fr; gap: 4px; }
   .bc-page-wrap    { padding: var(--s-5) var(--s-4) var(--s-7); }
