@@ -199,9 +199,11 @@ hr {
   margin: var(--s-7) 0;
 }
 
+/* Editorial blockquote: italic + soft ink does the work; no side-stripe.
+   The 2px clay border was the one place this system carried a side-stripe
+   accent, which the design laws disallow. Italic + color shift is enough. */
 blockquote {
-  border-left: 2px solid var(--clay);
-  padding-left: var(--s-5);
+  padding-left: var(--s-4);
   margin: var(--s-6) 0;
   color: var(--ink-2);
   font-style: italic;
@@ -416,6 +418,19 @@ button { font-family: inherit; }
 
 .bc-body { font-size: var(--t-body); line-height: var(--lh-body); color: var(--ink); }
 .bc-body + .bc-body { margin-top: var(--s-4); }
+
+/* Inline external links inside body prose auto-append a ↗ glyph (DESIGN.md
+   "Iconography"). Add `.bc-no-arrow` to opt out for cases that already carry
+   their own affordance (the bc-link-arrow class, the masthead/footer chrome,
+   etc — those aren't `target="_blank"` anyway, but the opt-out is here as a
+   future safety valve). */
+.bc-lede a[target="_blank"]:not(.bc-no-arrow)::after,
+.bc-body a[target="_blank"]:not(.bc-no-arrow)::after,
+.bc-now a[target="_blank"]:not(.bc-no-arrow)::after,
+.bc-prose a[target="_blank"]:not(.bc-no-arrow)::after {
+  content: "\00a0↗";
+  font-feature-settings: normal;
+}
 .bc-lede {
   font-size: 22px;
   line-height: 1.5;
@@ -647,7 +662,6 @@ button { font-family: inherit; }
 .bc-prose ul, .bc-prose ol { margin-top: var(--s-4); padding-left: var(--s-5); }
 .bc-prose li + li { margin-top: 8px; }
 .bc-prose blockquote {
-  border-left: 2px solid var(--clay);
   padding-left: var(--s-4);
   margin: var(--s-5) 0;
   color: var(--ink-2);
