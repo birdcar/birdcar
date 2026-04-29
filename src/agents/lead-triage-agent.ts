@@ -208,19 +208,50 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
   }
 
   /**
-   * Cron sweep: leads in `processing` for longer than the threshold are
-   * reset to `pending` so the next attempt can pick them up. Idempotent.
+   * Cron sweep — the safety net for two distinct failure modes:
+   *
+   *   1. Workflow stalled mid-flight: lead is `processing`, `updatedAt`
+   *      hasn't moved in >threshold minutes. Reset to `pending` so the
+   *      second pass picks it up.
+   *   2. Workflow never started: lead is `pending`, `submittedAt` is
+   *      >threshold old, no row activity. Either the queue.send call
+   *      failed silently in the action or the queue consumer never fired.
+   *      Re-trigger the workflow directly via the agent so recovery
+   *      doesn't depend on the queue path being healthy.
+   *
+   * Idempotent. Goes through `runWorkflow` directly (not the queue) so
+   * the sweep is a true secondary trigger, not an echo of the primary.
    */
   async sweepStuckRows(): Promise<void> {
     const cutoff = new Date(Date.now() - STUCK_ROW_THRESHOLD_MINUTES * 60 * 1000).toISOString();
     const db = getDb(this.env.LEADS_DB);
-    const stuck = await db
+
+    // Step 1: reset stalled `processing` rows back to `pending`.
+    const reset = await db
       .update(leads)
       .set({ status: 'pending' })
       .where(and(eq(leads.status, 'processing'), lt(leads.updatedAt, cutoff)))
       .returning({ id: leads.id });
-    if (stuck.length > 0) {
-      console.log(`[sweep] reset ${stuck.length} stuck rows`);
+    if (reset.length > 0) {
+      console.log(`[sweep] reset ${reset.length} stalled processing row(s) to pending`);
+    }
+
+    // Step 2: re-trigger any `pending` rows older than the threshold.
+    // Catches both the freshly-reset rows from step 1 and rows where the
+    // queue path never delivered the message in the first place.
+    const stale = await db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(and(eq(leads.status, 'pending'), lt(leads.submittedAt, cutoff)));
+    if (stale.length === 0) return;
+    console.log(`[sweep] re-triggering ${stale.length} stuck pending row(s)`);
+    for (const row of stale) {
+      try {
+        const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId: row.id });
+        console.log(`[sweep] re-triggered lead ${row.id} as workflow ${workflowId}`);
+      } catch (err) {
+        console.error(`[sweep] runWorkflow failed for lead ${row.id}:`, err);
+      }
     }
   }
 
