@@ -122,7 +122,7 @@
 
         <footer>
           <p>
-            <a href="https://birdcar.dev">birdcar.dev</a>
+            <a href="https://www.birdcar.dev">birdcar.dev</a>
           </p>
         </footer>
       </body>

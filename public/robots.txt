@@ -3,7 +3,7 @@
 User-agent: *
 Allow: /
 Content-Signal: search=yes, ai-input=yes, ai-train=yes
-Sitemap: https://birdcar.dev/sitemap-index.xml
+Sitemap: https://www.birdcar.dev/sitemap-index.xml
 
 # AI crawlers — allowed for AEO visibility
 User-agent: GPTBot

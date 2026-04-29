@@ -320,6 +320,6 @@ ${qualLine}
 Message:
 ${input.lead.message}
 
-Review: https://birdcar.dev/admin/leads/${input.leadId}
+Review: https://www.birdcar.dev/admin/leads/${input.leadId}
 `;
 }

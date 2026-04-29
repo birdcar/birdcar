@@ -19,7 +19,7 @@ import { rehypeImageCdn } from './src/plugins/rehype-image-cdn';
 // Compose BFM plugins individually — skip frontmatter (Astro handles it)
 // and footnotes (Astro's built-in remark-gfm handles them).
 export default defineConfig({
-  site: 'https://birdcar.dev',
+  site: 'https://www.birdcar.dev',
   output: 'static',
   adapter: cloudflare({
     imageService: 'compile',

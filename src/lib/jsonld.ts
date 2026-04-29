@@ -3,7 +3,7 @@
 // entity gets a stable @id and references (author, publisher,
 // breadcrumb items) are by-id rather than duplicated.
 
-const SITE_ORIGIN = 'https://birdcar.dev';
+const SITE_ORIGIN = 'https://www.birdcar.dev';
 
 const PERSON_ID = `${SITE_ORIGIN}/#person`;
 const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
