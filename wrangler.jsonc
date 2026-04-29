@@ -32,6 +32,15 @@
   // fetches the map asynchronously when an exception is logged — zero
   // runtime cost on the hot path.
   "upload_source_maps": true,
+  // Worker-level cron, fires the `scheduled` handler in src/worker.ts
+  // every 5 minutes. The handler calls `sweepStuckRows` on the agent;
+  // this is the only mechanism guaranteed to fire even if the DO has
+  // never been instantiated (the agent's own `this.schedule` alarm is
+  // registered in `onStart`, which doesn't run until the first request
+  // touches the DO — chicken-and-egg if the queue path is broken).
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
   "kv_namespaces": [
     {
       "binding": "SESSION",

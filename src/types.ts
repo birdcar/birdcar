@@ -25,7 +25,7 @@ import type { LeadTriageAgent } from './agents/lead-triage-agent';
  */
 type LeadTriageStub = Pick<
   LeadTriageAgent,
-  'queueLead' | 'approveLead' | 'discardLead' | 'getRecentActivity'
+  'queueLead' | 'approveLead' | 'discardLead' | 'getRecentActivity' | 'sweepStuckRows'
 >;
 
 interface LeadTriageNamespace {
