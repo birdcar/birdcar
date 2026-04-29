@@ -13,7 +13,7 @@ export const MODELS = {
 export const STEP_RETRY = {
   classify: { retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' }, timeout: '30 seconds' },
   qualify: { retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' }, timeout: '30 seconds' },
-  score: { retries: { limit: 1 }, timeout: '5 seconds' },
+  score: { retries: { limit: 1, delay: '1 second' }, timeout: '5 seconds' },
   draft: { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
   persist: { retries: { limit: 3, delay: '2 seconds', backoff: 'exponential' }, timeout: '10 seconds' },
   notify: { retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' }, timeout: '15 seconds' },
