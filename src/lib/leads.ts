@@ -11,8 +11,23 @@ import type { Env } from '../types';
  */
 export type CloudflareEnv = Env;
 
-export function getEnv(locals: App.Locals): Env | null {
-  return (locals as { runtime?: { env?: Env } }).runtime?.env ?? null;
+/**
+ * Resolve the runtime Cloudflare env. Astro 6 removed `Astro.locals.runtime.env`;
+ * the supported pattern is `import { env } from 'cloudflare:workers'`.
+ *
+ * Imported lazily so this module can be transitively pulled into the
+ * Node-prerender bundle (via Astro's action manifest) without crashing
+ * the build — `cloudflare:workers` is workerd-only and Node's loader
+ * rejects the scheme. The dynamic import means the resolution only
+ * happens when the function is actually called, which is at request
+ * time inside the deployed worker.
+ *
+ * The `locals` parameter is kept on the signature for call-site readability;
+ * callers still pass it and we ignore it.
+ */
+export async function getEnv(_locals: App.Locals): Promise<Env | null> {
+  const { env } = await import('cloudflare:workers');
+  return (env as Env) ?? null;
 }
 
 export async function insertLead(

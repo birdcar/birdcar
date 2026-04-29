@@ -24,7 +24,7 @@ export const server = {
           .max(5000, 'Tighten that up — under 5000 characters.'),
       }),
       handler: async (input, ctx) => {
-        const env = getEnv(ctx.locals);
+        const env = await getEnv(ctx.locals);
         if (!env?.LEADS_DB) {
           throw new ActionError({
             code: 'INTERNAL_SERVER_ERROR',

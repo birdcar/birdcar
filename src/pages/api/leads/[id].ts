@@ -40,7 +40,7 @@ function isAuthorized(request: Request, expected: string | undefined): boolean {
 }
 
 export const PATCH: APIRoute = async ({ request, params, locals }) => {
-  const env = getEnv(locals);
+  const env = await getEnv(locals);
   if (!env || !isAuthorized(request, env.WORKER_PULL_TOKEN)) {
     return jsonResponse(401, { error: 'unauthorized' });
   }
