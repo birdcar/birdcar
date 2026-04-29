@@ -2,13 +2,23 @@
 /**
  * One-shot Cloudflare bootstrap for birdcar.dev.
  *
- * Provisions the SESSION KV namespaces (production + preview) that Astro
- * Actions uses for session-backed action results, then writes the namespace
- * IDs back into wrangler.jsonc so subsequent deploys have everything they
- * need.
+ * Provisions every account-level resource the deployed worker needs that
+ * isn't auto-created on deploy:
+ *   - SESSION KV namespaces (prod + preview), used by Astro Actions for
+ *     session-backed action results.
+ *   - lead-triage Queue, used by the contact action to dispatch leads to
+ *     the triage agent without coupling form latency to agent state.
  *
- * Idempotent: re-running after IDs are filled in does nothing destructive —
- * wrangler returns the existing namespace's ID rather than failing.
+ * Then writes any newly-issued KV ids back into wrangler.jsonc so subsequent
+ * deploys have everything they need.
+ *
+ * Idempotent: re-running after resources exist is a no-op — wrangler returns
+ * the existing resource rather than failing.
+ *
+ * Out of scope (handle separately):
+ *   - D1 database (`birdcar-leads`) and migrations — run `bun run db:migrate`.
+ *   - send_email DNS verification — manual via the Cloudflare dashboard.
+ *   - DOs and Workflows — created automatically on first `wrangler deploy`.
  *
  * Prereqs:
  *   - Logged into wrangler (bunx wrangler login)
@@ -23,6 +33,7 @@ import { spawnSync } from 'node:child_process';
 
 const CONFIG_PATH = join(process.cwd(), 'wrangler.jsonc');
 const NAMESPACE_TITLE = 'birdcar-session';
+const QUEUE_NAME = 'lead-triage';
 
 interface NamespaceCreateResult {
   id: string;
@@ -99,6 +110,35 @@ async function ensureNamespace(title: string): Promise<string> {
   return id;
 }
 
+interface QueueListEntry {
+  queue_name?: string;
+  name?: string;
+}
+
+async function listExistingQueues(): Promise<string[]> {
+  const out = runWrangler(['queues', 'list']);
+  try {
+    const parsed = JSON.parse(out) as QueueListEntry[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((q) => q.queue_name ?? q.name)
+      .filter((n): n is string => typeof n === 'string');
+  } catch {
+    return [];
+  }
+}
+
+async function ensureQueue(name: string): Promise<void> {
+  const existing = await listExistingQueues();
+  if (existing.includes(name)) {
+    console.log(`✓ Queue "${name}" already exists`);
+    return;
+  }
+  console.log(`→ Creating queue "${name}"...`);
+  runWrangler(['queues', 'create', name]);
+  console.log(`✓ Created queue "${name}"`);
+}
+
 async function patchConfig(prodId: string, previewId: string): Promise<void> {
   const raw = await readFile(CONFIG_PATH, 'utf8');
   const next = raw
@@ -117,10 +157,14 @@ async function main(): Promise<void> {
   const prodId = await ensureNamespace(NAMESPACE_TITLE);
   const previewId = await ensureNamespace(`${NAMESPACE_TITLE}_preview`);
   await patchConfig(prodId, previewId);
+  await ensureQueue(QUEUE_NAME);
   console.log('\nNext steps:');
-  console.log('  1. Set CONTACT_WEBHOOK_URL as a secret:');
-  console.log('       bunx wrangler secret put CONTACT_WEBHOOK_URL');
-  console.log('  2. Deploy:');
+  console.log('  1. Apply D1 migrations to the remote database:');
+  console.log('       bun run db:migrate');
+  console.log('  2. Set the worker pull token (PATCH /api/leads/[id] gate):');
+  console.log('       openssl rand -hex 32 | bunx wrangler secret put WORKER_PULL_TOKEN');
+  console.log('  3. Verify the send_email sender domain in the Cloudflare dashboard.');
+  console.log('  4. Deploy:');
   console.log('       bun run build && bunx wrangler deploy');
 }
 
