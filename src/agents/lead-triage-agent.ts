@@ -153,10 +153,11 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
   }
 
   async onWorkflowComplete(
-    _workflowName: string,
-    _workflowId: string,
+    workflowName: string,
+    workflowId: string,
     _result?: unknown,
   ): Promise<void> {
+    console.log({ event: 'agent.workflow.complete', workflowName, workflowId });
     this.setState({
       ...this.state,
       metrics: {
@@ -167,10 +168,16 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
   }
 
   async onWorkflowError(
-    _workflowName: string,
-    _workflowId: string,
-    _error: string,
+    workflowName: string,
+    workflowId: string,
+    error: string,
   ): Promise<void> {
+    console.error({
+      event: 'agent.workflow.failed',
+      workflowName,
+      workflowId,
+      error,
+    });
     this.setState({
       ...this.state,
       metrics: {
