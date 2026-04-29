@@ -30,7 +30,7 @@ export default {
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     console.log({ event: 'cron.scheduled.fired', cron: controller.cron });
     try {
-      const stub = env.LEAD_TRIAGE.get(env.LEAD_TRIAGE.idFromName('global'));
+      const stub = env.LEAD_TRIAGE_AGENT.get(env.LEAD_TRIAGE_AGENT.idFromName('global'));
       await stub.sweepStuckRows();
       console.log({ event: 'cron.scheduled.ok' });
     } catch (err) {
@@ -40,7 +40,7 @@ export default {
   },
   async queue(batch: MessageBatch<TriageMessage>, env: Env): Promise<void> {
     console.log({ event: 'queue.batch.received', count: batch.messages.length });
-    const stub = env.LEAD_TRIAGE.get(env.LEAD_TRIAGE.idFromName('global'));
+    const stub = env.LEAD_TRIAGE_AGENT.get(env.LEAD_TRIAGE_AGENT.idFromName('global'));
     for (const msg of batch.messages) {
       console.log({
         event: 'queue.dispatching',

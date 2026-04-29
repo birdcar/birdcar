@@ -8,7 +8,7 @@ import type {
   SendEmail,
 } from '@cloudflare/workers-types';
 // Type-only import — erased at runtime by `verbatimModuleSyntax`. Exists so
-// the LEAD_TRIAGE binding's stub type carries the agent's RPC method
+// the LEAD_TRIAGE_AGENT binding's stub type carries the agent's RPC method
 // signatures (e.g. `queueLead`) without pulling the agent's `cloudflare:*`
 // imports into modules that consume `Env` from prerender-eligible code.
 import type { LeadTriageAgent } from './agents/lead-triage-agent';
@@ -52,7 +52,7 @@ declare global {
       LEADS_DB: D1Database;
       SESSION?: KVNamespace;
       AI: Ai;
-      LEAD_TRIAGE: LeadTriageNamespace;
+      LEAD_TRIAGE_AGENT: LeadTriageNamespace;
       LEAD_TRIAGE_WORKFLOW: Workflow;
       LEAD_TRIAGE_QUEUE: Queue<TriageMessage>;
       EMAIL: SendEmail;

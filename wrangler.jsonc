@@ -63,7 +63,13 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "LEAD_TRIAGE",
+        // The binding name must match the class name under the agents SDK's
+        // kebab-case auto-detection (`camelCaseToKebabCase` in agents/utils),
+        // so `runWorkflow` can find the binding without an explicit
+        // `agentBinding` option on every call site. `LeadTriageAgent`
+        // → `lead-triage-agent`, and `LEAD_TRIAGE_AGENT` collapses to
+        // the same kebab form.
+        "name": "LEAD_TRIAGE_AGENT",
         "class_name": "LeadTriageAgent"
       }
     ]
