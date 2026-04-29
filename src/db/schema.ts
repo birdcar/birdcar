@@ -12,7 +12,11 @@ export const leads = sqliteTable(
     userAgent: text('user_agent'),
     source: text('source').notNull().default('birdcar.dev/contact'),
     status: text('status', {
-      enum: ['pending', 'processing', 'done', 'discarded'],
+      // `awaiting-approval` is the dwell state between the workflow's
+      // `notify-nick` step and `waitForApproval` returning. The sweep
+      // skips it — these rows are deliberately stalled on a human, not a
+      // failure mode. Phase 2 dashboard transitions them to `done`/`discarded`.
+      enum: ['pending', 'processing', 'awaiting-approval', 'done', 'discarded'],
     })
       .notNull()
       .default('pending'),

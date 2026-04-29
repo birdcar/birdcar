@@ -208,7 +208,18 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
       });
     });
 
-    // 8. Surface as a pending approval. The agent's onWorkflowProgress hook
+    // 8. Flip the row to `awaiting-approval` so the sweep stops treating
+    //    it as a stalled `processing` row. This is a deliberate dwell state:
+    //    the workflow is healthy, the lead is just waiting on a human.
+    await step.do('mark-awaiting-approval', STEP_RETRY.persist, async () => {
+      const db = getDb(this.env.LEADS_DB);
+      await db
+        .update(leads)
+        .set({ status: 'awaiting-approval' })
+        .where(eq(leads.id, leadId));
+    });
+
+    // 9. Surface as a pending approval. The agent's onWorkflowProgress hook
     //    pushes this into agent.state.pendingApprovals so the dashboard can render.
     await this.reportProgress({
       step: 'approval',
@@ -224,8 +235,8 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
       },
     });
 
-    // 9. Wait for human. waitForApproval returns approval metadata, throws
-    //    WorkflowRejectedError on reject, throws on timeout.
+    // 10. Wait for human. waitForApproval returns approval metadata, throws
+    //     WorkflowRejectedError on reject, throws on timeout.
     let approvalMetadata: ApprovalMetadata | undefined;
     try {
       approvalMetadata = await this.waitForApproval<ApprovalMetadata>(step, {
