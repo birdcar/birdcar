@@ -52,6 +52,26 @@
       "class_name": "LeadTriageWorkflow"
     }
   ],
+  // Action publishes to LEAD_TRIAGE_QUEUE on submit; the worker's `queue`
+  // handler consumes and dispatches to the agent. Decouples form latency
+  // from agent state and gives us free retry + backpressure. The agent's
+  // cron sweep is the safety net for any rows that miss the queue path.
+  "queues": {
+    "producers": [
+      {
+        "binding": "LEAD_TRIAGE_QUEUE",
+        "queue": "lead-triage"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "lead-triage",
+        "max_batch_size": 5,
+        "max_batch_timeout": 5,
+        "max_retries": 3
+      }
+    ]
+  },
   "send_email": [
     {
       "name": "EMAIL",

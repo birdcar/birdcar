@@ -52,19 +52,14 @@ export const server = {
           });
         }
 
-        // Queue triage on the agent. Non-blocking: a transient agent failure
-        // does not break the form submit. The cron sweep on the agent picks
-        // up any leads that stay in `pending` longer than the threshold.
-        // Imported lazily so the `agents` SDK (which uses workerd-only
-        // `cloudflare:` schemes) doesn't get pulled into Node-prerendered
-        // pages. The handler only fires inside the deployed worker, where
-        // workerd resolves these imports natively.
+        // Publish to LEAD_TRIAGE_QUEUE; the worker entry's queue handler
+        // dispatches to the agent. Non-blocking: a transient queue.send
+        // failure doesn't break the form submit. The agent's cron sweep
+        // recovers any rows that miss the queue path entirely.
         try {
-          const { getTriageAgent } = await import('../lib/agent-stub');
-          const agent = await getTriageAgent(env);
-          await agent.queueLead(id);
+          await env.LEAD_TRIAGE_QUEUE.send({ leadId: id });
         } catch (err) {
-          console.warn(`[contact.send] triage queue failed for ${id}:`, err);
+          console.warn(`[contact.send] triage enqueue failed for ${id}:`, err);
         }
 
         return { delivered: true, id } as const;
