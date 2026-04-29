@@ -27,6 +27,15 @@ function acceptsMarkdown(request: Request): boolean {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Skip during static prerender — there's no real request, and reading
+  // `request.headers` triggers Astro's "headers not available on
+  // prerendered pages" warning on every static route. The markdown
+  // negotiation is purely a runtime concern; the deployed worker still
+  // runs this middleware on real requests.
+  if (context.isPrerendered) {
+    return next();
+  }
+
   const { request } = context;
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
