@@ -18,6 +18,15 @@
     "nodejs_compat"
   ],
   "compatibility_date": "2026-04-15",
+  // Workers Logs: persist console output, fetch traces, exceptions, and
+  // queue-handler invocations to the Cloudflare dashboard for query later.
+  // Without this, every console.log / console.error in the deployed worker
+  // is silently discarded — no way to debug runtime issues retroactively.
+  // 100% sampling because lead-form traffic is low and every event matters.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "kv_namespaces": [
     {
       "binding": "SESSION",

@@ -35,6 +35,8 @@ export const server = {
         const id = crypto.randomUUID();
         const submittedAt = new Date().toISOString();
 
+        console.log(`[contact.send] received lead ${id} from ${input.email}`);
+
         try {
           await insertLead(env.LEADS_DB, {
             id,
@@ -45,7 +47,9 @@ export const server = {
             userAgent: ctx.request.headers.get('user-agent'),
             source: 'birdcar.dev/contact',
           });
-        } catch {
+          console.log(`[contact.send] inserted ${id} into D1`);
+        } catch (err) {
+          console.error(`[contact.send] D1 insert failed for ${id}:`, err);
           throw new ActionError({
             code: 'INTERNAL_SERVER_ERROR',
             message: "I couldn't save that. Email hi@birdcar.dev directly and I'll see it.",
@@ -58,6 +62,7 @@ export const server = {
         // recovers any rows that miss the queue path entirely.
         try {
           await env.LEAD_TRIAGE_QUEUE.send({ leadId: id });
+          console.log(`[contact.send] enqueued ${id} on lead-triage`);
         } catch (err) {
           console.warn(`[contact.send] triage enqueue failed for ${id}:`, err);
         }

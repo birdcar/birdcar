@@ -93,15 +93,22 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
    */
   @callable()
   async queueLead(leadId: string): Promise<{ workflowId: string }> {
-    const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId });
-    this.setState({
-      ...this.state,
-      metrics: {
-        ...this.state.metrics,
-        leadsProcessed: this.state.metrics.leadsProcessed + 1,
-      },
-    });
-    return { workflowId };
+    console.log(`[agent.queueLead] starting workflow for lead ${leadId}`);
+    try {
+      const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId });
+      console.log(`[agent.queueLead] workflow ${workflowId} started for lead ${leadId}`);
+      this.setState({
+        ...this.state,
+        metrics: {
+          ...this.state.metrics,
+          leadsProcessed: this.state.metrics.leadsProcessed + 1,
+        },
+      });
+      return { workflowId };
+    } catch (err) {
+      console.error(`[agent.queueLead] runWorkflow failed for lead ${leadId}:`, err);
+      throw err;
+    }
   }
 
   /**

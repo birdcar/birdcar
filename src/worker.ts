@@ -21,10 +21,13 @@ export { LeadTriageWorkflow } from './workflows/lead-triage-workflow';
 export default {
   fetch: server.fetch,
   async queue(batch: MessageBatch<TriageMessage>, env: Env): Promise<void> {
+    console.log(`[queue] received batch of ${batch.messages.length} message(s)`);
     const stub = env.LEAD_TRIAGE.get(env.LEAD_TRIAGE.idFromName('global'));
     for (const msg of batch.messages) {
+      console.log(`[queue] dispatching lead ${msg.body.leadId} (attempt ${msg.attempts})`);
       try {
-        await stub.queueLead(msg.body.leadId);
+        const result = await stub.queueLead(msg.body.leadId);
+        console.log(`[queue] queueLead OK for ${msg.body.leadId}, workflowId=${result.workflowId}`);
         msg.ack();
       } catch (err) {
         console.error(
