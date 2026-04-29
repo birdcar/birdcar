@@ -1,7 +1,6 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 import { getEnv, insertLead } from '../lib/leads';
-import { getTriageAgent } from '../lib/agent-stub';
 
 export const server = {
   contact: {
@@ -56,7 +55,12 @@ export const server = {
         // Queue triage on the agent. Non-blocking: a transient agent failure
         // does not break the form submit. The cron sweep on the agent picks
         // up any leads that stay in `pending` longer than the threshold.
+        // Imported lazily so the `agents` SDK (which uses workerd-only
+        // `cloudflare:` schemes) doesn't get pulled into Node-prerendered
+        // pages. The handler only fires inside the deployed worker, where
+        // workerd resolves these imports natively.
         try {
+          const { getTriageAgent } = await import('../lib/agent-stub');
           const agent = await getTriageAgent(env);
           await agent.queueLead(id);
         } catch (err) {

@@ -21,7 +21,6 @@ import {
   REPLY_FROM,
 } from '../lib/triage-config';
 import type { LeadTriageAgent } from '../agents/lead-triage-agent';
-import type { Env } from '../types';
 
 interface TriageParams {
   leadId: string;
