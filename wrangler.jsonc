@@ -27,6 +27,11 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  // Upload source maps with the deploy so production stack traces map back
+  // to TypeScript source instead of minified bundle locations. Cloudflare
+  // fetches the map asynchronously when an exception is logged — zero
+  // runtime cost on the hot path.
+  "upload_source_maps": true,
   "kv_namespaces": [
     {
       "binding": "SESSION",

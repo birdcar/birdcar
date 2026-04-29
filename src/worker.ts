@@ -13,6 +13,7 @@
 //      agent state and we get free retry + backpressure.
 import type { MessageBatch } from '@cloudflare/workers-types';
 import server from '@astrojs/cloudflare/entrypoints/server';
+import { errorFields } from './lib/log';
 import type { Env, TriageMessage } from './types';
 
 export { LeadTriageAgent } from './agents/lead-triage-agent';
@@ -21,19 +22,29 @@ export { LeadTriageWorkflow } from './workflows/lead-triage-workflow';
 export default {
   fetch: server.fetch,
   async queue(batch: MessageBatch<TriageMessage>, env: Env): Promise<void> {
-    console.log(`[queue] received batch of ${batch.messages.length} message(s)`);
+    console.log({ event: 'queue.batch.received', count: batch.messages.length });
     const stub = env.LEAD_TRIAGE.get(env.LEAD_TRIAGE.idFromName('global'));
     for (const msg of batch.messages) {
-      console.log(`[queue] dispatching lead ${msg.body.leadId} (attempt ${msg.attempts})`);
+      console.log({
+        event: 'queue.dispatching',
+        leadId: msg.body.leadId,
+        attempt: msg.attempts,
+      });
       try {
         const result = await stub.queueLead(msg.body.leadId);
-        console.log(`[queue] queueLead OK for ${msg.body.leadId}, workflowId=${result.workflowId}`);
+        console.log({
+          event: 'queue.dispatched',
+          leadId: msg.body.leadId,
+          workflowId: result.workflowId,
+        });
         msg.ack();
       } catch (err) {
-        console.error(
-          `[queue] queueLead failed for ${msg.body.leadId} (attempt ${msg.attempts}):`,
-          err,
-        );
+        console.error({
+          event: 'queue.dispatch.failed',
+          leadId: msg.body.leadId,
+          attempt: msg.attempts,
+          error: errorFields(err),
+        });
         // Let the runtime retry per the consumer config (max_retries: 3).
         // The agent's cron sweep recovers anything that exhausts retries.
         msg.retry({ delaySeconds: 30 });

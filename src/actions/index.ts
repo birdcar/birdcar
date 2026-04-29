@@ -1,6 +1,7 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 import { getEnv, insertLead } from '../lib/leads';
+import { errorFields } from '../lib/log';
 
 export const server = {
   contact: {
@@ -35,7 +36,7 @@ export const server = {
         const id = crypto.randomUUID();
         const submittedAt = new Date().toISOString();
 
-        console.log(`[contact.send] received lead ${id} from ${input.email}`);
+        console.log({ event: 'lead.received', leadId: id, email: input.email });
 
         try {
           await insertLead(env.LEADS_DB, {
@@ -47,9 +48,9 @@ export const server = {
             userAgent: ctx.request.headers.get('user-agent'),
             source: 'birdcar.dev/contact',
           });
-          console.log(`[contact.send] inserted ${id} into D1`);
+          console.log({ event: 'lead.persisted', leadId: id });
         } catch (err) {
-          console.error(`[contact.send] D1 insert failed for ${id}:`, err);
+          console.error({ event: 'lead.persist.failed', leadId: id, error: errorFields(err) });
           throw new ActionError({
             code: 'INTERNAL_SERVER_ERROR',
             message: "I couldn't save that. Email hi@birdcar.dev directly and I'll see it.",
@@ -62,9 +63,9 @@ export const server = {
         // recovers any rows that miss the queue path entirely.
         try {
           await env.LEAD_TRIAGE_QUEUE.send({ leadId: id });
-          console.log(`[contact.send] enqueued ${id} on lead-triage`);
+          console.log({ event: 'lead.enqueued', leadId: id });
         } catch (err) {
-          console.warn(`[contact.send] triage enqueue failed for ${id}:`, err);
+          console.warn({ event: 'lead.enqueue.failed', leadId: id, error: errorFields(err) });
         }
 
         return { delivered: true, id } as const;

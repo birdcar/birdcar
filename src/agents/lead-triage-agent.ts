@@ -2,6 +2,7 @@ import { Agent, callable } from 'agents';
 import { and, eq, lt } from 'drizzle-orm';
 import { getDb } from '../db/client';
 import { leads } from '../db/schema';
+import { errorFields } from '../lib/log';
 import { SWEEP_CRON, STUCK_ROW_THRESHOLD_MINUTES } from '../lib/triage-config';
 import type { Env } from '../types';
 
@@ -93,10 +94,10 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
    */
   @callable()
   async queueLead(leadId: string): Promise<{ workflowId: string }> {
-    console.log(`[agent.queueLead] starting workflow for lead ${leadId}`);
+    console.log({ event: 'agent.queueLead.start', leadId });
     try {
       const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId });
-      console.log(`[agent.queueLead] workflow ${workflowId} started for lead ${leadId}`);
+      console.log({ event: 'agent.queueLead.ok', leadId, workflowId });
       this.setState({
         ...this.state,
         metrics: {
@@ -106,7 +107,7 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
       });
       return { workflowId };
     } catch (err) {
-      console.error(`[agent.queueLead] runWorkflow failed for lead ${leadId}:`, err);
+      console.error({ event: 'agent.queueLead.failed', leadId, error: errorFields(err) });
       throw err;
     }
   }
@@ -195,7 +196,12 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
            ${input.errorMessage ?? null})
       `;
     } catch (err) {
-      console.warn('[agent.recordActivity] insert failed:', err);
+      console.warn({
+        event: 'agent.activity.insert.failed',
+        leadId: input.leadId,
+        workflowId: input.workflowId,
+        error: errorFields(err),
+      });
     }
   }
 
@@ -233,7 +239,7 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
       .where(and(eq(leads.status, 'processing'), lt(leads.updatedAt, cutoff)))
       .returning({ id: leads.id });
     if (reset.length > 0) {
-      console.log(`[sweep] reset ${reset.length} stalled processing row(s) to pending`);
+      console.log({ event: 'sweep.processing.reset', count: reset.length });
     }
 
     // Step 2: re-trigger any `pending` rows older than the threshold.
@@ -244,13 +250,21 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
       .from(leads)
       .where(and(eq(leads.status, 'pending'), lt(leads.submittedAt, cutoff)));
     if (stale.length === 0) return;
-    console.log(`[sweep] re-triggering ${stale.length} stuck pending row(s)`);
+    console.log({ event: 'sweep.pending.retriggering', count: stale.length });
     for (const row of stale) {
       try {
         const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId: row.id });
-        console.log(`[sweep] re-triggered lead ${row.id} as workflow ${workflowId}`);
+        console.log({
+          event: 'sweep.pending.retriggered',
+          leadId: row.id,
+          workflowId,
+        });
       } catch (err) {
-        console.error(`[sweep] runWorkflow failed for lead ${row.id}:`, err);
+        console.error({
+          event: 'sweep.pending.retrigger.failed',
+          leadId: row.id,
+          error: errorFields(err),
+        });
       }
     }
   }

@@ -81,6 +81,13 @@ export default defineConfig({
         decorators: false,
       },
     },
+    // Emit source maps so Wrangler can upload them with the worker bundle
+    // (`upload_source_maps: true` in wrangler.jsonc). Cloudflare fetches
+    // them asynchronously when an exception is logged — production stack
+    // traces resolve back to TypeScript source paths/lines.
+    build: {
+      sourcemap: true,
+    },
     server: {
       fs: {
         strict: false,
