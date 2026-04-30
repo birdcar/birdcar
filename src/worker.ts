@@ -17,16 +17,58 @@
 //      message successfully, the DO has never started, the alarm has
 //      never been scheduled, and the safety net never fires. The worker
 //      cron runs independent of DO lifecycle and bootstraps the agent.
-import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
+import type {
+  ExecutionContext,
+  MessageBatch,
+  ScheduledController,
+} from '@cloudflare/workers-types';
 import server from '@astrojs/cloudflare/entrypoints/server';
+import { routeAgentRequest } from 'agents';
 import { errorFields } from './lib/log';
+import { readSessionCookie, validateSession } from './lib/workos';
 import type { Env, TriageMessage } from './types';
 
 export { LeadTriageAgent } from './agents/lead-triage-agent';
 export { LeadTriageWorkflow } from './workflows/lead-triage-workflow';
 
 export default {
-  fetch: server.fetch,
+  // The Agents SDK ships its own router for `/agents/<class>/<name>` —
+  // including the WebSocket upgrade the dashboard's AgentClient depends
+  // on. We need it to run ahead of the Astro adapter so `/agents/*` never
+  // hits Astro routing.
+  //
+  // Critically, this runs *before* Astro middleware, so the auth gate in
+  // src/middleware.ts cannot protect `/agents/*` requests. The session
+  // check has to happen here, inline, before we delegate. Otherwise the
+  // dashboard's WebSocket (which exposes `pendingApprovals` PII and the
+  // `approveLead`/`discardLead` callable surface) would be reachable
+  // anonymously.
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
+    const url = new URL(request.url);
+    // Use the same path parsing the Agents SDK does internally —
+    // `pathname.split('/').filter(Boolean)`. A naive `startsWith('/agents/')`
+    // would miss `//agents/...`, which Cloudflare's runtime preserves
+    // verbatim but the SDK's matcher collapses, opening an unauthenticated
+    // WebSocket to the DO.
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (parts[0] === 'agents') {
+      const cookie = readSessionCookie(request);
+      const session = await validateSession(env, cookie);
+      if (!session) {
+        // WebSocket handshakes don't follow 302; HTTP fetches against
+        // `/agents/*` shouldn't either (no useful login page to land on
+        // for a programmatic client). Plain 401 in both cases.
+        return new Response('unauthorized', { status: 401 });
+      }
+    }
+    const agentResponse = await routeAgentRequest(request, env);
+    if (agentResponse) return agentResponse;
+    return server.fetch(request, env, ctx);
+  },
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     console.log({ event: 'cron.scheduled.fired', cron: controller.cron });
     try {

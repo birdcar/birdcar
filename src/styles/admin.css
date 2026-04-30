@@ -1,0 +1,68 @@
+/* Admin-only chrome. Reuses tokens from global.css. Keep this file small —
+   any styling that isn't admin-specific (lists, prose, buttons, form-error,
+   form-actions) lives in global.css. */
+
+.bc-pill {
+  display: inline-block;
+  padding: 2px var(--s-2);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: var(--t-meta);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+.bc-pill--success { background: var(--ok); color: var(--paper); }
+.bc-pill--failure { background: var(--err); color: var(--paper); }
+.bc-pill--retry   { background: var(--warn); color: var(--paper); }
+
+.bc-activity {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-small);
+  margin-top: var(--s-5);
+}
+.bc-activity th {
+  text-align: left;
+  padding: var(--s-2);
+  border-bottom: var(--bw) solid var(--rule-strong);
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.bc-activity td {
+  padding: var(--s-2);
+  border-bottom: var(--bw) solid var(--rule);
+  vertical-align: top;
+}
+.bc-activity .bc-mono {
+  font-family: var(--mono);
+  color: var(--ink-3);
+  font-size: var(--t-meta);
+}
+
+.bc-field-textarea {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  padding: var(--s-3);
+  border: var(--bw) solid var(--rule-strong);
+  border-radius: var(--r-2);
+  background: var(--paper);
+  color: var(--ink);
+  resize: vertical;
+}
+.bc-field-textarea:focus {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+
+.bc-admin-notice {
+  color: var(--clay-2);
+  background: var(--clay-tint);
+  padding: var(--s-3);
+  border-left: 4px solid var(--clay);
+  margin: var(--s-4) 0;
+  font-family: var(--sans);
+  font-size: var(--t-small);
+}

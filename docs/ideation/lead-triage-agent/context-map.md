@@ -1,10 +1,12 @@
 # Context Map: lead-triage-agent
 
-**Phase**: 1
-**Scout Confidence**: 78/100
-**Verdict**: GO (with documented gaps — see Risks)
+**Phase**: 2 (extends Phase 1)
+**Scout Confidence (Phase 2)**: 73/100
+**Verdict (Phase 2)**: GO (with documented gaps — see Phase 2 Risks)
 
-## Dimensions
+## Phase 1 Sections (retained)
+
+### Phase 1 Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
@@ -16,49 +18,111 @@
 
 **Total: 78/100 — GO**
 
-## Key Patterns
+### Phase 1 Key Patterns
 
 - `src/lib/leads.ts` — named exports, `CloudflareEnv` interface, `getEnv(locals)` helper that pulls runtime env from `App.Locals`. Drizzle queries returning typed `Lead`/`NewLead` rows. `patchLead` returns `Lead | null`. The `LeadPatch` type uses `Partial<Pick<Lead, ...>>`. No default exports anywhere.
 - `src/db/client.ts` — `getDb(d1: D1Database): Database` with `Database = DrizzleD1Database<typeof schema>`. Logger off. Canonical entry for new agent + workflow Drizzle calls.
-- `src/db/schema.ts` — `leads` table already has every column the spec writes to: `category` (with the same enum), `qualification` (text, nullable — JSON stringified), `score` (integer), `draft` (text), `status` (with `processing`/`done` already in the enum), `outcome` (with `approved`/`edited`/`discarded`), `respondedAt` (text). The schema field is `respondedAt` (camelCase) but the DB column is `responded_at` — drizzle handles the mapping.
-- `src/actions/index.ts` — uses `astro:actions` `defineAction({ accept: 'form', input: z.object(...), handler: async (input, ctx) => ... })`. Env access via `getEnv(ctx.locals)`. Throws `ActionError` on failure. Try/catch wraps `insertLead`. New `agent.queueLead(id)` call follows this pattern.
-- `src/middleware.ts` — runtime env is read as `(context.locals as { runtime?: { env?: ... } }).runtime?.env`.
-- `wrangler.jsonc` — flat JSONC structure. Existing bindings: `kv_namespaces` (SESSION), `d1_databases` (LEADS_DB). `nodejs_compat` flag is on, `compatibility_date` is `2026-04-15`. The Astro Cloudflare adapter merges this into `dist/server/wrangler.json` at build time.
-- `astro.config.ts` — `output: 'static'` with `adapter: cloudflare({ imageService: 'compile' })`. No worker-entry hook is currently configured. The Vite SSR `external` block excludes `@resvg/resvg-js`, `satori`, `@aws-sdk/client-s3`.
-- `tsconfig.json` — extends `astro/tsconfigs/strict`. JSX configured for React. Strict mode active.
+- `src/db/schema.ts` — `leads` table already has every column the spec writes to: `category`, `qualification`, `score`, `draft`, `status`, `outcome`, `respondedAt`. Status enum now `pending|processing|awaiting-approval|done|discarded` (Phase 1 added `awaiting-approval`).
+- `src/actions/index.ts` — `astro:actions` `defineAction` pattern. Env access via `getEnv(ctx.locals)`. Throws `ActionError` on failure.
+- `src/middleware.ts` — runtime env read as `(context.locals as { runtime?: { env?: ... } }).runtime?.env`. Markdown content-negotiation branch is the only existing logic.
+- `wrangler.jsonc` — flat JSONC. KV (SESSION), D1 (LEADS_DB), AI, DO (LEAD_TRIAGE_AGENT), Workflow, Queue, send_email all bound. `nodejs_compat`, `compatibility_date` 2026-04-15.
+- `astro.config.ts` — `output: 'static'`, adapter cloudflare, vite esbuild target sets `decorators: false`. SSR external excludes resvg/satori/aws-sdk.
+- `tsconfig.json` — `astro/tsconfigs/strict`, JSX configured for React.
 
-## Dependencies
+### Phase 1 Dependencies
 
-- `src/lib/leads.ts:claimPendingLeads` — consumed only by `src/pages/api/leads/pending.ts:31`. Safe to remove with that route.
-- `src/lib/leads.ts:CloudflareEnv` — currently the only env interface in the repo. Will be replaced/extended by `src/types.ts:Env`. `src/lib/leads.ts:getEnv` and `src/middleware.ts` both inline-cast `locals` rather than importing this interface, so the rename has minimal blast radius.
-- `src/lib/leads.ts:WORKER_PULL_TOKEN` field on `CloudflareEnv` — consumed by `src/pages/api/leads/[id].ts:44`. The spec keeps this route. **Resolution: keep the field on `Env`** so the debug surface continues to work; revisit when Phase 2 lands the WorkOS gate.
-- `src/lib/leads.ts:insertLead` — consumed by `src/actions/index.ts:39`. Unchanged in Phase 1.
-- `src/lib/leads.ts:patchLead` — consumed by `src/pages/api/leads/[id].ts:61`. Unchanged in Phase 1.
-- `src/db/schema.ts:leads` — new consumers: `src/agents/lead-triage-agent.ts` (sweep query), `src/workflows/lead-triage-workflow.ts` (load + update).
-- `src/actions/index.ts:server.contact.send` — consumed implicitly by `/contact` page via `astro:actions`. Adding `agent.queueLead(id)` is non-breaking (try/catch).
+- `src/lib/leads.ts:claimPendingLeads` — consumed only by deleted `src/pages/api/leads/pending.ts`. Safe to remove.
+- `src/lib/leads.ts:CloudflareEnv` — replaced by `src/types.ts:Env`. Now consolidated in `src/types.ts` after Phase 1.
+- `src/lib/leads.ts:WORKER_PULL_TOKEN` field — still consumed by `src/pages/api/leads/[id].ts:44`. Kept on `Env`.
+- `src/db/schema.ts:leads` — new consumers (now landed): `src/agents/lead-triage-agent.ts`, `src/workflows/lead-triage-workflow.ts`.
+- `src/actions/index.ts:server.contact.send` — adds `agent.queueLead(id)` (non-breaking, try/catch).
 
-## Conventions
+### Phase 1 Conventions
 
-- **Naming**: camelCase variables/functions, PascalCase types/interfaces/classes. Files kebab-case. Schema columns snake_case in SQL but camelCase via drizzle column mapping.
-- **Imports**: relative paths only (no path aliases). Type-only imports use `import type`. Cloudflare types from `@cloudflare/workers-types`. **Zod**: Astro files use `astro:schema`; agent/workflow files (bundled into the worker outside Astro module graph) use `zod` directly. Need to add `zod` to deps.
-- **Error handling**: throw `ActionError` from action handlers; throw plain `Error` deeper. Try/catch at boundaries. Console.warn for non-blocking failures.
-- **Types**: `interface` for object shapes; `type` for unions/intersections. No barrels. `Lead`/`NewLead` from drizzle's `$inferSelect`/`$inferInsert`.
-- **Env access**: `getEnv(locals)` in actions/routes; `this.env.X` in agent/workflow.
-- **Testing**: no test framework; validation is `bun run check` + dev server.
-- **Drizzle**: `eq`, `inArray`, `asc`, `and`, `lt` from `drizzle-orm`. Returning rows via `.returning()`.
+- camelCase variables/functions, PascalCase types/interfaces/classes. Files kebab-case.
+- Imports relative; type-only via `import type`. Cloudflare types from `@cloudflare/workers-types`. Astro files use `astro:schema`; agent/workflow files use `zod` directly.
+- Throw `ActionError` from action handlers; throw plain `Error` deeper. Try/catch at boundaries. Console.warn for non-blocking failures.
+- `interface` for object shapes; `type` for unions. No barrels.
+- Env access: `getEnv(locals)` in actions/routes; `this.env.X` in agent/workflow.
+- No tests. `bun run check` + `wrangler dev --remote` + `wrangler tail` + manual.
+- Drizzle: `eq`, `inArray`, `asc`, `and`, `lt` from `drizzle-orm`. `.returning()` for RETURNING rows.
 
-## Risks
+### Phase 1 Risks (status update)
 
-1. **`N8N_AI_FLOW.md` is external (gist), not in the repo.** The spec twice references it as the source of truth for prompts. **Mitigation**: hand-author the prompts from the spec's sketches plus voice rules now in `PRODUCT.md`. Output: minimum-viable prompts covering classify / qualify / draft, with explicit `// TODO: tune` markers for further iteration. Flag in completion report.
+1. `N8N_AI_FLOW.md` external — accepted, prompts hand-authored in Phase 1.
+2. `WORKER_PULL_TOKEN` kept — still unresolved in Phase 2 spec. Phase 2 wraps `/admin/*` and `/agents/*` with auth; `/api/leads/[id]` is NOT covered by the gate. **Carry forward as Phase 2 risk.**
+3. Worker entry / DO + Workflow re-export — landed in Phase 1 (`src/worker.ts` exports `LeadTriageAgent` and `LeadTriageWorkflow`). **However, `routeAgentRequest` is NOT yet wired** (see Phase 2 Risk #1).
+4. `astro:schema` Zod compatibility — resolved in Phase 1 (Zod is a dep).
+5. Drizzle sweep query — landed in `src/agents/lead-triage-agent.ts:238`.
+6. D1 read-after-write — Phase 1 covers via `STEP_RETRY.persist`.
+7. Agents SDK API surface — landed cleanly in Phase 1.
 
-2. **`WORKER_PULL_TOKEN` removal is inconsistent.** Spec says drop it from `.env.example` but `src/pages/api/leads/[id].ts:44` still reads `env.WORKER_PULL_TOKEN`. **Resolution**: keep the field on `Env` and the entry in `.env.example`. The debug-surface route keeps working until Phase 2 replaces it with a WorkOS gate.
+## Phase 2 Sections (new)
 
-3. **Worker entry / DO + Workflow class re-export shape is unverified.** Spec admits this with "validate during implementation." **Mitigation**: fetch `@astrojs/cloudflare` v13 docs and `agents` SDK "add to existing project" guide via Context7 before writing the worker-entry file.
+### Phase 2 Dimensions
 
-4. **`astro:schema` Zod compatibility with `agents` SDK.** The agent + workflow are bundled into the worker entry, not the Astro action runtime. **Resolution**: use plain `zod` (add as dep) in `src/lib/ai-types.ts`. Astro action files keep `astro:schema`.
+| Dimension | Score | Notes |
+|---|---|---|
+| Scope clarity | 16/20 | All 12 new files, 5 modified files identified with code in spec. Two unknowns: (1) **`src/lib/agent-stub.ts` does not exist** (spec's `/admin/activity/index.astro` imports `getTriageAgent(env)` from it — must be created or activity page must inline the stub fetch); (2) **Worker entry needs `routeAgentRequest(request, env)` wired** — spec admits "validate during implementation" and the current `src/worker.ts:28` only delegates to `server.fetch`. Without this, `/agents/*` WebSocket upgrades return 404 from the Astro adapter. |
+| Pattern familiarity | 14/20 | Read `src/middleware.ts` (markdown branch present, can interleave auth check ahead of it). Read `Base.astro` (admin pages slot in fine). Read `global.css` — design tokens confirmed: `--paper`, `--paper-2`, `--ink`, `--ink-2`, `--ink-3`, `--rule`, `--rule-strong`, `--clay`, `--clay-2`, plus `--mono`/`--serif`/`--sans` (NOT `--font-mono`/`--font-serif` as spec's `admin.css` writes — see Risks). `src/scripts/` directory exists but is empty — no precedent for client-bundled TS modules. The Agents SDK `AgentClient` API (auto-reconnect, `state` subscription, `stub.X` RPC over WS) is net-new. |
+| Dependency awareness | 15/20 | Agent methods exist exactly as spec assumes (`approveLead`, `discardLead`, `getRecentActivity` are `@callable()`). State shape `pendingApprovals: PendingApproval[]` confirmed. New file `src/lib/agent-stub.ts` has zero existing consumers. Middleware extension is additive. WORKOS_* env vars only consumed by new `src/lib/workos.ts`. |
+| Edge case coverage | 14/20 | Spec covers: WS upgrade 401, session refresh propagation, callback no-code, callback auth-failure, logout no-cookie, draft min-length client check, race when an approval is fulfilled mid-action, agent state arriving while a button is mid-click. Gaps: (1) `[id].astro` doesn't check `lead.status`; (2) Cookie `Secure` flag breaks local dev over `http://localhost:4321`; (3) `WORKER_PULL_TOKEN` route NOT auth-gated. |
+| Test strategy | 14/20 | No new test infrastructure proposed. Validation steps are concrete: dev → AuthKit redirect → callback → dashboard → contact form → live update → click into lead → approve → email → activity table → logout. `bun run check` + `bun run build:ci` are the static gates. |
 
-5. **Drizzle sweep query needs `and(eq, lt)`.** The schema uses `text('updated_at')` storing ISO strings. **Resolution**: use `and(eq(leads.status, 'processing'), lt(leads.updatedAt, cutoffISO))` — Drizzle handles ISO 8601 string comparison correctly.
+**Total: 73/100 — GO**
 
-6. **D1 read-after-write timing for `agent.queueLead`.** The workflow runs in a different DO context from the action that just inserted the row. **Resolution**: rely on `STEP_RETRY.persist` (3 retries, 2s exponential backoff) on the `load-lead` step. If `Lead ${id} not found` happens, retry covers it.
+### Phase 2 Key Patterns
 
-7. **`agents` SDK API surface assumed but not verified.** Spec was authored against an iterating SDK. **Mitigation**: fetch current `agents` SDK docs via Context7 before writing agent / workflow files; verify each method signature (`Agent.options.hibernate`, `this.sql`, `this.schedule`, `this.runWorkflow`, `this.approveWorkflow`, `AgentWorkflow`, `step.do`, etc.) against current docs.
+- `src/middleware.ts:29-77` — existing `defineMiddleware` pattern. Already has `context.isPrerendered` short-circuit at line 35. Phase 2 inserts the auth gate above the markdown branch. Runtime env extracted via the same `(context.locals as { runtime?: { env?: ... } }).runtime?.env` cast already used here.
+- `src/types.ts:50-61` — `Cloudflare.Env` augmentation pattern. Phase 2 adds 4 WORKOS_* fields here.
+- `src/agents/lead-triage-agent.ts:9-18` — `PendingApproval` interface (already exposed). Phase 2 client mirrors a subset (`workflowId`, `leadId`, `name`, `email`, `category`, `score`, `enqueuedAt`).
+- `src/agents/lead-triage-agent.ts:120-136` — `@callable()` `approveLead(workflowId, editedBody?)` and `discardLead(workflowId, reason?)`. **Already supports the editedBody param.** No agent change needed.
+- `src/agents/lead-triage-agent.ts:215-221` — `@callable()` `getRecentActivity(limit = 100)` returns `ActivityRow[]` with snake_case keys.
+- `src/layouts/Base.astro` — accepts `title`/`description`/etc. Admin pages just need `title`.
+- `src/styles/global.css` — design tokens: `--paper`, `--paper-2`, `--paper-3`, `--ink`, `--ink-2`, `--ink-3`, `--ink-4`, `--rule`, `--rule-strong`, `--clay`, `--clay-2`, `--clay-tint`, `--ok`, `--warn`, `--err`, `--mono`, `--serif`, `--sans` (NOT `--font-mono`/`--font-serif`), `--s-1`..`--s-10`, etc. `.bc-form-error` already exists at line 836.
+- `src/pages/contact.astro:1-7` — server-render pattern with `prerender = false` and `Astro.locals` access.
+- `src/pages/api/leads/[id].ts` — `APIRoute` pattern with `prerender = false`, runtime env, returns `Response`.
+- `src/worker.ts:28-31` — current default export only forwards `server.fetch`. Phase 2 needs to wrap with `routeAgentRequest` ahead of `server.fetch`.
+
+### Phase 2 Dependencies
+
+- `src/middleware.ts:29` — extending; new code path for `/admin/*` and `/agents/*` runs ahead of markdown branch.
+- `src/types.ts:51-60` — extending `Cloudflare.Env` interface with 4 WORKOS_* fields.
+- `src/agents/lead-triage-agent.ts` — read-only; consumed by new admin pages and client scripts.
+- `src/lib/agent-stub.ts` — does not exist yet; needed by activity page.
+- `src/worker.ts:28-31` — needs `routeAgentRequest` import and wrapping call.
+- `src/scripts/` — directory exists but empty. **No existing precedent for how client-side TS gets bundled and served at `/scripts/*.js`.** Need to verify the bundling approach during implementation.
+- `package.json:dependencies` — adding `@workos-inc/node`. `agents/client` already available via `agents` dep.
+
+### Phase 2 Conventions
+
+- **Cookies**: `wos-session` name; `HttpOnly; Secure; SameSite=Lax; Max-Age=2592000` (30d). Cleared with `Max-Age=0`.
+- **Auth gate**: pathname prefix on `/admin` and `/agents`, with allowlist for `/admin/login` and `/admin/callback`.
+- **WS upgrade auth**: 401 plain Response (no redirect — browsers don't follow 302 on WS handshake).
+- **Session refresh**: opportunistic — append `Set-Cookie` to wrapped response if refreshed.
+- **Locals user**: `App.Locals.user?: SessionUser` global augmentation in middleware.
+- **Client-side rendering**: forbid `innerHTML`/template-string interpolation. All user-facing text via `document.createElement` + `textContent`. URLs via `encodeURIComponent`.
+- **Admin styles**: keep `admin.css` minimal; reuse global.css tokens.
+- **Astro SSR opt-in**: every admin page sets `export const prerender = false`.
+
+### Phase 2 Risks
+
+1. **`routeAgentRequest` is not wired in `src/worker.ts`.** Phase 2's whole real-time UX depends on this. Mitigation: import `{ routeAgentRequest } from 'agents'`, call it before `server.fetch`. Validate against Agents SDK docs for v0.11.6 signature.
+
+2. **`src/lib/agent-stub.ts` does not exist.** Spec's activity page imports `getTriageAgent` from this missing file. Add to file changes during execution.
+
+3. **`src/scripts/` bundling is unverified.** Spec uses absolute `<script type="module" src="/scripts/admin-leads-list.js">`. Astro doesn't auto-emit standalone TS modules from `src/scripts/` to `/scripts/*.js`. Two viable approaches: (a) use Astro's inline `<script src="../../../scripts/admin-leads-list.ts">` (Vite-bundled — recommended); (b) put compiled JS in `public/scripts/`. Validate during implementation.
+
+4. **CSS token name mismatch in spec.** `admin.css` example references `var(--font-mono)` and `var(--font-serif)` (lines 686, 705, 707), but actual tokens are `--mono` and `--serif`. Substitute correct names during write.
+
+5. **`.bc-form-error` is duplicated.** Already exists in global.css. Drop the admin.css redefinition.
+
+6. **Cookie `Secure` flag in dev.** Browsers may reject `Secure` cookies over `http://localhost`. If sessions break in dev, gate `Secure` on the request URL's scheme.
+
+7. **`/api/leads/[id]` remains unauthed (debug surface).** Phase 2 doesn't gate it. Acceptable while WORKER_PULL_TOKEN stays a secret; mention in completion report.
+
+8. **`[id].astro` renders action buttons regardless of `lead.status`.** Server-side check on `awaiting-approval` would improve clarity, but client hydration disables buttons when no matching pending approval. Acceptable.
+
+9. **AuthKit redirect URI must be registered in WorkOS dashboard out-of-band.** Setup pre-req — note in completion report.
+
+10. **Agents SDK kebab-case binding resolution.** `LEAD_TRIAGE_AGENT` collapses to `lead-triage-agent` via the SDK's `camelCaseToKebabCase`. Class name `LeadTriageAgent` → `lead-triage-agent`. Match confirmed; low risk.

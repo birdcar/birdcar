@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+---
+
+<Base title="Admin — Birdcar">
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Admin</div>
+      <h1>Birdcar admin</h1>
+      <p class="bc-lede">
+        Approve drafted replies, watch workflow activity, and triage incoming leads.
+      </p>
+    </header>
+
+    <ul class="bc-postlist">
+      <li>
+        <a href="/admin/leads" class="bc-post-row">
+          <span class="bc-post-date">leads</span>
+          <span class="bc-post-title">Pending approvals</span>
+          <span class="bc-post-tag">live</span>
+        </a>
+      </li>
+      <li>
+        <a href="/admin/activity" class="bc-post-row">
+          <span class="bc-post-date">activity</span>
+          <span class="bc-post-title">Recent workflow runs</span>
+          <span class="bc-post-tag">log</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="bc-mono-eyebrow">
+      Logged in as {user?.email ?? 'unknown'} · <a href="/admin/logout">sign out</a>
+    </p>
+  </div>
+</Base>

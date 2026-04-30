@@ -1,0 +1,17 @@
+---
+import { getEnv } from '../../lib/leads';
+import { getAuthorizationUrl, safeReturnPath } from '../../lib/workos';
+
+export const prerender = false;
+
+const env = await getEnv(Astro.locals);
+if (!env) {
+  return new Response('runtime unavailable', { status: 500 });
+}
+
+// Defense-in-depth: validate `return` here even though `state` is also
+// validated in the callback. Anything not matching a same-origin absolute
+// path is replaced with the safe default.
+const returnPath = safeReturnPath(Astro.url.searchParams.get('return'));
+return Astro.redirect(getAuthorizationUrl(env, returnPath), 302);
+---

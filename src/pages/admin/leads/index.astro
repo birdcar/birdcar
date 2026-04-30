@@ -1,0 +1,33 @@
+---
+import Base from '../../../layouts/Base.astro';
+import '../../../styles/admin.css';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+---
+
+<Base title="Pending approvals — Birdcar admin">
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Admin · pending approvals</div>
+      <h1>Leads waiting for you</h1>
+      <p class="bc-lede">
+        New leads land here as the agent finishes triage. Approve, edit the
+        draft, or discard.
+      </p>
+    </header>
+
+    <ul class="bc-postlist" id="approval-list" aria-live="polite"></ul>
+    <p class="muted" id="empty-state">No pending approvals.</p>
+
+    <p class="bc-mono-eyebrow">
+      <a href="/admin">← admin</a> · logged in as {user?.email ?? 'unknown'} ·
+      <a href="/admin/logout">sign out</a>
+    </p>
+  </div>
+
+  <script>
+    import '../../../scripts/admin-leads-list';
+  </script>
+</Base>

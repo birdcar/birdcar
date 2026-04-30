@@ -118,5 +118,16 @@
     //   bunx wrangler secret put WORKER_PULL_TOKEN
     // Generate locally with: openssl rand -hex 32
     // Kept as the auth on PATCH /api/leads/[id] until Phase 2's WorkOS gate.
+
+    // WorkOS AuthKit gates /admin/* and /agents/* (the dashboard + the
+    // AgentClient WebSocket). Four secrets — set with:
+    //   bunx wrangler secret put WORKOS_API_KEY
+    //   bunx wrangler secret put WORKOS_CLIENT_ID
+    //   bunx wrangler secret put WORKOS_REDIRECT_URI
+    //   bunx wrangler secret put WORKOS_COOKIE_PASSWORD
+    // The redirect URI must be registered in the WorkOS dashboard under
+    // the AuthKit application: https://birdcar.dev/admin/callback for
+    // prod and http://localhost:4321/admin/callback for `wrangler dev`.
+    // Generate WORKOS_COOKIE_PASSWORD with: openssl rand -base64 32
   }
 }

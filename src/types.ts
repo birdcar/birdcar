@@ -57,6 +57,14 @@ declare global {
       LEAD_TRIAGE_QUEUE: Queue<TriageMessage>;
       EMAIL: SendEmail;
       WORKER_PULL_TOKEN?: string;
+      // WorkOS AuthKit secrets — gate /admin/* and /agents/*. See
+      // wrangler.jsonc and .env.example for setup. Required at runtime;
+      // typed as required so middleware/auth route code can rely on them
+      // without inline narrowing.
+      WORKOS_API_KEY: string;
+      WORKOS_CLIENT_ID: string;
+      WORKOS_REDIRECT_URI: string;
+      WORKOS_COOKIE_PASSWORD: string;
     }
   }
 }

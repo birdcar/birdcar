@@ -1,0 +1,73 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getEnv } from '../../../lib/leads';
+import { getTriageAgent } from '../../../lib/agent-stub';
+import '../../../styles/admin.css';
+
+export const prerender = false;
+
+const env = await getEnv(Astro.locals);
+if (!env) {
+  return new Response('runtime unavailable', { status: 500 });
+}
+
+const agent = getTriageAgent(env);
+let rows: Awaited<ReturnType<typeof agent.getRecentActivity>> = [];
+let activityError: string | null = null;
+try {
+  rows = await agent.getRecentActivity(100);
+} catch (err) {
+  console.error({ event: 'admin.activity.load.failed', error: err });
+  activityError = 'Could not load recent activity.';
+}
+
+const user = Astro.locals.user;
+
+function formatTs(ts: number): string {
+  return new Date(ts).toISOString().replace('T', ' ').slice(0, 19);
+}
+---
+
+<Base title="Agent activity — Birdcar admin">
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Admin · activity</div>
+      <h1>Recent workflow runs</h1>
+      <p class="bc-lede">Last 100 step transitions, newest first.</p>
+    </header>
+
+    {activityError && <p class="bc-admin-notice">{activityError}</p>}
+
+    {rows.length === 0 && !activityError ? (
+      <p class="muted">No activity yet.</p>
+    ) : (
+      <table class="bc-activity">
+        <thead>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">Lead</th>
+            <th scope="col">Step</th>
+            <th scope="col">Outcome</th>
+            <th scope="col">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <td class="bc-mono">{formatTs(r.ts)}</td>
+              <td><a href={`/admin/leads/${r.lead_id}`}>{r.lead_id.slice(0, 8)}</a></td>
+              <td>{r.step}</td>
+              <td><span class={`bc-pill bc-pill--${r.outcome}`}>{r.outcome}</span></td>
+              <td class="bc-mono">{r.duration_ms ?? '—'}ms</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+
+    <p class="bc-mono-eyebrow">
+      <a href="/admin">← admin</a> · {user?.email ?? 'unknown'} ·
+      <a href="/admin/logout">sign out</a>
+    </p>
+  </div>
+</Base>

@@ -1,0 +1,74 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { eq } from 'drizzle-orm';
+import { getDb } from '../../../db/client';
+import { leads } from '../../../db/schema';
+import { getEnv } from '../../../lib/leads';
+import '../../../styles/admin.css';
+
+export const prerender = false;
+
+const env = await getEnv(Astro.locals);
+if (!env) {
+  return new Response('runtime unavailable', { status: 500 });
+}
+
+const id = Astro.params.id;
+if (!id) {
+  return Astro.redirect('/admin/leads', 302);
+}
+
+const db = getDb(env.LEADS_DB);
+const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+if (!lead) {
+  return Astro.redirect('/admin/leads', 302);
+}
+
+const isAwaitingApproval = lead.status === 'awaiting-approval';
+const user = Astro.locals.user;
+---
+
+<Base title={`Lead from ${lead.name} — Birdcar admin`}>
+  <div class="bc-page-prose">
+    <header class="bc-page-head">
+      <div class="bc-mono-eyebrow">Admin · lead</div>
+      <h1>{lead.name} <span class="muted">&lt;{lead.email}&gt;</span></h1>
+      <p class="bc-mono-eyebrow">
+        {lead.category ?? 'uncategorized'} · score {lead.score ?? '—'} · {lead.submittedAt}
+      </p>
+    </header>
+
+    <section>
+      <h2>Their message</h2>
+      <p class="bc-body">{lead.message}</p>
+    </section>
+
+    <section>
+      <h2>Drafted reply</h2>
+      <textarea id="draft-body" class="bc-field-textarea" rows="14">{lead.draft ?? ''}</textarea>
+    </section>
+
+    {isAwaitingApproval ? (
+      <div class="bc-form-actions" id="lead-actions" data-lead-id={id}>
+        <button type="button" class="bc-btn bc-btn-primary" data-action="approve">Approve as drafted</button>
+        <button type="button" class="bc-btn bc-btn-secondary" data-action="edit-approve">Approve with edits</button>
+        <button type="button" class="bc-btn bc-btn-link" data-action="discard">Discard</button>
+      </div>
+    ) : (
+      <p class="bc-admin-notice">
+        This lead is no longer pending approval — current status: <code>{lead.status}</code>.
+      </p>
+    )}
+
+    <p class="bc-mono-eyebrow">
+      <a href="/admin/leads">← all pending approvals</a> · {user?.email ?? 'unknown'} ·
+      <a href="/admin/logout">sign out</a>
+    </p>
+  </div>
+
+  {isAwaitingApproval && (
+    <script>
+      import '../../../scripts/admin-lead-detail';
+    </script>
+  )}
+</Base>
