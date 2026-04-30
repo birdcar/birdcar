@@ -1,6 +1,6 @@
 import { AgentWorkflow, WorkflowRejectedError } from 'agents/workflows';
 import type { AgentWorkflowEvent, AgentWorkflowStep } from 'agents/workflows';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { generateText } from 'ai';
 import { createWorkersAI } from 'workers-ai-provider';
 import { getDb } from '../db/client';
@@ -183,22 +183,44 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
       return;
     }
 
-    // 7. Notify Nick by email.
+    // 7. Notify Nick by email — lead-scoped idempotency via `notified_at`.
+    //    Atomic CAS: claim the slot only if it's null, send only if we
+    //    won the claim, roll back on send failure so retries can try
+    //    again. Survives workflow respawns: a second workflow run for
+    //    the same lead won't double-send because notified_at is set.
     await step.do('notify-nick', STEP_RETRY.notify, async () => {
       const start = Date.now();
-      await this.env.EMAIL.send({
-        to: NOTIFY_TO,
-        from: NOTIFY_FROM,
-        replyTo: NOTIFY_FROM.email,
-        subject: `New lead: ${lead.name}`,
-        text: notifyEmailBody({
-          lead: { name: lead.name, email: lead.email, message: lead.message },
-          classification,
-          qualification,
-          score,
-          leadId,
-        }),
-      });
+      const db = getDb(this.env.LEADS_DB);
+      const claim = await db
+        .update(leads)
+        .set({ notifiedAt: sql`(datetime('now'))` })
+        .where(and(eq(leads.id, leadId), isNull(leads.notifiedAt)))
+        .returning({ id: leads.id });
+      if (claim.length === 0) {
+        console.log({ event: 'notify-nick.skipped', leadId, workflowId, reason: 'already-notified' });
+        return;
+      }
+      try {
+        await this.env.EMAIL.send({
+          to: NOTIFY_TO,
+          from: NOTIFY_FROM,
+          replyTo: NOTIFY_FROM.email,
+          subject: `New lead: ${lead.name}`,
+          text: notifyEmailBody({
+            lead: { name: lead.name, email: lead.email, message: lead.message },
+            classification,
+            qualification,
+            score,
+            leadId,
+          }),
+        });
+      } catch (err) {
+        await db
+          .update(leads)
+          .set({ notifiedAt: null })
+          .where(eq(leads.id, leadId));
+        throw err;
+      }
       await this.agent.recordActivity({
         leadId,
         workflowId,
@@ -270,15 +292,36 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
 
     const finalBody = approvalMetadata?.editedBody?.trim() || draft;
 
-    // 10. Send reply email.
+    // 10. Send reply email — same claim-first idempotency via `responded_at`.
+    //     Pre-Phase 2 the workflow can't actually reach this without a
+    //     dashboard sending approve, but defense in depth: if Phase 2 ever
+    //     surfaces a "retry approval" path, this step won't double-send.
     await step.do('send-reply', STEP_RETRY.notify, async () => {
-      await this.env.EMAIL.send({
-        to: lead.email,
-        from: REPLY_FROM,
-        replyTo: REPLY_FROM.email,
-        subject: 'Re: your message via birdcar.dev',
-        text: `${finalBody}\n\n- Nick`,
-      });
+      const db = getDb(this.env.LEADS_DB);
+      const claim = await db
+        .update(leads)
+        .set({ respondedAt: sql`(datetime('now'))` })
+        .where(and(eq(leads.id, leadId), isNull(leads.respondedAt)))
+        .returning({ id: leads.id });
+      if (claim.length === 0) {
+        console.log({ event: 'send-reply.skipped', leadId, workflowId, reason: 'already-responded' });
+        return;
+      }
+      try {
+        await this.env.EMAIL.send({
+          to: lead.email,
+          from: REPLY_FROM,
+          replyTo: REPLY_FROM.email,
+          subject: 'Re: your message via birdcar.dev',
+          text: `${finalBody}\n\n- Nick`,
+        });
+      } catch (err) {
+        await db
+          .update(leads)
+          .set({ respondedAt: null })
+          .where(eq(leads.id, leadId));
+        throw err;
+      }
       await this.agent.recordActivity({
         leadId,
         workflowId,
@@ -287,7 +330,9 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
       });
     });
 
-    // 11. Mark done.
+    // 11. Mark done. `respondedAt` was already claimed in send-reply
+    //     (lead-scoped idempotency); re-setting it here would overwrite
+    //     the actual send timestamp with the mark-done timestamp.
     await step.do('mark-done', STEP_RETRY.persist, async () => {
       const outcome = finalBody === draft ? 'approved' : 'edited';
       const db = getDb(this.env.LEADS_DB);
@@ -296,7 +341,6 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
         .set({
           status: 'done',
           outcome,
-          respondedAt: new Date().toISOString(),
           draft: finalBody,
         })
         .where(eq(leads.id, leadId));

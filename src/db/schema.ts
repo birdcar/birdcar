@@ -37,6 +37,7 @@ export const leads = sqliteTable(
       enum: ['approved', 'edited', 'discarded'],
     }),
     respondedAt: text('responded_at'),
+    notifiedAt: text('notified_at'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(datetime('now'))`),
