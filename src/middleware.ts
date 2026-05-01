@@ -11,15 +11,29 @@ interface AssetsBinding {
   fetch: (request: Request) => Promise<Response>;
 }
 
-interface CloudflareRuntime {
-  env?: Env & { ASSETS?: AssetsBinding };
-}
+type EnvWithAssets = Env & { ASSETS?: AssetsBinding };
 
 declare global {
   namespace App {
     interface Locals {
       user?: SessionUser;
     }
+  }
+}
+
+/**
+ * Astro 6 removed `Astro.locals.runtime.env` — accessing it now throws.
+ * The supported pattern is the dynamic `import('cloudflare:workers')`
+ * (mirrors the helper in src/lib/leads.ts). The dynamic form keeps the
+ * `cloudflare:workers` virtual module out of the Node prerender bundle,
+ * which would otherwise crash the build.
+ */
+async function loadEnv(): Promise<EnvWithAssets | null> {
+  try {
+    const { env } = await import('cloudflare:workers');
+    return (env as EnvWithAssets) ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -54,7 +68,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const { request, url } = context;
-  const runtime = (context.locals as { runtime?: CloudflareRuntime }).runtime;
 
   // -------------- Auth gate for /admin/* and /agents/* --------------
   // Runs ahead of the markdown branch so the auth requirement is honored
@@ -67,7 +80,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     url.pathname === '/admin/login' || url.pathname === '/admin/callback';
 
   if ((isAdminPath || isAgentPath) && !isAuthFlowPath) {
-    const env = runtime?.env;
+    const env = await loadEnv();
     if (!env) {
       return new Response('runtime unavailable', { status: 500 });
     }
@@ -113,7 +126,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const mdPath = mapToMarkdownPath(url.pathname);
   if (!mdPath) return next();
 
-  const assets = runtime?.env?.ASSETS;
+  const env = await loadEnv();
+  const assets = env?.ASSETS;
   if (!assets) return next();
 
   const mdUrl = new URL(mdPath, url.origin);
