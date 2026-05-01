@@ -9,6 +9,7 @@
     "build:ci": "bun run scripts/generate-og.ts && astro build && bun run scripts/post-build.ts",
     "generate-og": "bun run scripts/generate-og.ts",
     "cf:bootstrap": "bun run scripts/cf-bootstrap.ts",
+    "cf:create-admin": "bun run scripts/cf-create-admin.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply birdcar-leads --remote",
     "db:migrate:local": "wrangler d1 migrations apply birdcar-leads --local",
