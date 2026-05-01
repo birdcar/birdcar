@@ -12,8 +12,6 @@ if (root && draftEl) {
       const approval = state?.pendingApprovals?.find((p) => p.leadId === leadId);
       workflowId = approval?.workflowId ?? null;
       if (!approval) {
-        // Already resolved — disable buttons and surface an inline note so
-        // the SSR view doesn't lie about what's possible.
         setButtonsDisabled(true);
         showNotice('This lead is no longer pending approval. Refresh to see latest status.');
       }

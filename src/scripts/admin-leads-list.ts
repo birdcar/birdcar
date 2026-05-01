@@ -7,9 +7,6 @@ if (list && empty) {
   connectAgent((state) => {
     const approvals = state?.pendingApprovals ?? [];
     empty.hidden = approvals.length > 0;
-    // Rebuild the list with safe DOM construction. `replaceChildren` is
-    // O(n) over the new set and avoids the innerHTML XSS shape entirely —
-    // no field on the row touches innerHTML or template-string interpolation.
     list.replaceChildren(...approvals.map(renderRow));
   });
 }

@@ -19,9 +19,6 @@ export interface AgentStateView {
   pendingApprovals: PendingApprovalView[];
 }
 
-// Sealed `wos-session` cookie rides along on the WS upgrade automatically
-// because the dashboard, the agent route, and the cookie all share the
-// same origin. Nothing for the client to do beyond connecting.
 export function connectAgent(
   onStateUpdate: (state: AgentStateView) => void,
 ): AgentClient {

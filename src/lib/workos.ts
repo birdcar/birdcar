@@ -77,9 +77,8 @@ export async function validateSession(
     return { user: toSessionUser(auth.user) };
   }
 
-  // Access token expired or invalid — try refreshing transparently. If
-  // refresh works, the response gets a new sealed cookie attached so the
-  // browser stays signed in. If it fails, we treat the session as gone.
+  // Access token expired — try refreshing. The new sealed cookie rides
+  // back on the response so the browser stays signed in.
   try {
     const refreshed = await session.refresh();
     if (refreshed.authenticated) {
@@ -89,7 +88,7 @@ export async function validateSession(
       };
     }
   } catch {
-    // fall through to null
+    /* refresh failed — treat as logged out */
   }
   return null;
 }

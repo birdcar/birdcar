@@ -1,17 +1,21 @@
-// Custom worker entry. Four responsibilities:
+// Custom worker entry. Five responsibilities:
 //
 //   1. Re-export the Durable Object and Workflow classes so miniflare / the
 //      Cloudflare runtime can wrap them. The Astro adapter defaults `main`
 //      to `@astrojs/cloudflare/entrypoints/server`, which only exports a
 //      default fetch handler — that's why we override it via `main` in
 //      wrangler.jsonc and add the named exports here.
-//   2. Forward the adapter's `fetch` handler unchanged so HTTP requests
+//   2. Gate `/agents/*` with the WorkOS session before delegating to the
+//      Agents SDK router. routeAgentRequest runs ahead of Astro middleware,
+//      so the middleware's auth gate cannot protect WebSocket upgrades to
+//      the DO; the check has to live here.
+//   3. Forward the adapter's `fetch` handler unchanged so HTTP requests
 //      still flow through Astro's SSR runtime.
-//   3. Consume LEAD_TRIAGE_QUEUE messages and dispatch each lead to the
+//   4. Consume LEAD_TRIAGE_QUEUE messages and dispatch each lead to the
 //      agent's `queueLead` RPC. The action submits to the queue rather
 //      than calling the DO directly so form latency is independent of
 //      agent state and we get free retry + backpressure.
-//   4. Run the worker-level cron trigger that fires `sweepStuckRows` on
+//   5. Run the worker-level cron trigger that fires `sweepStuckRows` on
 //      the agent. The agent's own internal alarm only registers after the
 //      DO is first instantiated; if the queue path has never delivered a
 //      message successfully, the DO has never started, the alarm has
@@ -32,36 +36,20 @@ export { LeadTriageAgent } from './agents/lead-triage-agent';
 export { LeadTriageWorkflow } from './workflows/lead-triage-workflow';
 
 export default {
-  // The Agents SDK ships its own router for `/agents/<class>/<name>` —
-  // including the WebSocket upgrade the dashboard's AgentClient depends
-  // on. We need it to run ahead of the Astro adapter so `/agents/*` never
-  // hits Astro routing.
-  //
-  // Critically, this runs *before* Astro middleware, so the auth gate in
-  // src/middleware.ts cannot protect `/agents/*` requests. The session
-  // check has to happen here, inline, before we delegate. Otherwise the
-  // dashboard's WebSocket (which exposes `pendingApprovals` PII and the
-  // `approveLead`/`discardLead` callable surface) would be reachable
-  // anonymously.
   async fetch(
     request: Request,
     env: Env,
     ctx: ExecutionContext,
   ): Promise<Response> {
+    // Match the SDK's segment-based parsing rather than `startsWith('/agents/')`
+    // — the latter misses `//agents/...`, which the runtime preserves
+    // verbatim but the SDK matcher collapses.
     const url = new URL(request.url);
-    // Use the same path parsing the Agents SDK does internally —
-    // `pathname.split('/').filter(Boolean)`. A naive `startsWith('/agents/')`
-    // would miss `//agents/...`, which Cloudflare's runtime preserves
-    // verbatim but the SDK's matcher collapses, opening an unauthenticated
-    // WebSocket to the DO.
     const parts = url.pathname.split('/').filter(Boolean);
     if (parts[0] === 'agents') {
       const cookie = readSessionCookie(request);
       const session = await validateSession(env, cookie);
       if (!session) {
-        // WebSocket handshakes don't follow 302; HTTP fetches against
-        // `/agents/*` shouldn't either (no useful login page to land on
-        // for a programmatic client). Plain 401 in both cases.
         return new Response('unauthorized', { status: 401 });
       }
     }

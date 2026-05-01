@@ -13,10 +13,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
   if (!env) return new Response('runtime unavailable', { status: 500 });
 
   const code = url.searchParams.get('code');
-  // `state` round-trips through the AuthKit redirect from `/admin/login`,
-  // so any path an attacker could lure a victim to via that URL also lands
-  // here. Validate it as a same-origin path before reflecting it into the
-  // `Location` header — otherwise this would be an open redirect.
+  // `state` is attacker-controllable via `/admin/login?return=...`; sanitize
+  // before reflecting into Location to avoid an open redirect.
   const state = safeReturnPath(url.searchParams.get('state'));
 
   if (!code) {

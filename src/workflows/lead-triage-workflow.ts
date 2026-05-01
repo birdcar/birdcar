@@ -350,17 +350,10 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
   }
 }
 
-/**
- * Pull the first balanced `{...}` (or `[...]`) block out of the model's
- * response. The prompts ask for JSON only, but Llama-3 occasionally
- * prepends "Here is the JSON you requested:\n" on retries — a fence-only
- * stripper misses that. Grabbing the first brace-balanced block ignores
- * any surrounding prose, code fences, or trailing commentary.
- *
- * Falls back to the trimmed input if no JSON-shaped substring is found,
- * so the downstream `JSON.parse` produces a meaningful error rather than
- * silently parsing an empty string.
- */
+// Llama-3 occasionally prepends "Here is the JSON:\n" on retries; fence
+// stripping misses that. Grab the first balanced JSON block instead, with
+// the trimmed input as a fallback so JSON.parse fails loudly when truly
+// nothing matched.
 function extractJson(s: string): string {
   const obj = matchBalanced(s, '{', '}');
   if (obj) return obj;
