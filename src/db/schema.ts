@@ -23,7 +23,7 @@ export const leads = sqliteTable(
     category: text('category', {
       enum: [
         'consulting-fit',
-        'consulting-offfit',
+        'consulting-off-fit',
         'support-question',
         'vendor-pitch',
         'recruiting',

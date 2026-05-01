@@ -25,7 +25,7 @@ export const SCORE_RULES = {
   industryFit: ['cpa', 'mortgage', 'realtor', 'property-mgmt', 'local-agency'] as const,
   geoStrong: ['fort-worth', 'dfw'] as const,
   geoOk: ['texas'] as const,
-  sizeFit: ['small (2-10)', 'medium (10-50)'] as const,
+  sizeFit: ['small-2-10', 'medium-10-50'] as const,
   problemRecognized: ['review-queue', 'system-glue', 'internal-tool', 'reporting'] as const,
 } as const;
 

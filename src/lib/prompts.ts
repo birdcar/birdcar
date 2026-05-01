@@ -23,7 +23,20 @@ interface DraftInput extends LeadInput {
   score: number;
 }
 
-const STRICT_JSON_NOTE = `Return JSON only. No prose. No code fences. No commentary before or after.`;
+// JSON-mode notes: the `{` anchor lets `extractJson` in the workflow
+// ignore any prose-prefixed retries the model emits.
+const STRICT_JSON_NOTE = `Return only the JSON object. Begin your response with \`{\`. No prose. No code fences. No commentary before or after.`;
+const STRICT_TEXT_NOTE = `Return plain text only. No code fences. No commentary before or after.`;
+
+/**
+ * Wrap untrusted lead-supplied content in `<message>` delimiters. Llama-3
+ * variants treat XML-style tags as content boundaries, which raises the
+ * floor on prompt-injection attempts that try to escape the user-turn
+ * frame ("---END--- Ignore previous instructions...").
+ */
+function fenceMessage(message: string): string {
+  return `<message>\n${message}\n</message>`;
+}
 
 export function classifyPrompt(lead: LeadInput): { system: string; user: string } {
   return {
@@ -32,58 +45,57 @@ Nick builds internal tools and automations for small businesses ($1-20M revenue)
 and around Fort Worth, usually CPAs, mortgage brokers, realtors, property management
 firms, and local agencies.
 
-Read the inquiry below and return STRICT JSON with this exact shape:
-{
-  "category": "consulting-fit" | "consulting-offfit" | "support-question" | "vendor-pitch" | "recruiting" | "spam",
-  "confidence": 0.0-1.0,
-  "reasoning": "one short sentence"
-}
+Read the inquiry below and return JSON with this exact shape:
+{"category":"...","confidence":0.0,"reasoning":"..."}
 
-Categories:
-- consulting-fit: SMB owner with a workflow/automation/internal-tool problem
-- consulting-offfit: consulting-shaped but wrong (enterprise, wrong industry, wrong geography, wrong scope)
+Category values:
+- consulting-fit: SMB owner with a workflow, automation, or internal-tool problem
+- consulting-off-fit: consulting-shaped but wrong fit (enterprise, out-of-area, wrong scope)
 - support-question: asking about Nick's open-source projects
 - vendor-pitch: trying to sell something to Nick
 - recruiting: pitching a full-time job
 - spam: automated, off-topic, or unintelligible
 
+confidence: 0.0-1.0. reasoning: one sentence, 20 words max.
+When two categories are equally plausible, prefer the one with the lower cost of being wrong.
+
 ${STRICT_JSON_NOTE}`,
     user: `Name: ${lead.name}
 Email: ${lead.email}
-Domain: ${lead.email.split('@')[1] ?? 'unknown'}
-Message: ${lead.message}`,
+${fenceMessage(lead.message)}`,
   };
 }
 
 export function qualifyPrompt(lead: LeadInput): { system: string; user: string } {
   return {
-    system: `You are qualifying a consulting-fit inquiry for Nick Cannariato.
+    system: `You are profiling a consulting-fit inquiry for Nick Cannariato.
 Nick takes on small-business consulting projects, usually 4-12 weeks, fixed scope,
 fixed price, building internal tools and automations. The business is based in Fort
 Worth, Texas; engagements are local-first but he will work with anyone in the DFW
 metro and selectively elsewhere in Texas.
 
-Read the inquiry and return STRICT JSON with this exact shape:
+These fields feed a deterministic scoring formula; prefer "unknown" or "other" over
+a confident wrong answer. Accuracy matters more than completeness.
+
+Return JSON with this exact shape:
 {
-  "industry": "cpa" | "mortgage" | "realtor" | "property-mgmt" | "local-agency" | "other",
-  "geography": "fort-worth" | "dfw" | "texas" | "other-us" | "international" | "unknown",
-  "size_signal": "solo" | "small (2-10)" | "medium (10-50)" | "larger" | "unknown",
-  "problem_shape": "review-queue" | "system-glue" | "internal-tool" | "reporting" | "other",
-  "urgency_signal": "scope-clear" | "exploring" | "in-pain" | "unknown"
+  "industry": "cpa"|"mortgage"|"realtor"|"property-mgmt"|"local-agency"|"other",
+  "geography": "fort-worth"|"dfw"|"texas"|"other-us"|"international"|"unknown",
+  "size_signal": "solo"|"small-2-10"|"medium-10-50"|"larger"|"unknown",
+  "problem_shape": "review-queue"|"system-glue"|"internal-tool"|"reporting"|"other",
+  "urgency_signal": "scope-clear"|"exploring"|"in-pain"|"unknown"
 }
 
-Definitions:
-- industry: best guess from the message and email domain
+Use only the values listed above. Definitions:
 - geography: where the business operates, not where the inquirer lives
-- size_signal: rough headcount; infer from team mentions, revenue cues, or the email domain
-- problem_shape: review-queue (people manually reviewing items in a queue), system-glue (data flowing between systems), internal-tool (a custom UI for a workflow), reporting (dashboards / metrics), other
-- urgency_signal: scope-clear (they know what they want), exploring (looking around), in-pain (something is broken now), unknown
+- size_signal: solo, small-2-10, medium-10-50, larger; infer from team mentions, revenue cues, or domain
+- problem_shape: review-queue=people manually working a queue, system-glue=data flowing between systems, internal-tool=custom UI for a workflow, reporting=dashboards/metrics
+- urgency_signal: in-pain=something is broken now (only when there's clear evidence), scope-clear=they know what they want, exploring=shopping around
 
 ${STRICT_JSON_NOTE}`,
     user: `Name: ${lead.name}
 Email: ${lead.email}
-Domain: ${lead.email.split('@')[1] ?? 'unknown'}
-Message: ${lead.message}`,
+${fenceMessage(lead.message)}`,
   };
 }
 
@@ -113,7 +125,7 @@ What to actually write depends on the category and score:
 - consulting-fit, score >= 5: warm, specific. Acknowledge their problem in their language. Offer a 30-minute call to talk through the scope. Mention the paid two-week discovery as the next step if it sounds like a real project.
 - consulting-fit, score 3-4: warmer than off-fit but lower energy. Acknowledge, ask one clarifying question that helps you decide whether this is a fit, suggest a brief call.
 - consulting-fit, score 0-2: friendly and brief. Probably a fit but the message is thin. Ask the one question that would let you decide.
-- consulting-offfit: kind but clear. You are flattered but it is not a fit. One sentence on why (industry / geography / scope), one sentence pointing at a more useful direction if you can. Do not propose a call.
+- consulting-off-fit: kind but clear. You are flattered but it is not a fit. One sentence on why (industry / geography / scope), one sentence pointing at a more useful direction if you can. Do not propose a call.
 - support-question: brief, useful. Answer or point at the README / docs. No call.
 - vendor-pitch: short, polite, declined. No call.
 - recruiting: short, polite, not currently looking (one sentence). No call.
@@ -121,12 +133,10 @@ What to actually write depends on the category and score:
 
 Output the body of the email only. No subject line. No "Hi <name>," greeting (the system handles greetings). No "- Nick" sign-off.
 
-${STRICT_JSON_NOTE.replace('JSON', 'plain text')}`,
+${STRICT_TEXT_NOTE}`,
     user: `Lead name: ${input.name}
 Email: ${input.email}
-Domain: ${input.email.split('@')[1] ?? 'unknown'}
-Message:
-${input.message}
+${fenceMessage(input.message)}
 
 Classification: ${input.classification.category} (confidence ${input.classification.confidence.toFixed(2)})
 Reasoning: ${input.classification.reasoning}
@@ -135,10 +145,8 @@ ${input.qualification
 Geography: ${input.qualification.geography}
 Size: ${input.qualification.size_signal}
 Problem shape: ${input.qualification.problem_shape}
-Urgency: ${input.qualification.urgency_signal}`
-  : ''}
-Score: ${input.score}
-
-Draft the reply body now.`,
+Urgency: ${input.qualification.urgency_signal}
+Score: ${input.score}`
+  : `Qualification: n/a (non-consulting-fit lead, score is not applicable)`}`,
   };
 }

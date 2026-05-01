@@ -71,7 +71,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
           system,
           prompt: user,
         });
-        const parsed = ClassifyOutput.parse(JSON.parse(stripCodeFences(text)));
+        const parsed = ClassifyOutput.parse(JSON.parse(extractJson(text)));
         await this.agent.recordActivity({
           leadId,
           workflowId,
@@ -99,7 +99,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
               system,
               prompt: user,
             });
-            const parsed = QualifyOutput.parse(JSON.parse(stripCodeFences(text)));
+            const parsed = QualifyOutput.parse(JSON.parse(extractJson(text)));
             await this.agent.recordActivity({
               leadId,
               workflowId,
@@ -350,11 +350,37 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
   }
 }
 
-function stripCodeFences(s: string): string {
-  return s
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```\s*$/, '')
-    .trim();
+/**
+ * Pull the first balanced `{...}` (or `[...]`) block out of the model's
+ * response. The prompts ask for JSON only, but Llama-3 occasionally
+ * prepends "Here is the JSON you requested:\n" on retries — a fence-only
+ * stripper misses that. Grabbing the first brace-balanced block ignores
+ * any surrounding prose, code fences, or trailing commentary.
+ *
+ * Falls back to the trimmed input if no JSON-shaped substring is found,
+ * so the downstream `JSON.parse` produces a meaningful error rather than
+ * silently parsing an empty string.
+ */
+function extractJson(s: string): string {
+  const obj = matchBalanced(s, '{', '}');
+  if (obj) return obj;
+  const arr = matchBalanced(s, '[', ']');
+  if (arr) return arr;
+  return s.trim();
+}
+
+function matchBalanced(s: string, open: string, close: string): string | null {
+  const start = s.indexOf(open);
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < s.length; i++) {
+    if (s[i] === open) depth++;
+    else if (s[i] === close) {
+      depth--;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 function notifyEmailBody(input: {
