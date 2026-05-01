@@ -111,13 +111,39 @@ function extractNamespaceId(stdout: string): string | null {
 }
 
 async function listExistingNamespaces(): Promise<NamespaceCreateResult[]> {
+  // `wrangler kv namespace list` prints structured JSON by default on
+  // recent wrangler versions, but only the bare JSON without surrounding
+  // log lines on stdout — `extractJsonArray` is forgiving in case a
+  // future version adds preamble.
   const out = runWrangler(['kv', 'namespace', 'list']);
-  try {
-    const parsed = JSON.parse(out) as NamespaceCreateResult[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  return extractJsonArray<NamespaceCreateResult>(out);
+}
+
+/**
+ * Pull the first JSON array out of `s`. Some wrangler subcommands print
+ * log lines or banners to stdout before the JSON payload; a strict
+ * `JSON.parse(out)` blows up on those. This walks to the first `[` and
+ * returns the balanced block, falling back to [] if nothing parses.
+ */
+function extractJsonArray<T>(s: string): T[] {
+  const start = s.indexOf('[');
+  if (start === -1) return [];
+  let depth = 0;
+  for (let i = start; i < s.length; i++) {
+    if (s[i] === '[') depth++;
+    else if (s[i] === ']') {
+      depth--;
+      if (depth === 0) {
+        try {
+          const parsed = JSON.parse(s.slice(start, i + 1));
+          return Array.isArray(parsed) ? (parsed as T[]) : [];
+        } catch {
+          return [];
+        }
+      }
+    }
   }
+  return [];
 }
 
 async function ensureNamespace(title: string): Promise<string> {
@@ -137,22 +163,16 @@ async function ensureNamespace(title: string): Promise<string> {
   return id;
 }
 
-interface QueueListEntry {
-  queue_name?: string;
-  name?: string;
-}
-
 async function listExistingQueues(): Promise<string[]> {
+  // `wrangler queues list` has no JSON output mode in v4.x; it prints a
+  // Unicode box-drawn table. Each data row looks like:
+  //   │ <32-hex id> │ <name> │ <iso-ts> │ ... │
+  // Match the second column off the id anchor with `matchAll`. If the
+  // output format ever changes, the create-with-fallback in ensureQueue
+  // catches the resulting 11009 and treats it as success.
   const out = runWrangler(['queues', 'list']);
-  try {
-    const parsed = JSON.parse(out) as QueueListEntry[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((q) => q.queue_name ?? q.name)
-      .filter((n): n is string => typeof n === 'string');
-  } catch {
-    return [];
-  }
+  const matches = out.matchAll(/│\s*[0-9a-f]{32}\s*│\s*([^│\s][^│]*?)\s*│/gi);
+  return Array.from(matches, (m) => m[1]);
 }
 
 async function ensureQueue(name: string): Promise<void> {
@@ -162,8 +182,21 @@ async function ensureQueue(name: string): Promise<void> {
     return;
   }
   console.log(`→ Creating queue "${name}"...`);
-  runWrangler(['queues', 'create', name]);
-  console.log(`✓ Created queue "${name}"`);
+  try {
+    runWrangler(['queues', 'create', name]);
+    console.log(`✓ Created queue "${name}"`);
+  } catch (err) {
+    // Defense in depth: if the list call missed an existing queue (older
+    // wrangler versions emitted non-JSON tables, listing API throttles,
+    // etc.), the create will fail with code 11009. Treat that as
+    // success to keep the script idempotent.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/code:\s*11009|already taken/i.test(msg)) {
+      console.log(`✓ Queue "${name}" already exists (detected via create)`);
+      return;
+    }
+    throw err;
+  }
 }
 
 interface D1ListEntry {
