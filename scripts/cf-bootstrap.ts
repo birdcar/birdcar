@@ -41,7 +41,7 @@
  *   - Cloudflare account with Workers/Pages access
  *   - WorkOS AuthKit application(s) created — one per environment if you
  *     want prod/staging isolation. Each app needs its own redirect URI:
- *       Prod app    → https://birdcar.dev/admin/callback
+ *       Prod app    → https://www.birdcar.dev/admin/callback
  *       Staging app → http://localhost:4321/admin/callback
  *
  * Usage:
@@ -62,7 +62,12 @@ const DEV_VARS_PATH = join(process.cwd(), '.dev.vars');
 const NAMESPACE_TITLE = 'birdcar-session';
 const D1_DATABASE_NAME = 'birdcar-leads';
 const QUEUE_NAME = 'lead-triage';
-const PROD_REDIRECT_URI = 'https://birdcar.dev/admin/callback';
+// Canonical host is `www.birdcar.dev` (matches astro.config.ts:site).
+// The bare `birdcar.dev` redirects upstream, which would break the
+// AuthKit callback — registering both at WorkOS isn't enough; the
+// `state` parameter only round-trips through the URL the SDK was
+// initialized with.
+const PROD_REDIRECT_URI = 'https://www.birdcar.dev/admin/callback';
 const DEV_REDIRECT_URI = 'http://localhost:4321/admin/callback';
 
 interface NamespaceCreateResult {

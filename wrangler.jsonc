@@ -121,8 +121,9 @@
     //   bunx wrangler secret put WORKOS_REDIRECT_URI
     //   bunx wrangler secret put WORKOS_COOKIE_PASSWORD
     // The redirect URI must be registered in the WorkOS dashboard under
-    // the AuthKit application: https://birdcar.dev/admin/callback for
-    // prod and http://localhost:4321/admin/callback for `wrangler dev`.
+    // the AuthKit application: https://www.birdcar.dev/admin/callback for
+    // prod (canonical host has the www) and http://localhost:4321/admin/callback
+    // for local dev.
     // Generate WORKOS_COOKIE_PASSWORD with: openssl rand -base64 32
   }
 }
