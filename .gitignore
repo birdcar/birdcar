@@ -4,6 +4,7 @@ dist/
 .vite/
 *.log
 .env
+.dev.vars
 images/**
 !images/.gitkeep
 public/og/

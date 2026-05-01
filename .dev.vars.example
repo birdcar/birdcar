@@ -1,0 +1,27 @@
+# Worker runtime secrets read by `wrangler dev`. Do NOT commit the real
+# `.dev.vars` file — it's gitignored. Use `bun run cf:bootstrap` to
+# populate this interactively, or copy this file to `.dev.vars` and
+# fill in the values manually.
+
+# WorkOS AuthKit gates the admin dashboard. Use STAGING credentials
+# here (sk_test_..., client_test_...) so local dev never touches the
+# prod WorkOS user pool. Get values from the WorkOS dashboard:
+#   https://dashboard.workos.com/
+
+# In the WorkOS dashboard for the staging AuthKit app, register the
+# local redirect URI:
+#   http://localhost:4321/admin/callback
+# Enable passkeys in the authentication methods if you want to test them.
+
+WORKOS_API_KEY=
+WORKOS_CLIENT_ID=
+
+# Always http://localhost:4321/admin/callback for local dev. The
+# bootstrap script writes this verbatim.
+WORKOS_REDIRECT_URI=http://localhost:4321/admin/callback
+
+# 32-character (or longer) password for sealing session cookies.
+# Generate with: openssl rand -base64 32
+# This must NOT match the prod cookie password — keep prod and staging
+# sessions cryptographically separate.
+WORKOS_COOKIE_PASSWORD=

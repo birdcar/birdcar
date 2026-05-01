@@ -18,8 +18,8 @@
  *   - Prompts for prod API key + client ID, generates a prod cookie password,
  *     pushes all four as production wrangler secrets
  *   - Prompts for staging/dev API key + client ID, generates a separate
- *     cookie password, writes them to the local .env so `wrangler dev`
- *     works against the staging app
+ *     cookie password, writes them to .dev.vars so `wrangler dev` populates
+ *     `env.WORKOS_*` inside the local worker runtime
  *   - Offers a "use the same creds for both" shortcut for single-env setups
  *
  * Idempotent: re-running after resources exist is a no-op — wrangler returns
@@ -54,8 +54,11 @@ import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 
 const CONFIG_PATH = join(process.cwd(), 'wrangler.jsonc');
-const ENV_PATH = join(process.cwd(), '.env');
-const ENV_EXAMPLE_PATH = join(process.cwd(), '.env.example');
+// `.dev.vars` is wrangler's runtime-secret file for local dev — what
+// `bunx wrangler dev` reads to populate `env.WORKOS_*` etc. inside the
+// worker. (Build-time Node secrets like S3_* still live in `.env`; the
+// two are separate concerns and we don't want to mix them.)
+const DEV_VARS_PATH = join(process.cwd(), '.dev.vars');
 const NAMESPACE_TITLE = 'birdcar-session';
 const D1_DATABASE_NAME = 'birdcar-leads';
 const QUEUE_NAME = 'lead-triage';
@@ -392,21 +395,29 @@ function pushProdSecrets(prod: WorkOSCreds): void {
 }
 
 /**
- * Write or update the local .env file with the staging/dev creds.
- * Existing non-WorkOS keys (e.g. S3_*) are preserved — we only replace
- * the four WORKOS_* lines (or append them if missing).
+ * Write or update `.dev.vars` with the staging/dev WorkOS creds.
+ *
+ * Why .dev.vars and not .env: `bunx wrangler dev` reads `.dev.vars`
+ * to populate the worker's runtime env (`env.WORKOS_*` etc.). `.env`
+ * is read by Node-side build scripts (S3 upload, etc.) but NOT by
+ * the worker runtime — putting the WorkOS creds there would leave
+ * `env.WORKOS_CLIENT_ID` undefined inside the dev worker and the
+ * SDK would throw "Missing client ID" on the first auth call.
+ *
+ * Existing non-WorkOS keys in `.dev.vars` are preserved — we only
+ * replace the four WORKOS_* lines (or append them if missing).
  */
-async function writeEnvFile(local: WorkOSCreds): Promise<void> {
+async function writeDevVarsFile(local: WorkOSCreds): Promise<void> {
   let baseContent: string;
-  if (existsSync(ENV_PATH)) {
-    if (!confirmDefault(`\n${ENV_PATH} exists. Update WORKOS_* values in place?`, true)) {
-      console.log('✓ Leaving .env unchanged');
+  if (existsSync(DEV_VARS_PATH)) {
+    if (!confirmDefault(`\n${DEV_VARS_PATH} exists. Update WORKOS_* values in place?`, true)) {
+      console.log('✓ Leaving .dev.vars unchanged');
       return;
     }
-    baseContent = await readFile(ENV_PATH, 'utf8');
+    baseContent = await readFile(DEV_VARS_PATH, 'utf8');
   } else {
-    console.log(`→ Creating ${ENV_PATH} from .env.example`);
-    baseContent = await readFile(ENV_EXAMPLE_PATH, 'utf8');
+    console.log(`→ Creating ${DEV_VARS_PATH}`);
+    baseContent = '';
   }
 
   const replacements: Record<string, string> = {
@@ -422,12 +433,12 @@ async function writeEnvFile(local: WorkOSCreds): Promise<void> {
     if (pattern.test(content)) {
       content = content.replace(pattern, `${key}=${value}`);
     } else {
-      content += `${content.endsWith('\n') ? '' : '\n'}${key}=${value}\n`;
+      content += `${content.endsWith('\n') || content.length === 0 ? '' : '\n'}${key}=${value}\n`;
     }
   }
 
-  await writeFile(ENV_PATH, content, 'utf8');
-  console.log(`✓ Wrote ${ENV_PATH}`);
+  await writeFile(DEV_VARS_PATH, content, 'utf8');
+  console.log(`✓ Wrote ${DEV_VARS_PATH}`);
 }
 
 async function main(): Promise<void> {
@@ -443,7 +454,7 @@ async function main(): Promise<void> {
 
   const workos = await configureWorkOS();
   if (workos.prod) pushProdSecrets(workos.prod);
-  if (workos.local) await writeEnvFile(workos.local);
+  if (workos.local) await writeDevVarsFile(workos.local);
 
   console.log('\nNext steps:');
   let step = 1;
