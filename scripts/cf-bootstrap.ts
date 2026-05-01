@@ -26,9 +26,11 @@
  * the existing resource rather than failing. WorkOS prompts can be skipped
  * if you've already set the secrets.
  *
+ * Optionally also runs D1 migrations (delegates to `bun run db:migrate`)
+ * once the database id is patched in. The `db:migrate` script stays
+ * standalone for incremental migrations after the initial bootstrap.
+ *
  * Out of scope (handle separately):
- *   - D1 migrations — run `bun run db:migrate` after bootstrap so the
- *     leads schema lands on whichever database id we just patched in.
  *   - send_email DNS verification — manual via the Cloudflare dashboard.
  *   - DOs and Workflows — created automatically on first `wrangler deploy`.
  *   - WorkOS dashboard config (creating the AuthKit app, registering the
@@ -259,6 +261,27 @@ function generateCookiePassword(): string {
   return randomBytes(32).toString('base64');
 }
 
+/**
+ * Optional: hand off to the existing `db:migrate` script. Kept as a
+ * separate package.json entry so it can also be invoked standalone
+ * (e.g. when adding a new migration after the initial bootstrap).
+ */
+function runMigrations(): boolean {
+  if (!confirmDefault('\nApply D1 migrations now (`bun run db:migrate`)?', true)) {
+    console.log('Skipped D1 migrations — run `bun run db:migrate` when ready.');
+    return false;
+  }
+  console.log('→ Running `bun run db:migrate`...');
+  const result = spawnSync('bun', ['run', 'db:migrate'], {
+    stdio: 'inherit',
+  });
+  if (result.status !== 0) {
+    throw new Error(`bun run db:migrate failed (exit ${result.status})`);
+  }
+  console.log('✓ D1 migrations applied');
+  return true;
+}
+
 function setSecret(name: string, value: string): void {
   console.log(`→ Setting prod secret ${name}...`);
   const result = spawnSync('bunx', ['wrangler', 'secret', 'put', name], {
@@ -383,15 +406,20 @@ async function main(): Promise<void> {
   await patchD1Id(d1Uuid);
   await ensureQueue(QUEUE_NAME);
 
+  const migrationsApplied = runMigrations();
+
   const workos = await configureWorkOS();
   if (workos.prod) pushProdSecrets(workos.prod);
   if (workos.local) await writeEnvFile(workos.local);
 
   console.log('\nNext steps:');
-  console.log('  1. Apply D1 migrations to the remote database:');
-  console.log('       bun run db:migrate');
-  console.log('  2. Verify the send_email sender domain in the Cloudflare dashboard.');
-  console.log('  3. Deploy:');
+  let step = 1;
+  if (!migrationsApplied) {
+    console.log(`  ${step++}. Apply D1 migrations to the remote database:`);
+    console.log('       bun run db:migrate');
+  }
+  console.log(`  ${step++}. Verify the send_email sender domain in the Cloudflare dashboard.`);
+  console.log(`  ${step++}. Deploy:`);
   console.log('       bun run build && bunx wrangler deploy');
 }
 
