@@ -1,5 +1,7 @@
 import { ActionError, defineAction } from 'astro:actions';
-import { z } from 'astro:schema';
+// Astro 6 deprecates `z` from astro:schema; the canonical replacement is
+// `astro/zod` (a re-export of zod/v4 the rest of the framework uses too).
+import { z } from 'astro/zod';
 import { getEnv, insertLead } from '../lib/leads';
 import { errorFields } from '../lib/log';
 
@@ -14,9 +16,8 @@ export const server = {
           .min(1, 'Tell me your name.')
           .max(120, 'That name is unusually long.'),
         email: z
-          .string()
-          .trim()
           .email('Give me an email I can reply to.')
+          .trim()
           .max(254, 'That email is too long.'),
         message: z
           .string()

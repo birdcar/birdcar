@@ -80,19 +80,24 @@ export type Env = Cloudflare.Env;
  * Re-declare them here as merged interfaces so the type checker
  * sees what the runtime actually has.
  */
+// TypeScript's module augmentation requires the augmenting interface to
+// use the SDK's exact type-parameter names; renames break the merge with
+// "All declarations of X must have identical type parameters." That
+// leaves us with names we don't reference in the interface body, which
+// trips noUnusedParameters. The phantom optional `_phantom` property
+// references the otherwise-unused generics in a non-emitting type so the
+// declaration is well-formed without polluting the public surface.
 declare module 'agents' {
-  // Class+interface merging — adds `env` to the Agent instance type
-  // without changing its visibility (still effectively protected at runtime).
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface Agent<Env extends Cloudflare.Env, State, Props extends Record<string, unknown>> {
     env: Env;
+    _phantom?: [State, Props];
   }
 }
 
 declare module 'agents/workflows' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface AgentWorkflow<AgentType, Params, ProgressType, Env extends Cloudflare.Env> {
     env: Env;
+    _phantom?: [AgentType, Params, ProgressType];
   }
   interface AgentWorkflowStep {
     do<T>(name: string, callback: () => Promise<T>): Promise<T>;

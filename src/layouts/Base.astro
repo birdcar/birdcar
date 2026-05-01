@@ -88,7 +88,7 @@ const jsonLd = serializeSchemaGraph(
     <meta name="twitter:image" content={ogImage} />
 
     <!-- JSON-LD Structured Data — see src/lib/jsonld.ts for the @graph -->
-    <script type="application/ld+json" set:html={jsonLd} />
+    <script type="application/ld+json" is:inline set:html={jsonLd} />
 
     <link rel="alternate" type="application/rss+xml" title="birdcar.dev" href="/rss.xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

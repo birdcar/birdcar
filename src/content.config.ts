@@ -1,4 +1,7 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+// `import { z } from 'astro:content'` is deprecated in Astro 6;
+// `astro/zod` is the canonical replacement (a re-export of zod/v4).
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 const blog = defineCollection({
