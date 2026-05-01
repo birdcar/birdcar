@@ -93,6 +93,16 @@ export default defineConfig({
         strict: false,
       },
     },
+    // `@workos-inc/node` ships a CJS+ESM hybrid plus internal subpath
+    // imports (`@workos-inc/node/dist/...`) that Vite's dep optimizer
+    // splits into hashed chunks (e.g. `webapi-...js`). Those chunk files
+    // get invalidated and never regenerated when the optimizer reruns
+    // mid-session, so subsequent SDK calls crash with "file does not
+    // exist in optimize deps directory." Excluding it keeps the SDK
+    // resolved as its original module each time.
+    optimizeDeps: {
+      exclude: ['@workos-inc/node'],
+    },
     ssr: {
       // Native bindings + Node-only deps used solely by prerendered routes
       // (the OG image generator). Keep them out of the worker bundle.
