@@ -6,11 +6,13 @@
  * isn't auto-created on deploy:
  *   - SESSION KV namespaces (prod + preview), used by Astro Actions for
  *     session-backed action results.
+ *   - birdcar-leads D1 database, used by the contact form, agent, and
+ *     workflow for lead persistence.
  *   - lead-triage Queue, used by the contact action to dispatch leads to
  *     the triage agent without coupling form latency to agent state.
  *
- * Then writes any newly-issued KV ids back into wrangler.jsonc so subsequent
- * deploys have everything they need.
+ * Then writes any newly-issued resource ids back into wrangler.jsonc so
+ * subsequent deploys have everything they need.
  *
  * Interactively configures WorkOS AuthKit, per environment:
  *   - Prompts for prod API key + client ID, generates a prod cookie password,
@@ -25,7 +27,8 @@
  * if you've already set the secrets.
  *
  * Out of scope (handle separately):
- *   - D1 database (`birdcar-leads`) and migrations — run `bun run db:migrate`.
+ *   - D1 migrations — run `bun run db:migrate` after bootstrap so the
+ *     leads schema lands on whichever database id we just patched in.
  *   - send_email DNS verification — manual via the Cloudflare dashboard.
  *   - DOs and Workflows — created automatically on first `wrangler deploy`.
  *   - WorkOS dashboard config (creating the AuthKit app, registering the
@@ -52,6 +55,7 @@ const CONFIG_PATH = join(process.cwd(), 'wrangler.jsonc');
 const ENV_PATH = join(process.cwd(), '.env');
 const ENV_EXAMPLE_PATH = join(process.cwd(), '.env.example');
 const NAMESPACE_TITLE = 'birdcar-session';
+const D1_DATABASE_NAME = 'birdcar-leads';
 const QUEUE_NAME = 'lead-triage';
 const PROD_REDIRECT_URI = 'https://birdcar.dev/admin/callback';
 const DEV_REDIRECT_URI = 'http://localhost:4321/admin/callback';
@@ -158,6 +162,69 @@ async function ensureQueue(name: string): Promise<void> {
   console.log(`→ Creating queue "${name}"...`);
   runWrangler(['queues', 'create', name]);
   console.log(`✓ Created queue "${name}"`);
+}
+
+interface D1ListEntry {
+  uuid: string;
+  name: string;
+}
+
+function listExistingD1Databases(): D1ListEntry[] {
+  const out = runWrangler(['d1', 'list', '--json']);
+  try {
+    const parsed = JSON.parse(out) as D1ListEntry[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function extractD1Uuid(stdout: string): string | null {
+  // `wrangler d1 create` either prints a JSON snippet with `database_id`,
+  // a TOML-style binding block, or a "Successfully created" string. Try
+  // each shape — first match wins.
+  const fromJson = stdout.match(/"database_id":\s*"([0-9a-f-]{36})"/i);
+  if (fromJson) return fromJson[1];
+  const fromToml = stdout.match(/database_id\s*=\s*"([0-9a-f-]{36})"/i);
+  if (fromToml) return fromToml[1];
+  const fromCreate = stdout.match(/Created your new D1 database[\s\S]*?"([0-9a-f-]{36})"/i);
+  if (fromCreate) return fromCreate[1];
+  return null;
+}
+
+async function ensureD1Database(name: string): Promise<string> {
+  const existing = listExistingD1Databases();
+  const found = existing.find((db) => db.name === name);
+  if (found) {
+    console.log(`✓ D1 database "${name}" already exists (${found.uuid})`);
+    return found.uuid;
+  }
+  console.log(`→ Creating D1 database "${name}"...`);
+  const out = runWrangler(['d1', 'create', name]);
+  const uuid = extractD1Uuid(out);
+  if (!uuid) {
+    throw new Error(`Could not parse database uuid from wrangler output:\n${out}`);
+  }
+  console.log(`✓ Created D1 database "${name}" (${uuid})`);
+  return uuid;
+}
+
+async function patchD1Id(uuid: string): Promise<void> {
+  const raw = await readFile(CONFIG_PATH, 'utf8');
+  // Match the `database_id` key inside the d1_databases block. The config
+  // only has one D1 binding so a global single-line replace is fine.
+  const pattern = /"database_id":\s*"[^"]*"/;
+  if (!pattern.test(raw)) {
+    console.warn('⚠ wrangler.jsonc has no "database_id" entry to patch — skipping');
+    return;
+  }
+  const next = raw.replace(pattern, `"database_id": "${uuid}"`);
+  if (next === raw) {
+    console.log('✓ wrangler.jsonc database_id already up to date');
+    return;
+  }
+  await writeFile(CONFIG_PATH, next, 'utf8');
+  console.log(`✓ Wrote D1 database_id to ${CONFIG_PATH}`);
 }
 
 async function patchConfig(prodId: string, previewId: string): Promise<void> {
@@ -312,6 +379,8 @@ async function main(): Promise<void> {
   const prodId = await ensureNamespace(NAMESPACE_TITLE);
   const previewId = await ensureNamespace(`${NAMESPACE_TITLE}_preview`);
   await patchConfig(prodId, previewId);
+  const d1Uuid = await ensureD1Database(D1_DATABASE_NAME);
+  await patchD1Id(d1Uuid);
   await ensureQueue(QUEUE_NAME);
 
   const workos = await configureWorkOS();
