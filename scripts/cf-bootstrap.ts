@@ -12,12 +12,13 @@
  * Then writes any newly-issued KV ids back into wrangler.jsonc so subsequent
  * deploys have everything they need.
  *
- * Interactively configures WorkOS AuthKit:
- *   - Prompts for API key + client ID
- *   - Generates a 32-byte cookie-sealing password
- *   - Pushes the four WORKOS_* values as production secrets (wrangler secret put)
- *   - Writes/updates the local .env file so `wrangler dev` works without
- *     a second round of typing
+ * Interactively configures WorkOS AuthKit, per environment:
+ *   - Prompts for prod API key + client ID, generates a prod cookie password,
+ *     pushes all four as production wrangler secrets
+ *   - Prompts for staging/dev API key + client ID, generates a separate
+ *     cookie password, writes them to the local .env so `wrangler dev`
+ *     works against the staging app
+ *   - Offers a "use the same creds for both" shortcut for single-env setups
  *
  * Idempotent: re-running after resources exist is a no-op — wrangler returns
  * the existing resource rather than failing. WorkOS prompts can be skipped
@@ -33,9 +34,10 @@
  * Prereqs:
  *   - Logged into wrangler (bunx wrangler login)
  *   - Cloudflare account with Workers/Pages access
- *   - WorkOS AuthKit application created with both redirect URIs registered:
- *       https://birdcar.dev/admin/callback
- *       http://localhost:4321/admin/callback
+ *   - WorkOS AuthKit application(s) created — one per environment if you
+ *     want prod/staging isolation. Each app needs its own redirect URI:
+ *       Prod app    → https://birdcar.dev/admin/callback
+ *       Staging app → http://localhost:4321/admin/callback
  *
  * Usage:
  *   bun run cf:bootstrap
@@ -207,50 +209,74 @@ function setSecret(name: string, value: string): void {
   console.log(`✓ ${name} set`);
 }
 
-interface WorkOSSecrets {
+interface WorkOSCreds {
   apiKey: string;
   clientId: string;
   cookiePassword: string;
 }
 
-async function configureWorkOS(): Promise<WorkOSSecrets | null> {
+interface WorkOSConfig {
+  prod: WorkOSCreds | null;
+  local: WorkOSCreds | null;
+}
+
+function collectCreds(label: string): WorkOSCreds {
+  console.log(`\n  ${label} credentials:`);
+  const apiKey = ask(`    WORKOS_API_KEY (sk_test_... or sk_live_...): `);
+  const clientId = ask(`    WORKOS_CLIENT_ID (client_...): `);
+  const cookiePassword = generateCookiePassword();
+  console.log(`    ✓ Generated 32-byte WORKOS_COOKIE_PASSWORD`);
+  return { apiKey, clientId, cookiePassword };
+}
+
+async function configureWorkOS(): Promise<WorkOSConfig> {
   console.log('\n--- WorkOS AuthKit ---');
   console.log('Pre-reqs (one-time, in https://dashboard.workos.com/):');
-  console.log('  - AuthKit application created');
-  console.log(`  - Redirect URIs registered: ${PROD_REDIRECT_URI} and ${DEV_REDIRECT_URI}`);
+  console.log('  - One AuthKit app per environment (prod + staging are separate)');
+  console.log(`  - Prod app has ${PROD_REDIRECT_URI} registered`);
+  console.log(`  - Staging app has ${DEV_REDIRECT_URI} registered`);
   console.log('  - Passkeys enabled in authentication methods\n');
 
   if (!confirmDefault('Configure WorkOS now?', true)) {
     console.log('Skipping WorkOS configuration.');
-    return null;
+    return { prod: null, local: null };
   }
 
-  const apiKey = ask('WORKOS_API_KEY (sk_test_... or sk_live_...): ');
-  const clientId = ask('WORKOS_CLIENT_ID (client_...): ');
-  const cookiePassword = generateCookiePassword();
-  console.log('✓ Generated 32-byte WORKOS_COOKIE_PASSWORD');
+  const sameForBoth = confirmDefault(
+    'Use the same WorkOS credentials for prod and local dev?',
+    false,
+  );
 
-  if (confirmDefault('Push these as production secrets via wrangler?', true)) {
-    setSecret('WORKOS_API_KEY', apiKey);
-    setSecret('WORKOS_CLIENT_ID', clientId);
-    setSecret('WORKOS_REDIRECT_URI', PROD_REDIRECT_URI);
-    setSecret('WORKOS_COOKIE_PASSWORD', cookiePassword);
-  } else {
+  if (sameForBoth) {
+    const shared = collectCreds('Shared');
+    return { prod: shared, local: shared };
+  }
+
+  const prod = collectCreds('Production');
+  const local = collectCreds('Staging / local dev');
+  return { prod, local };
+}
+
+function pushProdSecrets(prod: WorkOSCreds): void {
+  if (!confirmDefault('\nPush production credentials as wrangler secrets?', true)) {
     console.log('Skipped prod secret upload — set them manually with `bunx wrangler secret put` later.');
+    return;
   }
-
-  return { apiKey, clientId, cookiePassword };
+  setSecret('WORKOS_API_KEY', prod.apiKey);
+  setSecret('WORKOS_CLIENT_ID', prod.clientId);
+  setSecret('WORKOS_REDIRECT_URI', PROD_REDIRECT_URI);
+  setSecret('WORKOS_COOKIE_PASSWORD', prod.cookiePassword);
 }
 
 /**
- * Write or update the local .env file with the values we just collected.
+ * Write or update the local .env file with the staging/dev creds.
  * Existing non-WorkOS keys (e.g. S3_*) are preserved — we only replace
  * the four WORKOS_* lines (or append them if missing).
  */
-async function writeEnvFile(workos: WorkOSSecrets): Promise<void> {
+async function writeEnvFile(local: WorkOSCreds): Promise<void> {
   let baseContent: string;
   if (existsSync(ENV_PATH)) {
-    if (!confirmDefault(`${ENV_PATH} exists. Update WORKOS_* values in place?`, true)) {
+    if (!confirmDefault(`\n${ENV_PATH} exists. Update WORKOS_* values in place?`, true)) {
       console.log('✓ Leaving .env unchanged');
       return;
     }
@@ -261,10 +287,10 @@ async function writeEnvFile(workos: WorkOSSecrets): Promise<void> {
   }
 
   const replacements: Record<string, string> = {
-    WORKOS_API_KEY: workos.apiKey,
-    WORKOS_CLIENT_ID: workos.clientId,
+    WORKOS_API_KEY: local.apiKey,
+    WORKOS_CLIENT_ID: local.clientId,
     WORKOS_REDIRECT_URI: DEV_REDIRECT_URI,
-    WORKOS_COOKIE_PASSWORD: workos.cookiePassword,
+    WORKOS_COOKIE_PASSWORD: local.cookiePassword,
   };
 
   let content = baseContent;
@@ -289,7 +315,8 @@ async function main(): Promise<void> {
   await ensureQueue(QUEUE_NAME);
 
   const workos = await configureWorkOS();
-  if (workos) await writeEnvFile(workos);
+  if (workos.prod) pushProdSecrets(workos.prod);
+  if (workos.local) await writeEnvFile(workos.local);
 
   console.log('\nNext steps:');
   console.log('  1. Apply D1 migrations to the remote database:');
