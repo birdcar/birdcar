@@ -161,8 +161,11 @@ async function main(): Promise<void> {
   console.log('\nNext steps:');
   console.log('  1. Apply D1 migrations to the remote database:');
   console.log('       bun run db:migrate');
-  console.log('  2. Set the worker pull token (PATCH /api/leads/[id] gate):');
-  console.log('       openssl rand -hex 32 | bunx wrangler secret put WORKER_PULL_TOKEN');
+  console.log('  2. Set the WorkOS AuthKit secrets (admin dashboard auth gate):');
+  console.log('       bunx wrangler secret put WORKOS_API_KEY');
+  console.log('       bunx wrangler secret put WORKOS_CLIENT_ID');
+  console.log('       bunx wrangler secret put WORKOS_REDIRECT_URI');
+  console.log('       openssl rand -base64 32 | bunx wrangler secret put WORKOS_COOKIE_PASSWORD');
   console.log('  3. Verify the send_email sender domain in the Cloudflare dashboard.');
   console.log('  4. Deploy:');
   console.log('       bun run build && bunx wrangler deploy');
