@@ -16,7 +16,10 @@
     "db:studio": "drizzle-kit studio",
     "check": "astro check",
     "preview": "astro preview",
-    "sync-images": "bun run scripts/sync-images.ts"
+    "sync-images": "bun run scripts/sync-images.ts",
+    "test": "bun test src/plugins/ && bun x vitest run",
+    "test:watch": "bun x vitest",
+    "test:rehype": "bun test src/plugins/"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.2.1",
@@ -44,6 +47,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.8",
+    "@cloudflare/vitest-pool-workers": "^0.15.2",
     "@cloudflare/workers-types": "^4.20260426.1",
     "@types/katex": "^0.16.8",
     "@types/mime-types": "^3.0.1",
@@ -53,6 +57,8 @@
     "drizzle-kit": "^0.31.10",
     "node-html-parser": "^7.1.0",
     "turndown": "^7.2.4",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.87.0"
   }
 }
