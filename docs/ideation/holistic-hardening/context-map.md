@@ -1,51 +1,61 @@
 # Context Map: holistic-hardening
 
-**Phase**: 1
-**Scout Confidence**: 84/100
+**Phase**: 2
+**Scout Confidence**: 82/100
 **Verdict**: GO
+
+(Phase 1's map is in commit 90f999f if needed — this file is now the Phase 2 map.)
 
 ## Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Scope clarity | 18/20 | Spec lists 7 new files and 3 modified files with concrete content. Spec offers `.github/workflows/test.yml` *or* modifying `deploy.yml` — modifying `deploy.yml` is correct because the existing schedule trigger lives there. Phase 2 fixtures/mocks (`tests/fixtures/leads.ts`, `tests/mocks/workers-ai.ts`, `tests/mocks/workos.ts`) are scaffolded here; only the canary test is asserted in Phase 1 testing requirements. |
-| Pattern familiarity | 16/20 | `src/plugins/rehype-image-cdn.test.ts` shows `bun:test` AAA conventions; `extractJson` ("pattern to follow" for AI mocks) at `src/workflows/lead-triage-workflow.ts:357`. No existing vitest infrastructure — first stand-up. `@cloudflare/vitest-pool-workers` API drift is the unknown. |
-| Dependency awareness | 17/20 | Bindings declared in `wrangler.jsonc` are consumed by `src/types.ts:51-67`, `src/worker.ts`, `src/agents/lead-triage-agent.ts`, `src/workflows/lead-triage-workflow.ts`, `src/lib/leads.ts`, `src/db/client.ts`, `src/lib/workos.ts`, `src/middleware.ts`. Phase 1 changes touch zero of these — additive only. The deploy workflow change has no dependents. |
-| Edge case coverage | 16/20 | Spec's Failure Modes table is thorough. Additional edges: (a) DO `LeadTriageAgent` migration (`new_sqlite_classes`) must flow from `wrangler.jsonc` to pool-workers; (b) `nodejs_compat` flag flows from `wrangler.jsonc:17-19`; (c) `send_email` binding has `remote: true` — likely cannot resolve in miniflare without explicit local stub; canary should assert `env.EMAIL` exists, not invoke. |
-| Test strategy | 17/20 | Clear: `bun x vitest run` for pool-workers + `bun test src/plugins/` for rehype, umbrella'd as `bun run test`. Migrations live in `/migrations/` (4 SQL files); `tests/setup.ts` reads journal, applies in order against `:memory:` D1. CI command set explicit. |
+| Scope clarity | 17/20 | 7 spec files + 3 helpers + 2 mock extensions. Two open items: (a) Astro Action route shape — confirmed `/_actions/contact.send`; (b) `APPROVAL_TIMEOUT` test approach — pool-workers ships `introspectWorkflowInstance(...).modify(m => m.forceEventTimeout(...))` (no env-override needed). |
+| Pattern familiarity | 17/20 | Phase 1's `canary.spec.ts` is the in-repo reference. `cloudflare:test` API confirmed via package types. Mock skeletons exist; need extension. |
+| Dependency awareness | 17/20 | Purely additive; no production code modified. Tests consume worker, agent, workflow, middleware, workos, leads modules at module-import or `SELF.fetch` boundaries. |
+| Edge case coverage | 16/20 | Spec failure modes good. Phase-2-specific edges: WS upgrade via SELF.fetch, send_email remote: true invocation, DO setState async-write timing, queue handler via createMessageBatch + getQueueResult helpers (canonical). |
+| Test strategy | 15/20 | Pool-workers + vitest 4 confirmed. **Gap**: `vi.mock('ai', ...)` first usage at scale — canary doesn't exercise. Workflow passes verb in `system`, not `prompt` — current mock dispatches on `prompt` regex, must switch to `system`. |
 
 ## Key Patterns
 
-- `src/plugins/rehype-image-cdn.test.ts` — `bun:test` style: `import { describe, test, expect } from 'bun:test'`. Stays on `bun test`; vitest tests live under `tests/` with `.spec.ts` extension to disambiguate runners.
-- `src/workflows/lead-triage-workflow.ts:357` (`extractJson`) — pattern referenced for the workers-ai mock: deterministic prompt-prefix → fixed JSON output. `generateText` call sites at lines 56-69, 97-102, 138 — Phase 2 mock target is the `ai` package's `generateText`.
-- `src/types.ts:49-69` — `Cloudflare.Env` augmentation defines exact binding shape pool-workers must produce. `SESSION` is optional; the canary asserts binding presence accordingly.
-- `src/lib/leads.ts:33-55` — Drizzle insert pattern the canary mirrors for the round-trip insert+select check.
-- `wrangler.jsonc` — single source of truth for bindings; `compatibility_date: 2026-04-15`, `compatibility_flags: ["nodejs_compat"]`, `migrations_dir: ./migrations`, DO `migrations: [{ tag: "v1", new_sqlite_classes: ["LeadTriageAgent"] }]`.
+- **`tests/canary.spec.ts`** — Phase 1 reference. `import { env } from 'cloudflare:workers'`, AAA blocks, Drizzle round-trip via `getDb(env.LEADS_DB)`.
+- **`tests/setup.ts`** — `beforeAll` applies migrations lex-sorted; `afterEach` runs `DELETE FROM leads`. May need extension for DO `agent_activity` cleanup and `abortAllDurableObjects()`.
+- **`@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts`** — confirms: `SELF: Fetcher`, `runInDurableObject<O,R>(stub, callback)`, `createScheduledController({ cron })`, `createMessageBatch<Body>(queueName, messages)`, `getQueueResult(batch, ctx)`, `introspectWorkflowInstance(workflow, instanceId)` with `.modify(m => m.disableSleeps()/forceEventTimeout())`, `applyD1Migrations`, `reset()`, `abortAllDurableObjects()`. Both `env`/`SELF` here are deprecated in favor of `cloudflare:workers` `env` / `exports.default.fetch()` — but functional. Use `env` from `cloudflare:workers`; pull `SELF` and helpers from `cloudflare:test`.
+- **`src/workflows/lead-triage-workflow.ts:69-73,97-102,138-142`** — three `generateText({ model, system, prompt })` call sites. Mock target. **Workflow passes verb in `system`** (`classifyPrompt`/`qualifyPrompt` outputs distinct system strings), not `prompt`. Current mock dispatches on `prompt` regex — **must switch to `system`**.
+- **`src/actions/index.ts`** — Astro Action `contact.send` accepts `accept: 'form'`. Astro 6 generates `/_actions/[...path]` routes per `node_modules/astro/dist/actions/consts.js:13`. So `POST /_actions/contact.send` form-encoded is correct.
+- **`src/lib/triage-config.ts`** — `APPROVAL_TIMEOUT = '7 days'`, `STEP_RETRY` shape, `STUCK_ROW_THRESHOLD_MINUTES = 10`. Test approach for timeout: `introspectWorkflowInstance(env.LEAD_TRIAGE_WORKFLOW, workflowId).modify(m => m.forceEventTimeout(...))`.
+- **`src/db/schema.ts`** — status enum: `['pending','processing','awaiting-approval','done','discarded']`. The legacy `'discarded'` status entry is unused by current workflow paths (which use `status='done', outcome='discarded'`); enum-violation test should target `'invalid'`, not `'discarded'`.
 
 ## Dependencies
 
-Phase 1 is purely additive — no production source files modified. Touched files:
+Phase 2 is purely additive. Test files exercise:
 
-- `package.json` — adds devDeps + 3 scripts. No consumer impact.
-- `tsconfig.json` — spec asks to add `compilerOptions.types`; **scout flags this as risky** (would shrink auto-included `@types/*`). Resolution: omit the root tsconfig change; vitest-pool-workers' `cloudflare:test` virtual module is typed via its own `package.json#types` and does not need a `types` array entry. If `astro check` complains, add `tests/tsconfig.json` extending root with the array.
-- `.github/workflows/deploy.yml` — currently 45 lines, single `deploy` job, triggers `push: main`, `schedule`, `workflow_dispatch`. Add `pull_request` trigger and `test` job; `deploy` requires it via `needs:`. Make the `if:` on deploy explicit.
-- `migrations/` — four SQL files. **Scout flags**: `migrations/meta/_journal.json` enumerates only `0000_woozy_bishop`; `0001`-`0003` were hand-authored. Setup must `glob + sort migrations/*.sql` lex order, not trust the journal.
+- `src/actions/index.ts` ← `contact-flow.spec.ts` (via SELF.fetch)
+- `src/worker.ts` (default fetch/queue/scheduled) ← `worker-handlers.spec.ts` (direct module + SELF.fetch)
+- `src/agents/lead-triage-agent.ts` ← `agent-rpc.spec.ts` (via runInDurableObject)
+- `src/workflows/lead-triage-workflow.ts` ← `workflow-paths.spec.ts` (via agent.queueLead, observed via D1 + EMAIL.send capture + introspectWorkflowInstance)
+- `src/middleware.ts` ← `middleware.spec.ts` (via SELF.fetch)
+- `src/lib/workos.ts` ← `workos-session.spec.ts` (direct + vi.mock('@workos-inc/node'))
+- `src/lib/leads.ts` ← `leads-db.spec.ts` (direct against env.LEADS_DB)
+
+Mock seams: `vi.mock('ai', ...)` and `vi.mock('@workos-inc/node', ...)`.
 
 ## Conventions
 
-- **Naming**: kebab-case file names. Test files colocated as `*.test.ts` for `bun:test`; pool-workers tests under `tests/` with `.spec.ts`.
-- **Imports**: NodeNext-style; type-only imports use `import type`. `@cloudflare/workers-types` is canonical type provider; `cloudflare:workers` is dynamic-imported in `lib/leads.ts:29` and `middleware.ts:33` to keep it out of the prerender bundle.
-- **Error handling**: Throw at boundaries; structured `errorFields(err)` (`src/lib/log.ts:24`) for telemetry. JSON objects with stable `event` keys.
-- **Types**: Strict (Astro's strict tsconfig). Discriminated unions and zod schemas. `Cloudflare.Env` augmented in `src/types.ts`.
-- **Testing**: `bun:test` colocated with source. Phase 1 introduces vitest under `tests/`; runners are kept disjoint by directory.
-- **Package manager**: `bun` everywhere; `bun x vitest` per spec.
+- **Naming**: `tests/integration/*.spec.ts` for new files; helpers `tests/helpers/*.ts`.
+- **Imports**: `import { env } from 'cloudflare:workers'`; `import { SELF, runInDurableObject, createMessageBatch, createScheduledController, createExecutionContext, getQueueResult, introspectWorkflowInstance } from 'cloudflare:test'`; vitest names from `vitest`.
+- **Error handling**: tests assert behavior. Bug-revealing tests use `it.fails` or `it.todo` referencing follow-up — no source fixes in Phase 2.
+- **Types**: `import type` for type-only.
+- **Inner loop**: `bun x vitest run tests/integration/` (full phase) or `bun x vitest run tests/integration/<file>.spec.ts` (focused).
 
 ## Risks
 
-1. **Root `tsconfig.json compilerOptions.types`** — explicit array shrinks auto-included `@types/*`. **Mitigation**: omit unless `astro check` fails; fall back to `tests/tsconfig.json` extending root.
-2. **Migrations journal incompleteness** — `_journal.json` lists only `0000`. **Mitigation**: glob+sort `migrations/*.sql` rather than read journal.
-3. **`send_email` `remote: true`** — miniflare may not resolve to a usable stub. **Mitigation**: canary asserts `env.EMAIL` exists, never invokes `.send()`.
-4. **DO `new_sqlite_classes` migration tag** — `wrangler.jsonc:110-115` declares it. Pool-workers should auto-honor via `configPath`. **Mitigation**: canary doesn't instantiate the DO in this phase, so this doesn't matter for Phase 1; revisit in Phase 2.
-5. **Umbrella test script `&&` short-circuit** — vitest failure means rehype tests don't run locally. Acceptable for now; document.
-6. **`@cloudflare/vitest-pool-workers` version pinning** — repo has no `wrangler` direct devDep. **Mitigation**: add `wrangler` as a pinned devDep alongside pool-workers.
-7. **`pull_request` deploy gate `if:`** — make explicit: `if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'`.
+1. **`vi.mock('ai', ...)` first usage at Phase 2 scale** — current mock dispatches on `prompt`, but verb is in `system`. **Mitigation**: update mock to dispatch on `system` *before* writing the first workflow test.
+2. **`APPROVAL_TIMEOUT = '7 days'`** — use `introspectWorkflowInstance(...).modify(m => m.forceEventTimeout({ name: '<wait-for-approval-step-name>' }))`. Identify exact step name from `node_modules/agents/dist/workflows.js` if not obvious. Fallback: `disableSleeps()`.
+3. **Queue handler test path** — prefer `createMessageBatch + createExecutionContext + getQueueResult` over hand-rolling `worker.queue(batch, env)`. Cleaner ack/retry assertions.
+4. **WS upgrade test via `SELF.fetch`** — should accept `headers: { upgrade: 'websocket' }`. Fallback: direct `worker.fetch(request, env, ctx)` with hand-built `Request` if `SELF` blocks the upgrade header.
+5. **`send_email` `remote: true`** — `captureEmail(env)` monkey-patches `env.EMAIL.send`. Confirm `env.EMAIL` is writable; fallback to `vi.spyOn(env.EMAIL, 'send').mockResolvedValue(undefined)`.
+6. **Agent `setState` async timing** — `setState` writes are async-flushed. Inspecting `instance.state.pendingApprovals` immediately may read pre-flush. **Mitigation**: poll with bounded timeout (mirror `waitForLeadStatus`), or assert via `agent_activity` rows (sql-synchronous).
+7. **`agent_activity` table accumulates across tests** — DO sqlite is not wiped by `afterEach DELETE FROM leads`. **Mitigation**: `abortAllDurableObjects()` in `afterEach`, or explicit `runInDurableObject(stub, (i) => i.sql\`DELETE FROM agent_activity\`)`.
+8. **DO sqlite `agent_activity` not created until `onStart` fires** — first call to `agent.queueLead` triggers `onStart`. Tests that call `getRecentActivity` *first* will fail. **Mitigation**: prewarm in `beforeEach` via `runInDurableObject(stub, async () => {})`.
+9. **Shared global env mutations** — pool-workers shares isolates across tests in a file. Use `afterEach` (not `afterAll`) and explicit restore.

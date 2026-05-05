@@ -10,6 +10,12 @@ import {
 // `WorkersPoolOptions` is declared but not exported by the package; both
 // `cloudflareTest` and `cloudflarePool` accept the inferred shape directly.
 const workerOptions = {
+  // Tests need a worker entry to instantiate the LeadTriageAgent DO and
+  // LeadTriageWorkflow. The production entry (src/worker.ts) imports
+  // @astrojs/cloudflare's `virtual:astro-cloudflare:config` which only
+  // resolves during `astro build`. tests/test-worker.ts re-exports the
+  // DO + Workflow classes plus a stub default fetch.
+  main: './tests/test-worker.ts',
   wrangler: { configPath: './wrangler.jsonc' },
   miniflare: {
     bindings: {

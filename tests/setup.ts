@@ -54,6 +54,13 @@ beforeAll(async () => {
 
 afterEach(async () => {
   // Per-test isolation: wipe the leads table between tests so workflow/queue
-  // tests don't leak state. Schema stays.
+  // tests don't leak state. Schema stays. DO sqlite (agent_activity,
+  // pendingApprovals state) is not wiped here — tests that interact with
+  // the agent should clear their own DO state in their own `beforeEach`,
+  // typically by namespacing with a unique `idFromName(...)` per test or
+  // by resetting state inside `runInDurableObject`. `abortAllDurableObjects`
+  // would seem cleaner but breaks `vi.mock('ai', ...)` for subsequent tests
+  // — pool-workers re-instantiates the worker isolate after abort and the
+  // mock factory does not re-apply.
   await env.LEADS_DB.prepare('DELETE FROM leads').run();
 });
