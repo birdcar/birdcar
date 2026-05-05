@@ -3,12 +3,12 @@ import Base from '../../../layouts/Base.astro';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../../db/client';
 import { leads } from '../../../db/schema';
-import { getEnv } from '../../../lib/leads';
+import { getCloudflareEnv } from '../../../lib/env';
 import '../../../styles/admin.css';
 
 export const prerender = false;
 
-const env = await getEnv(Astro.locals);
+const env = await getCloudflareEnv();
 if (!env) {
   return new Response('runtime unavailable', { status: 500 });
 }

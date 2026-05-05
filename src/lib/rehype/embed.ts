@@ -1,6 +1,7 @@
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
 import { fromHtml } from 'hast-util-from-html';
+import { extractText, getDataAttr } from './utils';
 
 interface OEmbedResponse {
   type: string;
@@ -30,8 +31,10 @@ export function rehypeBfmEmbed() {
     });
 
     for (const { node, index, parent } of embeds.reverse()) {
-      const url = String(node.properties?.['dataUrl'] || node.properties?.['data-url'] || '');
-      const caption = extractText(node);
+      const url = getDataAttr(node, 'url');
+      // Local extractText recursively trimmed; the shared utility does not.
+      // Trim explicitly so the caption stays clean.
+      const caption = extractText(node).trim();
 
       if (!url) continue;
 
@@ -98,8 +101,3 @@ function isEmbedElement(node: Element): boolean {
   return cls === 'embed' || cls.startsWith('embed ');
 }
 
-function extractText(node: any): string {
-  if (node.type === 'text') return node.value || '';
-  if (node.children) return node.children.map(extractText).join('').trim();
-  return '';
-}

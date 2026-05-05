@@ -1,16 +1,15 @@
 import { AgentWorkflow, WorkflowRejectedError } from 'agents/workflows';
 import type { AgentWorkflowEvent, AgentWorkflowStep } from 'agents/workflows';
-import { and, eq, isNull, sql } from 'drizzle-orm';
 import { generateText } from 'ai';
 import { createWorkersAI } from 'workers-ai-provider';
-import { getDb } from '../db/client';
-import { leads } from '../db/schema';
+import { LeadsRepo } from '../lib/leads-repo';
 import { ClassifyOutput, QualifyOutput } from '../lib/ai-types';
 import type {
   ClassifyOutput as ClassifyOutputT,
   QualifyOutput as QualifyOutputT,
 } from '../lib/ai-types';
 import { classifyPrompt, qualifyPrompt, draftPrompt } from '../lib/prompts';
+import { logEvent } from '../lib/event-log';
 import {
   MODELS,
   STEP_RETRY,
@@ -36,13 +35,14 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     const { leadId } = event.payload;
     const workflowId = this.workflowId;
 
+    const repo = new LeadsRepo(this.env.LEADS_DB);
+
     // 1. Load lead from D1, mark as processing so the sweep ignores it.
     const lead = await step.do('load-lead', STEP_RETRY.persist, async () => {
       const start = Date.now();
-      const db = getDb(this.env.LEADS_DB);
-      const [row] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+      const row = await repo.findById(leadId);
       if (!row) throw new Error(`Lead ${leadId} not found`);
-      await db.update(leads).set({ status: 'processing' }).where(eq(leads.id, leadId));
+      await repo.markStatus(leadId, 'processing');
       await this.agent.recordActivity({
         leadId,
         workflowId,
@@ -152,16 +152,12 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
 
     // 6. Persist triage results to D1.
     await step.do('persist', STEP_RETRY.persist, async () => {
-      const db = getDb(this.env.LEADS_DB);
-      await db
-        .update(leads)
-        .set({
-          category: classification.category,
-          qualification: qualification ? JSON.stringify(qualification) : null,
-          score,
-          draft,
-        })
-        .where(eq(leads.id, leadId));
+      await repo.patch(leadId, {
+        category: classification.category,
+        qualification: qualification ? JSON.stringify(qualification) : null,
+        score,
+        draft,
+      });
       await this.agent.recordActivity({
         leadId,
         workflowId,
@@ -173,11 +169,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     // Spam path: short-circuit. No notification, no approval.
     if (classification.category === 'spam') {
       await step.do('mark-done-spam', STEP_RETRY.persist, async () => {
-        const db = getDb(this.env.LEADS_DB);
-        await db
-          .update(leads)
-          .set({ status: 'done', outcome: 'discarded' })
-          .where(eq(leads.id, leadId));
+        await repo.markStatus(leadId, 'done', 'discarded');
       });
       await step.reportComplete({ outcome: 'spam-auto-discarded' });
       return;
@@ -190,14 +182,9 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     //    the same lead won't double-send because notified_at is set.
     await step.do('notify-nick', STEP_RETRY.notify, async () => {
       const start = Date.now();
-      const db = getDb(this.env.LEADS_DB);
-      const claim = await db
-        .update(leads)
-        .set({ notifiedAt: sql`(datetime('now'))` })
-        .where(and(eq(leads.id, leadId), isNull(leads.notifiedAt)))
-        .returning({ id: leads.id });
-      if (claim.length === 0) {
-        console.log({ event: 'notify-nick.skipped', leadId, workflowId, reason: 'already-notified' });
+      const claimed = await repo.claimNotificationSlot(leadId);
+      if (!claimed) {
+        logEvent('notify-nick.skipped', { leadId, workflowId, reason: 'already-notified' });
         return;
       }
       try {
@@ -215,10 +202,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
           }),
         });
       } catch (err) {
-        await db
-          .update(leads)
-          .set({ notifiedAt: null })
-          .where(eq(leads.id, leadId));
+        await repo.releaseNotificationSlot(leadId);
         throw err;
       }
       await this.agent.recordActivity({
@@ -234,11 +218,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     //    it as a stalled `processing` row. This is a deliberate dwell state:
     //    the workflow is healthy, the lead is just waiting on a human.
     await step.do('mark-awaiting-approval', STEP_RETRY.persist, async () => {
-      const db = getDb(this.env.LEADS_DB);
-      await db
-        .update(leads)
-        .set({ status: 'awaiting-approval' })
-        .where(eq(leads.id, leadId));
+      await repo.markStatus(leadId, 'awaiting-approval');
     });
 
     // 9. Surface as a pending approval. The agent's onWorkflowProgress hook
@@ -267,22 +247,14 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     } catch (err) {
       if (err instanceof WorkflowRejectedError) {
         await step.do('mark-discarded', STEP_RETRY.persist, async () => {
-          const db = getDb(this.env.LEADS_DB);
-          await db
-            .update(leads)
-            .set({ status: 'done', outcome: 'discarded' })
-            .where(eq(leads.id, leadId));
+          await repo.markStatus(leadId, 'done', 'discarded');
         });
         await step.reportComplete({ outcome: 'discarded' });
         return;
       }
       // Timeout or other unexpected error — mark stale.
       await step.do('mark-stale', STEP_RETRY.persist, async () => {
-        const db = getDb(this.env.LEADS_DB);
-        await db
-          .update(leads)
-          .set({ status: 'done', outcome: 'discarded' })
-          .where(eq(leads.id, leadId));
+        await repo.markStatus(leadId, 'done', 'discarded');
       });
       await step.reportError(
         err instanceof Error ? err : new Error('Approval wait failed'),
@@ -297,14 +269,9 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     //     dashboard sending approve, but defense in depth: if Phase 2 ever
     //     surfaces a "retry approval" path, this step won't double-send.
     await step.do('send-reply', STEP_RETRY.notify, async () => {
-      const db = getDb(this.env.LEADS_DB);
-      const claim = await db
-        .update(leads)
-        .set({ respondedAt: sql`(datetime('now'))` })
-        .where(and(eq(leads.id, leadId), isNull(leads.respondedAt)))
-        .returning({ id: leads.id });
-      if (claim.length === 0) {
-        console.log({ event: 'send-reply.skipped', leadId, workflowId, reason: 'already-responded' });
+      const claimed = await repo.claimResponseSlot(leadId);
+      if (!claimed) {
+        logEvent('send-reply.skipped', { leadId, workflowId, reason: 'already-responded' });
         return;
       }
       try {
@@ -316,10 +283,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
           text: `${finalBody}\n\n- Nick`,
         });
       } catch (err) {
-        await db
-          .update(leads)
-          .set({ respondedAt: null })
-          .where(eq(leads.id, leadId));
+        await repo.releaseResponseSlot(leadId);
         throw err;
       }
       await this.agent.recordActivity({
@@ -335,15 +299,7 @@ export class LeadTriageWorkflow extends AgentWorkflow<LeadTriageAgent, TriagePar
     //     the actual send timestamp with the mark-done timestamp.
     await step.do('mark-done', STEP_RETRY.persist, async () => {
       const outcome = finalBody === draft ? 'approved' : 'edited';
-      const db = getDb(this.env.LEADS_DB);
-      await db
-        .update(leads)
-        .set({
-          status: 'done',
-          outcome,
-          draft: finalBody,
-        })
-        .where(eq(leads.id, leadId));
+      await repo.patch(leadId, { status: 'done', outcome, draft: finalBody });
     });
 
     await step.reportComplete({ outcome: 'replied' });

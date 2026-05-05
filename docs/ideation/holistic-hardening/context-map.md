@@ -1,61 +1,78 @@
 # Context Map: holistic-hardening
 
-**Phase**: 2
-**Scout Confidence**: 82/100
+**Phase**: 3
+**Scout Confidence**: 86/100
 **Verdict**: GO
 
-(Phase 1's map is in commit 90f999f if needed — this file is now the Phase 2 map.)
+(Phase 1 map archived in commit 90f999f; Phase 2 map replaced by this one. Prior phase notes preserved in "Prior Phases" at the bottom.)
 
 ## Dimensions
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Scope clarity | 17/20 | 7 spec files + 3 helpers + 2 mock extensions. Two open items: (a) Astro Action route shape — confirmed `/_actions/contact.send`; (b) `APPROVAL_TIMEOUT` test approach — pool-workers ships `introspectWorkflowInstance(...).modify(m => m.forceEventTimeout(...))` (no env-override needed). |
-| Pattern familiarity | 17/20 | Phase 1's `canary.spec.ts` is the in-repo reference. `cloudflare:test` API confirmed via package types. Mock skeletons exist; need extension. |
-| Dependency awareness | 17/20 | Purely additive; no production code modified. Tests consume worker, agent, workflow, middleware, workos, leads modules at module-import or `SELF.fetch` boundaries. |
-| Edge case coverage | 16/20 | Spec failure modes good. Phase-2-specific edges: WS upgrade via SELF.fetch, send_email remote: true invocation, DO setState async-write timing, queue handler via createMessageBatch + getQueueResult helpers (canonical). |
-| Test strategy | 15/20 | Pool-workers + vitest 4 confirmed. **Gap**: `vi.mock('ai', ...)` first usage at scale — canary doesn't exercise. Workflow passes verb in `system`, not `prompt` — current mock dispatches on `prompt` regex, must switch to `system`. |
+| Scope clarity | 18/20 | All 8 hotspots verified. Open item: lib/leads.ts deletion vs. transitional alias. **5** admin .astro files call `getEnv` (not 3 listed in spec). |
+| Pattern familiarity | 18/20 | Patterns confirmed verbatim. `getDataAttr` already exists locally in query.ts:145-150 — returns `string \| undefined`, divergence from spec's `string`. |
+| Dependency awareness | 17/20 | Phase 2 tests cover every target. `tests/integration/leads-db.spec.ts` directly imports `insertLead`/`getLeadById`/`patchLead` — must keep working through migration. |
+| Edge case coverage | 17/20 | Spec failure modes thorough. `loadEnv` returns `EnvWithAssets`; `getCloudflareEnv` must preserve. `extractText` semantics differ (embed.ts trims, math.ts doesn't). |
+| Test strategy | 16/20 | Inner-loop `bun x vitest run tests/integration/`. **Risk**: log event names not asserted in tests — preservation depends on manual diffs. |
 
 ## Key Patterns
 
-- **`tests/canary.spec.ts`** — Phase 1 reference. `import { env } from 'cloudflare:workers'`, AAA blocks, Drizzle round-trip via `getDb(env.LEADS_DB)`.
-- **`tests/setup.ts`** — `beforeAll` applies migrations lex-sorted; `afterEach` runs `DELETE FROM leads`. May need extension for DO `agent_activity` cleanup and `abortAllDurableObjects()`.
-- **`@cloudflare/vitest-pool-workers/types/cloudflare-test.d.ts`** — confirms: `SELF: Fetcher`, `runInDurableObject<O,R>(stub, callback)`, `createScheduledController({ cron })`, `createMessageBatch<Body>(queueName, messages)`, `getQueueResult(batch, ctx)`, `introspectWorkflowInstance(workflow, instanceId)` with `.modify(m => m.disableSleeps()/forceEventTimeout())`, `applyD1Migrations`, `reset()`, `abortAllDurableObjects()`. Both `env`/`SELF` here are deprecated in favor of `cloudflare:workers` `env` / `exports.default.fetch()` — but functional. Use `env` from `cloudflare:workers`; pull `SELF` and helpers from `cloudflare:test`.
-- **`src/workflows/lead-triage-workflow.ts:69-73,97-102,138-142`** — three `generateText({ model, system, prompt })` call sites. Mock target. **Workflow passes verb in `system`** (`classifyPrompt`/`qualifyPrompt` outputs distinct system strings), not `prompt`. Current mock dispatches on `prompt` regex — **must switch to `system`**.
-- **`src/actions/index.ts`** — Astro Action `contact.send` accepts `accept: 'form'`. Astro 6 generates `/_actions/[...path]` routes per `node_modules/astro/dist/actions/consts.js:13`. So `POST /_actions/contact.send` form-encoded is correct.
-- **`src/lib/triage-config.ts`** — `APPROVAL_TIMEOUT = '7 days'`, `STEP_RETRY` shape, `STUCK_ROW_THRESHOLD_MINUTES = 10`. Test approach for timeout: `introspectWorkflowInstance(env.LEAD_TRIAGE_WORKFLOW, workflowId).modify(m => m.forceEventTimeout(...))`.
-- **`src/db/schema.ts`** — status enum: `['pending','processing','awaiting-approval','done','discarded']`. The legacy `'discarded'` status entry is unused by current workflow paths (which use `status='done', outcome='discarded'`); enum-violation test should target `'invalid'`, not `'discarded'`.
+- `src/middleware.ts:31-38` — `loadEnv()` returns `EnvWithAssets | null` (with optional ASSETS).
+- `src/lib/leads.ts:28-31` — `getEnv(_locals)` body to delegate.
+- `src/lib/log.ts:24-36` — `errorFields(err)` shape `{name, message, stack?}`.
+- `src/lib/rehype/chart.ts:138-149` — `extractCaptionText` calls local recursive `collect`. Caller does `.trim()` after.
+- `src/lib/rehype/embed.ts:101-105` — local `extractText` includes `.trim()` on recursion result. Migration: shared utility doesn't trim; call site needs explicit `.trim()`.
+- `src/lib/rehype/math.ts:52-56` — local `extractText` no trim. Caller already trims (line 11). Shared utility works.
+- `src/lib/rehype/query.ts:145-150` — `getDataAttr` returns `string | undefined`; callers (32-37) check truthy. Shared `string` return preserves semantics (empty string equally falsy).
+- `src/lib/rehype/figure-src.ts:48-57` — error elements identical across chart/include/figure-src with different `class` values. `buildErrorElement(message, className?)` accepts override.
+- `src/scripts/admin-client.ts:22-33` — existing `connectAgent`. New `AgentController` class replaces.
+- `src/scripts/admin-lead-detail.ts:52-65` — local `setButtonsDisabled(disabled)` closes over `root`. Shared `(scope, disabled)` requires explicit pass.
+- `src/lib/workos.ts:64-94, 116-124, 144-151` — low-level helpers. `session.ts` composes; do not delete the low-level ones.
+- `src/workflows/lead-triage-workflow.ts:191-231, 295-331` — claim/release patterns for notify-nick and send-reply with rollback on email send failure.
+- `src/agents/lead-triage-agent.ts:238-277` — `sweepStuckRows` D1 reads/writes for `findStaleProcessing` / `resetStaleProcessing` / `findStalePending`.
+- `src/actions/index.ts:42-59` — outer try/catch around insertLead. Inner try/catch around `LEAD_TRIAGE_QUEUE.send` at 65-70 STAYS (different semantics — non-blocking).
 
 ## Dependencies
 
-Phase 2 is purely additive. Test files exercise:
-
-- `src/actions/index.ts` ← `contact-flow.spec.ts` (via SELF.fetch)
-- `src/worker.ts` (default fetch/queue/scheduled) ← `worker-handlers.spec.ts` (direct module + SELF.fetch)
-- `src/agents/lead-triage-agent.ts` ← `agent-rpc.spec.ts` (via runInDurableObject)
-- `src/workflows/lead-triage-workflow.ts` ← `workflow-paths.spec.ts` (via agent.queueLead, observed via D1 + EMAIL.send capture + introspectWorkflowInstance)
-- `src/middleware.ts` ← `middleware.spec.ts` (via SELF.fetch)
-- `src/lib/workos.ts` ← `workos-session.spec.ts` (direct + vi.mock('@workos-inc/node'))
-- `src/lib/leads.ts` ← `leads-db.spec.ts` (direct against env.LEADS_DB)
-
-Mock seams: `vi.mock('ai', ...)` and `vi.mock('@workos-inc/node', ...)`.
+| Modified file | Consumed by |
+|---|---|
+| `src/middleware.ts` | tests/integration/middleware.spec.ts |
+| `src/lib/leads.ts:getEnv` | actions/index.ts; pages/admin/login.ts, callback.ts, logout.ts; **pages/admin/leads/[id].astro, leads/index.astro, activity/index.astro** (5 callers, not 3) |
+| `src/lib/leads.ts:insertLead/getLeadById/patchLead` | actions/index.ts; **tests/integration/leads-db.spec.ts:5,9,17,22,...** (test depends on direct exports — keep transitional thin wrappers) |
+| `src/lib/workos.ts:readSessionCookie/validateSession/buildSessionCookie/buildClearedSessionCookie` | middleware.ts; worker.ts; admin/callback.ts, admin/logout.ts; tests/integration/workos-session.spec.ts (and others transitively) |
+| `src/worker.ts` | tests/integration/worker-handlers.spec.ts; tests/integration/contact-flow.spec.ts |
+| `src/agents/lead-triage-agent.ts` | agent-rpc.spec.ts, workflow-paths.spec.ts, contact-flow.spec.ts |
+| `src/workflows/lead-triage-workflow.ts` | workflow-paths.spec.ts |
+| `src/scripts/admin-leads-list.ts`, `admin-lead-detail.ts` | Browser bundle only — `bun run build:ci` validates. |
+| `src/lib/rehype/*.ts` | Astro markdown pipeline only — `bun run build:ci` validates. |
+| `src/actions/index.ts` | tests/integration/contact-flow.spec.ts (imports `server` and calls `server.contact.send`) |
 
 ## Conventions
 
-- **Naming**: `tests/integration/*.spec.ts` for new files; helpers `tests/helpers/*.ts`.
-- **Imports**: `import { env } from 'cloudflare:workers'`; `import { SELF, runInDurableObject, createMessageBatch, createScheduledController, createExecutionContext, getQueueResult, introspectWorkflowInstance } from 'cloudflare:test'`; vitest names from `vitest`.
-- **Error handling**: tests assert behavior. Bug-revealing tests use `it.fails` or `it.todo` referencing follow-up — no source fixes in Phase 2.
-- **Types**: `import type` for type-only.
-- **Inner loop**: `bun x vitest run tests/integration/` (full phase) or `bun x vitest run tests/integration/<file>.spec.ts` (focused).
+- **Naming**: `src/lib/` for shared modules. Class names PascalCase (`LeadsRepo`, `AgentController`). Functions camelCase.
+- **Imports**: `import type` for type-only. No barrel files. Lazy `import('cloudflare:workers')` (not static).
+- **Error handling**: `errorFields(err)` for log payloads. Throw `ActionError` at action boundary; let other errors propagate.
+- **Types**: `Env` from `src/types`; `Lead`/`NewLead` from `src/db/schema`; `Database` from `src/db/client`.
+- **Testing**: NO new tests in Phase 3. Phase 2 suite is the regression net. Inner loop: `bun x vitest run tests/integration/`. Full: `bun run test`.
+- **Logging contract**: Workers Logs at 100% sampling. **DO NOT rename event names** — they're operational contract: `lead.received`, `lead.persisted`, `lead.persist.failed`, `lead.enqueued`, `lead.enqueue.failed`, `queue.batch.received`, `queue.dispatching`, `queue.dispatched`, `queue.dispatch.failed`, `cron.scheduled.fired/ok/failed`, `agent.queueLead.start/ok/failed`, `agent.workflow.complete`, `agent.workflow.failed`, `agent.activity.insert.failed`, `sweep.processing.reset`, `sweep.pending.retriggering`, `sweep.pending.retriggered`, `sweep.pending.retrigger.failed`, `notify-nick.skipped`, `send-reply.skipped`, `admin.callback.failed`, `admin.activity.load.failed`.
 
 ## Risks
 
-1. **`vi.mock('ai', ...)` first usage at Phase 2 scale** — current mock dispatches on `prompt`, but verb is in `system`. **Mitigation**: update mock to dispatch on `system` *before* writing the first workflow test.
-2. **`APPROVAL_TIMEOUT = '7 days'`** — use `introspectWorkflowInstance(...).modify(m => m.forceEventTimeout({ name: '<wait-for-approval-step-name>' }))`. Identify exact step name from `node_modules/agents/dist/workflows.js` if not obvious. Fallback: `disableSleeps()`.
-3. **Queue handler test path** — prefer `createMessageBatch + createExecutionContext + getQueueResult` over hand-rolling `worker.queue(batch, env)`. Cleaner ack/retry assertions.
-4. **WS upgrade test via `SELF.fetch`** — should accept `headers: { upgrade: 'websocket' }`. Fallback: direct `worker.fetch(request, env, ctx)` with hand-built `Request` if `SELF` blocks the upgrade header.
-5. **`send_email` `remote: true`** — `captureEmail(env)` monkey-patches `env.EMAIL.send`. Confirm `env.EMAIL` is writable; fallback to `vi.spyOn(env.EMAIL, 'send').mockResolvedValue(undefined)`.
-6. **Agent `setState` async timing** — `setState` writes are async-flushed. Inspecting `instance.state.pendingApprovals` immediately may read pre-flush. **Mitigation**: poll with bounded timeout (mirror `waitForLeadStatus`), or assert via `agent_activity` rows (sql-synchronous).
-7. **`agent_activity` table accumulates across tests** — DO sqlite is not wiped by `afterEach DELETE FROM leads`. **Mitigation**: `abortAllDurableObjects()` in `afterEach`, or explicit `runInDurableObject(stub, (i) => i.sql\`DELETE FROM agent_activity\`)`.
-8. **DO sqlite `agent_activity` not created until `onStart` fires** — first call to `agent.queueLead` triggers `onStart`. Tests that call `getRecentActivity` *first* will fail. **Mitigation**: prewarm in `beforeEach` via `runInDurableObject(stub, async () => {})`.
-9. **Shared global env mutations** — pool-workers shares isolates across tests in a file. Use `afterEach` (not `afterAll`) and explicit restore.
+1. **`getCloudflareEnv` return type drops `ASSETS`** — `loadEnv` returns `EnvWithAssets`. `getCloudflareEnv` signature `Promise<Env | null>` would force a cast at the markdown branch. Mitigation: include `ASSETS?: AssetsBinding` in the returned type, or use `EnvWithAssets`.
+2. **Memoization across worker isolates** — pool-workers may persist memoized null between tests. Add `__resetEnvCacheForTests()` to test setup OR don't memoize.
+3. **`extractText` trim semantics differ** — embed.ts call site needs explicit `.trim()` after migration to shared utility.
+4. **`getDataAttr` return type narrowing** — keep `string`; truthy guards at call sites preserve semantics.
+5. **`AgentController.call` Promise typing** — `as Promise<T>` unavoidable; AgentClient.call returns `unknown`.
+6. **LeadsRepo class instance** — drizzle-orm/d1 stateless; safe to construct per call.
+7. **`wrapAction` ctx type** — use `ActionAPIContext` from `astro:actions` (mocked in test as identity-on-handler).
+8. **`leads-db.spec.ts` direct imports** — keep `lib/leads.ts` thin wrappers in Phase 3; defer deletion to Phase 4.
+9. **5 admin .astro pages call `getEnv`** — `pages/admin/leads/[id].astro`, `leads/index.astro`, `activity/index.astro` plus 3 .ts auth-flow files.
+10. **Workflow notify-nick claim/release** — preserve try/catch around email send with explicit rollback.
+11. **Mock initialization order** — keep transitional re-exports until Phase 4 to avoid vitest hoisting surprises.
+
+## Prior Phases
+
+**Phase 1** (commit 90f999f): canary spec only. Pool-workers + cloudflare:test API surface confirmed.
+
+**Phase 2** (merged): 7 spec files + 3 helpers. 69 passing + 1 expected fail + 4 todos. Mock convention for AI: dispatch on `system`. Per-test agent IDs (not `'global'`) avoid DO state pollution. `vi.mock('ai', ...)` uses async dynamic import to dodge the hoisting hazard.

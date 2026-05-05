@@ -28,8 +28,8 @@ import type {
 } from '@cloudflare/workers-types';
 import server from '@astrojs/cloudflare/entrypoints/server';
 import { routeAgentRequest } from 'agents';
-import { errorFields } from './lib/log';
-import { readSessionCookie, validateSession } from './lib/workos';
+import { logError, logEvent } from './lib/event-log';
+import { requireSession } from './lib/session';
 import type { Env, TriageMessage } from './types';
 
 export { LeadTriageAgent } from './agents/lead-triage-agent';
@@ -47,8 +47,7 @@ export default {
     const url = new URL(request.url);
     const parts = url.pathname.split('/').filter(Boolean);
     if (parts[0] === 'agents') {
-      const cookie = readSessionCookie(request);
-      const session = await validateSession(env, cookie);
+      const { session } = await requireSession(request, env);
       if (!session) {
         return new Response('unauthorized', { status: 401 });
       }
@@ -58,40 +57,37 @@ export default {
     return server.fetch(request, env, ctx);
   },
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
-    console.log({ event: 'cron.scheduled.fired', cron: controller.cron });
+    logEvent('cron.scheduled.fired', { cron: controller.cron });
     try {
       const stub = env.LEAD_TRIAGE_AGENT.get(env.LEAD_TRIAGE_AGENT.idFromName('global'));
       await stub.sweepStuckRows();
-      console.log({ event: 'cron.scheduled.ok' });
+      logEvent('cron.scheduled.ok');
     } catch (err) {
-      console.error({ event: 'cron.scheduled.failed', error: errorFields(err) });
+      logError('cron.scheduled.failed', {}, err);
       throw err;
     }
   },
   async queue(batch: MessageBatch<TriageMessage>, env: Env): Promise<void> {
-    console.log({ event: 'queue.batch.received', count: batch.messages.length });
+    logEvent('queue.batch.received', { count: batch.messages.length });
     const stub = env.LEAD_TRIAGE_AGENT.get(env.LEAD_TRIAGE_AGENT.idFromName('global'));
     for (const msg of batch.messages) {
-      console.log({
-        event: 'queue.dispatching',
+      logEvent('queue.dispatching', {
         leadId: msg.body.leadId,
         attempt: msg.attempts,
       });
       try {
         const result = await stub.queueLead(msg.body.leadId);
-        console.log({
-          event: 'queue.dispatched',
+        logEvent('queue.dispatched', {
           leadId: msg.body.leadId,
           workflowId: result.workflowId,
         });
         msg.ack();
       } catch (err) {
-        console.error({
-          event: 'queue.dispatch.failed',
-          leadId: msg.body.leadId,
-          attempt: msg.attempts,
-          error: errorFields(err),
-        });
+        logError(
+          'queue.dispatch.failed',
+          { leadId: msg.body.leadId, attempt: msg.attempts },
+          err,
+        );
         // Let the runtime retry per the consumer config (max_retries: 3).
         // The agent's cron sweep recovers anything that exhausts retries.
         msg.retry({ delaySeconds: 30 });

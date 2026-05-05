@@ -1,4 +1,4 @@
-import { connectAgent } from './admin-client';
+import { AgentController, setButtonsDisabled, showNotice } from './admin-controller';
 
 const root = document.getElementById('lead-actions') as HTMLElement | null;
 const draftEl = document.getElementById('draft-body') as HTMLTextAreaElement | null;
@@ -8,12 +8,15 @@ if (root && draftEl) {
   if (leadId) {
     let workflowId: string | null = null;
 
-    const agent = connectAgent((state) => {
+    const agent = new AgentController((state) => {
       const approval = state?.pendingApprovals?.find((p) => p.leadId === leadId);
       workflowId = approval?.workflowId ?? null;
       if (!approval) {
-        setButtonsDisabled(true);
-        showNotice('This lead is no longer pending approval. Refresh to see latest status.');
+        setButtonsDisabled(root, true);
+        showNotice(
+          root,
+          'This lead is no longer pending approval. Refresh to see latest status.',
+        );
       }
     });
 
@@ -24,7 +27,7 @@ if (root && draftEl) {
       if (!target || !workflowId) return;
       const action = target.dataset.action;
 
-      setButtonsDisabled(true);
+      setButtonsDisabled(root, true);
 
       try {
         if (action === 'approve') {
@@ -45,23 +48,8 @@ if (root && draftEl) {
         console.error('[admin/lead] action failed:', err);
         alert('Action failed — see console.');
       } finally {
-        setButtonsDisabled(false);
+        setButtonsDisabled(root, false);
       }
     });
-
-    function setButtonsDisabled(disabled: boolean): void {
-      root!.querySelectorAll('button').forEach((b) => {
-        (b as HTMLButtonElement).disabled = disabled;
-      });
-    }
-
-    function showNotice(text: string): void {
-      if (document.getElementById('lead-status-notice')) return;
-      const notice = document.createElement('p');
-      notice.id = 'lead-status-notice';
-      notice.className = 'bc-admin-notice';
-      notice.textContent = text;
-      root!.parentElement?.insertBefore(notice, root);
-    }
   }
 }

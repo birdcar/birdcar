@@ -2,6 +2,7 @@ import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
 import { fromHtml } from 'hast-util-from-html';
 import katex from 'katex';
+import { extractText } from './utils';
 
 export function rehypeBfmMath() {
   return function (tree: Root) {
@@ -49,8 +50,3 @@ function isMathElement(node: Element): boolean {
   return false;
 }
 
-function extractText(node: any): string {
-  if (node.type === 'text') return node.value || '';
-  if (node.children) return node.children.map(extractText).join('');
-  return '';
-}

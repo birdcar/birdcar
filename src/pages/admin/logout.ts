@@ -1,15 +1,12 @@
 import type { APIRoute } from 'astro';
-import { getEnv } from '../../lib/leads';
-import {
-  buildClearedSessionCookie,
-  getLogoutUrl,
-  readSessionCookie,
-} from '../../lib/workos';
+import { getCloudflareEnv } from '../../lib/env';
+import { clearSession } from '../../lib/session';
+import { getLogoutUrl, readSessionCookie } from '../../lib/workos';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, locals }) => {
-  const env = await getEnv(locals);
+export const GET: APIRoute = async ({ request }) => {
+  const env = await getCloudflareEnv();
   if (!env) return new Response('runtime unavailable', { status: 500 });
 
   const cookie = readSessionCookie(request);
@@ -28,7 +25,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     status: 302,
     headers: {
       Location: location,
-      'Set-Cookie': buildClearedSessionCookie(new URL(request.url)),
+      'Set-Cookie': clearSession(new URL(request.url)),
     },
   });
 };

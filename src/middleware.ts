@@ -1,39 +1,13 @@
 import { defineMiddleware } from 'astro:middleware';
-import type { Env } from './types';
-import {
-  buildSessionCookie,
-  readSessionCookie,
-  validateSession,
-  type SessionUser,
-} from './lib/workos';
-
-interface AssetsBinding {
-  fetch: (request: Request) => Promise<Response>;
-}
-
-type EnvWithAssets = Env & { ASSETS?: AssetsBinding };
+import type { SessionUser } from './lib/workos';
+import { attachRefreshedSession, requireSession } from './lib/session';
+import { getCloudflareEnv } from './lib/env';
 
 declare global {
   namespace App {
     interface Locals {
       user?: SessionUser;
     }
-  }
-}
-
-/**
- * Astro 6 removed `Astro.locals.runtime.env` — accessing it now throws.
- * The supported pattern is the dynamic `import('cloudflare:workers')`
- * (mirrors the helper in src/lib/leads.ts). The dynamic form keeps the
- * `cloudflare:workers` virtual module out of the Node prerender bundle,
- * which would otherwise crash the build.
- */
-async function loadEnv(): Promise<EnvWithAssets | null> {
-  try {
-    const { env } = await import('cloudflare:workers');
-    return (env as EnvWithAssets) ?? null;
-  } catch {
-    return null;
   }
 }
 
@@ -80,12 +54,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     url.pathname === '/admin/login' || url.pathname === '/admin/callback';
 
   if ((isAdminPath || isAgentPath) && !isAuthFlowPath) {
-    const env = await loadEnv();
+    const env = await getCloudflareEnv();
     if (!env) {
       return new Response('runtime unavailable', { status: 500 });
     }
-    const cookie = readSessionCookie(request);
-    const session = await validateSession(env, cookie);
+    const { session } = await requireSession(request, env);
     if (!session) {
       // Browsers drop 302 on a WebSocket handshake — only HTTP fetches
       // can be redirected to the login flow. WS upgrades get a plain
@@ -102,12 +75,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (session.refreshedCookie) {
       // Wrap the downstream response so the new sealed cookie rides
       // along with whatever the page or route returns.
-      const response = await next();
-      response.headers.append(
-        'Set-Cookie',
-        buildSessionCookie(session.refreshedCookie, url),
-      );
-      return response;
+      return attachRefreshedSession(await next(), session.refreshedCookie, url);
     }
     // Authenticated, no refresh needed. Skip the markdown branch — gated
     // paths shouldn't ever serve their `.md` siblings.
@@ -126,7 +94,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const mdPath = mapToMarkdownPath(url.pathname);
   if (!mdPath) return next();
 
-  const env = await loadEnv();
+  const env = await getCloudflareEnv();
   const assets = env?.ASSETS;
   if (!assets) return next();
 

@@ -1,8 +1,6 @@
 import { Agent, callable } from 'agents';
-import { and, eq, lt } from 'drizzle-orm';
-import { getDb } from '../db/client';
-import { leads } from '../db/schema';
-import { errorFields } from '../lib/log';
+import { LeadsRepo } from '../lib/leads-repo';
+import { logError, logEvent, logWarn } from '../lib/event-log';
 import { SWEEP_CRON, STUCK_ROW_THRESHOLD_MINUTES } from '../lib/triage-config';
 import type { Env } from '../types';
 
@@ -94,10 +92,10 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
    */
   @callable()
   async queueLead(leadId: string): Promise<{ workflowId: string }> {
-    console.log({ event: 'agent.queueLead.start', leadId });
+    logEvent('agent.queueLead.start', { leadId });
     try {
       const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId });
-      console.log({ event: 'agent.queueLead.ok', leadId, workflowId });
+      logEvent('agent.queueLead.ok', { leadId, workflowId });
       this.setState({
         ...this.state,
         metrics: {
@@ -107,7 +105,7 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
       });
       return { workflowId };
     } catch (err) {
-      console.error({ event: 'agent.queueLead.failed', leadId, error: errorFields(err) });
+      logError('agent.queueLead.failed', { leadId }, err);
       throw err;
     }
   }
@@ -157,7 +155,7 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
     workflowId: string,
     _result?: unknown,
   ): Promise<void> {
-    console.log({ event: 'agent.workflow.complete', workflowName, workflowId });
+    logEvent('agent.workflow.complete', { workflowName, workflowId });
     this.setState({
       ...this.state,
       metrics: {
@@ -172,6 +170,9 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
     workflowId: string,
     error: string,
   ): Promise<void> {
+    // The SDK passes `error` as a pre-formatted string, not an Error object,
+    // so emit it as a literal field rather than running it through
+    // errorFields. Preserve the historical log shape.
     console.error({
       event: 'agent.workflow.failed',
       workflowName,
@@ -203,12 +204,11 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
            ${input.errorMessage ?? null})
       `;
     } catch (err) {
-      console.warn({
-        event: 'agent.activity.insert.failed',
-        leadId: input.leadId,
-        workflowId: input.workflowId,
-        error: errorFields(err),
-      });
+      logWarn(
+        'agent.activity.insert.failed',
+        { leadId: input.leadId, workflowId: input.workflowId },
+        err,
+      );
     }
   }
 
@@ -237,41 +237,26 @@ export class LeadTriageAgent extends Agent<Env, AgentState> {
    */
   async sweepStuckRows(): Promise<void> {
     const cutoff = new Date(Date.now() - STUCK_ROW_THRESHOLD_MINUTES * 60 * 1000).toISOString();
-    const db = getDb(this.env.LEADS_DB);
+    const repo = new LeadsRepo(this.env.LEADS_DB);
 
     // Step 1: reset stalled `processing` rows back to `pending`.
-    const reset = await db
-      .update(leads)
-      .set({ status: 'pending' })
-      .where(and(eq(leads.status, 'processing'), lt(leads.updatedAt, cutoff)))
-      .returning({ id: leads.id });
+    const reset = await repo.resetStaleProcessing(cutoff);
     if (reset.length > 0) {
-      console.log({ event: 'sweep.processing.reset', count: reset.length });
+      logEvent('sweep.processing.reset', { count: reset.length });
     }
 
     // Step 2: re-trigger any `pending` rows older than the threshold.
     // Catches both the freshly-reset rows from step 1 and rows where the
     // queue path never delivered the message in the first place.
-    const stale = await db
-      .select({ id: leads.id })
-      .from(leads)
-      .where(and(eq(leads.status, 'pending'), lt(leads.submittedAt, cutoff)));
+    const stale = await repo.findStalePending(cutoff);
     if (stale.length === 0) return;
-    console.log({ event: 'sweep.pending.retriggering', count: stale.length });
+    logEvent('sweep.pending.retriggering', { count: stale.length });
     for (const row of stale) {
       try {
         const workflowId = await this.runWorkflow('LEAD_TRIAGE_WORKFLOW', { leadId: row.id });
-        console.log({
-          event: 'sweep.pending.retriggered',
-          leadId: row.id,
-          workflowId,
-        });
+        logEvent('sweep.pending.retriggered', { leadId: row.id, workflowId });
       } catch (err) {
-        console.error({
-          event: 'sweep.pending.retrigger.failed',
-          leadId: row.id,
-          error: errorFields(err),
-        });
+        logError('sweep.pending.retrigger.failed', { leadId: row.id }, err);
       }
     }
   }

@@ -1,5 +1,6 @@
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
+import { getDataAttr } from './utils';
 
 export interface QueryResult {
   title: string;
@@ -28,12 +29,16 @@ export function rehypeBfmQuery(options: QueryOptions) {
     visit(tree, 'element', (node: Element, index, parent) => {
       if (!isQueryElement(node) || index == null || !parent) return;
 
+      // The shared util returns '' for missing; map back to undefined where
+      // call sites distinguished empty/missing.
+      const orUndef = (v: string) => (v.length > 0 ? v : undefined);
+      const limitStr = getDataAttr(node, 'query-limit');
       const params: QueryParams = {
-        type: getDataAttr(node, 'query-type'),
-        state: getDataAttr(node, 'query-state'),
-        tag: getDataAttr(node, 'query-tag'),
-        limit: getDataAttr(node, 'query-limit') ? Number(getDataAttr(node, 'query-limit')) : undefined,
-        sort: getDataAttr(node, 'query-sort'),
+        type: orUndef(getDataAttr(node, 'query-type')),
+        state: orUndef(getDataAttr(node, 'query-state')),
+        tag: orUndef(getDataAttr(node, 'query-tag')),
+        limit: limitStr ? Number(limitStr) : undefined,
+        sort: orUndef(getDataAttr(node, 'query-sort')),
       };
 
       replacements.push({ index, parent, results: [] as QueryResult[] });
@@ -142,9 +147,3 @@ function isQueryElement(node: Element): boolean {
   return cls === 'query' || cls.startsWith('query ');
 }
 
-function getDataAttr(node: Element, name: string): string | undefined {
-  // Try both camelCase (dataQueryType) and kebab (data-query-type)
-  const camel = 'data' + name.split('-').map(s => s[0].toUpperCase() + s.slice(1)).join('');
-  const val = node.properties?.[camel] ?? node.properties?.[`data-${name}`];
-  return val != null ? String(val) : undefined;
-}

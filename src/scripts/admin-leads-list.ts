@@ -1,10 +1,11 @@
-import { connectAgent, type PendingApprovalView } from './admin-client';
+import type { PendingApprovalView } from './admin-client';
+import { AgentController } from './admin-controller';
 
 const list = document.getElementById('approval-list') as HTMLUListElement | null;
 const empty = document.getElementById('empty-state') as HTMLParagraphElement | null;
 
 if (list && empty) {
-  connectAgent((state) => {
+  new AgentController((state) => {
     const approvals = state?.pendingApprovals ?? [];
     empty.hidden = approvals.length > 0;
     list.replaceChildren(...approvals.map(renderRow));

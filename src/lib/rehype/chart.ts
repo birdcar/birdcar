@@ -31,6 +31,7 @@ import { visit } from 'unist-util-visit';
 import { fromHtml } from 'hast-util-from-html';
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildErrorElement, extractText, getDataAttr } from './utils';
 
 export interface ChartOptions {
   basePath?: string;
@@ -79,12 +80,11 @@ export function rehypeBfmChart(options: ChartOptions = {}) {
       if (node.tagName !== 'figure') return;
       const cls = String(node.properties?.className || node.properties?.class || '');
       if (!cls.includes('bfm-figure')) return;
-      if (String(node.properties?.['dataKind'] || node.properties?.['data-kind']) !== 'chart') return;
+      if (getDataAttr(node, 'kind') !== 'chart') return;
 
-      const props = node.properties || {};
-      const src    = String(props['dataSrc']  || props['data-src']  || '');
-      const type   = String(props['dataType'] || props['data-type'] || 'line');
-      const width  = String(props['dataWidth'] || props['data-width'] || 'prose');
+      const src = getDataAttr(node, 'src');
+      const type = getDataAttr(node, 'type') || 'line';
+      const width = getDataAttr(node, 'width') || 'prose';
 
       if (!src) return;
 
@@ -94,12 +94,7 @@ export function rehypeBfmChart(options: ChartOptions = {}) {
         data = JSON.parse(fs.readFileSync(resolved, 'utf-8'));
       } catch {
         node.children = [
-          {
-            type: 'element',
-            tagName: 'div',
-            properties: { class: 'bfm-figure-error' },
-            children: [{ type: 'text', value: `Chart data not found: ${src}` }],
-          },
+          buildErrorElement(`Chart data not found: ${src}`),
           ...keepCaption(node),
         ];
         return;
@@ -140,12 +135,7 @@ function extractCaptionText(node: Element): string {
     c => c.type === 'element' && (c as Element).tagName === 'figcaption'
   );
   if (!cap) return '';
-  const collect = (n: any): string => {
-    if (n.type === 'text') return n.value || '';
-    if (n.children) return n.children.map(collect).join('');
-    return '';
-  };
-  return collect(cap).trim();
+  return extractText(cap).trim();
 }
 
 function resolvePath(src: string, basePath: string, filePath?: string): string {

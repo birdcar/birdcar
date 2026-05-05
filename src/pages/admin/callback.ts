@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
-import { getEnv } from '../../lib/leads';
+import { getCloudflareEnv } from '../../lib/env';
+import { logError } from '../../lib/event-log';
 import {
   authenticateWithCode,
   buildSessionCookie,
@@ -8,8 +9,8 @@ import {
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals, url }) => {
-  const env = await getEnv(locals);
+export const GET: APIRoute = async ({ url }) => {
+  const env = await getCloudflareEnv();
   if (!env) return new Response('runtime unavailable', { status: 500 });
 
   const code = url.searchParams.get('code');
@@ -31,7 +32,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       },
     });
   } catch (err) {
-    console.error({ event: 'admin.callback.failed', error: err });
+    logError('admin.callback.failed', {}, err);
     return new Response('auth failed', { status: 401 });
   }
 };

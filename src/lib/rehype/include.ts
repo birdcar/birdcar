@@ -2,6 +2,7 @@ import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildErrorElement, getDataAttr } from './utils';
 
 export interface IncludeOptions {
   basePath?: string;
@@ -14,24 +15,21 @@ export function rehypeBfmInclude(options: IncludeOptions = {}) {
     visit(tree, 'element', (node: Element, index, parent) => {
       if (!isIncludeElement(node) || index == null || !parent) return;
 
-      const dataPath = String(node.properties?.['dataPath'] || node.properties?.['data-path'] || '');
+      const dataPath = getDataAttr(node, 'path');
       if (!dataPath) return;
 
       const resolved = path.resolve(basePath, 'src/content', dataPath);
 
       if (!fs.existsSync(resolved)) {
-        const errorNode: Element = {
-          type: 'element',
-          tagName: 'div',
-          properties: { class: 'include include--error' },
-          children: [{ type: 'text', value: `Include not found: ${dataPath}` }],
-        };
-        (parent.children as Element[])[index] = errorNode;
+        (parent.children as Element[])[index] = buildErrorElement(
+          `Include not found: ${dataPath}`,
+          'include include--error',
+        );
         return;
       }
 
       const content = fs.readFileSync(resolved, 'utf-8');
-      const heading = String(node.properties?.['dataHeading'] || node.properties?.['data-heading'] || '');
+      const heading = getDataAttr(node, 'heading');
 
       // Extract section if heading is specified
       const body = heading ? extractSection(content, heading) : content;

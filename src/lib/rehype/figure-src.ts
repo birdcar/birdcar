@@ -16,6 +16,7 @@ import { visit } from 'unist-util-visit';
 import { fromHtml } from 'hast-util-from-html';
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildErrorElement, getDataAttr } from './utils';
 
 export interface FigureSrcOptions {
   /** Project root used to resolve bare paths under `src/content/`. */
@@ -34,25 +35,18 @@ export function rehypeBfmFigureSrc(options: FigureSrcOptions = {}) {
       if (!cls.includes('bfm-figure')) return;
 
       // Chart figures are rendered by rehypeBfmChart, not here.
-      const kind = String(node.properties?.['dataKind'] || node.properties?.['data-kind'] || '');
+      const kind = getDataAttr(node, 'kind');
       if (kind === 'chart') return;
 
-      const src = String(
-        node.properties?.['dataSrc'] ||
-        node.properties?.['data-src'] ||
-        ''
-      );
+      const src = getDataAttr(node, 'src');
       if (!src) return;
 
       const resolved = resolvePath(src, basePath, file.path);
       if (!fs.existsSync(resolved)) {
-        const errorNode: Element = {
-          type: 'element',
-          tagName: 'div',
-          properties: { class: 'bfm-figure-error' },
-          children: [{ type: 'text', value: `Figure source not found: ${src}` }],
-        };
-        node.children = [errorNode, ...keepCaption(node)];
+        node.children = [
+          buildErrorElement(`Figure source not found: ${src}`),
+          ...keepCaption(node),
+        ];
         return;
       }
 
@@ -80,11 +74,7 @@ export function rehypeBfmFigureSrc(options: FigureSrcOptions = {}) {
         // Simplest: assume content figures live under public/figures/ and
         // emit a public-relative URL.
         const publicUrl = toPublicUrl(resolved, basePath);
-        const alt = String(
-          node.properties?.['dataAlt'] ||
-          node.properties?.['data-alt'] ||
-          ''
-        );
+        const alt = getDataAttr(node, 'alt');
         const imgNode: Element = {
           type: 'element',
           tagName: 'img',

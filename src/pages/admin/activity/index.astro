@@ -1,12 +1,13 @@
 ---
 import Base from '../../../layouts/Base.astro';
-import { getEnv } from '../../../lib/leads';
+import { getCloudflareEnv } from '../../../lib/env';
 import { getTriageAgent } from '../../../lib/agent-stub';
+import { logError } from '../../../lib/event-log';
 import '../../../styles/admin.css';
 
 export const prerender = false;
 
-const env = await getEnv(Astro.locals);
+const env = await getCloudflareEnv();
 if (!env) {
   return new Response('runtime unavailable', { status: 500 });
 }
@@ -17,7 +18,7 @@ let activityError: string | null = null;
 try {
   rows = await agent.getRecentActivity(100);
 } catch (err) {
-  console.error({ event: 'admin.activity.load.failed', error: err });
+  logError('admin.activity.load.failed', {}, err);
   activityError = 'Could not load recent activity.';
 }
 

@@ -2,8 +2,10 @@ import { ActionError, defineAction } from 'astro:actions';
 // Astro 6 deprecates `z` from astro:schema; the canonical replacement is
 // `astro/zod` (a re-export of zod/v4 the rest of the framework uses too).
 import { z } from 'astro/zod';
-import { getEnv, insertLead } from '../lib/leads';
-import { errorFields } from '../lib/log';
+import { LeadsRepo } from '../lib/leads-repo';
+import { getCloudflareEnv } from '../lib/env';
+import { logEvent, logWarn } from '../lib/event-log';
+import { wrapAction } from '../lib/with-action-error';
 
 export const server = {
   contact: {
@@ -25,22 +27,34 @@ export const server = {
           .min(10, 'A sentence or two helps me reply usefully.')
           .max(5000, 'Tighten that up — under 5000 characters.'),
       }),
-      handler: async (input, ctx) => {
-        const env = await getEnv(ctx.locals);
-        if (!env?.LEADS_DB) {
-          throw new ActionError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'The contact form is not configured. Email me directly at hi@birdcar.dev.',
-          });
-        }
+      handler: wrapAction(
+        {
+          // Historical event name kept so existing Workers Logs queries
+          // continue to work. Pre-Phase-3 only the persist failure path
+          // emitted this; under wrapAction, any unanticipated handler throw
+          // does. The persist throw is by far the dominant case, so the
+          // name still describes the most likely failure correctly.
+          event: 'lead.persist.failed',
+          userMessage:
+            "I couldn't save that. Email hi@birdcar.dev directly and I'll see it.",
+        },
+        async (input, ctx) => {
+          const env = await getCloudflareEnv();
+          if (!env?.LEADS_DB) {
+            throw new ActionError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message:
+                'The contact form is not configured. Email me directly at hi@birdcar.dev.',
+            });
+          }
 
-        const id = crypto.randomUUID();
-        const submittedAt = new Date().toISOString();
+          const id = crypto.randomUUID();
+          const submittedAt = new Date().toISOString();
 
-        console.log({ event: 'lead.received', leadId: id, email: input.email });
+          logEvent('lead.received', { leadId: id, email: input.email });
 
-        try {
-          await insertLead(env.LEADS_DB, {
+          const repo = new LeadsRepo(env.LEADS_DB);
+          await repo.insert({
             id,
             submittedAt,
             name: input.name,
@@ -49,28 +63,22 @@ export const server = {
             userAgent: ctx.request.headers.get('user-agent'),
             source: 'birdcar.dev/contact',
           });
-          console.log({ event: 'lead.persisted', leadId: id });
-        } catch (err) {
-          console.error({ event: 'lead.persist.failed', leadId: id, error: errorFields(err) });
-          throw new ActionError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: "I couldn't save that. Email hi@birdcar.dev directly and I'll see it.",
-          });
-        }
+          logEvent('lead.persisted', { leadId: id });
 
-        // Publish to LEAD_TRIAGE_QUEUE; the worker entry's queue handler
-        // dispatches to the agent. Non-blocking: a transient queue.send
-        // failure doesn't break the form submit. The agent's cron sweep
-        // recovers any rows that miss the queue path entirely.
-        try {
-          await env.LEAD_TRIAGE_QUEUE.send({ leadId: id });
-          console.log({ event: 'lead.enqueued', leadId: id });
-        } catch (err) {
-          console.warn({ event: 'lead.enqueue.failed', leadId: id, error: errorFields(err) });
-        }
+          // Publish to LEAD_TRIAGE_QUEUE; the worker entry's queue handler
+          // dispatches to the agent. Non-blocking: a transient queue.send
+          // failure doesn't break the form submit. The agent's cron sweep
+          // recovers any rows that miss the queue path entirely.
+          try {
+            await env.LEAD_TRIAGE_QUEUE.send({ leadId: id });
+            logEvent('lead.enqueued', { leadId: id });
+          } catch (err) {
+            logWarn('lead.enqueue.failed', { leadId: id }, err);
+          }
 
-        return { delivered: true, id } as const;
-      },
+          return { delivered: true, id };
+        },
+      ),
     }),
   },
 };
