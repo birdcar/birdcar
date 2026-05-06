@@ -17,6 +17,26 @@ const workerOptions = {
   // DO + Workflow classes plus a stub default fetch.
   main: './tests/test-worker.ts',
   wrangler: { configPath: './wrangler.jsonc' },
+  // The AI binding is implicitly remote (no local runtime), and pool-workers
+  // tries to open a remote proxy session at pool startup. CI has no wrangler
+  // login, so the proxy startup throws before any test runs. Tests already
+  // `vi.mock('ai', ...)` at the SDK level, so the real binding is never
+  // invoked — disable the remote proxy entirely. Mirrors the same gate
+  // `astro.config.ts` uses for the build-time `remoteBindings`.
+  //
+  // The binding shape is still exposed on `env` (canary's
+  // `expect(env.AI).toBeDefined()` passes), so the type augmentation
+  // continues to match the runtime. Calls into `env.AI.run(...)` would fail,
+  // which is exactly why every AI-touching test mocks the SDK.
+  //
+  // To run tests against the live AI binding (e.g. prompt drift checks,
+  // pre-release smoke), add a sibling `vitest.live.config.ts` with
+  // `remoteBindings: true`, point its `include` at `tests/live/**/*.spec.ts`,
+  // and supply `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` via the test
+  // job env in `.github/workflows/deploy.yml`. Live specs should NOT
+  // `vi.mock('ai', ...)`. Run them on a schedule, not on every PR — Workers
+  // AI is rate-limited and the proxy session adds ~3-5s to pool startup.
+  remoteBindings: false,
   miniflare: {
     bindings: {
       WORKOS_API_KEY: 'test_api_key',
