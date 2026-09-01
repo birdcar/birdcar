@@ -5,16 +5,44 @@
         "cursor",
         "pi"
     ],
-    "cloud": false,
+    "cloud": true,
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
+    "packages": [
+        "spatie/laravel-activitylog",
+        "spatie/laravel-medialibrary",
+        "livewire/blaze",
+        "spatie/laravel-backup",
+        "spatie/laravel-pdf",
+        "spatie/laravel-permission",
+        "spatie/laravel-query-builder",
+        "spatie/laravel-sluggable"
+    ],
     "sail": false,
     "skills": [
         "infer-conventions",
+        "folio-routing",
+        "fortify-development",
         "laravel-best-practices",
         "testing-best-practices",
+        "configuring-horizon",
+        "octane-development",
+        "passport-development",
+        "pennant-development",
+        "scout-development",
+        "socialite-development",
+        "fluxui-development",
         "livewire-development",
-        "tailwindcss-development"
+        "echo-development",
+        "tailwindcss-development",
+        "blaze-optimize",
+        "laravel-backup",
+        "medialibrary-development",
+        "laravel-pdf",
+        "laravel-permission-development",
+        "laravel-query-builder",
+        "sluggable-development",
+        "deploying-laravel-cloud"
     ]
 }
