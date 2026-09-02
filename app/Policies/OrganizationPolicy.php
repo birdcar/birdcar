@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Authorization\Organizations\Permission as OrganizationPermission;
 use App\Models\Organization;
 use App\Models\User;
 
@@ -20,7 +21,8 @@ class OrganizationPolicy
      */
     public function view(User $user, Organization $organization): bool
     {
-        return false;
+        return $user->membershipFor($organization)
+            ?->hasPermissionTo(OrganizationPermission::View) ?? false;
     }
 
     /**
@@ -36,7 +38,8 @@ class OrganizationPolicy
      */
     public function update(User $user, Organization $organization): bool
     {
-        return false;
+        return $user->membershipFor($organization)
+            ?->hasPermissionTo(OrganizationPermission::Update) ?? false;
     }
 
     /**
