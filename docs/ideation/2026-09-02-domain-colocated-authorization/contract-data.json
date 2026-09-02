@@ -1,0 +1,357 @@
+{
+  "projectName": "Domain-Colocated Authorization Foundation",
+  "slug": "2026-09-02-domain-colocated-authorization",
+  "date": "2026-09-02",
+  "status": "Draft",
+  "supersedes": null,
+  "gates": {
+    "dimensions": [
+      {
+        "key": "problem",
+        "label": "Problem Clarity",
+        "status": "ready",
+        "evidence": "The current application has global User roles, an empty OrganizationMembership pivot, deny-all organization authorization, and no maintainable source of truth for the permission expected by the Admin route."
+      },
+      {
+        "key": "goal",
+        "label": "Goal Definition",
+        "status": "ready",
+        "evidence": "The approved extension contract requires each business domain to own typed role and permission definitions while one unchanged synchronization command loads explicitly registered catalogs."
+      },
+      {
+        "key": "criteria",
+        "label": "Success Criteria",
+        "status": "ready",
+        "evidence": "The user approved command-level and feature-test checks for synchronization, role composition, Admin access, tenant isolation, users without memberships, stale-definition reporting, and safe pruning."
+      },
+      {
+        "key": "scope",
+        "label": "Scope Boundaries",
+        "status": "ready",
+        "evidence": "This project includes the Admin and organization-membership authorization foundation while explicitly deferring Subscriber entitlements, MCP servers and identities, organization-authored roles, and speculative CRUD matrices."
+      },
+      {
+        "key": "consistency",
+        "label": "Consistency",
+        "status": "ready",
+        "evidence": "Roles remain domain-local and additive, permissions remain transport-neutral, global and tenant authorization use different subjects, and destructive catalog drift fails closed."
+      }
+    ]
+  },
+  "problem": [
+    "Birdcar needs one authenticated User identity to support overlapping access contexts: Employees with platform-wide Admin capabilities, Customers with permissions limited to a specific OrganizationMembership, and Subscribers who may have no organization. The current User model has global Spatie roles, while OrganizationMembership is an empty custom pivot and organization authorization is deny-all, so tenant-scoped permissions are not yet represented.",
+    "As the application grows, one large seeder or permission-creation script would centralize unrelated authorization knowledge, become difficult to review, and encourage UI- or transport-specific permission names. The foundation must let each business domain own a small typed catalog while preserving one explicit, safe database synchronization path and preventing global Employee permissions from leaking into tenant access."
+  ],
+  "goals": [
+    "Make a new authorization domain additive: implementation requires a domain Permission enum, Role enum, Catalog class, and one config registry entry without modifying the synchronization command.",
+    "Represent platform-wide permissions on User and organization-scoped permissions on a first-class OrganizationMembership so multiple role assignments produce the union of their permissions without crossing organization boundaries.",
+    "Provide an idempotent authorization:sync command that owns the complete role and permission catalog for the configured web guard, applies exact role-permission mappings, reports stale definitions by default, and only prunes unassigned stale records when explicitly requested.",
+    "Establish real Admin-entry and tenant-isolation behavior with Pest coverage, while keeping permission names reusable by future Admin UI, Customer UI, HTTP API, and separate Admin and Customer MCP servers.",
+    "Persist the authorization architecture as a custom Laravel Boost AI guideline that is discovered and composed into project agent instructions for future ideation and implementation work."
+  ],
+  "successCriteria": [
+    {
+      "criterion": "Running authorization:sync repeatedly produces the same permissions, roles, and role-permission mappings without duplicate rows or additional changes.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationSyncCommandTest.php --filter=idempotent",
+        "expect": "exits 0 and the second synchronization leaves the persisted authorization graph unchanged"
+      }
+    },
+    {
+      "criterion": "Only catalogs listed in config/authorization.php are loaded, and the Admin and Organizations catalogs create their exact enum-backed definitions and mappings for the configured web guard.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationSyncCommandTest.php --filter=catalogs",
+        "expect": "exits 0 with registered catalogs synchronized, an unregistered fixture catalog ignored, and definitions for other guards untouched"
+      }
+    },
+    {
+      "criterion": "Duplicate role or permission names across registered catalogs fail before any authorization records are written.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationSyncCommandTest.php --filter=collisions",
+        "expect": "exits 0 after proving collisions produce a failing command result and leave the authorization tables unchanged"
+      }
+    },
+    {
+      "criterion": "The Admin access role grants admin.view to a User, the named admin.index route requires authentication, and an authenticated User without that permission receives no Admin access.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AdminAuthorizationTest.php",
+        "expect": "exits 0 for permitted, unauthenticated, and authenticated-but-forbidden cases"
+      }
+    },
+    {
+      "criterion": "OrganizationMembership is a first-class web-guard authorization subject backed by organization_memberships, retains its primary key, and rejects duplicate organization-user memberships.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/OrganizationMembershipTest.php",
+        "expect": "exits 0 after persisting a membership identity and observing a database constraint violation for a duplicate organization-user pair"
+      }
+    },
+    {
+      "criterion": "Assigning the Organizations viewer and editor roles to one OrganizationMembership gives that membership the union of organizations.view and organizations.update.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/OrganizationAuthorizationTest.php --filter=composes",
+        "expect": "exits 0 and both permissions are inherited through separate membership roles"
+      }
+    },
+    {
+      "criterion": "A membership permission applies only to its own organization and never authorizes the same User in another organization.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/OrganizationAuthorizationTest.php --filter=isolates",
+        "expect": "exits 0 with access allowed for the matching membership and denied for the other organization"
+      }
+    },
+    {
+      "criterion": "A global User assignment of an Organizations role does not bypass membership-based tenant authorization, and a User with no memberships remains valid but receives no tenant access.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/OrganizationAuthorizationTest.php --filter=global",
+        "expect": "exits 0 with global Admin-side capability preserved and tenant access denied without the matching membership"
+      }
+    },
+    {
+      "criterion": "Normal authorization:sync reports catalog-managed roles and permissions that are stale without deleting them or their assignments.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationSyncCommandTest.php --filter=reports",
+        "expect": "exits 0 with stale records listed and persisted"
+      }
+    },
+    {
+      "criterion": "authorization:sync --prune deletes unassigned stale definitions but refuses to delete stale definitions that still have active role or model assignments.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationSyncCommandTest.php --filter=prune",
+        "expect": "exits 0 with unassigned records removed and assigned records reported without deletion"
+      }
+    },
+    {
+      "criterion": "A custom Laravel Boost authorization guideline is discovered from .ai/guidelines and its composed output includes the approved subject, catalog, synchronization, tenant-isolation, and MCP-boundary rules.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Authorization/AuthorizationGuidelineTest.php",
+        "expect": "exits 0 after proving Boost discovers the custom guideline and composes every required architectural invariant"
+      }
+    },
+    {
+      "criterion": "The focused authorization suite and PHPStan analysis pass after changed PHP files have been formatted with Pint.",
+      "check": {
+        "cmd": "composer types:check && php artisan test --compact tests/Feature/Authorization",
+        "expect": "both commands exit 0; the implementation validation steps run vendor/bin/pint --dirty --format agent before this check"
+      }
+    }
+  ],
+  "scope": {
+    "mvp": [
+      {
+        "item": "Convert OrganizationMembership into a first-class role-bearing Eloquent model, change the unmigrated table definition to organization_memberships while preserving its existing primary key, add User and Organization relationships, and enforce a unique organization-user membership constraint.",
+        "reason": "The membership is the tenant authorization subject and now has relationships and behavior of its own; using the plural table avoids a hidden model table override."
+      },
+      {
+        "item": "Keep global Spatie roles on User, add Spatie roles to OrganizationMembership with an explicit web guard, and keep teams disabled.",
+        "reason": "Spatie's polymorphic assignments can distinguish global User authority from organization-scoped membership authority without mutable current-team state or ambiguous guard resolution."
+      },
+      {
+        "item": "Add a shared AuthorizationCatalog contract, enum-backed definitions, and an explicit config/authorization.php catalog registry.",
+        "reason": "This is the stable, searchable extension contract that replaces a monolithic role and permission script."
+      },
+      {
+        "item": "Add minimal Admin and Organizations catalogs: admin.access grants admin.view; organizations.viewer and organizations.editor grant separate organizations.view and organizations.update capabilities.",
+        "reason": "These definitions exercise surface entry, global capabilities, membership composition, and tenant isolation without anticipating unfinished workflows."
+      },
+      {
+        "item": "Add an idempotent authorization:sync command that treats all Spatie role and permission rows for the configured web guard as catalog-owned, validates catalog collisions before writing, upserts definitions, synchronizes exact role mappings, and refreshes Spatie's cache.",
+        "reason": "Birdcar owns all role definitions, so guard-scoped ownership provides one explicit and testable synchronization boundary without adding tracking tables."
+      },
+      {
+        "item": "Report web-guard definitions absent from registered catalogs during normal sync and support fail-closed pruning of only unassigned stale records through --prune.",
+        "reason": "Code remains the declared source of truth without turning ordinary deploys into silent access revocations or touching definitions for other guards."
+      }
+    ],
+    "full": [
+      {
+        "item": "Add a named GET admin.index placeholder endpoint and require authentication plus admin.view for the Admin domain group using the Admin catalog enum rather than an untracked string.",
+        "reason": "The existing group has no requestable route and lacks an explicit authentication boundary, so a neutral no-content endpoint is needed to exercise the foundation without designing the Admin UI."
+      },
+      {
+        "item": "Implement membership-only OrganizationPolicy checks and the model relationships needed to resolve the matching membership explicitly.",
+        "reason": "Tenant authorization must not infer access from global User roles or ambient organization state."
+      },
+      {
+        "item": "Add factories and focused Pest coverage for catalog synchronization, global Admin access, additive membership roles, tenant isolation, users without memberships, and pruning safety.",
+        "reason": "Authorization and cross-tenant boundaries require executable regression evidence before the foundation is reused."
+      },
+      {
+        "item": "Add .ai/guidelines/authorization.md as a custom Laravel Boost AI guideline, verify its discovery and composition with one focused test, and regenerate the project agent instructions with boost:update.",
+        "reason": "Future ideation runs and coding agents must inherit the authorization subjects, catalog conventions, synchronization rules, tenant-isolation boundary, and future MCP direction; the existing catalog behavior tests already cover the PHP structure itself."
+      }
+    ],
+    "stretch": [],
+    "outOfScope": [
+      {
+        "item": "Subscriber subscription, purchase, and entitlement models",
+        "reason": "No product or billing access semantics exist yet; commercial access should not be represented as roles."
+      },
+      {
+        "item": "Admin MCP and Customer MCP server, tool, OAuth, or agent identity implementation",
+        "reason": "The servers will be separate and share domain capabilities, but their tool inventories and credential models are future projects."
+      },
+      {
+        "item": "Machine principals, delegated-agent tokens, or token-level permission narrowing",
+        "reason": "The catalog remains principal-neutral, but agent identity and auditing require a separately designed security boundary."
+      },
+      {
+        "item": "Organization-authored custom roles or role editors",
+        "reason": "Birdcar owns role definitions and the product is not targeting enterprise customization."
+      },
+      {
+        "item": "A broad User, Organization, or membership CRUD permission matrix",
+        "reason": "Those workflows do not exist yet; only representative permissions needed to prove the foundation are defined."
+      },
+      {
+        "item": "Role hierarchies, deny permissions, cross-domain roles, and assignment presets",
+        "reason": "Authorization is intentionally additive through several small domain-local roles."
+      },
+      {
+        "item": "Automatic filesystem catalog discovery or role and permission writes during application boot",
+        "reason": "Explicit registration and command-driven synchronization are easier to trace and safe under Octane."
+      },
+      {
+        "item": "Separate Employee, Customer, and Subscriber User models or a mutually exclusive users.type column",
+        "reason": "These access contexts may overlap and should be derived from global roles, memberships, and future entitlements."
+      }
+    ],
+    "future": [
+      "Add subscription and entitlement models when paid-content and product access rules are known.",
+      "Build separate Admin and Customer MCP servers whose tools reuse domain permission enums, hide unavailable tools through shouldRegister(), and authorize again during handle().",
+      "Choose delegated-user or independent machine-principal authentication and auditing when autonomous agent requirements are concrete.",
+      "Add additional business-domain catalogs as product workflows are implemented."
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "Use one User identity with overlapping access contexts.",
+      "rejected": "Mutually exclusive Employee, Customer, and Subscriber user types",
+      "reason": "A Subscriber can later gain an OrganizationMembership without losing subscription history, and one person may occupy several contexts simultaneously."
+    },
+    {
+      "decision": "Use User as the global authorization subject and OrganizationMembership as the tenant authorization subject.",
+      "rejected": "Spatie Teams as the primary tenant abstraction",
+      "reason": "Explicit membership checks preserve the domain invariant and avoid mutable current-team state in web requests, jobs, and Octane workers."
+    },
+    {
+      "decision": "Treat OrganizationMembership as a first-class Eloquent model.",
+      "rejected": "Keep it as an incidental custom Pivot",
+      "reason": "The membership has its own identity, metadata, authorization relationships, lifecycle, factories, and policies."
+    },
+    {
+      "decision": "Organize authorization catalogs by business domain.",
+      "rejected": "Organize strictly by Eloquent model or application surface",
+      "reason": "Business capabilities often span models and should remain reusable across Admin UI, customer UI, APIs, and MCP tools."
+    },
+    {
+      "decision": "Represent each domain with backed Permission and Role enums plus a small Catalog implementing a shared contract.",
+      "rejected": "One class per definition or untyped arrays",
+      "reason": "Enums provide type-safe names accepted by Spatie while the Catalog provides one cohesive mapping boundary."
+    },
+    {
+      "decision": "Register catalogs explicitly in config/authorization.php.",
+      "rejected": "Filesystem auto-discovery or service-provider tagging",
+      "reason": "A short explicit registry is searchable and predictable without adding reflection or container ceremony."
+    },
+    {
+      "decision": "Synchronize catalogs through an explicit idempotent authorization:sync command.",
+      "rejected": "Domain seeders, schema migrations, or application-boot writes",
+      "reason": "A dedicated command gives production synchronization clear semantics and remains safe for long-running Octane processes."
+    },
+    {
+      "decision": "Report stale records by default and prune only through --prune.",
+      "rejected": "Automatic strict deletion or silent additive-only synchronization",
+      "reason": "Operators can see drift without ordinary deploys deleting access or stale data accumulating invisibly."
+    },
+    {
+      "decision": "Refuse to prune stale definitions that still have active assignments.",
+      "rejected": "Cascade active assignment deletion after confirmation or without confirmation",
+      "reason": "Intentional access revocation should use an explicit transition or data migration rather than a catalog maintenance command."
+    },
+    {
+      "decision": "Keep roles domain-local and compose authority by assigning several roles.",
+      "rejected": "Cross-domain roles or broad persona roles",
+      "reason": "Small local bundles preserve catalog ownership and match the requested additive authorization model."
+    },
+    {
+      "decision": "Use admin.view only as the Admin surface-entry permission and use domain capabilities for concrete actions.",
+      "rejected": "Prefix every business action with admin or duplicate permissions per transport",
+      "reason": "The same business capability can be authorized consistently from Admin UI, APIs, and future MCP tools."
+    },
+    {
+      "decision": "Plan separate Admin and Customer MCP servers that reuse domain permission names.",
+      "rejected": "One mixed-context MCP server or separate permission vocabularies",
+      "reason": "Separate tool inventories and tenant-resolution paths preserve trust boundaries while shared capabilities avoid duplicated policy semantics."
+    },
+    {
+      "decision": "Defer agent identity while keeping catalogs principal-neutral.",
+      "rejected": "Implement delegated tokens or machine-principal models in this foundation",
+      "reason": "Agent credential, narrowing, revocation, and audit requirements are not concrete enough to justify security infrastructure now."
+    },
+    {
+      "decision": "Implement Admin access and tenant isolation as the first real behaviors.",
+      "rejected": "A speculative full CRUD matrix or catalog infrastructure with no integration",
+      "reason": "These boundaries prove the architecture against current routes and models without inventing unfinished product rules."
+    },
+    {
+      "decision": "Persist the approved authorization architecture as a custom Laravel Boost AI guideline.",
+      "rejected": "Rely on the ideation contract or implicit code conventions alone",
+      "reason": "Boost-composed project guidance makes the decisions visible to future ideation sessions and agentic development before authorization files are changed."
+    },
+    {
+      "decision": "Treat every Spatie role and permission for the configured web guard as catalog-owned.",
+      "rejected": "Add an authorization ownership manifest or columns to package tables",
+      "reason": "Birdcar defines all roles, so guard-scoped ownership makes stale detection deterministic without new persistence machinery."
+    },
+    {
+      "decision": "Use the plural organization_memberships table and an explicit web permission guard on OrganizationMembership.",
+      "rejected": "Keep the singular pivot table through a model override or rely on implicit guard resolution",
+      "reason": "The database has not been migrated, so adopting first-class model conventions now removes two hidden dependencies."
+    },
+    {
+      "decision": "Add a neutral named admin.index endpoint for authorization verification.",
+      "rejected": "Claim route-level Admin coverage while the protected route group contains no requestable route",
+      "reason": "A no-content endpoint proves the boundary without prematurely designing the Admin application."
+    },
+    {
+      "decision": "Fold durable AI guidance into the access-boundary phase and remove the separate architecture-convention test.",
+      "rejected": "Create a standalone documentation infrastructure phase and duplicate catalog behavior coverage",
+      "reason": "The custom Boost guideline is an explicit user goal, but one focused composition test and the existing catalog tests are sufficient."
+    },
+    {
+      "decision": "Verify behavior and static analysis separately from Pint's mutating formatter.",
+      "rejected": "Use git diff --exit-code after formatting as a success criterion",
+      "reason": "The formatter is an implementation validation step, while the acceptance command must not confuse intended uncommitted changes with formatting failures."
+    }
+  ],
+  "execution": {
+    "strategy": "Hybrid: build catalog synchronization and membership authorization independently, then integrate both into Admin and tenant boundaries and persist their conventions in Boost guidance.",
+    "phases": [
+      {
+        "title": "Domain Catalogs and Safe Synchronization",
+        "risk": "high",
+        "blocking": true,
+        "specPath": "docs/ideation/2026-09-02-domain-colocated-authorization/spec-phase-1.md",
+        "notes": "Create enum-backed domain catalogs, explicit registration, idempotent synchronization, collision validation, stale reporting, fail-closed pruning, and focused command tests."
+      },
+      {
+        "title": "Membership Authorization Principal",
+        "risk": "medium",
+        "blocking": true,
+        "specPath": "docs/ideation/2026-09-02-domain-colocated-authorization/spec-phase-2.md",
+        "notes": "Promote OrganizationMembership to a first-class model, define relationships and database invariants, attach Spatie roles to memberships, and add factory-backed composition tests."
+      },
+      {
+        "title": "Admin and Tenant Access Boundaries",
+        "risk": "medium",
+        "blocking": true,
+        "prereqs": [
+          "Domain Catalogs and Safe Synchronization",
+          "Membership Authorization Principal"
+        ],
+        "specPath": "docs/ideation/2026-09-02-domain-colocated-authorization/spec-phase-3.md",
+        "notes": "Add a neutral protected Admin entry route, implement membership-only organization policy behavior, prove global permissions cannot cross into tenant access, write and verify the custom Boost authorization guideline, regenerate agent instructions, and add integration coverage."
+      }
+    ]
+  }
+}
