@@ -1,0 +1,61 @@
+{
+  "projectName": "Domain-Colocated Authorization Foundation",
+  "slug": "2026-09-02-domain-colocated-authorization",
+  "date": "2026-09-02",
+  "branch": "ideation/2026-09-02-domain-colocated-authorization",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": [],
+    "noops": [],
+    "failed": [
+      "Domain Catalogs and Safe Synchronization",
+      "Membership Authorization Principal"
+    ],
+    "skipped": [
+      "Admin and Tenant Access Boundaries"
+    ],
+    "results": [
+      {
+        "title": "Domain Catalogs and Safe Synchronization",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review cycle 1 FAILED and the fixer reported it could not fix the findings: Applied the requested Phase 1 fixes and focused authorization tests/Pint pass. Validation still fails at `composer types:check` on restored non-Phase-1 files (`OrganizationController` return types and `config/horizon.php` env typing).. Nothing committed; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation docs/ideation/2026-09-02-domain-colocated-authorization/spec-phase-1.md:1 — Requested Phase 1 spec file is absent from the working tree, while the new context map references it as the implementation contract → Restore/add the Phase 1 spec at this path so the diff can be reviewed against the authoritative contract",
+          "high/spec-deviation app/Models/User.php:33 — Phase 1 scope is exceeded: the context map says exactly ten new files and no modified/deleted files, but the diff includes Phase 2 membership/model/schema/factory/test work plus unrelated controller/Horizon edits → Revert or split every non-Phase-1 change out of this working tree",
+          "medium/testing tests/Feature/Authorization/AuthorizationSyncCommandTest.php:81 — Spec edge cases for invalid authorization.guard/catalogs and invalid or empty enum values are implemented in the command but not exercised by tests → Add command feature tests for those validation-failure paths",
+          "low/pattern-mismatch app/Console/Commands/SyncAuthorization.php:16 — Pattern notes call for the generated Laravel command skeleton using protected $signature/$description, but this command uses console attributes instead → Switch to the specified skeleton style or update the spec/pattern guidance to explicitly allow attributes"
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      },
+      {
+        "title": "Membership Authorization Principal",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review cycle 2 FAILED and the fixer reported it could not fix the findings: Reverted the non-Phase-2 Horizon/controller edits and replaced parent-delete membership iteration with eachById() plus chunk-size regression tests. Pint and the focused membership tests pass, but composer types:check fails on the reverted non-Phase-2 Horizon/controller issues.. Nothing committed; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation config/horizon.php:70 — Persists from cycle 1: working tree still includes non-Phase-2 edits (`config/horizon.php` prefix closure and `app/Http/Controllers/OrganizationController.php` void return types) that are not listed in Phase 2 File Changes → Revert or split these unrelated changes before committing this phase",
+          "high/logic app/Models/Organization.php:21 — Parent-delete cleanup deletes memberships via `each()`, and `User.php` repeats the same pattern; Laravel `each()` uses offset chunking, so deleting rows during iteration can skip memberships after the first chunk and leave their role pivots orphaned by FK cascade → Use `eachById()`/`lazyById()` or explicit pivot cleanup in both parent hooks and add a regression test with enough memberships to exercise chunking"
+        ],
+        "warnings": [],
+        "reviewCycles": 2
+      },
+      {
+        "title": "Admin and Tenant Access Boundaries",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

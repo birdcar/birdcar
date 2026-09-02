@@ -2,7 +2,13 @@
   "projectName": "Domain-Colocated Authorization Foundation",
   "slug": "2026-09-02-domain-colocated-authorization",
   "date": "2026-09-02",
-  "status": "Draft",
+  "status": "Approved",
+  "approvalMode": "express",
+  "selectedScope": "Full",
+  "isolation": {
+    "branch": "ideation/2026-09-02-domain-colocated-authorization",
+    "createdFrom": "a7c8c7e"
+  },
   "supersedes": null,
   "gates": {
     "dimensions": [
@@ -322,10 +328,15 @@
       "decision": "Verify behavior and static analysis separately from Pint's mutating formatter.",
       "rejected": "Use git diff --exit-code after formatting as a success criterion",
       "reason": "The formatter is an implementation validation step, while the acceptance command must not confuse intended uncommitted changes with formatting failures."
+    },
+    {
+      "decision": "Serialize the two foundation phases during the retry.",
+      "rejected": "Retry both phases concurrently in one shared working tree",
+      "reason": "The first strict run proved that concurrent builders contaminate one another's diffs and reviewers even when their declared feature files do not overlap; Phase 2 now follows Phase 1 before integration."
     }
   ],
   "execution": {
-    "strategy": "Hybrid: build catalog synchronization and membership authorization independently, then integrate both into Admin and tenant boundaries and persist their conventions in Boost guidance.",
+    "strategy": "Sequential retry: build and commit catalog synchronization, then membership authorization, then integrate both into Admin and tenant boundaries and persist their conventions in Boost guidance.",
     "phases": [
       {
         "title": "Domain Catalogs and Safe Synchronization",
@@ -338,6 +349,9 @@
         "title": "Membership Authorization Principal",
         "risk": "medium",
         "blocking": true,
+        "prereqs": [
+          "Domain Catalogs and Safe Synchronization"
+        ],
         "specPath": "docs/ideation/2026-09-02-domain-colocated-authorization/spec-phase-2.md",
         "notes": "Promote OrganizationMembership to a first-class model, define relationships and database invariants, attach Spatie roles to memberships, and add factory-backed composition tests."
       },
