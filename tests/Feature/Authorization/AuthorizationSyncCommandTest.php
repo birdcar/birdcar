@@ -153,6 +153,7 @@ test('invalid catalog enum values fail before table changes', function (string $
     'empty role value' => [EmptyRoleValueCatalog::class, 'returned an invalid role value'],
     'integer role value' => [IntegerRoleValueCatalog::class, 'returned an invalid role value'],
     'plain mapped permission value' => [PlainMappedPermissionValueCatalog::class, 'mapped role [test.viewer] to an invalid permission value'],
+    'integer mapped permission value' => [IntegerMappedPermissionValueCatalog::class, 'mapped role [test.viewer] to an invalid permission value'],
     'empty mapped permission value' => [EmptyMappedPermissionValueCatalog::class, 'mapped role [test.viewer] to an invalid permission value'],
 ]);
 
@@ -524,6 +525,24 @@ final class PlainMappedPermissionValueCatalog implements AuthorizationCatalog
             [
                 'role' => TestRole::Viewer,
                 'permissions' => ['test.view'],
+            ],
+        ];
+    }
+}
+
+final class IntegerMappedPermissionValueCatalog implements AuthorizationCatalog
+{
+    public function permissions(): array
+    {
+        return [TestPermission::View];
+    }
+
+    public function roles(): array
+    {
+        return [
+            [
+                'role' => TestRole::Viewer,
+                'permissions' => [IntegerPermission::View],
             ],
         ];
     }
