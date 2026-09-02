@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -32,6 +33,18 @@ class User extends Authenticatable implements OAuthenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $user->organizationMemberships()
+                ->eachById(function (OrganizationMembership $membership): bool {
+                    $membership->delete();
+
+                    return true;
+                }, 100);
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -43,6 +56,21 @@ class User extends Authenticatable implements OAuthenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * @return HasMany<OrganizationMembership, $this>
+     */
+    public function organizationMemberships(): HasMany
+    {
+        return $this->hasMany(OrganizationMembership::class);
+    }
+
+    public function membershipFor(Organization $organization): ?OrganizationMembership
+    {
+        return $this->organizationMemberships()
+            ->whereBelongsTo($organization)
+            ->first();
     }
 
     /**

@@ -3,12 +3,14 @@
 namespace Database\Factories;
 
 use App\Models\Organization;
+use App\Models\OrganizationMembership;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Organization>
+ * @extends Factory<OrganizationMembership>
  */
-class OrganizationFactory extends Factory
+class OrganizationMembershipFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,9 +20,8 @@ class OrganizationFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company(),
-            'metadata' => '{}',
-            'stripe_customer_id' => 'cus_'.fake()->unique()->regexify('[A-Za-z0-9]{14}'),
+            'organization_id' => Organization::factory(),
+            'user_id' => User::factory(),
         ];
     }
 }
