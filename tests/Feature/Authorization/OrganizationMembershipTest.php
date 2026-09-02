@@ -5,6 +5,7 @@ use App\Models\OrganizationMembership;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -91,32 +92,103 @@ test('membership accepts web guard roles and deleting it removes role assignment
     ]);
 });
 
-test('deleting a user cleans membership role assignments across chunks', function (): void {
+test('deleting a user cleans membership authorization assignments in a fixed number of queries', function (): void {
     $role = Role::create(['name' => 'tenant.member', 'guard_name' => 'web']);
+    $permission = Permission::create(['name' => 'tenant.view', 'guard_name' => 'web']);
     $user = User::factory()->create();
     $memberships = OrganizationMembership::factory()
         ->count(101)
         ->create(['user_id' => $user->id]);
 
     $memberships->each->assignRole($role);
+    $memberships->first()->givePermissionTo($permission);
 
-    $user->delete();
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $user->deleteOrFail();
+    $assignmentDeleteQueryCount = membershipAssignmentDeleteQueryCount(DB::getQueryLog());
+    DB::disableQueryLog();
 
     expect(OrganizationMembership::count())->toBe(0)
-        ->and(DB::table('model_has_roles')->where('model_type', OrganizationMembership::class)->count())->toBe(0);
+        ->and(DB::table('model_has_roles')->where('model_type', OrganizationMembership::class)->count())->toBe(0)
+        ->and(DB::table('model_has_permissions')->where('model_type', OrganizationMembership::class)->count())->toBe(0)
+        ->and($assignmentDeleteQueryCount)->toBe(2);
 });
 
-test('deleting an organization cleans membership role assignments across chunks', function (): void {
+test('deleting an organization cleans membership authorization assignments in a fixed number of queries', function (): void {
     $role = Role::create(['name' => 'tenant.editor', 'guard_name' => 'web']);
+    $permission = Permission::create(['name' => 'tenant.update', 'guard_name' => 'web']);
     $organization = Organization::factory()->create();
     $memberships = OrganizationMembership::factory()
         ->count(101)
         ->create(['organization_id' => $organization->id]);
 
     $memberships->each->assignRole($role);
+    $memberships->first()->givePermissionTo($permission);
 
-    $organization->delete();
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $organization->deleteOrFail();
+    $assignmentDeleteQueryCount = membershipAssignmentDeleteQueryCount(DB::getQueryLog());
+    DB::disableQueryLog();
 
     expect(OrganizationMembership::count())->toBe(0)
-        ->and(DB::table('model_has_roles')->where('model_type', OrganizationMembership::class)->count())->toBe(0);
+        ->and(DB::table('model_has_roles')->where('model_type', OrganizationMembership::class)->count())->toBe(0)
+        ->and(DB::table('model_has_permissions')->where('model_type', OrganizationMembership::class)->count())->toBe(0)
+        ->and($assignmentDeleteQueryCount)->toBe(2);
 });
+
+test('failed user deletion rolls back the parent membership and all authorization assignments', function (): void {
+    $role = Role::create(['name' => 'tenant.rollback', 'guard_name' => 'web']);
+    $permission = Permission::create(['name' => 'tenant.rollback', 'guard_name' => 'web']);
+    $user = User::factory()->create();
+    $membership = OrganizationMembership::factory()->create(['user_id' => $user->id]);
+
+    $user->assignRole($role);
+    $membership->assignRole($role);
+    $membership->givePermissionTo($permission);
+
+    $shouldFail = true;
+
+    User::deleted(function (User $deletedUser) use ($user, &$shouldFail): void {
+        if ($shouldFail && $deletedUser->is($user)) {
+            $shouldFail = false;
+
+            throw new RuntimeException('Simulated post-delete failure.');
+        }
+    });
+
+    expect(fn () => $user->deleteOrFail())
+        ->toThrow(RuntimeException::class, 'Simulated post-delete failure.');
+
+    $this->assertDatabaseHas('users', ['id' => $user->id]);
+    $this->assertDatabaseHas('organization_memberships', ['id' => $membership->id]);
+    $this->assertDatabaseHas('model_has_roles', [
+        'role_id' => $role->id,
+        'model_type' => $user->getMorphClass(),
+        'model_id' => $user->id,
+    ]);
+    $this->assertDatabaseHas('model_has_roles', [
+        'role_id' => $role->id,
+        'model_type' => $membership->getMorphClass(),
+        'model_id' => $membership->id,
+    ]);
+    $this->assertDatabaseHas('model_has_permissions', [
+        'permission_id' => $permission->id,
+        'model_type' => $membership->getMorphClass(),
+        'model_id' => $membership->id,
+    ]);
+});
+
+/**
+ * @param  list<array{query: string, bindings: array<int, mixed>, time: float|null}>  $queries
+ */
+function membershipAssignmentDeleteQueryCount(array $queries): int
+{
+    $morphClass = (new OrganizationMembership)->getMorphClass();
+
+    return collect($queries)
+        ->filter(fn (array $query): bool => str_starts_with(strtolower(ltrim($query['query'])), 'delete')
+            && in_array($morphClass, $query['bindings'], true))
+        ->count();
+}
