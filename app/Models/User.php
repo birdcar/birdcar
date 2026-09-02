@@ -36,12 +36,9 @@ class User extends Authenticatable implements OAuthenticatable
     protected static function booted(): void
     {
         static::deleting(function (User $user): void {
-            $user->organizationMemberships()
-                ->eachById(function (OrganizationMembership $membership): bool {
-                    $membership->delete();
-
-                    return true;
-                }, 100);
+            OrganizationMembership::deleteAuthorizationAssignmentsFor(
+                $user->organizationMemberships()->getQuery(),
+            );
         });
     }
 

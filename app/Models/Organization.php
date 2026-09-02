@@ -19,12 +19,9 @@ class Organization extends Model
     protected static function booted(): void
     {
         static::deleting(function (Organization $organization): void {
-            $organization->memberships()
-                ->eachById(function (OrganizationMembership $membership): bool {
-                    $membership->delete();
-
-                    return true;
-                }, 100);
+            OrganizationMembership::deleteAuthorizationAssignmentsFor(
+                $organization->memberships()->getQuery(),
+            );
         });
     }
 
