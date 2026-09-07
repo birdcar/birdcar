@@ -2,8 +2,7 @@
     "agents": [
         "claude_code",
         "codex",
-        "cursor",
-        "pi"
+        "cursor"
     ],
     "cloud": true,
     "guidelines": true,
@@ -35,7 +34,6 @@
         "socialite-development",
         "fluxui-development",
         "livewire-development",
-        "echo-development",
         "tailwindcss-development",
         "blaze-optimize",
         "laravel-backup",
