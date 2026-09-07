@@ -1,0 +1,20 @@
+domains:
+  - birdcar
+php_version: "8.5"
+node_version: "22"
+framework: laravel
+framework_version: "13"
+secured: true
+services:
+  - mailpit
+  - postgres
+  - rustfs
+  - stripe-mock:
+      preset: stripe-mock
+  - valkey:
+      preset: valkey
+workers:
+  - horizon
+  - reverb
+  - schedule
+  - vite
