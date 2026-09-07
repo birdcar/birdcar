@@ -1,0 +1,79 @@
+@font-face {
+    font-family: 'Alkaline';
+    src: url('../fonts/Alkaline-Regular.woff2') format('woff2'), url('../fonts/Alkaline-Regular.woff') format('woff');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline';
+    src: url('../fonts/Alkaline-Medium.woff2') format('woff2'), url('../fonts/Alkaline-Medium.woff') format('woff');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline';
+    src: url('../fonts/Alkaline-Demi.woff2') format('woff2'), url('../fonts/Alkaline-Demi.woff') format('woff');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline';
+    src: url('../fonts/Alkaline-Bold.woff2') format('woff2'), url('../fonts/Alkaline-Bold.woff') format('woff');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline';
+    src: url('../fonts/Alkaline-Heavy.woff2') format('woff2'), url('../fonts/Alkaline-Heavy.woff') format('woff');
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline Caps';
+    src: url('../fonts/AlkalineCaps-Regular.woff2') format('woff2'), url('../fonts/AlkalineCaps-Regular.woff') format('woff');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline Caps';
+    src: url('../fonts/AlkalineCaps-Medium.woff2') format('woff2'), url('../fonts/AlkalineCaps-Medium.woff') format('woff');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline Caps';
+    src: url('../fonts/AlkalineCaps-Demi.woff2') format('woff2'), url('../fonts/AlkalineCaps-Demi.woff') format('woff');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline Caps';
+    src: url('../fonts/AlkalineCaps-Bold.woff2') format('woff2'), url('../fonts/AlkalineCaps-Bold.woff') format('woff');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alkaline Caps';
+    src: url('../fonts/AlkalineCaps-Heavy.woff2') format('woff2'), url('../fonts/AlkalineCaps-Heavy.woff') format('woff');
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}
