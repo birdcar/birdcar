@@ -1,0 +1,29 @@
+{
+  "seed": "0587a4ba",
+  "questionKey": "bcf82481",
+  "target": "resources/views/welcome.blade.php",
+  "kind": "challenger",
+  "label": "Make room",
+  "answer": {
+    "optionId": "pop-culture-shelf-bebop-title-card",
+    "steer": "",
+    "hero": "https://impeccable.style/worlds/cards/pop-culture-shelf-bebop-title-card-hero.webp",
+    "board": "https://impeccable.style/worlds/cards/pop-culture-shelf-bebop-title-card.webp",
+    "comp": ".impeccable/mocks/decision/make-room.png",
+    "buildPath": "comp",
+    "buildPathFlipped": false
+  },
+  "scope": "Visual direction seed; no final build-comp approval or UI implementation.",
+  "subsequentUserConstraints": [
+    "Birdcar is a person whose expertise, voice, and vision are central to the offering.",
+    "Use first-person singular in new copy, not corporate we, us, or our.",
+    "Study the owner's essays for voice only; the old marketing and offer remain discarded.",
+    "Revise the selected comp's impersonal copy and clarify its collaboration imagery before any build approval.",
+    "Include a first-class blog / Writing section with main navigation, an article index, individual essays, and room for future video content.",
+    "Treat this as greenfield work: the existing application code is disposable boilerplate and does not need to be preserved."
+  ],
+  "localReferences": {
+    "board": ".impeccable/mocks/reference/make-room-board.webp",
+    "hero": ".impeccable/mocks/reference/make-room-hero.webp"
+  }
+}

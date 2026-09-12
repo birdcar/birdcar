@@ -1,0 +1,24 @@
+{
+  "seed": "0587a4ba",
+  "target": "resources/views/welcome.blade.php",
+  "mode": "persuade",
+  "mechanism": "Understand one expensive workflow, give the client an actionable report they can keep, then offer scoped implementation and ongoing care.",
+  "audienceScene": "An owner or operations lead of an established service business is comparing help between client work, often after a local introduction, on a phone or ordinary office laptop in daylight.",
+  "mustProve": "The business understands the coordination burden, can deliver useful systems with the people using them, and offers a concrete free first step without locking the client in.",
+  "ruts": ["Generic automation consultancy with a navy hero and software-logo cloud", "Black neon AI command center", "Literal birds and cars substituted for the client's work"],
+  "orderedCandidates": [
+    {"name":"Service shop signage","family":"painted signage","rationale":"A capable local service business speaks in confident lettering and clear offers; Alkaline belongs naturally in that world.","expression":"A large evergreen sign-like opening, lime assessment panel, direct service sequence and unembellished project evidence."},
+    {"name":"Transit wayfinding","family":"public information systems","rationale":"Owners know the value of reliable routes, clear handoffs and knowing what happens next.","expression":"Cobalt navigation bands connect the assessment, build and care stages, with each destination stated in plain language."},
+    {"name":"Project folios","family":"working documents","rationale":"The tangible plan a buyer keeps is the first product; a well-organized folio makes that value visible before purchase.","expression":"Lilac and chartreuse tabbed fields frame an open, explicitly illustrative assessment report beside the promise and booking action."},
+    {"name":"Assembly bench","family":"industrial fixtures","rationale":"A fixture makes repeatable work easier for skilled people without replacing their judgment.","expression":"A light precise plane with cobalt fixtures arranges a small illustrative workflow into a reliable sequence."},
+    {"name":"Community event posters","family":"civic print","rationale":"The intended first introductions happen among local business peers; bold civic graphics can feel public, human and accessible.","expression":"A typographic event-like introduction leads to a practical invitation to discuss the business, with real project summaries below."},
+    {"name":"Business atlas","family":"cartographic information","rationale":"Regional owners navigate territory and dependencies; a clear index can explain where work stalls and how help connects it.","expression":"A blue-and-yellow indexed landscape groups recognizable operational problems, with a fixed path into assessment."},
+    {"name":"Public mosaics","family":"ceramic public art","rationale":"Distinct contributions can form a coherent whole while retaining human character.","expression":"Large teal, plum and apricot planes assemble into an orderly whole around a restrained service explanation."}
+  ],
+  "assignedIndex": 3,
+  "status": "user-selected-direction",
+  "chosenId": "pop-culture-shelf-bebop-title-card",
+  "chosenLabel": "Make room",
+  "selectionRecord": ".impeccable/seed-selection.json",
+  "fontReference": "/tmp/birdcar-alkaline-specimen.png"
+}
