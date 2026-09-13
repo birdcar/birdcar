@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\ReadWriting;
 use App\Authorization\Admin\Permission as AdminPermission;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
@@ -58,20 +59,12 @@ Route::domain('{org:slug}.birdcar.dev')->name('customer.')->group(function () {
     Route::prefix('settings')->name('settings.')->group(function () {});
 });
 
-/*
- * Marketing routes
- *
- * This is the collection of routes for the logged out marketing site.
- */
-Route::name('public.')->group(function () {
-    Route::view('/', 'welcome')->name('index');
-
-    // Placeholder for routes related to case studies
-    Route::get('/case-studies')->name('case-studies');
-
-    // Placeholder for routes related to contacting us
-    Route::get('/contact')->name('contact');
-
-    // Placeholder related to the blog and writing
-    Route::get('/blog')->name('blog');
+Route::name('public.')->group(function (): void {
+    Route::permanentRedirect('/case-studies', '/work');
+    Route::permanentRedirect('/contact', '/assessment');
+    Route::permanentRedirect('/blog', '/writing');
+    Route::get('/rss.xml', fn (ReadWriting $writing): Response => response()
+        ->view('writing-feed', ['articles' => $writing->all()])
+        ->header('Content-Type', 'application/rss+xml; charset=UTF-8'))
+        ->name('feed');
 });
