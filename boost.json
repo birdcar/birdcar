@@ -34,6 +34,7 @@
         "socialite-development",
         "fluxui-development",
         "livewire-development",
+        "echo-development",
         "tailwindcss-development",
         "blaze-optimize",
         "laravel-backup",
