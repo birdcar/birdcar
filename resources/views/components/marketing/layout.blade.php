@@ -4,17 +4,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $title }} — Birdcar</title>
-        <meta name="description" content="{{ $description }}">
-        <meta name="theme-color" content="#291e2e">
-        <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
-        <meta property="og:title" content="{{ $title }} — Birdcar">
-        <meta property="og:description" content="{{ $description }}">
-        <meta property="og:type" content="{{ $article ? 'article' : 'website' }}">
-        <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
-        @if ($publishedAt)
-            <meta property="article:published_time" content="{{ $publishedAt->toIso8601String() }}">
-        @endif
+        @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'assessment'))
+        @head
         <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
         <link rel="alternate" type="application/rss+xml" title="Birdcar Writing" href="{{ route('public.feed') }}">
         @fonts

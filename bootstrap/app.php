@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\PostHogRequestContext;
+use App\Http\Middleware\PreventPrivateIndexing;
 use App\Services\PostHogService;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(PreventPrivateIndexing::class);
+
         // Add spatie role middleware aliases
         $middleware->alias([
             'role' => RoleMiddleware::class,
