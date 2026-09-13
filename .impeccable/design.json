@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-13T14:57:22.828Z",
+  "title": "Design System: Birdcar",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Black cherry",
+        "tonalRamp": [
+          "oklch(0.1500 0.0333 315.04)",
+          "oklch(0.2643 0.0333 315.04)",
+          "oklch(0.3786 0.0333 315.04)",
+          "oklch(0.4929 0.0333 315.04)",
+          "oklch(0.6071 0.0333 315.04)",
+          "oklch(0.7214 0.0333 315.04)",
+          "oklch(0.8357 0.0333 315.04)",
+          "oklch(0.9500 0.0333 315.04)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Pale orchid",
+        "tonalRamp": [
+          "oklch(0.1500 0.0153 325.70)",
+          "oklch(0.2643 0.0153 325.70)",
+          "oklch(0.3786 0.0153 325.70)",
+          "oklch(0.4929 0.0153 325.70)",
+          "oklch(0.6071 0.0153 325.70)",
+          "oklch(0.7214 0.0153 325.70)",
+          "oklch(0.8357 0.0153 325.70)",
+          "oklch(0.9500 0.0153 325.70)"
+        ]
+      },
+      "lilac": {
+        "role": "primary",
+        "displayName": "Lilac",
+        "tonalRamp": [
+          "oklch(0.1500 0.0664 300.57)",
+          "oklch(0.2643 0.0664 300.57)",
+          "oklch(0.3786 0.0664 300.57)",
+          "oklch(0.4929 0.0664 300.57)",
+          "oklch(0.6071 0.0664 300.57)",
+          "oklch(0.7214 0.0664 300.57)",
+          "oklch(0.8357 0.0664 300.57)",
+          "oklch(0.9500 0.0664 300.57)"
+        ]
+      },
+      "rose": {
+        "role": "secondary",
+        "displayName": "Rose",
+        "tonalRamp": [
+          "oklch(0.1500 0.1111 346.54)",
+          "oklch(0.2643 0.1111 346.54)",
+          "oklch(0.3786 0.1111 346.54)",
+          "oklch(0.4929 0.1111 346.54)",
+          "oklch(0.6071 0.1111 346.54)",
+          "oklch(0.7214 0.1111 346.54)",
+          "oklch(0.8357 0.1111 346.54)",
+          "oklch(0.9500 0.1111 346.54)"
+        ]
+      },
+      "aubergine": {
+        "role": "secondary",
+        "displayName": "Aubergine",
+        "tonalRamp": [
+          "oklch(0.1500 0.0583 333.85)",
+          "oklch(0.2643 0.0583 333.85)",
+          "oklch(0.3786 0.0583 333.85)",
+          "oklch(0.4929 0.0583 333.85)",
+          "oklch(0.6071 0.0583 333.85)",
+          "oklch(0.7214 0.0583 333.85)",
+          "oklch(0.8357 0.0583 333.85)",
+          "oklch(0.9500 0.0583 333.85)"
+        ]
+      },
+      "reading-tint": {
+        "role": "neutral",
+        "displayName": "Reading tint",
+        "tonalRamp": [
+          "oklch(0.1500 0.0664 300.57)",
+          "oklch(0.2643 0.0664 300.57)",
+          "oklch(0.3786 0.0664 300.57)",
+          "oklch(0.4929 0.0664 300.57)",
+          "oklch(0.6071 0.0664 300.57)",
+          "oklch(0.7214 0.0664 300.57)",
+          "oklch(0.8357 0.0664 300.57)",
+          "oklch(0.9500 0.0664 300.57)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Interior marketing page titles; the homepage has a separate composition."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Expressive marketing section headings."
+      },
+      "article-title": {
+        "displayName": "Article title",
+        "purpose": "Original essay titles with a short measure and room for letter overhang."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Readable linked archive titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Marketing explanation and general text."
+      },
+      "reading": {
+        "displayName": "Reading",
+        "purpose": "Continuous essay prose."
+      },
+      "label": {
+        "displayName": "Measured detail",
+        "purpose": "Archive dates and reading time; selected terms, code and chart axes use related mono treatments."
+      },
+      "button": {
+        "displayName": "Action",
+        "purpose": "Sentence-case assessment actions."
+      },
+      "wordmark": {
+        "displayName": "Header wordmark",
+        "purpose": "The one Birdcar wordmark on each page."
+      }
+    },
+    "shadows": [
+      {
+        "name": "keyboard-focus-outer",
+        "value": "0 0 0 6px var(--color-ink, #291e2e)",
+        "purpose": "Button and skip-link focus only, combined with a 2px paper outline at 2px offset."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-color",
+        "value": "160ms ease",
+        "purpose": "Button background and text color."
+      },
+      {
+        "name": "arrow",
+        "value": "200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Button arrow moves 4px right on hover."
+      },
+      {
+        "name": "opening-lines",
+        "value": "0.85s; stagger 0.09s; cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "After font readiness: translateY 16px to 0 and opacity 0.85 to 1."
+      },
+      {
+        "name": "horizon-reveal",
+        "value": "1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Clip inset(0 48% 0 48%) to inset(0 0% 0 0%); opacity 0.4 to 1."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Skip opening animation, complete active motion on preference change, disable CSS transitions and smooth scrolling."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "home-bounded",
+        "value": "1100px"
+      },
+      {
+        "name": "supporting-layout",
+        "value": "1050px"
+      },
+      {
+        "name": "mobile",
+        "value": "760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Lilac assessment button",
+      "kind": "button",
+      "refersTo": "button-lilac",
+      "description": "Shared assessment action; the homepage applies its own desktop size.",
+      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-lilac, #d9c9f8);color:var(--color-ink, #291e2e);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-paper, #f3eaf3)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
+    },
+    {
+      "name": "Paper invitation button",
+      "kind": "button",
+      "refersTo": "button-paper",
+      "description": "Shared assessment action; the homepage applies its own desktop size.",
+      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-lilac, #d9c9f8)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
+    },
+    {
+      "name": "Ink assessment button",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "Shared assessment action; the homepage applies its own desktop size.",
+      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-ink, #291e2e);color:var(--color-paper, #f3eaf3);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-aubergine, #563750)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
+    },
+    {
+      "name": "Text link",
+      "kind": "custom",
+      "description": "An underlined reading or navigation action with the shared arrow.",
+      "html": "<a class=\"ds-text-link\" href=\"#writing\">Back to all writing <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-text-link{display:inline-flex;align-items:center;gap:1rem;padding-block:.4rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1rem;font-weight:600;line-height:1.55;color:var(--color-ink, #291e2e);text-decoration:underline;text-underline-offset:.22em}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-text-link:hover .ds-arrow{transform:translateX(4px)}.ds-text-link:focus-visible,.ds-text-link :focus-visible{outline:3px solid currentColor;outline-offset:6px}"
+    },
+    {
+      "name": "Marketing navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Black cherry header, one Alkaline wordmark, and a native mobile disclosure. Escape and outside-click enhancements live in app.js.",
+      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\" aria-current=\"page\">Writing</a><a class=\"ds-nav-booking\" href=\"#assessment\">Book a free assessment</a></nav><details class=\"ds-mobile-menu\"><summary>Menu <span class=\"ds-menu-icon\" aria-hidden=\"true\"></span></summary><nav aria-label=\"Mobile navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a></nav></details></header>",
+      "css": ".ds-site-header{box-sizing:border-box;background:var(--color-ink, #291e2e);color:var(--color-paper, #f3eaf3);font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;min-height:6.51vw;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 6.64% 1rem 6.25%;position:relative;z-index:10}.ds-site-header a{color:inherit;text-underline-offset:.22em}.ds-wordmark{font-family:var(--font-alkaline, 'Alkaline', cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;display:inline-block;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav>a{padding-block:.75rem;text-decoration:none;white-space:nowrap}.ds-desktop-nav>a:hover,.ds-desktop-nav>a[aria-current]{text-decoration:underline;text-decoration-thickness:2px}.ds-desktop-nav .ds-nav-booking{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border:1px solid #f3eaf3a0;border-radius:5px;position:relative;top:.26vw;width:15.23vw;height:3.38vw;padding:0;font-size:.98vw}.ds-mobile-menu{display:none}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-site-header:focus-visible,.ds-site-header :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:1050px){.ds-desktop-nav{gap:1.2rem;font-size:.95rem}}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}.ds-mobile-menu{display:block}.ds-mobile-menu summary{display:flex;gap:.8rem;align-items:center;padding:.65rem .15rem;list-style:none;font-size:1rem;cursor:pointer}.ds-mobile-menu summary::-webkit-details-marker{display:none}.ds-menu-icon{width:19px;height:9px;border-top:1px solid;border-bottom:1px solid}.ds-mobile-menu nav{color:var(--color-ink, #291e2e);position:absolute;inset:100% 0 auto;display:flex;flex-direction:column;background:var(--color-paper, #f3eaf3);padding:1rem 6% 1.8rem;border-bottom:1px solid var(--color-ink, #291e2e)}.ds-mobile-menu nav a{box-sizing:border-box;min-height:48px;padding-block:.8rem;display:flex;align-items:center;gap:1rem}.ds-mobile-menu nav a+a{border-top:1px solid #291e2e30}}"
+    },
+    {
+      "name": "Archive entry",
+      "kind": "custom",
+      "refersTo": "archive-row",
+      "description": "A whole linked row; metadata placeholders identify the original date and reading-time positions.",
+      "html": "<a class=\"ds-essay-row\" href=\"#essay\"><div><h3>Your metrics are bullshit</h3><p>Breaking the doom cycle of support metrics with service level thinking</p><span class=\"ds-essay-meta\">Original date <span>Reading time</span></span></div><svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-essay-row{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);display:flex;align-items:center;justify-content:space-between;gap:2rem;text-decoration:none;padding:2.2rem 0}.ds-essay-row h3{margin:0;font-size:clamp(1.5rem,2.5vw,2rem);font-weight:600;line-height:1.2;text-wrap:balance}.ds-essay-row p{max-width:66ch;font-size:1.05rem;margin:.8rem 0 0}.ds-essay-row:hover h3{color:var(--color-aubergine, #563750);text-decoration:underline;text-underline-offset:.15em}.ds-essay-meta{font-family:var(--font-mono, 'Commit Mono', ui-monospace, monospace);display:flex;gap:1.5rem;font-size:.875rem;margin-top:1.1rem}.ds-essay-meta>span{border-left:1px solid #291e2e60;padding-left:1.5rem}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-essay-row:focus-visible,.ds-essay-row :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-essay-row{padding:1.7rem 0;gap:1rem}.ds-essay-row h3{font-size:1.5rem}.ds-essay-row p{font-size:1rem}.ds-essay-row>.ds-arrow{width:20px;align-self:flex-start;margin-top:.25rem}.ds-essay-meta{font-size:.8rem;gap:1rem}.ds-essay-meta>span{padding-left:1rem}}"
+    },
+    {
+      "name": "Editorial note",
+      "kind": "custom",
+      "refersTo": "article-note",
+      "description": "Original editorial note content in a quiet lilac wash; its title belongs to the source.",
+      "html": "<aside class=\"ds-article-note\" role=\"note\"><p class=\"ds-article-note-title\">About this post</p><p>Nick here: BCC is a series of anonymized posts enabling Support Professionals to publish their thoughts and create public discussion about topics that would otherwise happen in private DMs. The Yetto team is deeply excited to present today&#x27;s post -- our first in this series -- and we believe it&#x27;s both timely and unbelievably well argued.</p><p>*Are you a support professional who has something to say? Reach out to Brian (@balevine) or Nick (@birdcar) In the Support Driven or Elevate CX Slack communities, we&#x27;d love to chat.*</p></aside>",
+      "css": ".ds-article-note{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.1875rem;line-height:1.8;color:var(--color-ink, #291e2e);margin-block:2rem;padding:1.5rem;background:#d9c9f830}.ds-article-note p{margin:0}.ds-article-note>p+p{margin-top:1em}.ds-article-note-title{font-weight:600}.ds-article-note:focus-visible,.ds-article-note :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-article-note{font-size:1.125rem;line-height:1.75}}"
+    },
+    {
+      "name": "Assessment report panel",
+      "kind": "card",
+      "refersTo": "report-panel",
+      "description": "Level, pale report-contents panel with fine rules and no logo.",
+      "html": "<aside class=\"ds-offer-report\"><h2>A clearer picture.<br>A useful next step.</h2><p>Your assessment report</p><dl><div><dt>What’s happening</dt><dd>The problems I’ve understood from your work.</dd></div><div><dt>What I recommend</dt><dd>Improvements worth considering for your business.</dd></div><div><dt>Something to work from</dt><dd>A written report you can put to use, with or without me.</dd></div></dl><span class=\"ds-report-signoff\">Yours to keep.</span></aside>",
+      "css": ".ds-offer-report{background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;padding:2.5rem;border-radius:5px}.ds-offer-report h2{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.8rem;line-height:1.15;font-weight:600;margin:0}.ds-offer-report>p{font-size:.9rem;margin:.75rem 0 0}.ds-offer-report dl{margin:1.5rem 0 0}.ds-offer-report dl>div{padding:1rem 0;border-top:1px solid #291e2e40}.ds-offer-report dt{font-size:1rem;font-weight:600}.ds-offer-report dd{font-size:.95rem;line-height:1.4;margin:.4rem 0 0}.ds-report-signoff{font-family:var(--font-alkaline, 'Alkaline', cursive);font-size:2.2rem;display:block;color:var(--color-aubergine, #563750);margin-top:1rem}@media(max-width:1050px){.ds-offer-report{padding:1.5rem}}@media(max-width:760px){.ds-offer-report{padding:1.7rem}.ds-offer-report h2{font-size:1.7rem}}"
+    },
+    {
+      "name": "Assessment question",
+      "kind": "custom",
+      "description": "Native disclosure with fine rules and an arrow that follows the open state.",
+      "html": "<div class=\"ds-assessment-faq\"><details><summary>Is the assessment really free?<svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></summary><p>Yes. The conversation and the written report are free. You don’t have to buy implementation to receive or use the report.</p></details></div>",
+      "css": ".ds-assessment-faq{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.125rem;line-height:1.55;color:var(--color-ink, #291e2e)}.ds-assessment-faq details{border-top:1px solid #291e2e60}.ds-assessment-faq details:last-child{border-bottom:1px solid #291e2e60}.ds-assessment-faq summary{list-style:none;padding-block:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1.5rem;font-weight:500;cursor:pointer}.ds-assessment-faq summary::-webkit-details-marker{display:none}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-assessment-faq summary .ds-arrow{transform:rotate(90deg);width:20px}.ds-assessment-faq details[open] summary .ds-arrow{transform:rotate(-90deg)}.ds-assessment-faq details p{margin:0;padding-bottom:1.5rem;font-size:1.0625rem}.ds-assessment-faq:focus-visible,.ds-assessment-faq :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-assessment-faq summary,.ds-assessment-faq details p{font-size:1rem}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Future, in person",
+    "overview": "Birdcar presents one person's technical expertise through expressive lettering and direct, readable explanation. Black cherry openings, pale orchid reading space, and a restrained luminous horizon connect the owner's Silicon Valley technology identity to a personal conversation. Typography supplies most of the visual character.\n\nThe public marketing pages use custom UI with licensed Alkaline, Karla, and Commit Mono. Broad flat sections, measured controls, fine rules, and generous prose spacing keep the experience clean and classic. Motion adds a brief opening gesture while the text and actions remain available without it.\n\nAdmin and customer project surfaces use Flux UI Pro with Inter. Their operational themes and component states are separate from these marketing tokens and were not established by this build.",
+    "keyCharacteristics": [
+      "Licensed Alkaline for the single header wordmark and expressive headings.",
+      "Karla for explanation and reading; Commit Mono for selected details and code.",
+      "Black cherry, pale orchid, and lilac fields with aubergine supporting sections.",
+      "Flat surfaces, lightly rounded controls, and continuous reading columns.",
+      "A luminous homepage horizon and a short, reduced-motion-aware opening sequence."
+    ],
+    "rules": [
+      {
+        "name": "The Field Pairing Rule",
+        "body": "Use paper text on ink or aubergine, and ink text on paper or lilac. Keep these pairings when adapting actions to another section.",
+        "section": "colors"
+      },
+      {
+        "name": "The Single Wordmark Rule",
+        "body": "Render the Birdcar wordmark once, in the header. Footer copy, article bylines, and the personal section use ordinary text; do not add logo signatures to them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Reading Voice Rule",
+        "body": "Introduce an essay with Alkaline and carry its reasoning with Karla. Keep source note titles and original editorial content within the reading hierarchy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Reading Order Rule",
+        "body": "Reflow headings, explanation, actions, and supporting material in their document order on mobile. Preserve full words, readable figures, and space around controls.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Field Rule",
+        "body": "Establish hierarchy with type, space, color, and boundaries. Reserve the visible outer shadow for keyboard focus, where it communicates state.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use the licensed Alkaline files for the single header wordmark and expressive marketing headings.",
+      "**Do** use Karla for readable explanation and Commit Mono selectively for measured details and code.",
+      "**Do** preserve the Field Pairing Rule and the two-color button focus treatment.",
+      "**Do** keep essays continuous, preserving source notes, complete text, links, dates, and figure meaning.",
+      "**Do** keep content and native controls usable without animation or JavaScript.",
+      "**Do** use Flux UI Pro and Inter for the separate Admin and customer surfaces."
+    ],
+    "donts": [
+      "**Don't** repeat the logo in the footer, article ending, personal section, or report panel.",
+      "**Don't** turn the homepage's display scale or decorative horizon into a requirement for every page.",
+      "**Don't** treat conceptual imagery or diagrams as client screenshots or measured proof.",
+      "**Don't** carry unused legacy selectors, bundled-but-unused type roles, or generated sidecar ramps into new UI as established patterns."
+    ]
+  }
+}
