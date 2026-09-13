@@ -1,0 +1,18 @@
+{
+  "prompt": "Use the provided crop as the approved visual reference and recreate it as a clean production asset at the target aspect ratio. This is a designed illustration plate. Output the same drawing, same style, same line weight and shading. Preserve silhouette, composition, perspective, palette (#291a2b, #f7ebf8, #503a53), lighting, material, and texture exactly. Remove every piece of UI text, label, caption, button, and interface chrome that is not part of the artwork itself. Remove letterboxing, borders, card corners, drop shadows, and any layout background that the page will draw in code. Do not add objects. Do not change the concept. Do not restyle. The artwork fills the whole frame edge to edge at the same scale as the reference; no margins, no border, no background band. Region: Thin luminous lavender horizon with soft rose reflection across black cherry ground; line sits about halfway down this region and pale next section excluded.\n\nUse case: ui-mockup supporting production background artwork, NOT an entire website.\nThe attached full approved comp is a REFERENCE IMAGE ONLY because the automated crop did not retain the artwork. Extract and recreate only the luminous horizontal line seen near y722 of the 1024-high reference, including its subtle rose/lavender light reflection, then deliver it as an independent newly generated production plate. Do not reproduce any letters or the white lower website section.\n\nOUTPUT: exactly 3072 pixels wide by 1024 pixels high, 3:1 landscape PNG. The artwork is one perfectly level fine lavender-white light line from the left edge to the right edge, positioned at 54% of image height (y553). Its brightest section is softly near center. Use a disciplined optical reflection with a narrow rose/lilac bloom immediately above and below the line; no beams, stars, horizons of landscapes, grids, lens circles, or objects. The line is hairline-thin like the reference, not a fat fluorescent tube. The image will compress vertically into a thin hero band, so all structure should run horizontally. Preserve flat deep black-cherry/plum ground #291a2b and #291e2e over the majority of the frame; it must return completely to that ground at both top and bottom edges, with calm dark ends at left and right. The fine line itself reaches both side edges. No borders, no frame, no text, no symbols, no interface. This plate is optical light alone, with generous uniform plum above and below it. Recreate the reference's subtle sophistication without amplifying the flare.",
+  "tool": "image_gen",
+  "use_case": "ui-mockup",
+  "kind": "production-plate",
+  "reference": ".impeccable/mocks/future-conversation.png",
+  "reference_crop": ".impeccable/build/crops/horizon.png",
+  "note": "Automated crop appeared flat; full approved comp supplied as artwork reference.",
+  "requested_dimensions": {
+    "width": 3072,
+    "height": 1024
+  },
+  "actual_dimensions": {
+    "width": 2172,
+    "height": 724
+  },
+  "resolution_note": "Built-in imagegen returned 2172x724 despite explicit 3072x1024 request. One resolution-only built-in retry also returned 2172x724; original is retained as the selected production asset."
+}

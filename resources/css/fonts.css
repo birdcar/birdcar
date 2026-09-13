@@ -77,3 +77,11 @@
     font-weight: 800;
     font-display: swap;
 }
+
+@font-face {
+    font-family: 'Commit Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/commit-mono/CommitMono-Regular.otf') format('opentype');
+}

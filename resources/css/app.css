@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './fonts.css';
+@import './marketing.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -7,5 +8,11 @@
 @theme {
     --font-alkaline: 'Alkaline', cursive;
     --font-alkaline-caps: 'Alkaline Caps', cursive;
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Karla', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Commit Mono', ui-monospace, monospace;
+    --color-ink: #291e2e;
+    --color-paper: #f3eaf3;
+    --color-lilac: #d9c9f8;
+    --color-rose: #a45983;
+    --color-aubergine: #563750;
 }
