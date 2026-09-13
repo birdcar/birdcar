@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\PostHogRequestContext;
+use App\Services\PostHogService;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,9 +25,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        $middleware->appendToGroup('web', PostHogRequestContext::class);
+        $middleware->appendToGroup('api', PostHogRequestContext::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->report(function (Throwable $exception): void {
+            app(PostHogService::class)->captureException(
+                $exception,
+                auth()->id() !== null ? (string) auth()->id() : null,
+                [
+                    '$current_url' => request()->url(),
+                    '$request_method' => request()->method(),
+                ],
+            );
+        });
     })->create();
