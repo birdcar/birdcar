@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\PostHogService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -41,6 +42,16 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'email' => $input['email'],
             ])->save();
         }
+
+        $posthog = app(PostHogService::class);
+        $posthog->identify(
+            (string) $user->getAuthIdentifier(),
+            $user->postHogPersonProperties(),
+        );
+        $posthog->capture(
+            (string) $user->getAuthIdentifier(),
+            'user_profile_updated',
+        );
     }
 
     /**
