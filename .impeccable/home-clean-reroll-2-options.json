@@ -1,0 +1,73 @@
+{
+  "title": "Room to focus, revised",
+  "question": "Room to focus now uses a left-aligned introduction, tighter hero copy, and the earlier untangling diagram. Compare it with the other two options.",
+  "options": [
+    {
+      "id": "message-up-front",
+      "label": "The message, up front",
+      "kicker": "THE ROLL",
+      "thesis": "A direct introduction with personality carried by color, words and spacing.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#F0DCAB",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Open editorial layout",
+        "Soft mustard offer",
+        "No illustration"
+      ],
+      "viewport": "Headline and lead side by side, orderly prose beneath, and a clear action before the assessment section.",
+      "risk": "The most editorial option; the two-column opening needs a clear reading order.",
+      "comp": ".impeccable/mocks/decision/home-clean-r1-message.png"
+    },
+    {
+      "id": "room-to-focus",
+      "label": "Room to focus \u2014 revised",
+      "thesis": "A direct explanation of the work, a visible free assessment, and a diagram that reinforces the message.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#F0DCAB",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Left-aligned opening",
+        "Sharper hero copy",
+        "Untangling diagram"
+      ],
+      "viewport": "Headline, explanation and booking action on the left; familiar problems, the untangling diagram and response on the right.",
+      "risk": "The illustration is still conceptual; the words and the assessment offer must do the selling.",
+      "comp": ".impeccable/mocks/decision/home-clean-r2-focus.png"
+    },
+    {
+      "id": "work-made-clearer",
+      "label": "Work, made clearer",
+      "thesis": "A small diagram connects the everyday problems in the copy to the work of making them easier.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#F0DCAB",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Copy-led diagram",
+        "Fine teal connections",
+        "Soft mustard offer"
+      ],
+      "viewport": "Introduction and three recognizable problems share the opening; a restrained diagram leads into the response and assessment.",
+      "risk": "The diagram earns its space only if it makes the message quicker to understand.",
+      "comp": ".impeccable/mocks/decision/home-clean-r1-clearer.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  }
+}

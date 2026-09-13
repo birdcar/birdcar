@@ -1,0 +1,93 @@
+{
+  "scope": "replacement marketing visual world",
+  "mode": "persuade",
+  "mechanism": "One accountable person follows work with the team, recommends useful improvements in a report the prospect keeps, then can build and care for the result.",
+  "scene": "An established service-business owner or operations leader visits between meetings in a daylight office, or checks a warm introduction on their phone after a local business event.",
+  "mustProve": "This person understands the work, can implement an improvement, and offers a useful first conversation with a concrete takeaway.",
+  "pinned": [
+    "Alkaline logo",
+    "existing offer and copy direction",
+    "person-led first-person singular",
+    "Craft & Communicate proof only",
+    "Clean, classic, type-and-animation-led.",
+    "Motion is installed; Alkaline is licensed and installed.",
+    "Silicon Valley technology brought into an established business; technical glitz welcome.",
+    "AEO foundations from launch without sacrificing usable visible copy."
+  ],
+  "rut": [
+    "White and corporate navy consultancy with stock boardroom photography and three service cards",
+    "Neon-on-black automation agency with AI claims",
+    "Existing mustard, brick, teal, cream and cut-paper figures"
+  ],
+  "orderedCandidates": [
+    {
+      "position": 1,
+      "name": "Applied Future",
+      "system": "Modern technology identity programs: product launches, precise wordmarks and integrated interface motion",
+      "family": "commercial identity",
+      "resonance": "Technical capability appears immediately, translated into the buyer’s everyday work.",
+      "world": "Cobalt, cloud white, midnight and ice blue; Alkaline with Public Sans and Commit Mono.",
+      "experience": "A blue typographic opening leads directly to the assessment; a precise moving light edge opens onto the real work story."
+    },
+    {
+      "position": 2,
+      "name": "A Clear View",
+      "system": "An architect's project-review wall with large drawings and precise margin annotations",
+      "family": "spatial presentation",
+      "resonance": "Seeing the whole process and discussing the details together resembles the actual discovery work.",
+      "world": "Deep evergreen, cool mist, clean white, controlled persimmon; Alkaline with Archivo and Red Hat Mono.",
+      "experience": "A broad illustrated operational example sits alongside the offer, clearly labeled as an example; scroll progresses from observing to making a useful plan."
+    },
+    {
+      "position": 3,
+      "name": "The Working Edition",
+      "system": "A regional business magazine's feature package and photographic contact sheets",
+      "family": "publication",
+      "resonance": "Owners read other owners' concrete business stories; expertise earns attention through an authored argument.",
+      "world": "Blackberry, pale lilac, sharp white, dark ink; Alkaline with News Cycle and Commit Mono.",
+      "experience": "A large opening statement crosses a staggered editorial grid; a quiet introduction and free assessment invitation support it, followed by the real work story."
+    },
+    {
+      "position": 4,
+      "name": "Follow Through",
+      "system": "Commercial campus wayfinding and integrated sign schedules",
+      "family": "information system",
+      "resonance": "People need to know where work goes next and who owns it; directional clarity makes the mechanism tangible.",
+      "world": "Marine blue, clear blue, porcelain and tangerine; Alkaline with Barlow and Red Hat Mono.",
+      "experience": "A clean directional composition leads from the pain to the report to implementation, with a fixed visible assessment action and no maze-like navigation."
+    },
+    {
+      "position": 5,
+      "name": "Future, in person",
+      "system": "The personal technology briefing: one expert, a clear central proposition, and a carefully paced explanation",
+      "family": "social ritual",
+      "resonance": "The buyer gets direct access to sophisticated technical judgment, explained by a helpful person.",
+      "world": "Black cherry, pale orchid, porcelain and dusty rose; Alkaline with Karla and Commit Mono.",
+      "experience": "A centered typographic stage makes room between headline and invitation; an optical horizon opens into the practical work and personal explanation below."
+    },
+    {
+      "position": 6,
+      "name": "Working Knowledge",
+      "system": "An industrial manufacturer's field handbook and indexed technical service catalog",
+      "family": "reference system",
+      "resonance": "Useful, maintainable work that someone else can understand is the delivery promise.",
+      "world": "Ultramarine, icy blue, graphite and white; Alkaline with Libre Franklin and Red Hat Mono.",
+      "experience": "A strong branded spine and open content spread organize problem, report, work and care; functional indexes remain ordinary links."
+    },
+    {
+      "position": 7,
+      "name": "A Person to Talk To",
+      "system": "Regional public-radio identity and current-affairs program schedules",
+      "family": "broadcast graphic system",
+      "resonance": "A familiar individual voice explains complicated topics without condescension; substantive writing extends the relationship.",
+      "world": "Raspberry, deep wine, light rose and white; Alkaline with Radio Canada and Commit Mono.",
+      "experience": "A wide personal masthead frames the central promise and one visible invitation; a program-like sequence connects practical work and the owner's approach."
+    }
+  ],
+  "userSteering": [
+    "Clean, classic, type-and-animation-led.",
+    "Motion is installed; Alkaline is licensed and installed.",
+    "Silicon Valley technology brought into an established business; technical glitz welcome.",
+    "AEO foundations from launch without sacrificing usable visible copy."
+  ]
+}

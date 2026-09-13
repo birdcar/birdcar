@@ -1,0 +1,17 @@
+{
+  "seed": "12a23888",
+  "round": 1,
+  "scope": "surface",
+  "mode": "persuade",
+  "dealt": [7, 3, 4],
+  "steering": "Blend Straight to the point and A little character. Prefer the latter's softer color treatment. No Understand / Build / Care submenu. Art is optional and must explain the copy. Generate three distinct options on this theme.",
+  "candidates": [
+    {"id": "reading-column", "label": "A personal introduction", "structure": "One continuous reading column pairs the introduction and offer, with work evidence in a quiet adjoining margin."},
+    {"id": "problem-and-response", "label": "The problem and the response", "structure": "A compact title precedes consecutive full-width problem and response passages, with the response carrying the booking action."},
+    {"id": "room-to-focus", "label": "Room to focus", "structure": "Centered compact headline, lead and action; two explanatory columns below; a softly tinted assessment section follows. No illustration."},
+    {"id": "work-made-clearer", "label": "Work, made clearer", "structure": "Headline and lead face the three exact problem sentences; a small flat connector diagram joins these to the explanatory paragraph below. Pale mustard offer follows."},
+    {"id": "open-letter", "label": "An open letter", "structure": "A narrow left-aligned title and sequential prose share a single uninterrupted column; the assessment closes the reading passage before work proof."},
+    {"id": "work-alongside-words", "label": "Work alongside the words", "structure": "Introduction and primary action occupy a main column; a clearly subordinate real work excerpt occupies the right third; offer forms a separate lower section."},
+    {"id": "message-up-front", "label": "The message, up front", "structure": "Headline and strong lead share an open horizontal opening; aligned prose columns follow beneath them with an inline booking action. A pale mustard assessment section then returns to cream for real work."}
+  ]
+}

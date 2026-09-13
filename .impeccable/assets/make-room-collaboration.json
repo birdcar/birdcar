@@ -1,0 +1,19 @@
+{
+  "asset": "public/images/make-room-collaboration.png",
+  "type": "illustration",
+  "source": "built-in image_gen",
+  "source_image": "/home/birdcar/.codex/generated_images/01a09809-26cc-7bf3-b656-966457605978/exec-e30ca758-fb27-4240-ac36-9d6ef2aa3886.png",
+  "direction_reference": ".impeccable/mocks/decision/make-room.png",
+  "palette_reference": ".impeccable/mocks/reference/make-room-board.webp",
+  "width": 880,
+  "height": 800,
+  "bytes": 556607,
+  "transparent": true,
+  "prompt": "Use case: illustration-story.\nAsset type: finished standalone transparent-background homepage hero illustration for a bespoke software advisor, to display about 440 by 400 CSS pixels on mustard #E0B23C.\nPrimary request: a sophisticated editorial cut-paper illustration of exactly three adults collaborating around a simple work table and workflow board: one standing advisor on the left pointing to the board, one client seated at the table in the lower center looking toward the board, and another client standing at the right holding a small paper notebook. This is a conceptual scene, not portraits or an actual company team.\nStyle and medium: confident, elegant black cut-paper silhouettes, slightly angular hand-cut edges, 1960s jazz title-card graphic grammar, very subtle screenprint grain within the ink and cream shapes. Recognizable natural human postures, clear profiles, no facial features or photorealism. Mostly solid ink black #0E0E0E. Minimal warm cream #F1E6CF details defining shirt collars, open laptop, notebook and the board surface. On the board, just six small flat workflow squares in mustard #E0B23C, deep teal #146B6E and brick #B23A2E connected by a few simple thin black arrows; a small checkbox motif may sit in one corner. No letters or numbers.\nComposition: approximately square, beautifully balanced as one compact vignette. Board occupies upper center with thin black frame and slight perspective. Standing people flank it, table crosses lower middle, seated client's feet and chair are fully visible. Every full body, shoe, table leg and board edge is entirely inside the canvas. All elements terminate around one baseline. Keep 4 percent transparent safety margin. Use lively but restrained diagonal gestures, calm visual rhythm and generous separation so the people and board remain immediately legible at small size.\nBackground: actual transparent alpha, no rectangular backdrop, no white matte, no yellow background, no floor plane, no cast shadow. All empty space between and around objects is transparent. Keep the cream board and cream object details opaque.\nConstraints: illustration only. No website layout, text, title, wordmark, logos, watermarks, labels, border, card or UI controls. No extra people. No decorative plant. No gradients or 3D rendering.",
+  "provenance": {
+    "embedded": true,
+    "format": "PNG tEXt",
+    "verified": true
+  },
+  "conversion": "ImageMagick resize to 880x800, PNG compression level 9; alpha preserved"
+}

@@ -1,0 +1,220 @@
+{
+  "title": "Birdcar, a new visual world",
+  "question": "Clean typography. Purposeful motion. Silicon Valley capability, made personally accessible. Keep the offer and voice; choose the new visual direction. These are generated composition previews; the build uses the actual licensed Alkaline files. Motion respects reduced-motion preferences and all copy stays available without JavaScript.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Future, in person",
+      "kicker": "THE ROLL",
+      "lineage": "The personal technology briefing",
+      "thesis": "Silicon Valley fluency, with a person you can talk to.",
+      "palette": [
+        "#291e2e",
+        "#f5f0f8",
+        "#c9b4ed",
+        "#dda8c7"
+      ],
+      "materials": [
+        "Alkaline + Karla + Commit Mono",
+        "precise type, deep color, a luminous horizon"
+      ],
+      "viewport": "A spacious centered Alkaline statement, plain first-person explanation and immediate assessment action; the next passage emerges below a fine optical horizon. Motion: headline lines settle once; the luminous horizon opens as the visitor moves into the work story.",
+      "risk": "The dark opening needs warm, direct copy to keep the relationship personal.",
+      "raised": [
+        {
+          "from": "challenger-film",
+          "raise": "Pace each passage as part of one deliberate sequence."
+        },
+        {
+          "from": "challenger-feed",
+          "raise": "Give the opening one focal statement and a visible action."
+        },
+        {
+          "from": "challenger-print",
+          "raise": "Let color enter in an intentional order rather than animate everything."
+        },
+        {
+          "from": "challenger-stack",
+          "raise": "Every destination and next step remains an ordinary, explicit link."
+        },
+        {
+          "from": "challenger-vu",
+          "raise": "Use one consistent settling rhythm for purposeful motion."
+        }
+      ],
+      "comp": ".impeccable/mocks/decision/vibe-future-in-person.png"
+    },
+    {
+      "id": "model-pick",
+      "label": "Applied Future",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Classic technology identity, with a personal signature",
+      "thesis": "Advanced technical capability with a clear, practical invitation.",
+      "palette": [
+        "#2041df",
+        "#f8faff",
+        "#171f38",
+        "#b9d9ff"
+      ],
+      "materials": [
+        "Alkaline + Public Sans + Commit Mono",
+        "cobalt fields, white space, precise light"
+      ],
+      "viewport": "Left-aligned Alkaline on a broad cobalt field, supporting copy and action directly below; a clean white work preview anchors the fold. Motion: precise type entrances and a moving light edge lead into the work; the cobalt field gives way to readable white sections.",
+      "risk": "Its technology-brand familiarity is reassuring, but less surprising than the lead.",
+      "comp": ".impeccable/mocks/decision/vibe-applied-future.png"
+    },
+    {
+      "id": "challenger-glazier",
+      "label": "Clear structure",
+      "verdict": "competitive",
+      "lineage": "Glazier colorfield partition, translated into a precise digital page",
+      "thesis": "Sophisticated technology, made clear one pane at a time.",
+      "palette": [
+        "#f8faff",
+        "#203dda",
+        "#171c28",
+        "#becafb"
+      ],
+      "materials": [
+        "Alkaline + Archivo + Red Hat Mono",
+        "clear fields, hairline divisions, optical light"
+      ],
+      "viewport": "One broad headline pane and a narrower assessment pane; a clear blue field moves between them. Motion: clear regions brighten on hover or keyboard focus; each section has one purpose and the reading order stays ordinary.",
+      "case": "Holds product clarity through explicit regions; the divided composition is less personal than the lead.",
+      "risk": "Requires restraint to avoid looking like a software dashboard.",
+      "comp": ".impeccable/mocks/decision/vibe-clear-structure.png",
+      "hero": "https://impeccable.style/worlds/cards/craft-making-glazier-colorfield-partition-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/craft-making-glazier-colorfield-partition.webp"
+    },
+    {
+      "id": "challenger-film",
+      "label": "Film sequence",
+      "verdict": "declined",
+      "thesis": "The work unfolds as a sequence of framed explanations.",
+      "palette": [
+        "#191818",
+        "#c8c6c3",
+        "#d77638"
+      ],
+      "materials": [
+        "silver emulsion",
+        "frame rhythm"
+      ],
+      "viewport": "A framed sequence progresses from workflow pain to the report and implementation.",
+      "case": "Loses audience identification and clarity: film controls and artifacts compete with a practical service.",
+      "risk": "The effect becomes the subject.",
+      "kept": "Pace each passage as part of one deliberate sequence.",
+      "hero": "https://impeccable.style/worlds/cards/cinema-cinematography-editing-hand-processed-film-bloom-hero.webp"
+    },
+    {
+      "id": "challenger-feed",
+      "label": "One thing at a time",
+      "verdict": "declined",
+      "thesis": "Each work problem receives an uninterrupted full-screen moment.",
+      "palette": [
+        "#111111",
+        "#ffffff"
+      ],
+      "materials": [
+        "edge-to-edge fields",
+        "caption rails"
+      ],
+      "viewport": "A full-height work scene leads to the offer in the following viewport.",
+      "case": "Loses audience identification and clarity: feed navigation separates the promise from the action.",
+      "risk": "Compulsory paging slows a buyer trying to scan.",
+      "kept": "Give the opening one focal statement and a visible action.",
+      "hero": "https://impeccable.style/worlds/cards/pop-culture-shelf-vertical-video-feed-surface-hero.webp"
+    },
+    {
+      "id": "challenger-print",
+      "label": "Registered color",
+      "verdict": "declined",
+      "thesis": "The explanation builds through successive color layers.",
+      "palette": [
+        "#f3eee4",
+        "#ae2923",
+        "#d9ac32",
+        "#263c72"
+      ],
+      "materials": [
+        "mineral pigment",
+        "shell ground"
+      ],
+      "viewport": "An illustrative subject develops through layers beside the offer.",
+      "case": "Loses audience identification and clarity: the print ritual suggests craft production more than technical delivery.",
+      "risk": "Returns to the illustrative direction you are leaving.",
+      "kept": "Let color enter in an intentional order rather than animate everything.",
+      "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-dong-ho-shell-ground-hero.webp"
+    },
+    {
+      "id": "challenger-stack",
+      "label": "Linked knowledge",
+      "verdict": "declined",
+      "thesis": "A connected set of cards makes the engagement explorable.",
+      "palette": [
+        "#ffffff",
+        "#000000",
+        "#ababab"
+      ],
+      "materials": [
+        "one-bit graphics",
+        "painted controls"
+      ],
+      "viewport": "A home card links to problems, work, and assessment details.",
+      "case": "Loses audience identification and clarity: authoring controls and retro navigation misstate the service.",
+      "risk": "Nostalgia becomes a usability tax.",
+      "kept": "Every destination and next step remains an ordinary, explicit link.",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-hypercard-stack-shoebox-hero.webp"
+    },
+    {
+      "id": "challenger-vu",
+      "label": "Measured motion",
+      "verdict": "declined",
+      "thesis": "A coordinated bank of instruments makes progress visible.",
+      "palette": [
+        "#f2ecdd",
+        "#242526",
+        "#813b32"
+      ],
+      "materials": [
+        "meter glass",
+        "steel"
+      ],
+      "viewport": "An instrument-like row compares work moving through the business.",
+      "case": "Loses audience identification and clarity: live meters would imply measurements this site does not provide.",
+      "risk": "Invented instrumentation looks like evidence.",
+      "kept": "Use one consistent settling rhythm for purposeful motion.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-vu-meter-bridge-hero.webp"
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Classic technology consultancy",
+    "thesis": "A familiar, polished structure with your signature lettering.",
+    "palette": [
+      "#ffffff",
+      "#17243a",
+      "#315bea",
+      "#e9eef5"
+    ],
+    "materials": [
+      "Alkaline logo + Public Sans + Commit Mono",
+      "white canvas, navy type, blue controls"
+    ],
+    "viewport": "White navigation and a conventional split hero put the promise beside the assessment explanation; proof follows.",
+    "risk": "Easy to understand, but close to other technology-service sites.",
+    "comp": ".impeccable/mocks/decision/vibe-classic.png"
+  },
+  "steer": true
+}

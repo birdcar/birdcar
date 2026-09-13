@@ -1,0 +1,24 @@
+Use case: ui-mockup. Generate ONE finished, high-fidelity Birdcar services-business HOMEPAGE screenshot, landscape 1536x1024, edge-to-edge actual website with no browser/device frame. This is a homepage composition concept for a user to compare, not implementation. Exact existing copy below must remain unchanged; only layout/type/art change. Modern, clean, capable, warm, with the polish and specific little personality of PostHog and the action clarity of a practical services offer. No marketing hype. The subject is one person's work helping businesses with operations, software, and processes, not a software product or agency.
+
+REFERENCE IMAGE: .impeccable/review/home-desktop-viewport.png. It supplies EXACT palette and Birdcar Alkaline wordmark only. The user explicitly rejects its oversized script headlines, businesspeople silhouettes, cut-paper scene, broad retro panels and diagonal bars. Do not carry those forward. User explicitly approved clean sans-serif headlines with Alkaline retained in the logo and occasional small accents. Recreate Barlow as the clean, contemporary sans-serif for all headlines/body/controls: normal width, confident 600/700 weight headline, no ultra-condensed display. Logo can precisely follow connected Alkaline script from reference. Large headline around 68-78px, body18-20px, nav16px, excellent letterspacing, clear ink-on-cream contrast.
+
+PALETTE stays exact: cream #F1E6CF dominant page ground, ink #0E0E0E text, mustard #E0B23C, brick #B23A2E for important booking actions, teal #146B6E for small details. Do not drift into pure white, pastels, blue-black or generic purple gradients. All surfaces flat and clean: no paper grain, faux printing, tilted paper, heavy outlines, offset shadows, glass, excessive rounded cards. Small corner radius for controls is fine. Plenty of deliberate whitespace. The same amount of polish across all three options.
+
+EXACT HEADER: left script wordmark 'Birdcar'; right links 'How I work', 'Selected work', 'Writing', and unmistakable but compact 'Book a free assessment' button. Header is 82px high and cream, with a quiet hairline separator. 110px side margins; usable content~1316px.
+
+EXACT HOMEPAGE COPY (keep these sentences in this order, visible portion according to composition):
+H1: 'Make room for better work.'
+Lead: 'I help businesses untangle work that’s become harder to keep up with.'
+Paragraph2: 'The reporting someone spends Friday assembling. The follow-up that depends on your memory. The process that keeps landing back on your desk.'
+Paragraph3: 'I work with you and the people doing that work to understand what’s getting in the way, then build tools and processes that make it easier to handle.'
+Offer heading: 'Let’s start with what’s painful.'
+Offer: 'I’ll spend about an hour with you, then write up what I’ve understood and the improvements I recommend. The assessment is free. The report is yours to keep.'
+CTA: 'Book a free assessment'
+Meta if space: 'About an hour. A practical report. Yours to keep.'
+Approach navigation labels available: 'Understand', 'Build', 'Care'.
+Following section title: 'Work in practice.'
+Following section intro: 'A useful system has a place in the business. Here’s one I’ve built.'
+Client proof title: 'Craft & Communicate'
+Client proof description: 'I built a client-facing reporting platform that brings together performance data and gives the agency something it can offer its customers.'
+Proof link: 'Read about the work'
+No invented text, testimonials, reviews, metrics, logo strip, video, client photo, UI screenshot, scarcity, calendar date, pricing, brand tagline, or section eyebrow. No GHX, no DataDash title, no essay cards. Render enough lower content to prove a genuine scrolling website. Whimsy must help recognition and never compete with the H1 or the booking action. Every word should be crisp and legible.
