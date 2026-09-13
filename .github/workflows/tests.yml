@@ -36,3 +36,24 @@ jobs:
 
       - name: Run CI Checks
         run: composer ci:check
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist
+
+      - name: Load published writing without development dependencies
+        env:
+          APP_ENV: production
+        run: |
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $articles = $app->make(App\Actions\ReadWriting::class)->all();
+
+          if ($articles->isEmpty()) {
+              throw new RuntimeException('No published writing loaded.');
+          }
+
+          echo 'Loaded '.$articles->count()." published articles.\n";
+          PHP
