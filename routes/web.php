@@ -2,9 +2,11 @@
 
 use App\Actions\ReadWriting;
 use App\Authorization\Admin\Permission as AdminPermission;
+use App\Services\MarketingSite;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Sitemap\Sitemap;
 
 /**
  * Admin Routes
@@ -59,12 +61,34 @@ Route::domain('{org:slug}.birdcar.dev')->name('customer.')->group(function () {
     Route::prefix('settings')->name('settings.')->group(function () {});
 });
 
-Route::name('public.')->group(function (): void {
+Route::domain(app(MarketingSite::class)->host())->name('public.')->group(function (): void {
     Route::permanentRedirect('/case-studies', '/work');
     Route::permanentRedirect('/contact', '/assessment');
     Route::permanentRedirect('/blog', '/writing');
+    Route::get('/sitemap.xml', function (ReadWriting $writing, MarketingSite $marketing): Sitemap {
+        $sitemap = Sitemap::create();
+
+        foreach (['public.index', 'public.work', 'public.assessment', 'public.writing'] as $route) {
+            $sitemap->add($marketing->url(route($route, absolute: false)));
+        }
+
+        foreach ($writing->all() as $article) {
+            $sitemap->add($marketing->url(route('public.article', ['slug' => $article['slug']], absolute: false)));
+        }
+
+        return $sitemap;
+    })->name('sitemap');
     Route::get('/rss.xml', fn (ReadWriting $writing): Response => response()
         ->view('writing-feed', ['articles' => $writing->all()])
         ->header('Content-Type', 'application/rss+xml; charset=UTF-8'))
         ->name('feed');
 });
+
+Route::get('/robots.txt', function (MarketingSite $marketing): Response {
+    $public = $marketing->indexable() && request()->getHost() === $marketing->host();
+    $rules = $public
+        ? "User-agent: *\nAllow: /\n\nSitemap: ".$marketing->url('/sitemap.xml')."\n"
+        : "User-agent: *\nDisallow: /\n";
+
+    return response($rules)->header('Content-Type', 'text/plain; charset=UTF-8');
+})->name('robots');
