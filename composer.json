@@ -25,6 +25,7 @@
         "laravel/scout": "^11.6",
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "livewire/blaze": "^1.0",
         "livewire/flux": "^2.18",
         "livewire/flux-pro": "^2.18",
