@@ -1,0 +1,14 @@
+{
+  "x": "month",
+  "series": [
+    { "key": "prompts", "label": "prompts" }
+  ],
+  "data": [
+    { "month": "Oct",  "prompts": 410 },
+    { "month": "Nov",  "prompts": 580 },
+    { "month": "Dec",  "prompts": 720 },
+    { "month": "Jan",  "prompts": 690 },
+    { "month": "Feb",  "prompts": 780 },
+    { "month": "Mar",  "prompts": 796 }
+  ]
+}
