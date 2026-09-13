@@ -1,0 +1,10 @@
+{
+  "seed": "537c5794",
+  "direction": "Future, in person",
+  "kind": "assigned",
+  "source": "explicit user message",
+  "answer": "I answered with Future, in person",
+  "buildPath": "comp",
+  "composition": "conversation",
+  "approvedComp": ".impeccable/mocks/future-conversation.png"
+}

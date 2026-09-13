@@ -1,0 +1,53 @@
+{
+  "seed": "12a23888",
+  "scope": "surface",
+  "mode": "persuade",
+  "dealt": [
+    4,
+    7,
+    5
+  ],
+  "pins": [
+    "Existing palette",
+    "Existing copy and offer",
+    "Alkaline wordmark and occasional accents",
+    "User approved exploring sans-serif headlines"
+  ],
+  "candidates": [
+    {
+      "id": "clear-introduction",
+      "label": "Clear introduction",
+      "structure": "Open cream introduction with a small explanatory workflow beside the existing copy and direct booking action."
+    },
+    {
+      "id": "working-note",
+      "label": "Working note",
+      "structure": "A personal introduction beside a flat, readable assessment report summary; proof follows."
+    },
+    {
+      "id": "useful-diagram",
+      "label": "The useful diagram",
+      "structure": "Headline and action over a horizontal explanation of how the existing Understand, Build, Care approach connects."
+    },
+    {
+      "id": "clear-next-step",
+      "label": "A clear next step",
+      "structure": "Broad cream introduction paired with a narrower mustard assessment panel; the next section presents the real project."
+    },
+    {
+      "id": "little-character",
+      "label": "A little character",
+      "structure": "Clean copy and booking action beside one small work-themed illustration, with a quiet Understand / Build / Care navigation row."
+    },
+    {
+      "id": "human-index",
+      "label": "Human index",
+      "structure": "Restrained side navigation and a continuous editorial introduction, approach, and proof column."
+    },
+    {
+      "id": "straight-to-point",
+      "label": "Straight to the point",
+      "structure": "Large direct headline, orderly prose columns, a full-width assessment action row, and plain selected-work evidence; no hero illustration."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "title": "Future, in person — the layout",
+  "question": "The visual identity is selected. Choose the opening composition to build, or describe what to combine or revise. The signature is the original preview. Actual Alkaline files govern the build; all three include accessible motion and AEO foundations.",
+  "options": [
+    {
+      "id": "centered",
+      "label": "The signature",
+      "thesis": "The original composition you chose: one confident statement and invitation at the center.",
+      "palette": [
+        "#291e2e",
+        "#f5f0f8",
+        "#c9b4ed",
+        "#dda8c7"
+      ],
+      "materials": [
+        "Alkaline + Karla + Commit Mono",
+        "purposeful Motion and a luminous horizon"
+      ],
+      "viewport": "The original composition you chose: one confident statement and invitation at the center.",
+      "risk": "Supporting detail arrives after the central promise.",
+      "comp": ".impeccable/mocks/future-centered.png"
+    },
+    {
+      "id": "conversation",
+      "label": "Direct conversation",
+      "thesis": "The promise and how I help sit side by side, with the action beside the explanation.",
+      "palette": [
+        "#291e2e",
+        "#f5f0f8",
+        "#c9b4ed",
+        "#dda8c7"
+      ],
+      "materials": [
+        "Alkaline + Karla + Commit Mono",
+        "purposeful Motion and a luminous horizon"
+      ],
+      "viewport": "The promise and how I help sit side by side, with the action beside the explanation.",
+      "risk": "The two-column opening is denser on desktop.",
+      "comp": ".impeccable/mocks/future-conversation.png"
+    },
+    {
+      "id": "offer",
+      "label": "The invitation",
+      "thesis": "A broad statement opens into a clear explanation of the free assessment and retained report.",
+      "palette": [
+        "#291e2e",
+        "#f5f0f8",
+        "#c9b4ed",
+        "#dda8c7"
+      ],
+      "materials": [
+        "Alkaline + Karla + Commit Mono",
+        "purposeful Motion and a luminous horizon"
+      ],
+      "viewport": "A broad statement opens into a clear explanation of the free assessment and retained report.",
+      "risk": "The invitation shares attention with the introduction.",
+      "comp": ".impeccable/mocks/future-offer.png"
+    }
+  ],
+  "steer": true,
+  "followup": false
+}

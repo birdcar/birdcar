@@ -1,0 +1,40 @@
+{
+  "title": "Clearer words, a little character",
+  "question": "Three layouts on your chosen theme: softer color, clear sans-serif headlines, no approach submenu. Which feels closest?",
+  "options": [
+    {
+      "id": "message-up-front",
+      "label": "The message, up front",
+      "kicker": "THE ROLL",
+      "thesis": "A direct introduction with personality carried by color, words and spacing.",
+      "palette": ["#F1E6CF", "#0E0E0E", "#F0DCAB", "#146B6E", "#B23A2E"],
+      "materials": ["Open editorial layout", "Soft mustard offer", "No illustration"],
+      "viewport": "Headline and lead side by side, orderly prose beneath, and a clear action before the assessment section.",
+      "risk": "The most editorial option; the two-column opening needs a clear reading order.",
+      "comp": ".impeccable/mocks/decision/home-clean-r1-message.png"
+    },
+    {
+      "id": "room-to-focus",
+      "label": "Room to focus",
+      "thesis": "A compact, centered introduction lets the message do the work.",
+      "palette": ["#F1E6CF", "#0E0E0E", "#F0DCAB", "#146B6E", "#B23A2E"],
+      "materials": ["Centered opening", "Calm type scale", "No illustration"],
+      "viewport": "Headline, lead and booking action form one focal point; explanation and a softly tinted assessment section follow.",
+      "risk": "The most familiar structure; distinction comes from precise typography and your voice.",
+      "comp": ".impeccable/mocks/decision/home-clean-r1-focus.png"
+    },
+    {
+      "id": "work-made-clearer",
+      "label": "Work, made clearer",
+      "thesis": "A small diagram connects the everyday problems in the copy to the work of making them easier.",
+      "palette": ["#F1E6CF", "#0E0E0E", "#F0DCAB", "#146B6E", "#B23A2E"],
+      "materials": ["Copy-led diagram", "Fine teal connections", "Soft mustard offer"],
+      "viewport": "Introduction and three recognizable problems share the opening; a restrained diagram leads into the response and assessment.",
+      "risk": "The diagram earns its space only if it makes the message quicker to understand.",
+      "comp": ".impeccable/mocks/decision/home-clean-r1-clearer.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "comp", "toggle": true}
+}

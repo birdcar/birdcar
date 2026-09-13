@@ -1,0 +1,73 @@
+{
+  "title": "A cleaner Birdcar homepage",
+  "question": "Same palette, copy and offer. Which composition feels closest? You can choose one or describe a combination.",
+  "options": [
+    {
+      "id": "clear-next-step",
+      "label": "A clear next step",
+      "kicker": "THE ROLL",
+      "thesis": "A calm introduction with the free assessment immediately in view.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#E0B23C",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Clean sans-serif headlines",
+        "Alkaline wordmark",
+        "Flat offer panel"
+      ],
+      "viewport": "Personal explanation on the left, a compact mustard assessment panel on the right, real work below.",
+      "risk": "The most offer-led of the three; less room for decorative personality.",
+      "comp": ".impeccable/mocks/decision/home-clean-next-step.png"
+    },
+    {
+      "id": "straight-to-point",
+      "label": "Straight to the point",
+      "thesis": "The clearest, most restrained expression of the existing message.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#E0B23C",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Editorial type hierarchy",
+        "Thin rules",
+        "Open cream space"
+      ],
+      "viewport": "Broad headline and ordered prose, followed by a simple assessment strip and the Craft & Communicate story.",
+      "risk": "The quietest option; personality comes mainly from your voice, logo and color.",
+      "comp": ".impeccable/mocks/decision/home-clean-straightforward.png"
+    },
+    {
+      "id": "little-character",
+      "label": "A little character",
+      "thesis": "Clear service information with one small, playful piece of work-related art.",
+      "palette": [
+        "#F1E6CF",
+        "#0E0E0E",
+        "#E0B23C",
+        "#146B6E",
+        "#B23A2E"
+      ],
+      "materials": [
+        "Clean sans-serif headlines",
+        "Small editorial illustration",
+        "Precise navigation"
+      ],
+      "viewport": "A clear introduction and booking button with a small work illustration alongside; the approach becomes easy to scan.",
+      "risk": "Closest to PostHog’s whimsy; the illustration needs restraint to keep the page feeling grown-up.",
+      "comp": ".impeccable/mocks/decision/home-clean-character.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  }
+}
