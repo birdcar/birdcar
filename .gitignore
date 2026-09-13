@@ -27,3 +27,10 @@ yarn-error.log
 frankenphp
 frankenphp-worker.php
 .env.before_lerd
+
+# Local design build and review output; approved concepts remain versioned.
+/.impeccable/build/
+/.impeccable/review/
+/.impeccable/questions/*.log
+/.impeccable/questions/*.state.json
+/.impeccable/hook.cache.json

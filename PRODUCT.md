@@ -22,9 +22,12 @@ site is discarded product context: its copy, audience, positioning, offer,
 engagement terms, claims, and visual identity must not be carried forward.
 Future work must use the new decisions recorded here.
 
-The owner's essays at `https://www.birdcar.dev/writing/` are an explicit
-exception for studying written voice. They do not restore the former site's
-marketing, positioning, or offer as product authority.
+The owner's full existing essay archive at `https://www.birdcar.dev/writing/`
+will be republished and may be studied for written voice. Preserve the essays'
+text, titles, original dates, URLs, and links. Typography and figures may be
+art-directed for the new brand, preserving chart data, labels, and meaning.
+The posts do not restore any other former-site copy, marketing, positioning,
+or offer as product authority.
 
 ## Users
 
@@ -77,6 +80,14 @@ The default entry is a free, roughly one-hour discovery assessment meeting,
 followed by a written report describing the observed problems and recommended
 improvements. The prospect keeps the report and can hire the owner to implement
 it, use it independently, or walk away without an implementation purchase.
+
+Booking uses the owner's existing Cal.com event,
+`https://cal.com/birdcar/60min`. The marketing page explains the offer and sends
+visitors to that event to select and confirm a time. A custom integration is
+not required for launch. The booking page draws offer structure from
+`https://www.acquisition.com/workshop`: recognizable problem, concrete take-away,
+process, objections, and clear invitations, written in the owner's voice.
+A VSL may be added later; there is no video placeholder at launch.
 
 An alternative paid entry buys approximately 5–10 total hours of the owner's
 time across one calendar week for deeper discovery with the team, its processes,
@@ -200,9 +211,12 @@ index and individual article pages. The owner intends to publish substantial
 written content regularly, alongside eventual video content. Writing is an
 expression of the owner's expertise and perspective, and belongs in the main
 navigation and the broader marketing experience. Article pages must support
-sustained reading. Editorial workflow, taxonomy, migration of existing essays,
-and future video presentation remain to be designed; the old marketing and offer
-remain discarded.
+sustained reading. Launch with the full original archive. The Writing introduction
+should speak to the core business: making work and business operations better.
+The archive does not need to be forced into that positioning; the owner will
+curate it after launch as new business-focused writing is published. Do not
+promote selected archive essays on the homepage yet. Editorial workflow, taxonomy,
+and future video presentation remain open; the old marketing and offer remain discarded.
 
 The owner already has Flux UI Pro. Its use for both operational surfaces is a
 confirmed requirement.
@@ -229,8 +243,18 @@ and permissions remain to be designed.
   as working with the client and their team; attribute actual collaborators by name.
 - Use the bundled custom fonts in `resources/fonts/` for the marketing logo and
   display text. The available families are Alkaline and Alkaline Caps.
-- Barlow is the preferred marketing body font; another compatible body font is
-  acceptable.
+- The brand brings the future of Silicon Valley technology into the client's
+  business. Technical sophistication and glitz are welcome; the owner's helpful
+  voice and direct involvement carry the personal relationship. Regional buyer
+  relevance must not make the brand look solely like a local consultancy.
+- Prefer clean, classic design led by typography and purposeful animation.
+  Motion is installed. Use the licensed, installed Alkaline files for the logo;
+  main and secondary headings may also use Alkaline. Compatible sans and mono
+  pairings are open to the selected visual direction.
+- Include answer-engine discovery foundations from launch. Public content must
+  remain useful, server-rendered, crawlable and accurately described in metadata,
+  even when JavaScript or animation is unavailable. Preserve private-surface
+  access controls. Search discovery is distinct from model-training permission.
 - Use Inter for UI text on the Admin and customer project surfaces.
 
 These are explicit commitments for the new work. The selected visual direction
@@ -279,7 +303,7 @@ patterns. New copy must express the offer and constraints established here.
 The owner supplied the following background and project summaries for this new
 direction on 2026-09-12:
 
-- More than fifteen years of customer-facing technical systems work, including
+- Fifteen years of customer-facing technical systems work, including
   internal tools engineering, solutions engineering, and founding and raising
   venture funding for a B2B SaaS platform. Experience includes helping build ways
   to manage and scale systems for GitHub, Heroku, Zapier, and WorkOS. These are
@@ -304,16 +328,28 @@ avoid inventing savings, revenue, testimonials, or guaranteed results.
 
 - `resources/fonts/` contains the custom font assets; `resources/css/fonts.css`
   declares their available families and weights.
-- The Laravel homepage in `resources/views/welcome.blade.php` is a starter screen,
-  not an approved marketing direction.
+- The former Laravel starter homepage is disposable and has been replaced by
+  the marketing pages under `resources/views/pages`.
+
+## Approved Launch Copy and Proof
+
+- The homepage introduction says “I help businesses”; do not narrow that sentence
+  to service businesses. Target the ideal customer through content.
+- Public experience copy may say “fifteen years” or “more than 12 years”, never
+  “more than fifteen years”.
+- Use “Craft & Communicate” as the public work-story title. Do not title it
+  “DataDash” or discuss build completion and the current retainer.
+- Exclude GHX entirely from the public marketing site until the owner resolves
+  whether the contract permits disclosure. Its background above is internal context.
+- Omit “I’ll agree that work with you explicitly” from the Care section.
 
 ## Open Decisions
 
 - The boundaries and turnaround for each report, and the preparation effort for
   the free assessment and report.
 - Offer names, paid prices, implementation acceptance criteria, and any guarantees.
-- The marketing site's booking/application flow and success measure, and concrete
-  lead-generation experiments within the chosen initial channels.
+- Booking measurement and concrete lead-generation experiments within the chosen
+  initial channels. The booking destination and launch flow are settled above.
 - Retainer pricing, included maintenance/change work versus separately billed
   work, and support response expectations.
 - Sustainable intake and the extent/duration of temporary overtime during growth.
