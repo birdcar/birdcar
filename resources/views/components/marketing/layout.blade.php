@@ -20,7 +20,7 @@
                 <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                 <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
                 <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
-                <a class="nav-booking" href="{{ route('public.assessment') }}" @if ($active === 'assessment') aria-current="page" @endif>Book a free assessment <x-marketing.arrow /></a>
+                <x-marketing.booking-link class="nav-booking" :inline="$active === 'assessment'" :aria-current="$active === 'assessment' ? 'page' : null">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
             </nav>
             <details class="mobile-menu">
                 <summary>Menu <span class="menu-icon" aria-hidden="true"></span></summary>
@@ -28,7 +28,7 @@
                     <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                     <a href="{{ route('public.work') }}">Selected work</a>
                     <a href="{{ route('public.writing') }}">Writing</a>
-                    <a href="{{ route('public.assessment') }}">Book a free assessment <x-marketing.arrow /></a>
+                    <x-marketing.booking-link :inline="$active === 'assessment'">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
                 </nav>
             </details>
         </header>

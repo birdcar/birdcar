@@ -225,7 +225,7 @@ Source notes and quotations use the translucent reading wash. Code uses Commit M
 
 The report panel uses a pale surface, a small radius, Karla contents, fine dividing rules, and the Alkaline phrase “Yours to keep.” It is an explanation of the assessment report, not a fabricated client artifact, and includes no logo. Padding reduces at the intermediate breakpoint and adapts again on mobile.
 
-FAQ rows use native disclosures with thin top and bottom rules. Their arrow points down while closed and up while open. Answers remain ordinary prose. Booking links go to the external calendar; the marketing site has no custom input form or field system to document.
+FAQ rows use native disclosures with thin top and bottom rules. Their arrow points down while closed and up while open. Answers remain ordinary prose. Booking happens inside the site through the Cal.com embed. The assessment page closes with the inline calendar in a level paper panel on aubergine, and booking buttons on every other page open the same calendar as an overlay. Each booking control keeps a plain link, to the assessment page or to the Cal.com event, as its no-JavaScript fallback. The marketing site has no custom input form or field system to document.
 
 ### Opening motion
 

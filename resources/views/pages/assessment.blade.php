@@ -12,7 +12,7 @@ name('public.assessment');
             <p class="offer-lead">Let’s work out what would change that.</p>
             <p>When you’re the person keeping track of everything, it’s hard to step back far enough to see what needs to change. I’ll take a closer look with you.</p>
             <p>In a free assessment, I’ll spend about an hour getting to know the work that’s giving you trouble. Afterward, I’ll write up the problems I’ve understood and the improvements I recommend.</p>
-            <a class="button button-brick" href="{{ config('marketing.booking_url') }}">Book my free assessment <x-marketing.arrow /></a>
+            <a class="button button-lilac" href="#choose-a-time">Book my free assessment <x-marketing.arrow /></a>
             <p class="action-note">About an hour with me. A written report you keep. Free.</p>
         </div>
         <aside class="offer-report" aria-labelledby="report-heading">
@@ -49,5 +49,10 @@ name('public.assessment');
             <details><summary>Is this an AI assessment?<x-marketing.arrow /></summary><p>It’s an assessment of the work. AI might be useful, and so might connecting the tools you already use or changing a process. I’ll recommend what makes sense for the problem.</p></details>
         </div>
     </section>
-    <section class="offer-close" aria-labelledby="book-heading"><h2 id="book-heading">Make a little room<br>to figure it out.</h2><p>A conversation with me. Practical recommendations in writing.<br>Yours to use however you choose.</p><a class="button button-cream" href="{{ config('marketing.booking_url') }}">Book my free assessment <x-marketing.arrow /></a><p class="action-note">Choose your time on Cal.com.</p></section>
+    <section class="offer-close" id="choose-a-time" aria-labelledby="book-heading">
+        <h2 id="book-heading">Make a little room<br>to figure it out.</h2>
+        <p>Pick an hour that suits you. A conversation with me, then practical recommendations in writing.<br>Yours to use however you choose.</p>
+        <div class="booking-calendar" data-cal-inline data-cal-link="{{ config('marketing.booking_calendar') }}" data-cal-namespace="{{ config('marketing.booking_namespace') }}"></div>
+        <p class="action-note">If the calendar doesn’t load, <a href="{{ config('marketing.booking_url') }}">book on Cal.com</a>.</p>
+    </section>
 </x-marketing.layout>

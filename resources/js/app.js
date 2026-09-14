@@ -1,4 +1,7 @@
 import { animate, stagger } from 'motion';
+import { initBooking } from './booking';
+
+initBooking();
 
 const menu = document.querySelector('.mobile-menu');
 

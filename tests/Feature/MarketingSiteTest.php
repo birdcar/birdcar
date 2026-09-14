@@ -33,13 +33,27 @@ test('the selected work page names the client without private engagement details
         ->assertDontSee('retainer');
 });
 
-test('the assessment explains the free report and links to the actual Cal event', function () {
+test('the assessment explains the free report and embeds the actual Cal event with a plain fallback', function () {
     $this->get('/assessment')->assertOk()
-        ->assertSee('https://cal.com/birdcar/60min', false)
+        ->assertSee('id="choose-a-time"', false)
+        ->assertSee('data-cal-inline data-cal-link="birdcar/free-assessment" data-cal-namespace="free-assessment"', false)
+        ->assertSee('href="https://cal.com/birdcar/free-assessment"', false)
+        ->assertSee('href="#choose-a-time"', false)
+        ->assertDontSee('data-cal-config')
+        ->assertDontSee('cal.com/birdcar/60min')
         ->assertSee('The conversation and the written report are free.')
         ->assertSee('separate implementation engagement')
         ->assertDontSee('You’re booked');
 });
+
+test('booking buttons away from the assessment page open the calendar in place and keep the assessment link as fallback', function (string $path) {
+    $this->get($path)->assertOk()
+        ->assertSee('href="'.route('public.assessment').'"', false)
+        ->assertSee('data-cal-link="birdcar/free-assessment"', false)
+        ->assertSee('data-cal-namespace="free-assessment"', false)
+        ->assertSee('data-cal-config=', false)
+        ->assertDontSee('data-cal-inline');
+})->with(['/', '/work', '/writing/']);
 
 test('the archive lists all essays in chronological order under the business introduction', function () {
     $this->get('/writing/')->assertOk()

@@ -27,8 +27,8 @@ Visitor mode: **Persuade**. This page implements the user-selected **Future, in 
 
 ## Content and behavior
 
-The sequence explains what to bring, the three meeting steps, six native FAQ disclosures, and the final aubergine invitation. The report panel uses Karla contents with the Alkaline phrase “Yours to keep.” It is a description of the offer, not a fabricated report sample.
+The sequence explains what to bring, the three meeting steps, six native FAQ disclosures, and the final aubergine section, which holds the inline calendar in a paper panel. The report panel uses Karla contents with the Alkaline phrase “Yours to keep.” It is a description of the offer, not a fabricated report sample.
 
 On mobile the offer precedes the report panel, the primary booking action is full width, and the steps and FAQ stack. Preserve native disclosure behavior and the two-color button focus treatment.
 
-Booking links use the configured destination, https://cal.com/birdcar/60min. The offer remains about an hour with the owner, a free assessment, and a written report to keep. There is no custom booking form, invented scarcity, monetary value stack, VSL, result, or report turnaround.
+Booking uses the configured Cal.com event, https://cal.com/birdcar/free-assessment, embedded inline in the closing section (`#choose-a-time`). The page's own booking buttons scroll there, and a plain Cal.com link stays beneath the calendar as the fallback. The offer remains about an hour with the owner, a free assessment, and a written report to keep. There is no custom booking form, invented scarcity, monetary value stack, VSL, result, or report turnaround.
