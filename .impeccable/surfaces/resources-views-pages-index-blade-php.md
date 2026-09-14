@@ -27,9 +27,9 @@ Visitor mode: **Persuade**. This page implements the user-selected **Future, in 
 
 ## Content and behavior
 
-The selected composition is `.impeccable/mocks/future-conversation.png`, grounded candidate 5, seed `537c5794`, approved as **Direct conversation**. Desktop heading size is (10.8vw), with (.93) leading and (-.02em) tracking. At (1100px), the opening adopts bounded type and spacing; at (760px), the three lines precede the introduction, full-width action, and terms. The horizon is (80px) high on mobile.
+The selected composition is `.impeccable/mocks/future-conversation.png`, grounded candidate 5, seed `537c5794`, approved as **Direct conversation**. Desktop heading size is (10.8vw) with (.93) leading and no tracking; the earlier (-.02em) opened seams in Alkaline's connected joins and was removed on 2026-09-14. At (1100px), the opening adopts bounded type and spacing; at (760px), the three lines precede the introduction, full-width action, and terms. The horizon is (80px) high on mobile.
 
-The sequence continues through the named work preview, free-assessment explanation, Understand / Build / Care, personal experience, and closing invitation. Preserve “I help businesses” and “fifteen years,” Craft & Communicate as the only public work story, and no homepage promotion of archive essays.
+The sequence continues through the named work preview, free-assessment explanation, Understand / Build / Care, personal experience, and closing invitation. Booking buttons on this page open the Cal.com calendar as an overlay and fall back to the assessment page link without JavaScript. Preserve “I help businesses” and “fifteen years,” Craft & Communicate as the only public work story, and no homepage promotion of archive essays.
 
 The original Motion line stagger and horizon clip reveal enhance visible server-rendered content and respect reduced motion. `public/images/future-horizon.png` is decorative and carries provenance; the historic collaboration image is unreferenced.
 

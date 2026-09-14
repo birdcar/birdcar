@@ -22,9 +22,8 @@
     .desktop-nav { display: flex; align-items: center; gap: clamp(1.2rem, 2.1vw, 2rem); font-size: 1rem; font-weight: 500; }
     .desktop-nav > a { padding-block: .75rem; text-decoration: none; white-space: nowrap; }
     .desktop-nav > a:hover, .desktop-nav > a[aria-current] { text-decoration: underline; text-decoration-thickness: 2px; }
-    .desktop-nav .nav-booking { display: inline-flex; align-items: center; gap: 1.5rem; border: 1px solid #f3eaf3a0; border-radius: 5px; padding: .7rem 1rem; }
-    .desktop-nav .nav-booking { position: relative; top: .26vw; width: 15.23vw; height: 3.38vw; padding: 0; justify-content: center; font-size: .98vw; }
-    .work-preview .text-link { padding: 0; line-height: 1.4; font-size: 1.04vw; border-bottom: 1px solid; text-decoration: none; gap: .7rem; }
+    .desktop-nav .nav-booking { position: relative; top: .26vw; display: inline-flex; align-items: center; justify-content: center; min-height: max(44px, 3.38vw); padding: .7rem clamp(1rem, 1.7vw, 1.6rem); border: 1px solid #f3eaf3a0; border-radius: 5px; font-size: clamp(.9rem, .98vw, 1rem); line-height: 1.2; }
+    .work-preview .text-link { padding: 0; line-height: 1.4; font-size: clamp(.875rem, 1.04vw, 1rem); border-bottom: 1px solid; text-decoration: none; gap: .7rem; }
     .work-preview .text-link .arrow { width: 20px; height: 20px; }
     .nav-booking .arrow { display: none; }
     .arrow { width: 24px; height: 24px; }
@@ -48,13 +47,13 @@
     .home-opening { position: relative; isolation: isolate; background: var(--color-ink); color: var(--color-paper); padding-bottom: 7.747vw; }
     .future-horizon { position: absolute; z-index: -1; bottom: 0; left: 0; width: 100%; height: 7.747vw; object-fit: cover; mask-image: linear-gradient(to bottom, transparent, #000 48%); }
     .home-hero { display: grid; grid-template-columns: 50.1% 45.9%; gap: 4%; padding: 3.7vw 4.7% 2.43vw 6.25%; min-height: 36.263vw; align-items: start; }
-    .home-hero h1 { font-size: 10.8vw; font-weight: 500; line-height: .93; letter-spacing: -.02em; }
+    .home-hero h1 { font-size: 10.8vw; font-weight: 500; line-height: .93; }
     .home-hero h1 span { display: block; }
     .hero-copy { padding-top: 3.3vw; }
     .hero-introduction { font-size: 2.25vw; line-height: 1.4; font-weight: 400; max-width: 32ch; }
     .hero-explanation { font-size: 1.55vw; line-height: 1.45; margin-top: 1.65vw; max-width: 47ch; }
     .hero-copy .button { margin-top: 2.6vw; font-size: 1.42vw; min-height: 4.3vw; gap: 3vw; }
-    .assessment-terms { font-family: var(--font-mono); font-size: .91vw; line-height: 1.6; margin-top: 1.6vw; white-space: nowrap; }
+    .assessment-terms { font-family: var(--font-mono); font-size: clamp(.75rem, .91vw, .875rem); line-height: 1.6; margin-top: 1.6vw; white-space: nowrap; }
     .home-work { display: grid; grid-template-columns: minmax(0, 58%) minmax(0, 42%); gap: 0; padding: 3.7vw 9.4% 5vw 11.6%; align-items: start; }
     .home-work h2 { margin-top: 1.8vw; font-size: 5.8vw; font-weight: 500; white-space: nowrap; }
     .work-preview { text-decoration: none; padding-top: 0; }
@@ -92,7 +91,7 @@
     .story-heading h2 { font-size: clamp(3rem, 4.7vw, 4.5rem); }
     .story-heading p { margin-top: 1.5rem; max-width: 26ch; }
     .story-body { padding-top: .6rem; }
-    .story-body h3, .story-bottom h3 { font-size: 1.45rem; font-weight: 600; line-height: 1.3; margin-bottom: 1.4rem; }
+    .story-body h3 { font-size: 1.45rem; font-weight: 600; line-height: 1.3; margin-bottom: 1.4rem; }
     .story-body p { max-width: 60ch; }
     .reporting-diagram { grid-column: 1 / -1; margin: 1.5rem 0; }
     .reporting-flow { background: var(--color-aubergine); color: var(--color-paper); padding: 3.5rem 4%; display: grid; grid-template-columns: 1fr 40px 1.4fr 40px 1fr; align-items: center; gap: 2rem; }
@@ -103,7 +102,9 @@
     .flow-platform small { margin-top: 1.5rem; font-size: .9rem; }
     .flow-client { font-family: var(--font-sans); font-size: 1.8rem; font-weight: 600; line-height: 1.2; }
     .reporting-diagram figcaption { font-size: .9rem; margin-top: 1rem; }
-    .story-bottom { grid-column: 2; }
+    .story-bottom-heading { grid-column: 1; font-family: var(--font-alkaline); font-size: clamp(2.4rem, 3.4vw, 3.2rem); font-weight: 500; line-height: 1.1; }
+    .story-bottom { grid-column: 2; padding-top: .6rem; }
+    .story-bottom p { max-width: 60ch; }
     .writing-title > div p:first-child { font-weight: 600; font-size: 1.5rem; }
     .writing-title > div p + p { font-size: 1.0625rem; }
     .writing-archive { padding-top: 3rem; }
@@ -131,7 +132,7 @@
     .essay-heading h1 { font-size: clamp(3.25rem, 6.5vw, 6rem); max-width: 19ch; padding-right: .15em; }
     .essay-description { font-size: 1.35rem; margin-top: 1.5rem; max-width: 60ch; line-height: 1.45; }
     .essay-byline { display: flex; gap: 1rem 1.6rem; flex-wrap: wrap; font-size: .9rem; margin-top: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #291e2e70; }
-    .article-prose { font-size: 1.1875rem; line-height: 1.8; max-width: 70ch; margin-inline: auto; overflow-wrap: break-word; }
+    .article-prose { font-size: 1.1875rem; line-height: 1.8; max-width: 60ch; margin-inline: auto; overflow-wrap: break-word; }
     .article-prose > p { margin-block: 1.3em; }
     .article-prose h2 { font-family: var(--font-sans); font-size: 1.85rem; font-weight: 600; line-height: 1.2; margin: 2.6em 0 .9em; }
     .article-prose h3 { font-size: 1.35rem; font-weight: 600; line-height: 1.3; margin: 2.2em 0 .8em; }
@@ -298,7 +299,8 @@
     .story-heading p { margin-top: 1rem; }
     .story-body { padding-top: 0; }
     .story-body h3 { font-size: 1.4rem; }
-    .story-bottom { grid-column: 1; }
+    .story-bottom-heading { grid-column: 1; font-size: 2.3rem; }
+    .story-bottom { grid-column: 1; padding-top: 0; }
     .reporting-diagram { margin: .5rem 0; }
     .reporting-flow { grid-template-columns: 1fr; gap: 1.25rem; padding: 2rem; text-align: center; }
     .flow-source { grid-template-columns: 1fr 1fr; gap: 1rem; }

@@ -24,7 +24,8 @@ name('public.work');
             </div>
             <figcaption>A view of how the work fits together, illustrated.</figcaption>
         </figure>
-        <div class="story-bottom"><h3>Built around the business.</h3><p>The reporting, the client management, and the customer-facing experience belong together. This is the kind of work I like: understanding how the pieces fit, then giving people a useful way to work with them.</p></div>
+        <h3 class="story-bottom-heading">Built around the business.</h3>
+        <div class="story-bottom"><p>The reporting, the client management, and the customer-facing experience belong together. This is the kind of work I like: understanding how the pieces fit, then giving people a useful way to work with them.</p></div>
     </article>
     <x-marketing.assessment-invitation heading="What’s getting in the way of your work?" />
 </x-marketing.layout>

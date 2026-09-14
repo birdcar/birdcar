@@ -29,4 +29,4 @@ Visitor mode: **Persuade**. This page implements the user-selected **Future, in 
 
 Craft & Communicate is the sole public work story. The reporting diagram explains relationships using labeled source blocks, a pale reporting platform, arrows, and the client service; its caption identifies it as illustrated. It is not a client screenshot or measured results artifact.
 
-On mobile, the title and story stack in reading order, the diagram runs vertically, and the source pair remains side by side. The page ends with the shared assessment invitation. Preserve the approved copy: no GHX, DataDash title, engagement-status claim, invented result, or testimonial.
+On mobile, the title and story stack in reading order, the diagram runs vertically, and the source pair remains side by side. The closing block places its Alkaline heading in the left column facing its paragraph on the right, matching the story rows above; both stack on mobile. The page ends with the shared assessment invitation. Preserve the approved copy: no GHX, DataDash title, engagement-status claim, invented result, or testimonial.

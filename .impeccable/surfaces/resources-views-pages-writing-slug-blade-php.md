@@ -27,7 +27,7 @@ Visitor mode: **Read**. This page implements the user-selected **Future, in pers
 
 ## Content and behavior
 
-The essay uses a centered outer container (1020px maximum) and reading measure (70ch). Prose is (1.1875rem, 1.8 leading) on desktop and (1.125rem, 1.75 leading) on mobile; the title wraps naturally with room for its letter overhang. Internal prose headings remain Karla.
+The essay uses a centered outer container (1020px maximum) and reading measure (60ch, about 75 Karla characters per line). Prose is (1.1875rem, 1.8 leading) on desktop and (1.125rem, 1.75 leading) on mobile; the title wraps naturally with room for its letter overhang. Internal prose headings remain Karla.
 
 Preserve original text, titles, dates, URLs, links, semantic note titles, chart data, and figure meaning. Notes and quotations have a faint lilac wash; code and chart axes use Commit Mono. Every rendered chart provides a caption and a native View chart data disclosure with its full table. Code blocks can scroll horizontally; print removes the navigation and return links.
 

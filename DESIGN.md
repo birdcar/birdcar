@@ -167,11 +167,13 @@ Alkaline's connected lettering establishes the personal presence at medium weigh
 - **Display and headline:** fluid Alkaline titles and section headings. The homepage has its own larger three-line composition, documented in its brief.
 - **Article title:** Alkaline with a short measure (19ch maximum) and right-side room for letter overhang. Preserve complete original titles and natural wrapping.
 - **Title:** Karla semibold for linked archive titles. Essay subheadings remain Karla; second-level headings use (1.85rem, 600, 1.2 leading), third-level headings use (1.35rem, 600, 1.3 leading).
-- **Body and reading:** the reading role has more leading and a maximum measure (70ch). General mobile body text becomes (1.0625rem); reading becomes (1.125rem, 1.75 leading).
+- **Body and reading:** the reading role has more leading and a maximum measure (60ch), which renders about 75 Karla characters per line. General mobile body text becomes (1.0625rem); reading becomes (1.125rem, 1.75 leading).
 - **Label:** measured archive metadata in Commit Mono. Other metadata, navigation, and bylines remain Karla; mono is not a universal label treatment.
 - **Button and wordmark:** sentence-case controls with ordinary tracking. The header wordmark becomes (2.7rem) on mobile.
 
 **The Single Wordmark Rule.** Render the Birdcar wordmark once, in the header. Footer copy, article bylines, and the personal section use ordinary text; do not add logo signatures to them.
+
+**The Connected Script Rule.** Never apply letter-spacing to Alkaline. Its joins depend on the font's native advance widths, and any tracking, even -.02em, opens visible seams between letters at display scale. Tighten Alkaline with size and leading instead.
 
 **The Reading Voice Rule.** Introduce an essay with Alkaline and carry its reasoning with Karla. Keep source note titles and original editorial content within the reading hierarchy.
 
@@ -209,7 +211,7 @@ Background and text colors transition (160ms, ease). Button arrows move right (4
 
 ### Navigation
 
-The black cherry header contains the only wordmark, a horizontal Karla navigation, and a thin outlined booking link. Hover and current-page states underline desktop links. The mobile menu uses native `details` and `summary`, opening a pale panel beneath the header. Its links provide (48px) minimum targets; JavaScript closes it after navigation, outside click, or Escape, returning focus to the summary on Escape. Native disclosure remains usable without JavaScript.
+The black cherry header contains the only wordmark, a horizontal Karla navigation, and a thin outlined booking link with a 44px minimum height and clamped type, so it never shrinks below (.9rem) at narrow desktop widths. Hover and current-page states underline desktop links. The mobile menu uses native `details` and `summary`, opening a pale panel beneath the header. Its links provide (48px) minimum targets; JavaScript closes it after navigation, outside click, or Escape, returning focus to the summary on Escape. Native disclosure remains usable without JavaScript.
 
 The footer is pale, with a short two-line statement, navigation, and an ordinary copyright line. It carries no second wordmark.
 
