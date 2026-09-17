@@ -31,8 +31,8 @@ test('every booking control on the homepage carries its placement marker', funct
         ->assertSee('data-booking-cta="closing-invitation"', false);
 });
 
-test('the assessment page marks its hero control and the plain Cal.com fallback link', function () {
-    $this->get('/assessment')
-        ->assertSee('data-booking-cta="assessment-hero"', false)
+test('the walkthrough page marks its hero control and the plain Cal.com fallback link', function () {
+    $this->get('/walkthrough')
+        ->assertSee('data-booking-cta="walkthrough-hero"', false)
         ->assertSee('data-booking-fallback', false);
 });

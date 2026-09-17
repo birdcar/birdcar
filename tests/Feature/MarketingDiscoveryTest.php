@@ -14,9 +14,9 @@ afterEach(function () {
 test('canonical and social metadata use the configured origin without tracking parameters', function () {
     config(['marketing.url' => 'https://birdcar.dev', 'marketing.indexable' => true]);
 
-    $this->get('/assessment?utm_source=example')
-        ->assertSee('<link rel="canonical" href="https://birdcar.dev/assessment">', false)
-        ->assertSee('property="og:url" content="https://birdcar.dev/assessment"', false)
+    $this->get('/walkthrough?utm_source=example')
+        ->assertSee('<link rel="canonical" href="https://birdcar.dev/walkthrough">', false)
+        ->assertSee('property="og:url" content="https://birdcar.dev/walkthrough"', false)
         ->assertSee('name="robots" content="index, follow, max-image-preview:large"', false);
 });
 
@@ -39,14 +39,14 @@ test('structured article data identifies its real author and original publicatio
     ])->not->toHaveKey('dateModified');
 });
 
-test('the assessment exposes the service described in its visible offer', function () {
-    $response = $this->get('/assessment')->assertOk();
+test('the walkthrough exposes the service described in its visible offer', function () {
+    $response = $this->get('/walkthrough')->assertOk();
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
     $scripts = (new DOMXPath($document))->query('//script[@type="application/ld+json"]');
     $graph = collect(iterator_to_array($scripts))->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR))->keyBy('@type');
 
-    expect($graph['Service'])->toMatchArray(['name' => 'Free business assessment', 'serviceType' => 'Business process assessment']);
+    expect($graph['Service'])->toMatchArray(['name' => 'The Walkthrough', 'serviceType' => 'Business process assessment']);
     expect($graph['Service']['provider']['@id'])->toBe($graph['Person']['@id']);
     $response->assertSee('The conversation and the written report are free.');
 });
@@ -67,7 +67,7 @@ test('marketing pages and their sitemap do not appear on application hosts', fun
     $this->get('https://'.$host.$path)->assertNotFound();
 })->with([
     ['admin.birdcar.dev', '/work'],
-    ['customer.birdcar.dev', '/assessment'],
+    ['customer.birdcar.dev', '/walkthrough'],
     ['customer.birdcar.dev', '/writing/just-build-it-twice/'],
     ['admin.birdcar.dev', '/sitemap.xml'],
 ]);
@@ -100,7 +100,7 @@ test('the sitemap contains the public pages and original archive with canonical 
     $urls = array_map(fn ($url): string => (string) $url->loc, iterator_to_array($xml->url, false));
 
     expect($xml->url)->toHaveCount(14);
-    expect($urls)->toContain('https://birdcar.dev/', 'https://birdcar.dev/work', 'https://birdcar.dev/assessment', 'https://birdcar.dev/writing/', 'https://birdcar.dev/writing/just-build-it-twice/');
+    expect($urls)->toContain('https://birdcar.dev/', 'https://birdcar.dev/work', 'https://birdcar.dev/walkthrough', 'https://birdcar.dev/writing/', 'https://birdcar.dev/writing/just-build-it-twice/');
     $response->assertDontSee('admin.')->assertDontSee('customer.')->assertDontSee('<lastmod>');
 });
 

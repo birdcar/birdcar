@@ -17,7 +17,8 @@ test('the homepage presents the approved offer and only the approved work story'
         ->assertSee('I help businesses untangle work')
         ->assertSee('fifteen years')
         ->assertSee('Craft &amp; Communicate', false)
-        ->assertSee(route('public.assessment'), false)
+        ->assertSee(route('public.walkthrough'), false)
+        ->assertSee('Book a free Walkthrough')
         ->assertDontSee('GHX')
         ->assertDontSee('DataDash')
         ->assertDontSee('more than fifteen years')
@@ -33,11 +34,11 @@ test('the selected work page names the client without private engagement details
         ->assertDontSee('retainer');
 });
 
-test('the assessment explains the free report and embeds the actual Cal event with a plain fallback', function () {
-    $this->get('/assessment')->assertOk()
+test('the walkthrough explains the free report and embeds the actual Cal event with a plain fallback', function () {
+    $this->get('/walkthrough')->assertOk()
         ->assertSee('id="choose-a-time"', false)
-        ->assertSee('data-cal-inline data-cal-link="birdcar/free-assessment" data-cal-namespace="free-assessment"', false)
-        ->assertSee('href="https://cal.com/birdcar/free-assessment"', false)
+        ->assertSee('data-cal-inline data-cal-link="birdcar/walkthrough" data-cal-namespace="walkthrough"', false)
+        ->assertSee('href="https://cal.com/birdcar/walkthrough"', false)
         ->assertSee('href="#choose-a-time"', false)
         ->assertDontSee('data-cal-config')
         ->assertDontSee('cal.com/birdcar/60min')
@@ -46,14 +47,20 @@ test('the assessment explains the free report and embeds the actual Cal event wi
         ->assertDontSee('You’re booked');
 });
 
-test('booking buttons away from the assessment page open the calendar in place and keep the assessment link as fallback', function (string $path) {
+test('booking buttons away from the walkthrough page open the calendar in place and keep the walkthrough link as fallback', function (string $path) {
     $this->get($path)->assertOk()
-        ->assertSee('href="'.route('public.assessment').'"', false)
-        ->assertSee('data-cal-link="birdcar/free-assessment"', false)
-        ->assertSee('data-cal-namespace="free-assessment"', false)
+        ->assertSee('href="'.route('public.walkthrough').'"', false)
+        ->assertSee('data-cal-link="birdcar/walkthrough"', false)
+        ->assertSee('data-cal-namespace="walkthrough"', false)
         ->assertSee('data-cal-config=', false)
         ->assertDontSee('data-cal-inline');
 })->with(['/', '/work', '/writing/']);
+
+test('no page still calls the offer a free assessment', function (string $path) {
+    $response = $this->get($path)->assertOk();
+
+    expect(mb_strtolower($response->getContent()))->not->toContain('free assessment')->not->toContain('free-assessment');
+})->with(['/', '/walkthrough', '/work', '/writing/']);
 
 test('the archive lists all essays in chronological order under the business introduction', function () {
     $this->get('/writing/')->assertOk()
@@ -135,7 +142,8 @@ test('the old marketing entry points redirect to the new destinations', function
 })->with([
     ['/blog', '/writing'],
     ['/case-studies', '/work'],
-    ['/contact', '/assessment'],
+    ['/contact', '/walkthrough'],
+    ['/assessment', '/walkthrough'],
 ]);
 
 test('the approach navigation resolves to a real section and the logo appears only in the header', function () {

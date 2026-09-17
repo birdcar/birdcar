@@ -31,7 +31,7 @@ class MarketingSite
         return (bool) config('marketing.indexable');
     }
 
-    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $assessment = false): void
+    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $walkthrough = false): void
     {
         $canonical = $this->url($path);
         $person = ['@type' => 'Person', '@id' => $this->url().'#person', 'name' => 'Birdcar', 'url' => $this->url()];
@@ -55,13 +55,13 @@ class MarketingSite
 
         $graph = [$person, $website, $page];
 
-        if ($assessment) {
+        if ($walkthrough) {
             $serviceId = $canonical.'#service';
             $graph[2]['mainEntity'] = ['@id' => $serviceId];
             $graph[] = [
                 '@type' => 'Service',
                 '@id' => $serviceId,
-                'name' => 'Free business assessment',
+                'name' => 'The Walkthrough',
                 'serviceType' => 'Business process assessment',
                 'description' => $description,
                 'url' => $canonical,

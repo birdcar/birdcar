@@ -13,8 +13,8 @@ name('public.index');
             <div class="hero-copy">
                 <p class="hero-introduction">I help businesses untangle work that’s become harder to keep up with.</p>
                 <p class="hero-explanation">I work with you and the people doing that work to understand what’s getting in the way, then build tools and processes that make it easier to handle.</p>
-                <x-marketing.booking-link class="button button-lilac" placement="hero">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
-                <p class="assessment-terms">About an hour. A free assessment. A report to keep.</p>
+                <x-marketing.booking-link class="button button-lilac" placement="hero">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                <p class="assessment-terms">About an hour. A free Walkthrough. A report to keep.</p>
             </div>
         </div>
     </section>
@@ -30,8 +30,8 @@ name('public.index');
         <h2 id="assessment-heading">Let’s start with what’s painful.</h2>
         <div>
             <p>The reporting someone spends Friday assembling. The follow-up that depends on your memory. The process that keeps landing back on your desk.</p>
-            <p>I’ll spend about an hour with you, then write up what I’ve understood and the improvements I recommend. The assessment is free. The report is yours to keep.</p>
-            <x-marketing.booking-link class="button button-ink" placement="homepage-strip">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
+            <p>I’ll spend about an hour with you, then write up what I’ve understood and the improvements I recommend. The Walkthrough is free. The report is yours to keep.</p>
+            <x-marketing.booking-link class="button button-ink" placement="homepage-strip">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
         </div>
     </section>
     <section class="approach-section section-space" id="how-i-work" aria-labelledby="approach-heading">

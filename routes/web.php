@@ -63,12 +63,13 @@ Route::domain('{org:slug}.birdcar.dev')->name('customer.')->group(function () {
 
 Route::domain(app(MarketingSite::class)->host())->name('public.')->group(function (): void {
     Route::permanentRedirect('/case-studies', '/work');
-    Route::permanentRedirect('/contact', '/assessment');
+    Route::permanentRedirect('/contact', '/walkthrough');
+    Route::permanentRedirect('/assessment', '/walkthrough');
     Route::permanentRedirect('/blog', '/writing');
     Route::get('/sitemap.xml', function (ReadWriting $writing, MarketingSite $marketing): Sitemap {
         $sitemap = Sitemap::create();
 
-        foreach (['public.index', 'public.work', 'public.assessment', 'public.writing'] as $route) {
+        foreach (['public.index', 'public.work', 'public.walkthrough', 'public.writing'] as $route) {
             $sitemap->add($marketing->url(route($route, absolute: false)));
         }
 
