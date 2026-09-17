@@ -78,7 +78,8 @@ workflow. Diagnosis must include how people and systems actually work together.
 
 The default entry is The Walkthrough: a free, roughly one-hour conversation,
 followed within three business days by a written report describing the observed
-problems and recommended improvements. The prospect keeps the report and can hire
+problems and recommended improvements. The conversation is a video call by
+default, or in person when the prospect prefers. The prospect keeps the report and can hire
 the owner to implement it, use it independently, or walk away without an
 implementation purchase.
 

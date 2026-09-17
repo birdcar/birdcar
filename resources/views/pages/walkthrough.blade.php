@@ -34,7 +34,7 @@ name('public.walkthrough');
     <section class="offer-steps section-space" aria-labelledby="meeting-heading">
         <h2 id="meeting-heading">Here’s how it works.</h2>
         <ol>
-            <li><span class="step-number">1</span><div><h3>Choose a time.</h3><p>Book an hour that works for you. Bring an example of the work you’d like to talk through; a few notes are plenty.</p></div></li>
+            <li><span class="step-number">1</span><div><h3>Choose a time.</h3><p>Book an hour that works for you. It’s a video call unless you’d rather meet in person. Bring an example of the work you’d like to talk through; a few notes are plenty.</p></div></li>
             <li><span class="step-number">2</span><div><h3>Walk me through it.</h3><p>You walk me through how the work happens, who’s involved, and where it gets difficult. I keep asking until the problem makes sense in your context.</p></div></li>
             <li><span class="step-number">3</span><div><h3>Keep the report.</h3><p>After the conversation, you get my observations and recommendations in writing, to use on your own or with my help.</p></div></li>
         </ol>
