@@ -1,3 +1,5 @@
+import { EVENTS, track } from './analytics';
+
 const EMBED_SCRIPT = 'https://app.cal.com/embed/embed.js';
 const EMBED_ORIGIN = 'https://app.cal.com';
 
@@ -90,6 +92,22 @@ export function initBooking() {
         },
         hideEventTypeDetails: false,
         layout: 'month_view',
+    });
+
+    const mode = inline ? 'inline' : 'modal';
+
+    Cal.ns[namespace]('on', {
+        action: 'linkReady',
+        callback: () => track(EVENTS.embedOpened, { mode }),
+    });
+
+    Cal.ns[namespace]('on', {
+        action: 'bookingSuccessfulV2',
+        callback: (event) => {
+            const { uid, eventTypeId, startTime, status } = event.detail?.data ?? {};
+
+            track(EVENTS.bookingCompleted, { mode, booking_uid: uid, event_type_id: eventTypeId, start_time: startTime, status });
+        },
     });
 
     if (trigger) keepTriggersOnPage();

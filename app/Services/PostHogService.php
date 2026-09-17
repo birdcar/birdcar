@@ -85,6 +85,21 @@ class PostHogService
         return PostHog::withContext($context, $callback, ['fresh' => true]);
     }
 
+    /**
+     * @return array{token: string, host: string}|null
+     */
+    public function browserConfig(): ?array
+    {
+        if (! $this->enabled) {
+            return null;
+        }
+
+        return [
+            'token' => (string) config('posthog.api_key'),
+            'host' => (string) config('posthog.host'),
+        ];
+    }
+
     private function throwWhenDebugging(string $variable): void
     {
         if (config('app.debug')) {

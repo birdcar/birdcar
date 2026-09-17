@@ -12,7 +12,8 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @stack('head')
     </head>
-    <body @class(['reading-page' => $article, 'home-page' => $home])>
+    @php($posthog = app(\App\Services\PostHogService::class)->browserConfig())
+    <body @class(['reading-page' => $article, 'home-page' => $home]) @if ($posthog) data-posthog-token="{{ $posthog['token'] }}" data-posthog-host="{{ $posthog['host'] }}" @endif>
         <a class="skip-link" href="#main">Skip to content</a>
         <header class="site-header">
             <a class="wordmark" href="{{ route('public.index') }}" aria-label="Birdcar home">Birdcar</a>
@@ -20,7 +21,7 @@
                 <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                 <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
                 <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
-                <x-marketing.booking-link class="nav-booking" :inline="$active === 'assessment'" :aria-current="$active === 'assessment' ? 'page' : null">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
+                <x-marketing.booking-link class="nav-booking" placement="header" :inline="$active === 'assessment'" :aria-current="$active === 'assessment' ? 'page' : null">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
             </nav>
             <details class="mobile-menu">
                 <summary>Menu <span class="menu-icon" aria-hidden="true"></span></summary>
@@ -28,7 +29,7 @@
                     <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                     <a href="{{ route('public.work') }}">Selected work</a>
                     <a href="{{ route('public.writing') }}">Writing</a>
-                    <x-marketing.booking-link :inline="$active === 'assessment'">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
+                    <x-marketing.booking-link placement="mobile-menu" :inline="$active === 'assessment'">Book a free assessment <x-marketing.arrow /></x-marketing.booking-link>
                 </nav>
             </details>
         </header>
