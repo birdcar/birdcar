@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Carbon\CarbonInterface;
 use Laravel\Head\Facades\Head;
+use RuntimeException;
 
 class MarketingSite
 {
@@ -23,7 +24,13 @@ class MarketingSite
 
     public function host(): string
     {
-        return parse_url(config('marketing.url'), PHP_URL_HOST);
+        $host = parse_url(config('marketing.url'), PHP_URL_HOST);
+
+        if (! is_string($host) || $host === '') {
+            throw new RuntimeException('config marketing.url must be an absolute URL with a host.');
+        }
+
+        return $host;
     }
 
     public function indexable(): bool

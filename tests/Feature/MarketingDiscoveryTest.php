@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\MarketingSite;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Route;
 
@@ -111,3 +112,16 @@ test('future dated writing stays out of the public sitemap', function () {
         ->assertDontSee('/writing/just-build-it-twice/')
         ->assertSee('/writing/your-ai-wrote-a-bug/');
 });
+
+test('the marketing host comes from the configured marketing url', function () {
+    config(['marketing.url' => 'https://birdcar.dev/']);
+
+    expect(app(MarketingSite::class)->host())->toBe('birdcar.dev');
+});
+
+test('a marketing url without a host fails loudly instead of binding routes to nothing', function (string $url) {
+    config(['marketing.url' => $url]);
+
+    expect(fn (): string => app(MarketingSite::class)->host())
+        ->toThrow(RuntimeException::class, 'marketing.url must be an absolute URL with a host');
+})->with(['/relative/path', 'birdcar.dev', 'http:///missing-host']);
