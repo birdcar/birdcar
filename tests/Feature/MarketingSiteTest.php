@@ -16,6 +16,10 @@ test('the homepage presents the approved offer and only the approved work story'
         ->assertOk()
         ->assertSee('I help businesses untangle work')
         ->assertSee('fifteen years')
+        ->assertSee('GitHub, Heroku, and Zapier')
+        ->assertSee('another hire, another subscription, or another hour of your evening')
+        ->assertSee('if the report assembled itself')
+        ->assertSee('within three business days')
         ->assertSee('Craft &amp; Communicate', false)
         ->assertSee(route('public.walkthrough'), false)
         ->assertSee('Book a free Walkthrough')
@@ -42,9 +46,34 @@ test('the walkthrough explains the free report and embeds the actual Cal event w
         ->assertSee('href="#choose-a-time"', false)
         ->assertDontSee('data-cal-config')
         ->assertDontSee('cal.com/birdcar/60min')
+        ->assertSee('I start with the people doing the work')
+        ->assertSee('you’ll bring it up, not me')
+        ->assertSee('within three business days')
+        ->assertSee('Where I’d start')
+        ->assertSee('the expensive version of standing still')
+        ->assertSee('if the reminders sent themselves')
         ->assertSee('The conversation and the written report are free.')
+        ->assertSee('I’m not the right fit')
         ->assertSee('separate implementation engagement')
+        ->assertSee('paid discovery week')
+        ->assertSee('the shape of the problem and where I’d look first')
+        ->assertSee('room for work that’s worth their time')
         ->assertDontSee('You’re booked');
+});
+
+test('each conversion page speaks to the reader at least as much as about me', function (string $path) {
+    $prose = marketingProse($this->get($path)->getContent());
+
+    $reader = preg_match_all("/\\b(you|your|yours|you're|you'll|you'd|you've)\\b/u", $prose);
+    $me = preg_match_all("/\\b(i|i'll|i've|i'd|i'm|me|my)\\b/u", $prose);
+
+    expect($reader)->toBeGreaterThanOrEqual($me, "reader words {$reader} vs first-person words {$me} on {$path}");
+})->with(['/', '/walkthrough']);
+
+test('the homepage asks the reader at least two questions', function () {
+    preg_match('#<main[^>]*>(.*)</main>#s', $this->get('/')->getContent(), $main);
+
+    expect(substr_count(marketingProse($main[1] ?? ''), '?'))->toBeGreaterThanOrEqual(2);
 });
 
 test('booking buttons away from the walkthrough page open the calendar in place and keep the walkthrough link as fallback', function (string $path) {
@@ -157,3 +186,15 @@ test('the approach navigation resolves to a real section and the logo appears on
     expect($xpath->query('//footer//*[@class="wordmark" or @class="signature"]'))->toHaveCount(0);
     $response->assertSee('href="'.route('public.index').'#how-i-work"', false);
 });
+
+/**
+ * Reduce a rendered marketing page to the lowercase prose a visitor reads: metadata scripts and
+ * styles removed, tags replaced by spaces so words on either side of a tag stay separate words,
+ * and typographic apostrophes normalised so contractions match plain patterns.
+ */
+function marketingProse(string $html): string
+{
+    $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#si', ' ', $html);
+
+    return mb_strtolower(str_replace('’', "'", preg_replace('/<[^>]+>/', ' ', $html)));
+}

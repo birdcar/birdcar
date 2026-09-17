@@ -76,13 +76,14 @@ workflow. Diagnosis must include how people and systems actually work together.
 
 ## Offer and Working Relationship
 
-The default entry is a free, roughly one-hour discovery assessment meeting,
-followed by a written report describing the observed problems and recommended
-improvements. The prospect keeps the report and can hire the owner to implement
-it, use it independently, or walk away without an implementation purchase.
+The default entry is The Walkthrough: a free, roughly one-hour conversation,
+followed within three business days by a written report describing the observed
+problems and recommended improvements. The prospect keeps the report and can hire
+the owner to implement it, use it independently, or walk away without an
+implementation purchase.
 
-Booking uses the owner's existing Cal.com event,
-`https://cal.com/birdcar/60min`. The marketing page explains the offer and sends
+Booking uses the owner's Cal.com event `https://cal.com/birdcar/walkthrough`
+(namespace `walkthrough`). The marketing page explains the offer and sends
 visitors to that event to select and confirm a time. A custom integration is
 not required for launch. The booking page draws offer structure from
 `https://www.acquisition.com/workshop`: recognizable problem, concrete take-away,
@@ -98,8 +99,9 @@ It details modernization opportunities, how to implement them, and which tools
 to use. The client can commission implementation or use the report themselves.
 
 Both entries produce a useful report. Their difference is discovery depth and
-recommendation detail; the precise boundaries and turnaround for each report
-remain open. Implementation is a separate purchase in either path.
+recommendation detail; the free report arrives within three business days, while
+the precise boundaries of each report and the paid report's turnaround remain
+open. Implementation is a separate purchase in either path.
 
 A clearly scoped implementation engagement around an expensive or frustrating
 workflow follows this approach:
@@ -342,12 +344,27 @@ avoid inventing savings, revenue, testimonials, or guaranteed results.
 - Exclude GHX entirely from the public marketing site until the owner resolves
   whether the contract permits disclosure. Its background above is internal context.
 - Omit “I’ll agree that work with you explicitly” from the Care section.
+- The offer is named The Walkthrough. It lives at `/walkthrough` (`/assessment`
+  and `/contact` redirect permanently) and books through
+  `https://cal.com/birdcar/walkthrough`, namespace `walkthrough`.
+- The written report is promised within three business days of the conversation.
+- The hour is promised pitch-free: “If you want to talk about hiring me, you’ll
+  bring it up, not me.” Honour it on every call.
+- Fit disqualifier: the Walkthrough works when the owner can talk to the people
+  doing the work; otherwise “I’m not the right fit.”
+- Past employers GitHub, Heroku, and Zapier may be named as background. WorkOS
+  stays off the public site while the owner is employed there.
+- The paid discovery week may be mentioned in one sentence with no price, as the
+  deeper form of the same process.
+- The report includes a “Where I’d start” section: the first change and why it
+  comes first.
+- Urgency is consequence copy only. No scarcity, capacity, or deadline language.
 
 ## Open Decisions
 
-- The boundaries and turnaround for each report, and the preparation effort for
-  the free assessment and report.
-- Offer names, paid prices, implementation acceptance criteria, and any guarantees.
+- The boundaries of each report, the paid report's turnaround, and the
+  preparation effort for the free Walkthrough and report.
+- Paid prices, implementation acceptance criteria, and any guarantees.
 - Booking measurement and concrete lead-generation experiments within the chosen
   initial channels. The booking destination and launch flow are settled above.
 - Retainer pricing, included maintenance/change work versus separately billed
