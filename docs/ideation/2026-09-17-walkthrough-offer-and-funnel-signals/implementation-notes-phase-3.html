@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 3 Build Notes</title>
+<meta name="description" content="Implementation notes for the Conversion copy and records phase of the walkthrough offer and funnel signals project.">
+<style>
+:root { --bg: #fbf8fb; --fg: #291e2e; --muted: #6b5c6e; --line: #e4dbe6; --accent: #563750; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1d1620; --fg: #f3eaf3; --muted: #b9a9bb; --line: #3b2f3e; --accent: #d9c9f8; } }
+:root[data-theme="dark"] { --bg: #1d1620; --fg: #f3eaf3; --muted: #b9a9bb; --line: #3b2f3e; --accent: #d9c9f8; }
+body { margin: 0; padding: 32px 16px 64px; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, sans-serif; }
+main { max-width: 760px; margin: 0 auto; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; } h2 { font-size: 1.15rem; margin: 32px 0 8px; color: var(--accent); }
+p.meta { color: var(--muted); margin: 0 0 24px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.95rem; } th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+code { font-family: ui-monospace, monospace; font-size: 0.9em; } ul { padding-left: 20px; } li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Phase 3: Conversion copy and records</h1>
+<p class="meta">Spec: <code>spec-phase-3.md</code> · Built 2026-09-17 · Headless, strict</p>
+
+<h2>What was built</h2>
+<ul>
+<li>Homepage (<code>index.blade.php</code>): hero explanation and action note, the strip's two NEPQ questions plus the three-business-day turnaround, approach intro, the three steps with reader subjects, and the personal note naming GitHub, Heroku, and Zapier. Markup, ids, and classes unchanged.</li>
+<li>Walkthrough page (<code>walkthrough.blade.php</code>): mechanism sentence, reader-subject opening, no-pitch line, action note, <code>Where I’d start</code> report row, consequence and solution-awareness copy in the outcome section, steps two and three, four rewritten FAQ answers, one new FAQ row (with <code>&lt;x-marketing.arrow /&gt;</code>), and the closing turnaround. Calendar div and fallback link untouched.</li>
+<li>Closing invitation component: no-pitch sentence and turnaround action note; inherited by <code>/work</code>.</li>
+<li><code>tests/Feature/MarketingSiteTest.php</code>: fourteen new anchors on the two existing page tests, <code>each conversion page speaks to the reader at least as much as about me</code> (dataset <code>/</code>, <code>/walkthrough</code>), <code>the homepage asks the reader at least two questions</code>, and the <code>marketingProse()</code> helper after the last test.</li>
+<li><code>PRODUCT.md</code>: eight Approved Launch Copy and Proof bullets; the first two Open Decisions narrowed to what is still open.</li>
+<li><code>.ai/rules/resources.md</code>: the <code>Assessment booking uses</code> sentence replaced with the spec's Walkthrough sentence; frontmatter intact.</li>
+</ul>
+
+<h2>Measured counts</h2>
+<table>
+<tr><th>Page</th><th>Before (reader : first-person)</th><th>After</th><th>Homepage questions</th></tr>
+<tr><td><code>/</code></td><td>14 : 19</td><td>24 : 20</td><td>0 → 2</td></tr>
+<tr><td><code>/walkthrough</code></td><td>30 : 34</td><td>40 : 37</td><td>—</td></tr>
+</table>
+<p class="meta">Counted with tags replaced by spaces (see below). The nav's two <code>How I work</code> links are included in every first-person count.</p>
+
+<h2>Gap decisions</h2>
+<table>
+<tr><th>Decision</th><th>Reason</th></tr>
+<tr><td>Step two flipped to <code>You get questions until the problem makes sense in its context.</code></td><td>The spec's copy verbatim lands <code>/walkthrough</code> on a 39 : 39 tie (the context map's simulation agreed). The spec names this sentence as the first fallback flip; applying it gives 40 : 37 so the owner's first one-word edit at the gate does not flip the test.</td></tr>
+<tr><td><code>marketingProse()</code> replaces tags with a space instead of calling <code>strip_tags()</code></td><td>Bare <code>strip_tags</code> fuses <code>&lt;/h3&gt;&lt;p&gt;You</code> into <code>BuildYou</code>, hiding the three step openers from the metric. Replacing tags with a space counts what the reader reads; the spec's regexes are unchanged. With <code>strip_tags</code> the homepage would read 21 : 20 and still pass.</td></tr>
+<tr><td>Question test reuses <code>marketingProse()</code> and guards <code>$main[1] ?? ''</code></td><td>Same tag handling as the ratio; a missed <code>&lt;main&gt;</code> match fails with a count of 0 instead of an undefined-key warning.</td></tr>
+<tr><td>Helper declared after the last test with a PHPDoc and return type</td><td>Follows the project's only precedent (<code>OrganizationMembershipTest.php</code>). Name is unique across <code>tests/</code>.</td></tr>
+<tr><td>Test named <code>each conversion page speaks to the reader…</code></td><td>The contract filters on <code>speaks to the reader</code>; a first draft with the plural <code>pages speak</code> matched zero tests under <code>--filter</code>, which <code>failOnEmptyTestSuite</code> would have turned into a failing acceptance run.</td></tr>
+<tr><td><code>.ai/rules/resources.md</code> edited directly, not via <code>record-rule</code></td><td>Boost's <code>record-rule</code> files a new note into an area file; it cannot replace a sentence inside an existing section, which is what the spec asks for. The spec's direct-edit fallback applies; frontmatter <code>paths</code> preserved and <code>index.md</code> still maps <code>resources/**</code> to this one file.</td></tr>
+<tr><td><code>.ai/rules/resources.md:15</code> also updated (<code>free assessment/report offer</code> → <code>the free Walkthrough/report offer</code>)</td><td>Outside the spec's named sentence, but leaving it would keep steering agents editing <code>resources/**</code> toward the old offer name.</td></tr>
+<tr><td><code>PRODUCT.md</code> lines 79–83, 84–85, and 100–103 amended</td><td>Outside the spec's append-and-prune, but each contradicted a bullet appended in the same edit: the offer was still a "discovery assessment meeting", booking still named <code>cal.com/birdcar/60min</code>, and the free report's turnaround was still listed as open. The file is read by agents as product truth, so two booking URLs in one file was the worse outcome.</td></tr>
+<tr><td>No <code>describe()</code> block; <code>assertOk()</code> kept before <code>assertSee</code> on the existing tests</td><td>Existing marketing tests are flat <code>test()</code> calls and stack <code>assertOk()</code>; the testing skill says project convention wins.</td></tr>
+</table>
+
+<h2>Not done in headless mode</h2>
+<ul>
+<li>The owner's read of <code>/</code>, <code>/walkthrough</code>, and the invitation on <code>/work</code> against the seven copy-editing sweeps and PRODUCT.md Written Voice. Mechanical proxies passed: <code>rg -w -i 'we'</code> over the marketing views returns nothing and the scarcity grep is clean.</li>
+<li>Visual check of the new FAQ row's arrow flip in the browser (no test covers it).</li>
+</ul>
+
+<h2>Validation</h2>
+<ul>
+<li><code>vendor/bin/pint --dirty --format agent</code>: passed</li>
+<li>Three marketing test files: 55 passed, 291 assertions</li>
+<li><code>--filter='speaks to the reader'</code>: 2 passed (dataset); <code>--filter='asks the reader'</code>: 1 passed</li>
+<li>Scarcity grep: no matches (exit 1)</li>
+<li><code>grep -n 'three business days' PRODUCT.md .ai/rules/resources.md</code>: 4 hits</li>
+<li>Full suite: 121 passed, 617 assertions</li>
+</ul>
+</main>
+</body>
+</html>

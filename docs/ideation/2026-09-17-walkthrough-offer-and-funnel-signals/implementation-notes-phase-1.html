@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 Build Notes</title>
+<meta name="description" content="Implementation notes for the Funnel instrumentation phase of the walkthrough offer and funnel signals project.">
+<style>
+:root { --bg: #fbf8fb; --fg: #291e2e; --muted: #6b5c6e; --line: #e4dbe6; --accent: #563750; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1d1620; --fg: #f3eaf3; --muted: #b9a9bb; --line: #3b2f3e; --accent: #d9c9f8; } }
+:root[data-theme="dark"] { --bg: #1d1620; --fg: #f3eaf3; --muted: #b9a9bb; --line: #3b2f3e; --accent: #d9c9f8; }
+body { margin: 0; padding: 32px 16px 64px; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, sans-serif; }
+main { max-width: 760px; margin: 0 auto; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; } h2 { font-size: 1.15rem; margin: 32px 0 8px; color: var(--accent); }
+p.meta { color: var(--muted); margin: 0 0 24px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.95rem; } th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+code { font-family: ui-monospace, monospace; font-size: 0.9em; } ul { padding-left: 20px; } li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Phase 1: Funnel instrumentation</h1>
+<p class="meta">Spec: <code>spec-phase-1.md</code> · Built 2026-09-17 · Headless, strict</p>
+
+<h2>What was built</h2>
+<ul>
+<li><code>posthog-js@1.433.10</code> added with <code>bun add</code>; bundled through <code>resources/js/analytics.js</code>, booted from <code>data-posthog-token</code>/<code>data-posthog-host</code> on <code>&lt;body&gt;</code>.</li>
+<li><code>PostHogService::browserConfig()</code> is the single read of enabled state for the layout.</li>
+<li>Every booking control carries <code>data-booking-cta="&lt;placement&gt;"</code> via a new <code>placement</code> prop on <code>booking-link</code>; the assessment hero anchor is now the component with <code>inline</code>; the plain Cal.com link carries <code>data-booking-fallback</code>.</li>
+<li><code>booking.js</code> forwards Cal.com <code>linkReady</code> → <code>booking_embed_opened</code> and <code>bookingSuccessfulV2</code> → <code>booking_completed</code> with only <code>mode</code>, <code>booking_uid</code>, <code>event_type_id</code>, <code>start_time</code>, <code>status</code>.</li>
+<li><code>phpunit.xml</code> pins <code>POSTHOG_DISABLED=true</code>, a blank token, and the US host, and sets <code>failOnEmptyTestSuite="true"</code>.</li>
+<li><code>tests/Feature/MarketingAnalyticsTest.php</code>: five tests covering emission, the two omission paths, homepage placements, and the assessment hero and fallback markers.</li>
+</ul>
+
+<h2>Gap decisions</h2>
+<table>
+<tr><th>Decision</th><th>Reason</th></tr>
+<tr><td><code>isEnabled()</code> not added</td><td>The spec lists it, but nothing in the app, tests, contract, or later phases calls it, and <code>browserConfig()</code> returning <code>null</code> already communicates the state. The context map flagged it as unused and the owner's standing rule is to delete unused code. Add it in the phase that first needs it.</td></tr>
+<tr><td><code>bun.lock</code> tarball URLs normalised to <code>""</code></td><td>This machine routes installs through the policy-managed WorkOS Socket Firewall registry, which made <code>bun add</code> rewrite all 300+ existing entries with <code>socket-firewall.workos.dev</code> URLs. The firewall config was left untouched (the install was scanned through it); only the lockfile's resolved URLs were reset to bun's default-registry form so the diff is the 25 lines for posthog-js and its dependencies. <code>bun install --frozen-lockfile</code> confirms the lockfile is consistent.</td></tr>
+<tr><td><code>failOnEmptyTestSuite</code> kept although Pest already fails</td><td>Pest 5.1.4 exits 1 on "No tests found." without the attribute. It is kept as the spec asks so a direct PHPUnit invocation behaves the same way.</td></tr>
+<tr><td>Placement test split into homepage and assessment tests</td><td>Two requests, two subjects; each failure names the page at fault.</td></tr>
+<tr><td>No <code>describe()</code> block</td><td>Existing marketing tests use flat <code>test()</code> calls; the file covers one flow.</td></tr>
+</table>
+
+<h2>Not done in headless mode</h2>
+<ul>
+<li>Dev-server checks against live PostHog (debug window, opt-out/opt-in, modal open count for <code>linkReady</code>, a real test booking). These need a browser and create real persons/events in the production PostHog project; they remain the spec's Open Items for the gate.</li>
+<li>If <code>linkReady</code> proves to fire once per page rather than per modal open, switch the opened signal to <code>bookerViewed</code>.</li>
+</ul>
+
+<h2>Validation</h2>
+<ul>
+<li><code>vendor/bin/pint --dirty --format agent</code>: passed</li>
+<li>Three marketing test files: 47 passed, 255 assertions</li>
+<li>Full suite: see the build report</li>
+<li><code>bun run build</code> + five bundle greps: all matched <code>public/build/assets/app-*.js</code></li>
+<li><code>php artisan test --compact --filter='no such test name'</code>: exits non-zero</li>
+</ul>
+</main>
+</body>
+</html>
