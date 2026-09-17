@@ -40,6 +40,9 @@ class PostHogService
         $this->enabled = true;
     }
 
+    /**
+     * @param  array<string, mixed>  $properties
+     */
     public function identify(string $distinctId, array $properties = []): void
     {
         if (! $this->enabled) {
@@ -52,6 +55,9 @@ class PostHogService
         ]);
     }
 
+    /**
+     * @param  array<string, mixed>  $properties
+     */
     public function capture(string $distinctId, string $event, array $properties = []): void
     {
         if (! $this->enabled) {
@@ -66,6 +72,9 @@ class PostHogService
         PostHog::flush();
     }
 
+    /**
+     * @param  array<string, mixed>  $properties
+     */
     public function captureException(\Throwable $exception, ?string $distinctId = null, array $properties = []): void
     {
         if (! $this->enabled) {
@@ -76,6 +85,9 @@ class PostHogService
         PostHog::flush();
     }
 
+    /**
+     * @param  array<string, mixed>  $context
+     */
     public function withContext(array $context, callable $callback): mixed
     {
         if (! $this->enabled) {
