@@ -27,9 +27,9 @@
                 <summary>Menu <span class="menu-icon" aria-hidden="true"></span></summary>
                 <nav aria-label="Mobile navigation">
                     <a href="{{ route('public.index') }}#how-i-work">How I work</a>
-                    <a href="{{ route('public.work') }}">Selected work</a>
-                    <a href="{{ route('public.writing') }}">Writing</a>
-                    <x-marketing.booking-link placement="mobile-menu" :inline="$active === 'walkthrough'">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                    <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
+                    <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
+                    <x-marketing.booking-link placement="mobile-menu" :inline="$active === 'walkthrough'" :aria-current="$active === 'walkthrough' ? 'page' : null">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
                 </nav>
             </details>
         </header>

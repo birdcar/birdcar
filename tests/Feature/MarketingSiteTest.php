@@ -175,6 +175,23 @@ test('the old marketing entry points redirect to the new destinations', function
     ['/assessment', '/walkthrough'],
 ]);
 
+test('mobile navigation identifies the current destination without relying on JavaScript', function (string $path, string $label) {
+    $response = $this->get($path)->assertOk();
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+
+    $currentLinks = $xpath->query('//details[@class="mobile-menu"]/nav/a[@aria-current="page"]');
+
+    expect($currentLinks)->toHaveCount(1);
+    expect(trim($currentLinks->item(0)->textContent))->toBe($label);
+})->with([
+    ['/work', 'Selected work'],
+    ['/writing/', 'Writing'],
+    ['/writing/your-ai-wrote-a-bug/', 'Writing'],
+    ['/walkthrough', 'Book a free Walkthrough'],
+]);
+
 test('the approach navigation resolves to a real section and the logo appears only in the header', function () {
     $response = $this->get('/')->assertOk();
     $document = new DOMDocument;
