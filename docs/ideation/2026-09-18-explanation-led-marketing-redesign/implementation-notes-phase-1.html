@@ -1,0 +1,99 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 1 (phase number, twice), Explanation-led marketing redesign, 2026-09-19, Visual foundation and homepage opening —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 1</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 1</h1>
+      <p class="doc-meta">Explanation-led marketing redesign · 2026-09-19 · Visual foundation and homepage opening</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Foundation — preserve alignment and separate type scopes</h3>
+        <dl>
+          <dt>Context</dt><dd>The owner’s alignment test is already committed. Shared CSS reaches every public page, while operational text must stay Inter.</dd>
+          <dt>Decision</dt><dd>Keep MarketingLayoutTest unchanged and retain its paired homepage grids. Give marketing its own Barlow font token, leaving the general sans token Inter. Existing public pages inherit palette/type only and remain explicitly unconverted. Record the superseding identity through Boost record-rule.</dd>
+          <dt>Alternative</dt><dd>Renaming or removing the tested lower sections now would unnecessarily expand Phase 1 into Phase 2.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Responsive explanation — one vertical sequence below 1100px</h3>
+        <dl>
+          <dt>Context</dt><dd>A two-column tablet arrangement made the second horizontal connector point away from the next stage.</dd>
+          <dt>Decision</dt><dd>Keep the preparatory stages, report, and choice branches connected on wide screens; use one vertical semantic sequence on tablet and mobile. All text remains ordinary HTML, and print removes color dependence.</dd>
+          <dt>Alternative</dt><dd>A serpentine tablet connector adds geometry without improving understanding.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Verification — corrected capture artifacts and approval boundary</h3>
+        <dl>
+          <dt>Context</dt><dd>Smooth scrolling and oversized element captures produced incorrectly cropped evidence, including an offscreen skip link. Existing dev server already answered on the Boost-resolved host.</dd>
+          <dt>Decision</dt><dd>Reuse the server; recapture with explicit document-top positioning and crop the mobile figure from a valid full-page static capture. Verify 200% reflow at the equivalent 720×450 CSS viewport; print evidence is browser print-media emulation, not a finished paginated specimen. The owner gate remains pending.</dd>
+          <dt>Alternative</dt><dd>Do not alter functioning UI to fix capture artifacts or claim agent QA as owner approval.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Independent finish review — make the report the focal object</h3>
+        <dl>
+          <dt>Context</dt><dd>The first reviewer found the static explanation correct but too close to four equal text columns.</dd>
+          <dt>Decision</dt><dd>Stack the preparation at left, draw a larger geometric report at center, and branch optional next steps at right. Preserve semantic order and the single yellow recommendation. The bounded verdict pass resolved all four findings and returned ship; it did not grant owner approval.</dd>
+          <dt>Alternative</dt><dd>Decorative arrows or animation alone would not make the report relationship more understandable.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

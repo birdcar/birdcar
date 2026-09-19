@@ -1,169 +1,163 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-13T14:57:22.828Z",
+  "generatedAt": "2026-09-19T15:20:54.582685+00:00",
   "title": "Design System: Birdcar",
   "extensions": {
     "colorMeta": {
       "ink": {
         "role": "neutral",
-        "displayName": "Black cherry",
+        "displayName": "Blue-green ink",
+        "canonical": "#102a33",
         "tonalRamp": [
-          "oklch(0.1500 0.0333 315.04)",
-          "oklch(0.2643 0.0333 315.04)",
-          "oklch(0.3786 0.0333 315.04)",
-          "oklch(0.4929 0.0333 315.04)",
-          "oklch(0.6071 0.0333 315.04)",
-          "oklch(0.7214 0.0333 315.04)",
-          "oklch(0.8357 0.0333 315.04)",
-          "oklch(0.9500 0.0333 315.04)"
+          "oklch(0.15 0.035 220)",
+          "oklch(0.264 0.035 220)",
+          "oklch(0.379 0.035 220)",
+          "oklch(0.493 0.035 220)",
+          "oklch(0.607 0.035 220)",
+          "oklch(0.721 0.035 220)",
+          "oklch(0.836 0.035 220)",
+          "oklch(0.95 0.035 220)"
         ]
       },
       "paper": {
         "role": "neutral",
-        "displayName": "Pale orchid",
+        "displayName": "White paper",
+        "canonical": "#ffffff",
         "tonalRamp": [
-          "oklch(0.1500 0.0153 325.70)",
-          "oklch(0.2643 0.0153 325.70)",
-          "oklch(0.3786 0.0153 325.70)",
-          "oklch(0.4929 0.0153 325.70)",
-          "oklch(0.6071 0.0153 325.70)",
-          "oklch(0.7214 0.0153 325.70)",
-          "oklch(0.8357 0.0153 325.70)",
-          "oklch(0.9500 0.0153 325.70)"
+          "oklch(0.15 0 0)",
+          "oklch(0.264 0 0)",
+          "oklch(0.379 0 0)",
+          "oklch(0.493 0 0)",
+          "oklch(0.607 0 0)",
+          "oklch(0.721 0 0)",
+          "oklch(0.836 0 0)",
+          "oklch(0.95 0 0)"
         ]
       },
-      "lilac": {
+      "cyan": {
         "role": "primary",
-        "displayName": "Lilac",
+        "displayName": "Cyan field",
+        "canonical": "#b7edf1",
         "tonalRamp": [
-          "oklch(0.1500 0.0664 300.57)",
-          "oklch(0.2643 0.0664 300.57)",
-          "oklch(0.3786 0.0664 300.57)",
-          "oklch(0.4929 0.0664 300.57)",
-          "oklch(0.6071 0.0664 300.57)",
-          "oklch(0.7214 0.0664 300.57)",
-          "oklch(0.8357 0.0664 300.57)",
-          "oklch(0.9500 0.0664 300.57)"
+          "oklch(0.15 0.045 210)",
+          "oklch(0.264 0.045 210)",
+          "oklch(0.379 0.045 210)",
+          "oklch(0.493 0.045 210)",
+          "oklch(0.607 0.045 210)",
+          "oklch(0.721 0.045 210)",
+          "oklch(0.836 0.045 210)",
+          "oklch(0.95 0.045 210)"
         ]
       },
-      "rose": {
+      "emphasis": {
+        "role": "primary",
+        "displayName": "Yellow recommendation",
+        "canonical": "#f7cb58",
+        "tonalRamp": [
+          "oklch(0.15 0.105 85)",
+          "oklch(0.264 0.105 85)",
+          "oklch(0.379 0.105 85)",
+          "oklch(0.493 0.105 85)",
+          "oklch(0.607 0.105 85)",
+          "oklch(0.721 0.105 85)",
+          "oklch(0.836 0.105 85)",
+          "oklch(0.95 0.105 85)"
+        ]
+      },
+      "deep-teal": {
         "role": "secondary",
-        "displayName": "Rose",
+        "displayName": "Deep teal state",
+        "canonical": "#214b57",
         "tonalRamp": [
-          "oklch(0.1500 0.1111 346.54)",
-          "oklch(0.2643 0.1111 346.54)",
-          "oklch(0.3786 0.1111 346.54)",
-          "oklch(0.4929 0.1111 346.54)",
-          "oklch(0.6071 0.1111 346.54)",
-          "oklch(0.7214 0.1111 346.54)",
-          "oklch(0.8357 0.1111 346.54)",
-          "oklch(0.9500 0.1111 346.54)"
+          "oklch(0.15 0.04 220)",
+          "oklch(0.264 0.04 220)",
+          "oklch(0.379 0.04 220)",
+          "oklch(0.493 0.04 220)",
+          "oklch(0.607 0.04 220)",
+          "oklch(0.721 0.04 220)",
+          "oklch(0.836 0.04 220)",
+          "oklch(0.95 0.04 220)"
         ]
       },
-      "aubergine": {
-        "role": "secondary",
-        "displayName": "Aubergine",
-        "tonalRamp": [
-          "oklch(0.1500 0.0583 333.85)",
-          "oklch(0.2643 0.0583 333.85)",
-          "oklch(0.3786 0.0583 333.85)",
-          "oklch(0.4929 0.0583 333.85)",
-          "oklch(0.6071 0.0583 333.85)",
-          "oklch(0.7214 0.0583 333.85)",
-          "oklch(0.8357 0.0583 333.85)",
-          "oklch(0.9500 0.0583 333.85)"
-        ]
-      },
-      "reading-tint": {
+      "cyan-wash": {
         "role": "neutral",
-        "displayName": "Reading tint",
+        "displayName": "Cyan wash",
+        "canonical": "#b7edf130",
         "tonalRamp": [
-          "oklch(0.1500 0.0664 300.57)",
-          "oklch(0.2643 0.0664 300.57)",
-          "oklch(0.3786 0.0664 300.57)",
-          "oklch(0.4929 0.0664 300.57)",
-          "oklch(0.6071 0.0664 300.57)",
-          "oklch(0.7214 0.0664 300.57)",
-          "oklch(0.8357 0.0664 300.57)",
-          "oklch(0.9500 0.0664 300.57)"
+          "oklch(0.15 0.045 210 / 0.19)",
+          "oklch(0.264 0.045 210 / 0.19)",
+          "oklch(0.379 0.045 210 / 0.19)",
+          "oklch(0.493 0.045 210 / 0.19)",
+          "oklch(0.607 0.045 210 / 0.19)",
+          "oklch(0.721 0.045 210 / 0.19)",
+          "oklch(0.836 0.045 210 / 0.19)",
+          "oklch(0.95 0.045 210 / 0.19)"
         ]
       }
     },
     "typographyMeta": {
+      "wordmark": {
+        "displayName": "Header wordmark",
+        "purpose": "The only Alkaline use in the Phase 1 marketing foundation."
+      },
       "display": {
-        "displayName": "Display",
-        "purpose": "Interior marketing page titles; the homepage has a separate composition."
+        "displayName": "Opening question",
+        "purpose": "Large Barlow problem statement in the cyan opening."
       },
       "headline": {
-        "displayName": "Headline",
-        "purpose": "Expressive marketing section headings."
-      },
-      "article-title": {
-        "displayName": "Article title",
-        "purpose": "Original essay titles with a short measure and room for letter overhang."
-      },
-      "title": {
-        "displayName": "Title",
-        "purpose": "Readable linked archive titles."
+        "displayName": "Explanatory heading",
+        "purpose": "Section and diagram headings in upright Barlow."
       },
       "body": {
-        "displayName": "Body",
-        "purpose": "Marketing explanation and general text."
+        "displayName": "Marketing body",
+        "purpose": "Plainspoken explanation, captions, and terms."
       },
-      "reading": {
-        "displayName": "Reading",
-        "purpose": "Continuous essay prose."
-      },
-      "label": {
-        "displayName": "Measured detail",
-        "purpose": "Archive dates and reading time; selected terms, code and chart axes use related mono treatments."
+      "lead": {
+        "displayName": "Hero lead",
+        "purpose": "First-person opening explanation under the main question."
       },
       "button": {
         "displayName": "Action",
-        "purpose": "Sentence-case assessment actions."
-      },
-      "wordmark": {
-        "displayName": "Header wordmark",
-        "purpose": "The one Birdcar wordmark on each page."
+        "purpose": "Walkthrough booking actions."
       }
     },
     "shadows": [
       {
         "name": "keyboard-focus-outer",
-        "value": "0 0 0 6px var(--color-ink, #291e2e)",
+        "value": "0 0 0 6px var(--color-ink, #102a33)",
         "purpose": "Button and skip-link focus only, combined with a 2px paper outline at 2px offset."
       }
     ],
     "motion": [
       {
-        "name": "state-color",
+        "name": "state-feedback",
         "value": "160ms ease",
-        "purpose": "Button background and text color."
+        "purpose": "Button and nav booking color feedback."
       },
       {
-        "name": "arrow",
-        "value": "200ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Button arrow moves 4px right on hover."
+        "name": "settle",
+        "value": "400ms linear(0, .2175, .5207, .7361, .8631, .9317, .9668, .9842, .9926, .9966, .9984, .9993, 1)",
+        "purpose": "Arrow movement and subtle active transform."
       },
       {
-        "name": "opening-lines",
-        "value": "0.85s; stagger 0.09s; cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "After font readiness: translateY 16px to 0 and opacity 0.85 to 1."
+        "name": "diagram-stage-emphasis",
+        "value": "0.55s, delay index * 0.32s, cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Stage circles scale from 1 to 1.12 and back while flashing yellow, then return to cyan."
       },
       {
-        "name": "horizon-reveal",
-        "value": "1.2s cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Clip inset(0 48% 0 48%) to inset(0 0% 0 0%); opacity 0.4 to 1."
+        "name": "diagram-recommendation-emphasis",
+        "value": "0.65s after stage sequence, cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The first recommendation moves up 3px and returns."
       },
       {
         "name": "reduced-motion",
         "value": "prefers-reduced-motion: reduce",
-        "purpose": "Skip opening animation, complete active motion on preference change, disable CSS transitions and smooth scrolling."
+        "purpose": "Disable transitions and animations; diagram restores complete static state."
       }
     ],
     "breakpoints": [
       {
-        "name": "home-bounded",
+        "name": "diagram-vertical",
         "value": "1100px"
       },
       {
@@ -174,130 +168,96 @@
         "name": "mobile",
         "value": "760px"
       }
-    ]
+    ],
+    "phaseStatus": {
+      "completed": "Phase 1 visual foundation: header, homepage opening, Walkthrough introduction and figure.",
+      "pending": "Owner visual gate remains pending; Phase 2 is blocked. Lower homepage and all other marketing pages await Phases 2-3 despite inherited shared color/type. Print is an early static sketch, not a finished specimen.",
+      "notCurrent": "No shipping raster was created. Retired horizon assets remain for Phase 4 decisions only. Admin/customer Inter surfaces are unchanged."
+    }
   },
   "components": [
     {
-      "name": "Lilac assessment button",
-      "kind": "button",
-      "refersTo": "button-lilac",
-      "description": "Shared assessment action; the homepage applies its own desktop size.",
-      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-lilac, #d9c9f8);color:var(--color-ink, #291e2e);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-paper, #f3eaf3)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
-    },
-    {
-      "name": "Paper invitation button",
-      "kind": "button",
-      "refersTo": "button-paper",
-      "description": "Shared assessment action; the homepage applies its own desktop size.",
-      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-lilac, #d9c9f8)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
-    },
-    {
-      "name": "Ink assessment button",
-      "kind": "button",
-      "refersTo": "button-ink",
-      "description": "Shared assessment action; the homepage applies its own desktop size.",
-      "html": "<a class=\"ds-button\" href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-ink, #291e2e);color:var(--color-paper, #f3eaf3);transition:background-color 160ms ease,color 160ms ease}.ds-button:hover{background:var(--color-aubergine, #563750)}.ds-button:focus-visible{outline:2px solid var(--color-paper, #f3eaf3);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink, #291e2e)}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-button .ds-arrow{transition:transform 200ms cubic-bezier(.16,1,.3,1)}.ds-button:hover .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-button .ds-arrow{transition:none}}"
-    },
-    {
-      "name": "Text link",
-      "kind": "custom",
-      "description": "An underlined reading or navigation action with the shared arrow.",
-      "html": "<a class=\"ds-text-link\" href=\"#writing\">Back to all writing <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-text-link{display:inline-flex;align-items:center;gap:1rem;padding-block:.4rem;font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1rem;font-weight:600;line-height:1.55;color:var(--color-ink, #291e2e);text-decoration:underline;text-underline-offset:.22em}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-text-link:hover .ds-arrow{transform:translateX(4px)}.ds-text-link:focus-visible,.ds-text-link :focus-visible{outline:3px solid currentColor;outline-offset:6px}"
-    },
-    {
-      "name": "Marketing navigation",
+      "name": "Cyan marketing header",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Black cherry header, one Alkaline wordmark, and a native mobile disclosure. Escape and outside-click enhancements live in app.js.",
-      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\" aria-current=\"page\">Writing</a><a class=\"ds-nav-booking\" href=\"#assessment\">Book a free assessment</a></nav><details class=\"ds-mobile-menu\"><summary>Menu <span class=\"ds-menu-icon\" aria-hidden=\"true\"></span></summary><nav aria-label=\"Mobile navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a href=\"#assessment\">Book a free assessment <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a></nav></details></header>",
-      "css": ".ds-site-header{box-sizing:border-box;background:var(--color-ink, #291e2e);color:var(--color-paper, #f3eaf3);font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;min-height:6.51vw;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 6.64% 1rem 6.25%;position:relative;z-index:10}.ds-site-header a{color:inherit;text-underline-offset:.22em}.ds-wordmark{font-family:var(--font-alkaline, 'Alkaline', cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;display:inline-block;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav>a{padding-block:.75rem;text-decoration:none;white-space:nowrap}.ds-desktop-nav>a:hover,.ds-desktop-nav>a[aria-current]{text-decoration:underline;text-decoration-thickness:2px}.ds-desktop-nav .ds-nav-booking{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border:1px solid #f3eaf3a0;border-radius:5px;position:relative;top:.26vw;width:15.23vw;height:3.38vw;padding:0;font-size:.98vw}.ds-mobile-menu{display:none}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-site-header:focus-visible,.ds-site-header :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:1050px){.ds-desktop-nav{gap:1.2rem;font-size:.95rem}}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}.ds-mobile-menu{display:block}.ds-mobile-menu summary{display:flex;gap:.8rem;align-items:center;padding:.65rem .15rem;list-style:none;font-size:1rem;cursor:pointer}.ds-mobile-menu summary::-webkit-details-marker{display:none}.ds-menu-icon{width:19px;height:9px;border-top:1px solid;border-bottom:1px solid}.ds-mobile-menu nav{color:var(--color-ink, #291e2e);position:absolute;inset:100% 0 auto;display:flex;flex-direction:column;background:var(--color-paper, #f3eaf3);padding:1rem 6% 1.8rem;border-bottom:1px solid var(--color-ink, #291e2e)}.ds-mobile-menu nav a{box-sizing:border-box;min-height:48px;padding-block:.8rem;display:flex;align-items:center;gap:1rem}.ds-mobile-menu nav a+a{border-top:1px solid #291e2e30}}"
+      "description": "Phase 1 header: cyan field, single Alkaline wordmark, Barlow links, and outlined Walkthrough booking control.",
+      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough</a></nav></header>",
+      "css": ".ds-site-header{box-sizing:border-box;background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 7%;}.ds-wordmark{font-family:var(--font-alkaline,'Alkaline',cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;color:inherit;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav a{color:inherit;text-decoration:none;padding-block:.75rem;white-space:nowrap}.ds-desktop-nav a:hover{text-decoration:underline;text-underline-offset:.22em}.ds-nav-booking{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.7rem 1rem;border:1px solid currentColor;border-radius:3px;line-height:1.2;transition:background-color 160ms ease,color 160ms ease}.ds-nav-booking:hover,.ds-nav-booking:focus-visible{background:var(--color-paper,#fff);color:var(--color-ink,#102a33)}.ds-site-header :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}}"
     },
     {
-      "name": "Archive entry",
+      "name": "Yellow Walkthrough button",
+      "kind": "button",
+      "refersTo": "button-yellow",
+      "description": "Primary Phase 1 action in the opening: yellow emphasis, ink text, shared arrow, paper feedback state.",
+      "html": "<a class=\"ds-button\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33);transition:background-color 160ms ease,color 160ms ease,transform 400ms linear(0,.2175,.5207,.7361,.8631,.9317,.9668,.9842,.9926,.9966,.9984,.9993,1)}.ds-button:hover,.ds-button:focus-visible,.ds-button:active{background:var(--color-paper,#fff)}.ds-button:active{transform:scale(.985)}.ds-button:focus-visible{outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px;flex-shrink:0;transition:transform 400ms linear(0,.2175,.5207,.7361,.8631,.9317,.9668,.9842,.9926,.9966,.9984,.9993,1)}.ds-button:hover .ds-arrow,.ds-button:focus-visible .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px;width:100%}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-arrow{transition:none}}"
+    },
+    {
+      "name": "Opening argument block",
       "kind": "custom",
-      "refersTo": "archive-row",
-      "description": "A whole linked row; metadata placeholders identify the original date and reading-time positions.",
-      "html": "<a class=\"ds-essay-row\" href=\"#essay\"><div><h3>Your metrics are bullshit</h3><p>Breaking the doom cycle of support metrics with service level thinking</p><span class=\"ds-essay-meta\">Original date <span>Reading time</span></span></div><svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-essay-row{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);display:flex;align-items:center;justify-content:space-between;gap:2rem;text-decoration:none;padding:2.2rem 0}.ds-essay-row h3{margin:0;font-size:clamp(1.5rem,2.5vw,2rem);font-weight:600;line-height:1.2;text-wrap:balance}.ds-essay-row p{max-width:66ch;font-size:1.05rem;margin:.8rem 0 0}.ds-essay-row:hover h3{color:var(--color-aubergine, #563750);text-decoration:underline;text-underline-offset:.15em}.ds-essay-meta{font-family:var(--font-mono, 'Commit Mono', ui-monospace, monospace);display:flex;gap:1.5rem;font-size:.875rem;margin-top:1.1rem}.ds-essay-meta>span{border-left:1px solid #291e2e60;padding-left:1.5rem}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-essay-row:focus-visible,.ds-essay-row :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-essay-row{padding:1.7rem 0;gap:1rem}.ds-essay-row h3{font-size:1.5rem}.ds-essay-row p{font-size:1rem}.ds-essay-row>.ds-arrow{width:20px;align-self:flex-start;margin-top:.25rem}.ds-essay-meta{font-size:.8rem;gap:1rem}.ds-essay-meta>span{padding-left:1rem}}"
+      "description": "The completed Phase 1 first viewport: large Barlow question, first-person explanation, and yellow Walkthrough action on cyan.",
+      "html": "<section class=\"ds-home-opening\" aria-labelledby=\"ds-home-heading\"><div class=\"ds-home-hero\"><h1 id=\"ds-home-heading\">Why does everything<br> come back to you?</h1><div class=\"ds-hero-copy\"><div><p class=\"ds-hero-introduction\">I help businesses untangle work that’s become harder to keep up with.</p><p class=\"ds-hero-explanation\">Your team shows me where the work gets stuck. I build the fix, so it stops coming back to you.</p></div><div class=\"ds-hero-action\"><a class=\"ds-button\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a><p class=\"ds-terms\">A pitch-free hour. A written report within three business days. Yours to keep.</p></div></div></div></section>",
+      "css": ".ds-home-opening{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif)}.ds-home-hero{padding:clamp(2.5rem,4vw,4rem) 7% clamp(3rem,5vw,5rem)}.ds-home-hero h1{max-width:22ch;margin:0;font-size:clamp(3rem,6.65vw,6rem);font-weight:600;line-height:1.02;letter-spacing:-.025em}.ds-hero-copy{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:8%;align-items:center;margin-top:2.5rem}.ds-hero-introduction{font-size:clamp(1.35rem,1.7vw,1.6rem);line-height:1.4;max-width:46ch;margin:0}.ds-hero-explanation{font-size:1.125rem;line-height:1.55;margin:1rem 0 0;max-width:54ch}.ds-hero-action{justify-self:end;max-width:25rem}.ds-button{box-sizing:border-box;min-height:62px;width:100%;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-size:1.075rem;font-weight:600;text-decoration:none;border-radius:5px;background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px}.ds-terms{font-size:1rem;line-height:1.5;margin:1rem 0 0;max-width:38ch}@media(max-width:1100px){.ds-home-hero{padding-inline:6%}.ds-hero-copy{gap:5%}}@media(max-width:760px){.ds-home-hero{padding:2rem 6% 2.5rem}.ds-home-hero h1{font-size:clamp(2.7rem,10.8vw,4.5rem)}.ds-hero-copy{grid-template-columns:1fr;gap:1.5rem;margin-top:1.5rem}.ds-hero-introduction{font-size:1.25rem}.ds-hero-explanation{font-size:1.0625rem}.ds-hero-action{justify-self:stretch;max-width:none}.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}.ds-terms{font-size:.95rem}}"
     },
     {
-      "name": "Editorial note",
+      "name": "Walkthrough report figure",
       "kind": "custom",
-      "refersTo": "article-note",
-      "description": "Original editorial note content in a quiet lilac wash; its title belongs to the source.",
-      "html": "<aside class=\"ds-article-note\" role=\"note\"><p class=\"ds-article-note-title\">About this post</p><p>Nick here: BCC is a series of anonymized posts enabling Support Professionals to publish their thoughts and create public discussion about topics that would otherwise happen in private DMs. The Yetto team is deeply excited to present today&#x27;s post -- our first in this series -- and we believe it&#x27;s both timely and unbelievably well argued.</p><p>*Are you a support professional who has something to say? Reach out to Brian (@balevine) or Nick (@birdcar) In the Support Driven or Elevate CX Slack communities, we&#x27;d love to chat.*</p></aside>",
-      "css": ".ds-article-note{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.1875rem;line-height:1.8;color:var(--color-ink, #291e2e);margin-block:2rem;padding:1.5rem;background:#d9c9f830}.ds-article-note p{margin:0}.ds-article-note>p+p{margin-top:1em}.ds-article-note-title{font-weight:600}.ds-article-note:focus-visible,.ds-article-note :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-article-note{font-size:1.125rem;line-height:1.75}}"
-    },
-    {
-      "name": "Assessment report panel",
-      "kind": "card",
-      "refersTo": "report-panel",
-      "description": "Level, pale report-contents panel with fine rules and no logo.",
-      "html": "<aside class=\"ds-offer-report\"><h2>A clearer picture.<br>A useful next step.</h2><p>Your assessment report</p><dl><div><dt>What’s happening</dt><dd>The problems I’ve understood from your work.</dd></div><div><dt>What I recommend</dt><dd>Improvements worth considering for your business.</dd></div><div><dt>Something to work from</dt><dd>A written report you can put to use, with or without me.</dd></div></dl><span class=\"ds-report-signoff\">Yours to keep.</span></aside>",
-      "css": ".ds-offer-report{background:var(--color-paper, #f3eaf3);color:var(--color-ink, #291e2e);font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);line-height:1.55;padding:2.5rem;border-radius:5px}.ds-offer-report h2{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.8rem;line-height:1.15;font-weight:600;margin:0}.ds-offer-report>p{font-size:.9rem;margin:.75rem 0 0}.ds-offer-report dl{margin:1.5rem 0 0}.ds-offer-report dl>div{padding:1rem 0;border-top:1px solid #291e2e40}.ds-offer-report dt{font-size:1rem;font-weight:600}.ds-offer-report dd{font-size:.95rem;line-height:1.4;margin:.4rem 0 0}.ds-report-signoff{font-family:var(--font-alkaline, 'Alkaline', cursive);font-size:2.2rem;display:block;color:var(--color-aubergine, #563750);margin-top:1rem}@media(max-width:1050px){.ds-offer-report{padding:1.5rem}}@media(max-width:760px){.ds-offer-report{padding:1.7rem}.ds-offer-report h2{font-size:1.7rem}}"
-    },
-    {
-      "name": "Assessment question",
-      "kind": "custom",
-      "description": "Native disclosure with fine rules and an arrow that follows the open state.",
-      "html": "<div class=\"ds-assessment-faq\"><details><summary>Is the assessment really free?<svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></summary><p>Yes. The conversation and the written report are free. You don’t have to buy implementation to receive or use the report.</p></details></div>",
-      "css": ".ds-assessment-faq{font-family:var(--font-sans, 'Karla', ui-sans-serif, system-ui, sans-serif);font-size:1.125rem;line-height:1.55;color:var(--color-ink, #291e2e)}.ds-assessment-faq details{border-top:1px solid #291e2e60}.ds-assessment-faq details:last-child{border-bottom:1px solid #291e2e60}.ds-assessment-faq summary{list-style:none;padding-block:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1.5rem;font-weight:500;cursor:pointer}.ds-assessment-faq summary::-webkit-details-marker{display:none}.ds-arrow{width:24px;height:24px;flex-shrink:0}.ds-assessment-faq summary .ds-arrow{transform:rotate(90deg);width:20px}.ds-assessment-faq details[open] summary .ds-arrow{transform:rotate(-90deg)}.ds-assessment-faq details p{margin:0;padding-bottom:1.5rem;font-size:1.0625rem}.ds-assessment-faq:focus-visible,.ds-assessment-faq :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-assessment-faq summary,.ds-assessment-faq details p{font-size:1rem}}"
+      "refersTo": "report-document",
+      "description": "Static extraction of the implemented Phase 1 figure, including its report, connectors, three optional choices, responsive sequence, and print rules.",
+      "html": "<figure class=\"ds-walkthrough-diagram\">\n    <ol class=\"ds-walkthrough-stages\" role=\"list\">\n        <li class=\"ds-bring-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>1</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Bring the work</h3>\n            <p>Pick a process your team actually performs: chasing a follow-up, putting a report together, getting a new client started.</p>\n            <p>You don’t need to diagnose the problem or specify software.</p>\n        </li>\n        <li class=\"ds-conversation-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>2</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Talk it through</h3>\n            <p>Then spend roughly one hour with me and the person doing the work. Show me what happens, including the awkward bits.</p>\n            <p>Free and pitch-free. If you want to talk about hiring me, you’ll bring it up, not me.</p>\n            <svg class=\"ds-report-handoff\" viewBox=\"0 0 100 24\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M0 12H98m-8-7 8 7-8 7\" /></svg>\n        </li>\n        <li class=\"ds-report-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>3</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Keep the report</h3>\n            <p>Within three business days of our conversation, I’ll send you a written report with:</p>\n            <div class=\"ds-report-document\">\n                <svg class=\"ds-report-outline\" viewBox=\"0 0 360 380\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 1H322L359 38V379H1ZM322 1V38H359\" /></svg>\n                <dl class=\"ds-report-contents\">\n                    <div><dt>What’s getting in the way</dt><dd>The problems I observed in the work.</dd></div>\n                    <div><dt>What I’d change</dt><dd>Recommended improvements and why they help.</dd></div>\n                    <div class=\"ds-first-recommendation\"><dt>Where I’d start</dt><dd>The first change and why it comes first.</dd></div>\n                </dl>\n            </div>\n        </li>\n        <li class=\"ds-choice-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\"><span>4</span></div>\n            <h3>Choose what happens next</h3>\n            <p>Once you have the report, the next step is yours:</p>\n            <ul class=\"ds-walkthrough-choices\" role=\"list\">\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V60M1 30H30m-8-6 8 6-8 6\" /></svg>Use the recommendations independently.</li>\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V60M1 30H30m-8-6 8 6-8 6\" /></svg>Discuss separate implementation with me.</li>\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V30H30m-8-6 8 6-8 6\" /></svg>Or do nothing. No purchase obligation.</li>\n            </ul>\n        </li>\n    </ol>\n    <figcaption>A real process, a free conversation, a report you keep. What you do with it is up to you.</figcaption>\n</figure>",
+      "css": ".ds-walkthrough-diagram{font-family:var(--font-marketing,Barlow,ui-sans-serif,system-ui,sans-serif);font-size:1.125rem;line-height:1.55;color:var(--color-ink,#102a33)}.ds-walkthrough-diagram *{box-sizing:border-box}.ds-walkthrough-diagram :is(h3,p,dl,ul){margin:0}.ds-walkthrough-diagram p+p{margin-top:1em}.ds-walkthrough-diagram { margin: 2.5rem 0 0; }.ds-walkthrough-stages { display: grid; grid-template-columns: .95fr 1.25fr .85fr; gap: 0 4rem; margin: 0; padding: 0; list-style: none; }.ds-walkthrough-stages > li { min-width: 0; position: relative; }.ds-bring-stage, .ds-conversation-stage { grid-column: 1; padding-left: 3.5rem; }.ds-bring-stage { padding-bottom: 2.5rem; }.ds-conversation-stage { grid-row: 2; }.ds-report-stage { grid-column: 2; grid-row: 1 / span 2; }.ds-choice-stage { grid-column: 3; grid-row: 1 / span 2; align-self: center; }.ds-stage-connection { margin-bottom: 1rem; }.ds-stage-connection span { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border: 1px solid var(--color-ink,#102a33); border-radius: 50%; font-weight: 600; background: var(--color-cyan,#b7edf1); flex-shrink: 0; }.ds-walkthrough-diagram svg { overflow: visible; fill: none; stroke: var(--color-ink,#102a33); stroke-width: 1.25; }.ds-walkthrough-diagram path { vector-effect: non-scaling-stroke; }.ds-stage-connection svg { display: none; }.ds-bring-stage .ds-stage-connection, .ds-conversation-stage .ds-stage-connection { position: absolute; inset: 0 auto 0 0; width: 2.5rem; margin: 0; }.ds-bring-stage .ds-stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); }.ds-report-handoff { position: absolute; right: -3.4rem; top: 1.25rem; width: 2.8rem; height: 24px; }.ds-walkthrough-stages h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.15; margin-bottom: 1rem; text-wrap: initial; }.ds-walkthrough-stages p, .ds-walkthrough-choices { font-size: 1rem; line-height: 1.5; }.ds-report-stage h3 { font-size: 2rem; }.ds-report-document { position: relative; margin-top: 1.5rem; }.ds-report-document .ds-report-outline { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--color-paper,#fff); }.ds-report-contents { position: relative; padding: 2rem 1.5rem 1.5rem; font-size: 1.125rem; }.ds-report-contents > div { padding-block: 1rem; }.ds-report-contents > div + div { border-top: 1px solid var(--color-ink,#102a33); }.ds-report-contents dt { font-weight: 600; }.ds-report-contents dd { margin: .35rem 0 0; font-size: 1rem; }.ds-report-contents .ds-first-recommendation { background: var(--color-emphasis,#f7cb58); padding: 1rem; border: 0; }.ds-walkthrough-choices { position: relative; list-style: none; padding: 0; margin-top: 1.5rem; }.ds-walkthrough-choices::before { content: ''; position: absolute; top: 0; left: -4rem; width: 4rem; border-top: 1px solid var(--color-ink,#102a33); }.ds-walkthrough-choices li { position: relative; padding: .8rem 0 .8rem 2.8rem; }.ds-walkthrough-choices svg { position: absolute; top: 0; left: 0; width: 32px; height: 100%; }.ds-walkthrough-diagram figcaption { border-top: 1px solid var(--color-ink,#102a33); padding-top: 1.25rem; margin-top: 2rem; font-size: 1rem; }@media (max-width: 1100px) { .ds-walkthrough-stages { grid-template-columns: 1fr; gap: 0; } }@media (max-width: 1100px) { .ds-walkthrough-stages > li { grid-column: auto; grid-row: auto; padding: 0 0 2rem 3.5rem; } }@media (max-width: 1100px) { .ds-walkthrough-stages > li:last-child { padding-bottom: 0; } }@media (max-width: 1100px) { .ds-stage-connection { position: absolute; top: 0; left: 0; bottom: 0; width: 2.5rem; margin: 0; } }@media (max-width: 1100px) { .ds-stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); } }@media (max-width: 1100px) { .ds-walkthrough-stages h3 { padding-top: .3rem; } }@media (max-width: 1100px) { .ds-walkthrough-stages p { max-width: 62ch; } }@media (max-width: 1100px) { .ds-report-document { max-width: 32rem; } }@media (max-width: 1100px) { .ds-report-contents { padding: 1.5rem 1rem 1rem; } }@media (max-width: 1100px) { .ds-report-handoff, .ds-walkthrough-choices::before { display: none; } }@media print { .ds-walkthrough-stages { display: block; } }@media print { .ds-walkthrough-stages > li { position: relative; padding: 0 0 1.25rem 3.5rem; break-inside: avoid; } }@media print { .ds-stage-connection { position: absolute; top: 0; left: 0; } }@media print { .ds-stage-connection svg, .ds-bring-stage .ds-stage-connection svg, .ds-report-handoff, .ds-walkthrough-choices::before { display: none; } }@media print { .ds-report-stage h3 { font-size: 1.5rem; } }@media print { .ds-report-document { max-width: 32rem; } }@media print { .ds-report-contents { padding: 1.5rem; } }@media print { .ds-stage-connection span, .ds-report-contents .ds-first-recommendation { background: white; color: black; border: 1px solid black; transform: none !important; } }@media print { .ds-walkthrough-stages p, .ds-walkthrough-choices, .ds-report-contents { font-size: 11pt; } }@media print { .ds-walkthrough-diagram figcaption { break-before: avoid; } }"
     }
   ],
   "narrative": {
-    "northStar": "Future, in person",
-    "overview": "Birdcar presents one person's technical expertise through expressive lettering and direct, readable explanation. Black cherry openings, pale orchid reading space, and a restrained luminous horizon connect the owner's Silicon Valley technology identity to a personal conversation. Typography supplies most of the visual character.\n\nThe public marketing pages use custom UI with licensed Alkaline, Karla, and Commit Mono. Broad flat sections, measured controls, fine rules, and generous prose spacing keep the experience clean and classic. Motion adds a brief opening gesture while the text and actions remain available without it.\n\nAdmin and customer project surfaces use Flux UI Pro with Inter. Their operational themes and component states are separate from these marketing tokens and were not established by this build.",
+    "northStar": "The clear argument",
+    "overview": "Phase 1 establishes the new marketing visual foundation through the homepage opening and the Walkthrough figure only. The built world is direct and explanatory: cyan editorial fields, blue-green ink, white explanatory space, yellow recommendation emphasis, upright Barlow type, and a single retained Alkaline wordmark. The composition makes the argument readable before it becomes decorative.\n\nThe completed Phase 1 surface covers the header, first viewport, Walkthrough explanation, geometric SVG/HTML report figure, and their responsive/static behavior. The lower homepage still carries retained narrative and older section structure; Writing, Work, Walkthrough detail, and other marketing pages have inherited some shared color/type CSS but are not visually finished. They await Phases 2–3. Print support is an early static sketch, not a finished print specimen.\n\nAdmin and customer project surfaces remain separate Flux UI Pro surfaces using Inter. Marketing uses `--font-marketing` Barlow for text and hierarchy, with Alkaline only for the header wordmark. No shipping raster was created for Phase 1; retired horizon assets remain legacy material for Phase 4 decisions, not current system tokens.",
     "keyCharacteristics": [
-      "Licensed Alkaline for the single header wordmark and expressive headings.",
-      "Karla for explanation and reading; Commit Mono for selected details and code.",
-      "Black cherry, pale orchid, and lilac fields with aubergine supporting sections.",
-      "Flat surfaces, lightly rounded controls, and continuous reading columns.",
-      "A luminous homepage horizon and a short, reduced-motion-aware opening sequence."
+      "Cyan opening field with ink typography and a yellow booking action.",
+      "Upright Barlow hierarchy; Alkaline appears once as the native-tracked wordmark.",
+      "Figure-led explanation: preparatory stages fold into a geometric report, then branch to three optional choices.",
+      "Flat surfaces, hard SVG strokes, square report geometry, and sparse rounded controls.",
+      "Static meaning first; optional Motion only emphasizes already-visible diagram relationships."
     ],
     "rules": [
       {
-        "name": "The Field Pairing Rule",
-        "body": "Use paper text on ink or aubergine, and ink text on paper or lilac. Keep these pairings when adapting actions to another section.",
+        "name": "The Argument Contrast Rule",
+        "body": "Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.",
         "section": "colors"
       },
       {
-        "name": "The Single Wordmark Rule",
-        "body": "Render the Birdcar wordmark once, in the header. Footer copy, article bylines, and the personal section use ordinary text; do not add logo signatures to them.",
+        "name": "The One Script Rule",
+        "body": "Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, or footer logos from the retired direction.",
         "section": "typography"
       },
       {
-        "name": "The Reading Voice Rule",
-        "body": "Introduce an essay with Alkaline and carry its reasoning with Karla. Keep source note titles and original editorial content within the reading hierarchy.",
+        "name": "The Upright Argument Rule",
+        "body": "Marketing headings in this phase are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.",
         "section": "typography"
       },
       {
-        "name": "The Reading Order Rule",
-        "body": "Reflow headings, explanation, actions, and supporting material in their document order on mobile. Preserve full words, readable figures, and space around controls.",
+        "name": "The Static Meaning Rule",
+        "body": "The page must read completely as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.",
         "section": "layout"
       },
       {
-        "name": "The Flat Field Rule",
-        "body": "Establish hierarchy with type, space, color, and boundaries. Reserve the visible outer shadow for keyboard focus, where it communicates state.",
+        "name": "The Flat Report Rule",
+        "body": "The report figure is a geometric explanation, not a mock client artifact or screenshot. Keep it level, stroked, and readable.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** use the licensed Alkaline files for the single header wordmark and expressive marketing headings.",
-      "**Do** use Karla for readable explanation and Commit Mono selectively for measured details and code.",
-      "**Do** preserve the Field Pairing Rule and the two-color button focus treatment.",
-      "**Do** keep essays continuous, preserving source notes, complete text, links, dates, and figure meaning.",
-      "**Do** keep content and native controls usable without animation or JavaScript.",
-      "**Do** use Flux UI Pro and Inter for the separate Admin and customer surfaces."
+      "**Do** use cyan, ink, white, and yellow to make the first argument clear.",
+      "**Do** keep the report/branch relationships visible in static HTML and SVG.",
+      "**Do** keep Alkaline to the one header wordmark and Barlow for marketing text.",
+      "**Do** treat Phase 1 as implemented foundation/opening/figure only; record owner visual gate as pending before Phase 2.",
+      "**Do** preserve reduced-motion, print-static, no-JavaScript, and semantic-reading fallbacks."
     ],
     "donts": [
-      "**Don't** repeat the logo in the footer, article ending, personal section, or report panel.",
-      "**Don't** turn the homepage's display scale or decorative horizon into a requirement for every page.",
-      "**Don't** treat conceptual imagery or diagrams as client screenshots or measured proof.",
-      "**Don't** carry unused legacy selectors, bundled-but-unused type roles, or generated sidecar ramps into new UI as established patterns."
+      "**Don't** describe all marketing pages as visually finished because shared CSS reaches them.",
+      "**Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.",
+      "**Don't** turn the diagram into proof, a client screenshot, or a fabricated report artifact.",
+      "**Don't** make yellow a general field color; reserve it for action/recommendation emphasis.",
+      "**Don't** start Phase 2 until the owner visual gate approves the real desktop/mobile opening and static/print sketch."
     ]
   }
 }

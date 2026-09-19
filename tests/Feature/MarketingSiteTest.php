@@ -2,6 +2,7 @@
 
 use App\Actions\ReadWriting;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Blade;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-12');
@@ -27,6 +28,51 @@ test('the homepage presents the approved offer and only the approved work story'
         ->assertDontSee('DataDash')
         ->assertDontSee('more than fifteen years')
         ->assertDontSee('Your AI wrote a bug');
+});
+
+test('the homepage explains the whole walkthrough in visible reading order before the work story', function () {
+    $response = $this->get('/')->assertOk()->assertSeeTextInOrder([
+        'Why does everything',
+        'Book a free Walkthrough',
+        'Bring the work',
+        'You don’t need to diagnose the problem or specify software.',
+        'Talk it through',
+        'roughly one hour',
+        'Free and pitch-free.',
+        'Keep the report',
+        'Within three business days of our conversation',
+        'What’s getting in the way',
+        'What I’d change',
+        'Where I’d start',
+        'The first change and why it comes first.',
+        'Choose what happens next',
+        'Use the recommendations independently.',
+        'Discuss separate implementation with me.',
+        'Or do nothing. No purchase obligation.',
+        'A real process, a free conversation, a report you keep.',
+        'Craft &amp; Communicate',
+    ], false);
+
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//figure[@data-walkthrough-diagram]/ol/li'))->toHaveCount(4);
+    expect($xpath->query('//figure[@data-walkthrough-diagram]//*[@hidden or @aria-hidden="true"]//p'))->toHaveCount(0);
+    expect($xpath->query('//figure[@data-walkthrough-diagram]//svg[not(@aria-hidden="true" or ancestor::*[@aria-hidden="true"])]'))->toHaveCount(0);
+    $response->assertDontSee('future-horizon')->assertDontSee('Direction contract');
+});
+
+test('repeated walkthrough figures keep complete semantic explanations without duplicate identifiers', function () {
+    $html = Blade::render('<x-marketing.walkthrough-diagram /><x-marketing.walkthrough-diagram />');
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//figure'))->toHaveCount(2);
+    expect($xpath->query('//figure/figcaption'))->toHaveCount(2);
+    expect($xpath->query('//figure/ol/li/h3'))->toHaveCount(8);
+    expect($xpath->query('//*[@id or @aria-labelledby or @aria-describedby]'))->toHaveCount(0);
 });
 
 test('the selected work page names the client without private engagement details', function () {

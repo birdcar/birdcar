@@ -13,3 +13,6 @@ Marketing copy says “I help businesses” and “fifteen years.” Public work
 
 ## Future, in person marketing identity
 The user selected the Future, in person redesign on 2026-09-13: licensed Alkaline for the single header wordmark and display headings, Karla body text, Commit Mono for measured details/code. This replaces the previous Barlow marketing guidance. Keep the logo only in the header; no repeated footer or article signatures. Preserve approved copy, the free Walkthrough/report offer, and the original archive. DESIGN.md records the built palette and responsive motion behavior.
+
+## The clear argument supersedes Future, in person
+Owner-selected direction, 2026-09-18: retain only the licensed Alkaline header wordmark (once, native tracking); replace the purple/horizon/Karla/script-heading identity with cyan editorial fields, blue-green ink, yellow emphasis, white, and upright sans-serif type. Barlow is the prototype starting point, subject to owner review. Author nontechnical SVG/HTML explanations with complete static meaning for marketing, writing, and print. Keep Admin/customer Inter typography separate. PRODUCT.md and the new homepage surface brief supersede the older Future, in person rule; implementation QA never substitutes for owner visual approval.

@@ -13,7 +13,7 @@
         @stack('head')
     </head>
     @php($posthog = app(\App\Services\PostHogService::class)->browserConfig())
-    <body @class(['reading-page' => $article, 'home-page' => $home]) @if ($posthog) data-posthog-token="{{ $posthog['token'] }}" data-posthog-host="{{ $posthog['host'] }}" @endif>
+    <body @class(['marketing-page', 'reading-page' => $article, 'home-page' => $home]) @if ($posthog) data-posthog-token="{{ $posthog['token'] }}" data-posthog-host="{{ $posthog['host'] }}" @endif>
         <a class="skip-link" href="#main">Skip to content</a>
         <header class="site-header">
             <a class="wordmark" href="{{ route('public.index') }}" aria-label="Birdcar home">Birdcar</a>

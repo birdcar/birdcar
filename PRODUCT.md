@@ -244,16 +244,21 @@ and permissions remain to be designed.
 - Write new marketing and relationship copy in first-person singular: I, me, my.
   Do not use corporate we, us, our, or imply an agency team. Describe collaboration
   as working with the client and their team; attribute actual collaborators by name.
-- Use the bundled custom fonts in `resources/fonts/` for the marketing logo and
-  display text. The available families are Alkaline and Alkaline Caps.
+- Retain the licensed Alkaline header wordmark, once per page and with native
+  tracking. It is the only mandatory visual anchor. The owner selected a new
+  visual world, The clear argument, on 2026-09-18: cyan editorial fields,
+  blue-green ink, yellow emphasis, white, and upright sans-serif hierarchy.
+  Begin with Barlow through the existing font pipeline, subject to prototype
+  review. Purple, the horizon, Karla, and script headings are not commitments.
 - The brand brings the future of Silicon Valley technology into the client's
   business. Technical sophistication and glitz are welcome; the owner's helpful
   voice and direct involvement carry the personal relationship. Regional buyer
   relevance must not make the brand look solely like a local consultancy.
-- Prefer clean, classic design led by typography and purposeful animation.
-  Motion is installed. Use the licensed, installed Alkaline files for the logo;
-  main and secondary headings may also use Alkaline. Compatible sans and mono
-  pairings are open to the selected visual direction.
+- Prefer clean, classic design led by typography and purposeful explanation.
+  Author nontechnical diagrams, SVGs, and infographics for the site, Writing,
+  and print. Every essential relationship must remain understandable in a
+  complete static version. Optional Motion guides attention rather than
+  revealing missing meaning. Commit Mono is for code, not a label costume.
 - Include answer-engine discovery foundations from launch. Public content must
   remain useful, server-rendered, crawlable and accurately described in metadata,
   even when JavaScript or animation is unavailable. Preserve private-surface

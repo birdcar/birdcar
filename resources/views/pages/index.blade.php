@@ -7,16 +7,26 @@ name('public.index');
 ?>
 <x-marketing.layout :home="true">
     <section class="home-opening" aria-labelledby="home-heading">
-        <img class="future-horizon" src="{{ asset('images/future-horizon.png') }}" alt="" width="2172" height="724" fetchpriority="high">
         <div class="home-hero">
-            <h1 id="home-heading"><span>Make room</span><span>for better</span><span>work.</span></h1>
+            <h1 id="home-heading">Why does everything<br class="desktop-break"> come back to you?</h1>
             <div class="hero-copy">
-                <p class="hero-introduction">I help businesses untangle work that’s become harder to keep up with.</p>
-                <p class="hero-explanation">Your team shows me where the work gets stuck. I build the fix, so it stops coming back to you.</p>
-                <x-marketing.booking-link class="button button-lilac" placement="hero">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
-                <p class="assessment-terms">About an hour. A free Walkthrough. A written report within three business days.</p>
+                <div>
+                    <p class="hero-introduction">I help businesses untangle work that’s become harder to keep up with.</p>
+                    <p class="hero-explanation">Your team shows me where the work gets stuck. I build the fix, so it stops coming back to you.</p>
+                </div>
+                <div class="hero-action">
+                    <x-marketing.booking-link class="button button-yellow" placement="hero">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                    <p class="assessment-terms">A pitch-free hour. A written report within three business days. Yours to keep.</p>
+                </div>
             </div>
         </div>
+    </section>
+    <section class="home-walkthrough" aria-labelledby="walkthrough-heading">
+        <div class="walkthrough-introduction">
+            <h2 id="walkthrough-heading">Start with the work.<br>Leave with a way forward.</h2>
+            <p>You don’t need a software brief. Just a process that’s harder than it should be. Here’s how the free Walkthrough turns that conversation into something you can use.</p>
+        </div>
+        <x-marketing.walkthrough-diagram />
     </section>
     <section class="home-work" aria-labelledby="work-heading">
         <h2 id="work-heading">Work in practice.</h2>
