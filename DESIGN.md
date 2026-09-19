@@ -1,6 +1,6 @@
 ---
 name: Birdcar — The clear argument
-description: "Reviewed Phase 2 marketing system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, ink personal notes, Barlow hierarchy, and one Alkaline wordmark."
+description: "Reviewed Phase 3 marketing and Reading/print system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, Barlow reading hierarchy, Commit Mono code, static figures, and one Alkaline wordmark."
 colors:
   ink: "#102a33"
   paper: "#ffffff"
@@ -148,19 +148,20 @@ components:
 
 **Creative North Star: "The clear argument"**
 
-Phase 2 extends the approved Phase 1 foundation across the reviewed homepage, Walkthrough page, and Work page. The system is still direct and explanatory: cyan editorial fields introduce invitations and offers, blue-green ink carries copy and linework, white creates implementation and reading space, yellow marks the useful action or first recommendation, and Barlow makes the reasoning feel upright rather than decorative.
+Phase 3 extends the approved Phase 1 foundation and shipped Phase 2 marketing system into Writing, long-form articles, authored article figures, and local print review. The system remains direct and explanatory: cyan editorial fields introduce invitations and archives, blue-green ink carries prose and linework, white creates sustained reading space, yellow marks useful recommendations, Barlow keeps the argument upright, and Commit Mono appears only for code.
 
-The reviewed Phase 2 surfaces are complete at bounded-review scope: homepage, Walkthrough, and Work. That is not an owner approval of new pages, and it does not expand the existing Phase 1 owner approval beyond the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. The finish reviewer disposition was ship with no fixes, and the independent proof-boundary review reported no findings.
+The reviewed Phase 3 Reading/print extension is complete at bounded-review scope: Writing index, individual article pages, article note/chart/diagram treatments, and the local-only figure specimen. This does not expand the existing Phase 1 owner approval beyond the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. Phase 2 remains the shipped homepage/Walkthrough/Work system. Phase 3 QA is a finish-review disposition, not owner launch approval.
 
-Writing/articles and a finished print specimen await Phase 3. The current article CSS is an inherited, usable reading treatment in the same token family, not a completed Phase 2 article design. No shipping raster was created; the reviewed screenshots are evidence, not product assets.
+The Phase 3 independent review disposition was ship with no material fixes. Evidence includes 390/768/1440 Reading captures and Letter/A4 print captures for archive, articles, and the specimen under `.impeccable/review/phase-3-*` and `.impeccable/review/print/phase-3-specimen-{Letter,A4}-{1,2,3}.png`. No shipping raster or PDF product was created; print artifacts are local review evidence only.
 
 **Key Characteristics:**
 
 - Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.
 - Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.
-- Authored static figures: the Walkthrough report diagram and the shared reporting component used on the homepage and Work page.
-- Flat surfaces, thin ink rules, square report/platform geometry, and sparse rounded controls.
-- Current navigation in header and footer: How I work, Selected work, Writing, and The Walkthrough, with native mobile details/summary fallback.
+- Authored static figures: the Walkthrough report diagram, the shared reporting component, and the article diagram wrapper for only those two approved subjects.
+- 65ch article prose, article headings capped at `4.5rem`, visible chart data tables in print, scrollable small-screen plots with explicit hints, and 16mm paper margins without forced page size.
+- Flat surfaces, thin ink rules, square report/platform geometry, sparse rounded controls, and two-column numbered Walkthrough stages in print.
+- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough.” Native mobile details/summary remains; print hides navigation and booking chrome.
 
 ## Colors
 
@@ -179,7 +180,7 @@ The palette is small and semantic. Cyan is the public invitation field, ink is b
 
 - **Blue-green ink:** body text, large headings, borders, rules, arrows, SVG connectors, selected calendar day, and the dark personal-note field.
 - **White paper:** page background, report/platform cards, mobile menu, calendar shell, and implementation approach sections.
-- **Cyan wash:** article notes, blockquotes, chart panels, and inherited reading aids awaiting Phase 3 refinement.
+- **Cyan wash:** article notes, blockquotes, and article diagram fields in the completed Reading extension. Chart plots remain on white with ink rules.
 - **Soft ink rules:** translucent ink rules separate footer, article rows, FAQ rows, and archive lines.
 
 **The Argument Contrast Rule.** Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.
@@ -191,9 +192,9 @@ The palette is small and semantic. Cyan is the public invitation field, ink is b
 **Display Font:** Barlow via `--font-marketing`, with UI sans-serif/system fallbacks.
 **Wordmark Font:** licensed Alkaline, with cursive fallback.
 **Operational Font:** Inter remains for Admin/customer surfaces only.
-**Mono Font:** Commit Mono exists for code in articles, not marketing labels.
+**Mono Font:** Commit Mono OFL is used for inline code and code blocks in articles, not marketing labels.
 
-Barlow supplies the marketing voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, FAQs, captions, and article prose. Phase 2 intentionally uses more steps than Phase 1 documented; the 87 detector advisories are all literal font-size values already present in CSS and now represented as actual typography roles rather than CSS changes.
+Barlow supplies the marketing and Reading voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, archive rows, long-form prose, captions, and print. Phase 3 intentionally keeps the additional CSS type steps; the 28 font-size detector advisories are documentation advisories, not defects to flatten.
 
 ### Hierarchy
 
@@ -206,13 +207,14 @@ Barlow supplies the marketing voice: plainspoken, technical enough to be precise
 - **Lead:** first-person opening explanation and larger page-summary copy.
 - **Body:** marketing explanation, report body, diagram copy, FAQ answers, and invitation copy.
 - **Compact, caption, and fine:** navigation, figure labels, terms, footer, metadata, chart labels, and small fallback text.
-- **Article prose:** inherited Phase 3 candidate treatment with looser line-height for sustained reading.
+- **Article prose:** 65ch sustained reading column with `1.1875rem` screen text, looser line-height, `1.125rem` mobile step, and 11pt print step.
+- **Article heading:** individual article titles cap at `4.5rem`, wrap at 24ch, and reduce on small screens so long original titles remain readable.
 
 **The One Script Rule.** Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, footer logos, or decorative script emphasis.
 
 **The Upright Argument Rule.** Marketing headings are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.
 
-**The Documented Step Rule.** Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.
+**The Documented Step Rule.** Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, print, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.
 
 ## Layout
 
@@ -222,7 +224,11 @@ The homepage sequence is complete: approved opening, Walkthrough figure, cyan/wh
 
 The current header and footer share the same navigation destinations. Desktop shows inline navigation and an outlined Walkthrough booking control. Mobile uses native `details`/`summary`; JavaScript may close it, but the native fallback remains. Footer navigation keeps the same public destinations and active underline state.
 
-**The Static Meaning Rule.** Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.
+Writing is a reading surface, not a conversion page. The index uses a compact cyan title beside the original introduction, then a chronological white ledger with years in the left column and whole-row essay links. Article pages use a quiet return link, original title/description/date/byline, and a centered 65ch prose column. On small screens, plots remain horizontally scrollable with a visible hint; on print, source tables are visible and chart disclosures do not hide essential data.
+
+Print uses browser output with `@page` margins of 16mm and no forced paper size, so Letter and A4 are both valid review formats. Site navigation, booking chrome, analytics/Cal behaviors, and local development scaffolding do not enter article handouts. The local `/__design/figures` specimen is CSS-only, three pages in both Letter and A4 review captures, and is not a public PDF or reusable handout product.
+
+**The Static Meaning Rule.** Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Article diagrams are static by default; homepage marketing may opt into motion explicitly, but motion cannot supply missing meaning.
 
 ## Elevation & Depth
 
@@ -274,9 +280,21 @@ FAQ rows are native `details` elements with ink rules, a small rotating arrow, d
 
 The inline calendar sits in a white rounded shell on cyan with a plain Cal.com fallback link. The Cal UI uses Birdcar palette inputs: ink brand, deep-teal brand emphasis, paper background, and cyan/dark fallbacks. Modal booking uses the same Cal theme over the page with a native close affordance and the real anchor fallback when the embed cannot take over.
 
+### Writing index
+
+The Writing index is a chronological ledger. A cyan title band introduces the section without turning the archive into a sales page. The archive itself is white, rule-led, grouped by year, and uses whole-row links with deep-teal hover/focus emphasis and RSS kept visible.
+
 ### Article and Writing surfaces
 
-Writing index and article styles currently share Barlow, ink, white, cyan wash notes/charts, deep teal links/charts, and Commit Mono code. They are not Phase 2 finished specimens; Phase 3 owns article art direction and print completion.
+Articles use the original title, description, date, byline, links, notes, chart data, and source text. The reading column is centered at 65ch with Barlow prose, Commit Mono code, cyan-wash notes/blockquotes, deep-teal links and chart marks, and source-data disclosures. Print hides chrome and reveals chart tables so the evidence is visible without interaction.
+
+### Article charts and notes
+
+Article notes are cyan-wash callouts with preserved titles. Charts keep their source values and labels; line charts sit in a scrollable region on small screens with a visible hint, and every chart carries a data disclosure that is visible in print.
+
+### Article diagrams and local specimen
+
+`article-diagram` only renders the Walkthrough and reporting components. Article diagrams are static by default, flow as labeled stages for reading, and switch to print-specific layouts: the Walkthrough becomes two-column numbered stages and reporting keeps the relationship/caption adjacent. The standalone figure specimen is local/testing only, uses the real renderer and CSS, has no analytics or Cal, and exists only as review evidence.
 
 ## Do's and Don'ts
 
@@ -286,12 +304,14 @@ Writing index and article styles currently share Barlow, ink, white, cyan wash n
 - **Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.
 - **Do** keep Alkaline to the one header wordmark and Barlow for marketing text.
 - **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, and no-JavaScript readability.
-- **Do** describe Phase 2 as reviewed and shipped at bounded scope for homepage, Walkthrough, and Work only; keep the existing owner approval scoped to Phase 1.
+- **Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.
+- **Do** describe Phase 2 as reviewed and shipped at bounded scope for homepage, Walkthrough, and Work; describe Phase 3 as implemented and reviewed at bounded Reading/print scope; keep the existing owner approval scoped to Phase 1.
 
 ### Don't:
 
-- **Don't** claim owner approval for Phase 2 pages.
-- **Don't** describe Writing/articles or print as finished Phase 2 design work.
+- **Don't** claim owner launch approval for Phase 2 or Phase 3 pages.
+- **Don't** describe local print artifacts as a PDF product, public handout system, or shipping raster.
 - **Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.
 - **Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.
-- **Don't** change CSS merely to silence undocumented-font-size advisories; document real type roles first.
+- **Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.
+- **Don't** change CSS merely to silence detector advisories; the 28 type-step and 2 print-grayscale color advisories are accepted documentation advisories, not UI changes.

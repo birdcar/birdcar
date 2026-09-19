@@ -1,3 +1,4 @@
+@props(['caption' => null])
 <figure {{ $attributes->class('reporting-diagram') }}>
     <div class="reporting-comparison">
         <div class="reporting-before">
@@ -21,5 +22,5 @@
             </div>
         </div>
     </div>
-    <figcaption>Craft &amp; Communicate’s reporting, illustrated. This shows how the work fits together, not a product screenshot or measured results.</figcaption>
+    <figcaption>@if ($caption)<strong class="diagram-caption">{{ $caption }}</strong>@endif Craft &amp; Communicate’s reporting, illustrated. This shows how the work fits together, not a product screenshot or measured results.</figcaption>
 </figure>

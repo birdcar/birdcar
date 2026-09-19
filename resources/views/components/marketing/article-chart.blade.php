@@ -12,6 +12,8 @@
             @endforeach
         </div>
     @else
+        <p class="chart-scroll-hint">Scroll for the full chart, or view the data below.</p>
+        <div class="chart-scroll" tabindex="0" role="region" aria-label="{{ $label }} by {{ $chart['x'] }}. Scroll to see the whole chart.">
         <svg class="line-chart" viewBox="0 0 640 250" role="img" aria-label="{{ $caption }} Values are in the data table below.">
             @foreach ([0, 400, 800] as $tick)
                 <line x1="42" y1="{{ 214 - $tick / 800 * 178 }}" x2="598" y2="{{ 214 - $tick / 800 * 178 }}" class="chart-grid" />
@@ -24,6 +26,7 @@
                 <text x="{{ 60 + $index * 520 / ($count - 1) }}" y="244" text-anchor="middle" class="chart-axis">{{ $row[$chart['x']] }}</text>
             @endforeach
         </svg>
+        </div>
     @endif
     <figcaption>{{ $caption }}</figcaption>
     <details class="chart-data"><summary>View chart data</summary><table><caption>{{ $caption }}</caption><thead><tr><th scope="col">{{ ucfirst($chart['x']) }}</th><th scope="col">{{ ucfirst($label) }}</th></tr></thead><tbody>@foreach ($chart['data'] as $row)<tr><th scope="row">{{ $row[$chart['x']] }}</th><td>{{ $row[$key] }}</td></tr>@endforeach</tbody></table></details>

@@ -155,3 +155,37 @@
 - **Layout-test fragility** — `MarketingLayoutTest.php` currently hardcodes `.home-work` + `.assessment-strip`; Phase 2 probably changes section names/structure. Adapt to new owner-intent invariant rather than deleting.
 - **No JS booking tests yet** — Contract later calls for `analytics.test.js`/`booking.test.js`, but they do not exist and are not Phase 2 validation. Do not over-scope Phase 2 by adding a broad JS analytics suite unless necessary.
 - **Acceptance-recording risk** — `acceptance.md` currently contains Phase 1 evidence. Phase 2 should record actual commands/review evidence only after they happen; no pre-filled approval.
+
+---
+
+# Phase 3 Context Map: Reading and print
+
+**Phase**: 3
+**Gates**: 5/5 ready
+**Verdict**: GO
+
+Scout run `56e90f0d` confirmed Phase 1 owner approval and Phase 2 implementation completion. Phase 2 QA is not owner approval.
+
+## Gates
+
+- Scope clarity: ready — Phase 3 names every file, the two allowed diagrams, and the local-only specimen boundary.
+- Pattern familiarity: ready — `ReadWriting.php:35-67`, Writing Folio pages, article note/chart components, both authored diagrams, layout, CSS, Pest tests, surface briefs, and DESIGN.md read.
+- Dependency awareness: ready — renderer feeds articles; archive feeds index, RSS and sitemap; diagrams feed homepage/Work and JS animation; CSS affects all marketing surfaces.
+- Edge case coverage: ready — adjacent Markdown, repeated diagrams, escaped captions, unknown/traversal names, raw SVG/script, legacy blocks, runtime environment changes, host isolation, noindex, discovery, print disclosures, pagination and font rights.
+- Test strategy: ready — spec's Pest/Bun/Pint/PHPStan/build commands plus bounded screen and Letter/A4 saved-PDF review.
+
+## Key patterns and consumers
+
+- `app/Actions/ReadWriting.php:35-67`: narrow regex placeholders, safe CommonMark conversion, then trusted Blade restoration; no input-derived diagram paths.
+- `resources/views/components/marketing/article-chart.blade.php`: labeled chart, caption, native details/table; preserve every value, label and existing axis.
+- `resources/views/components/marketing/article-note.blade.php`: semantic aside with title and sanitized Markdown; retain author destinations.
+- Both diagram components are ID-free semantic HTML with decorative SVG. `resources/js/diagrams.js:6` enhances `[data-walkthrough-diagram]`; reading instances must omit this opt-in hook.
+- Writing Folio routes preserve names, metadata, chronology, original dates and unknown-article 404s. Layout owns current navigation and RSS access.
+- `routes/web.php:64-83`: host-scoped public infrastructure routes; specimen belongs here with request-time local/testing allowlist and explicit noindex. `PreventPrivateIndexing` is not its access boundary.
+- Discovery tests protect 14 sitemap entries and ten original feed items. No specimen or new archive source is allowed.
+
+## Conventions and risks
+
+Use existing custom CSS, Barlow/ink/cyan/white, one Alkaline header mark, Pest feature/DOM tests, Bun Motion tests. Preserve all prior sections above as historical maps.
+
+Writing briefs still describe the retired identity and are explicit Phase 3 update targets. CSS has site-wide blast radius. Captions must remain escaped, repeated figures collision-free, and source data visible even when disclosures are closed during print. Tests alone do not prove archive preservation or PDF legibility. Compare `resources/writing` with baseline `3247b6da2d3b3dfa3fa0f0d2711967ae657cb75d` and execution HEAD. Record only observed evidence; font embedding rights and owner launch acceptance remain separate gates.

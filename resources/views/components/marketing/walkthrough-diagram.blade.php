@@ -1,4 +1,5 @@
-<figure {{ $attributes->class(['walkthrough-diagram']) }} data-walkthrough-diagram>
+@props(['animate' => false, 'caption' => null])
+<figure {{ $attributes->class(['walkthrough-diagram']) }} @if ($animate) data-walkthrough-diagram @endif>
     <ol class="walkthrough-stages" role="list">
         <li class="bring-stage">
             <div class="stage-connection" aria-hidden="true">
@@ -46,5 +47,5 @@
             </ul>
         </li>
     </ol>
-    <figcaption>A real process, a free conversation, a report you keep. What you do with it is up to you.</figcaption>
+    <figcaption>@if ($caption)<strong class="diagram-caption">{{ $caption }}</strong>@endif A real process, a free conversation, a report you keep. What you do with it is up to you.</figcaption>
 </figure>

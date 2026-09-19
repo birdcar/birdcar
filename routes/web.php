@@ -66,6 +66,12 @@ Route::domain(app(MarketingSite::class)->host())->name('public.')->group(functio
     Route::permanentRedirect('/contact', '/walkthrough');
     Route::permanentRedirect('/assessment', '/walkthrough');
     Route::permanentRedirect('/blog', '/writing');
+    Route::get('/__design/figures', function (): Response {
+        abort_unless(app()->environment(['local', 'testing']), 404);
+
+        return response()->view('figure-specimen')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
+    })->name('figure-specimen');
     Route::get('/sitemap.xml', function (ReadWriting $writing, MarketingSite $marketing): Sitemap {
         $sitemap = Sitemap::create();
 

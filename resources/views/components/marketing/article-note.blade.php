@@ -1,4 +1,4 @@
 <aside class="article-note" role="note">
-    <p class="article-note-title">{{ $title }}</p>
+    <h3 class="article-note-title">{{ $title }}</h3>
     {!! $html !!}
 </aside>

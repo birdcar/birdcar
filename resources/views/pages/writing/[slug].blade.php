@@ -24,6 +24,9 @@ render(function (View $view, string $slug, ReadWriting $writing): View {
             <div class="essay-byline"><span>By Birdcar</span><time datetime="{{ $article['date']->format('Y-m-d') }}">{{ $article['date']->format('F j, Y') }}</time><span>{{ $article['readMinutes'] }} min read</span></div>
         </header>
         <div class="article-prose">{!! $content !!}</div>
-        <footer class="essay-end"><a class="text-link" href="{{ route('public.writing') }}">Back to all writing <x-marketing.arrow /></a></footer>
+        <footer class="essay-end">
+            <a class="text-link" href="{{ route('public.writing') }}">Back to all writing <x-marketing.arrow /></a>
+            <a class="text-link" href="{{ route('public.feed') }}">Subscribe via RSS <x-marketing.arrow /></a>
+        </footer>
     </article>
 </x-marketing.layout>

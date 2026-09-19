@@ -105,6 +105,14 @@ test('the sitemap contains the public pages and original archive with canonical 
     $response->assertDontSee('admin.')->assertDontSee('customer.')->assertDontSee('<lastmod>');
 });
 
+test('the development specimen is excluded from public discovery and navigation', function () {
+    config(['marketing.indexable' => true]);
+
+    foreach (['/sitemap.xml', '/rss.xml', '/', '/writing/'] as $path) {
+        $this->get($path)->assertOk()->assertDontSee('/__design/figures')->assertDontSee('Development specimen');
+    }
+});
+
 test('future dated writing stays out of the public sitemap', function () {
     CarbonImmutable::setTestNow('2026-04-18');
 

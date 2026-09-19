@@ -26,7 +26,7 @@ name('public.index');
             <h2 id="walkthrough-heading">Start with the work.<br>Leave with a way forward.</h2>
             <p>You don’t need a software brief. Just a process that’s harder than it should be. Here’s how the free Walkthrough turns that conversation into something you can use.</p>
         </div>
-        <x-marketing.walkthrough-diagram />
+        <x-marketing.walkthrough-diagram :animate="true" />
     </section>
     <section class="assessment-strip" aria-labelledby="assessment-heading">
         <h2 id="assessment-heading">Which part of the week would you change?</h2>

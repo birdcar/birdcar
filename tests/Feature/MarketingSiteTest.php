@@ -195,7 +195,7 @@ test('original prose and link destinations survive article rendering', function 
 test('original article notes keep their titles and formatted content', function () {
     $this->get('/writing/stop-giving-me-take-homes/')->assertOk()
         ->assertSee('<aside', false)
-        ->assertSee('About this post')
+        ->assertSee('<h3 class="article-note-title">About this post</h3>', false)
         ->assertSee('href="/authors/balevine"', false)
         ->assertSee('href="/authors/birdcar"', false)
         ->assertSee('<em>Are you a support professional who has something to say?', false);
@@ -214,6 +214,44 @@ test('charts retain their source values and expose accessible data tables', func
     ['your-ai-wrote-a-bug', [20, 15, 10, 7]],
     ['six-months-talking-to-a-machine', [410, 580, 720, 690, 780, 796]],
 ]);
+
+test('source chart labels and values remain complete in reading order', function (string $slug, array $rows, array $columns) {
+    $response = $this->get('/writing/'.$slug.'/')->assertOk();
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+    $headers = array_map(fn ($cell): string => trim($cell->textContent), iterator_to_array($xpath->query('//details/table/thead/tr/th')));
+    $actualRows = array_map(fn ($row): array => array_map(fn ($cell): string => trim($cell->textContent), iterator_to_array($xpath->query('./th|./td', $row))), iterator_to_array($xpath->query('//details/table/tbody/tr')));
+
+    expect($headers)->toBe($columns);
+    expect($actualRows)->toBe($rows);
+})->with([
+    'bar chart' => ['your-ai-wrote-a-bug', [['logic', '20'], ['integration', '15'], ['spec', '10'], ['edge cases', '7']], ['Category', 'Loops']],
+    'line chart' => ['six-months-talking-to-a-machine', [['Oct', '410'], ['Nov', '580'], ['Dec', '720'], ['Jan', '690'], ['Feb', '780'], ['Mar', '796']], ['Month', 'Prompts']],
+]);
+
+test('the line chart retains its zero based axis and a keyboard accessible full size plot', function () {
+    $response = $this->get('/writing/six-months-talking-to-a-machine/')->assertSee('Scroll for the full chart, or view the data below.');
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//div[@class="chart-scroll" and @tabindex="0" and @role="region"]'))->toHaveCount(1);
+    expect($xpath->query('//svg[@class="line-chart"]/circle'))->toHaveCount(6);
+    expect(array_map(fn ($tick): string => $tick->textContent, iterator_to_array($xpath->query('//svg[@class="line-chart"]/text[@text-anchor="end"]'))))->toBe(['0', '400', '800']);
+});
+
+test('the complete archive preserves metadata and feed access in the reading layout', function () {
+    $response = $this->get('/writing/')->assertSee(route('public.feed'), false);
+
+    foreach (app(ReadWriting::class)->all() as $article) {
+        $response->assertSee($article['title'])->assertSee($article['description'])
+            ->assertSee('datetime="'.$article['date']->format('Y-m-d').'"', false)
+            ->assertSee(route('public.article', ['slug' => $article['slug']]).'/', false);
+    }
+
+    $this->get('/writing/your-ai-wrote-a-bug/')->assertSee('Subscribe via RSS')->assertSee(route('public.feed'), false);
+});
 
 test('unknown essays return a not found response', function () {
     $this->get('/writing/not-a-published-essay/')->assertNotFound();

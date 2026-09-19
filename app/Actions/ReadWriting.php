@@ -33,6 +33,20 @@ class ReadWriting
     {
         $blocks = [];
         $markdown = preg_replace_callback(
+            '/^@figure kind=diagram name=(walkthrough|reporting) caption="((?:[^"\\\\\r\n]|\\\\["\\\\])+)"[\t ]*\R@endfigure[\t ]*$/m',
+            function (array $match) use (&$blocks): string {
+                $key = 'BIRDCARBLOCK'.count($blocks).'END';
+                $blocks['<p>'.$key.'</p>'] = view('components.marketing.article-diagram', [
+                    'name' => $match[1],
+                    'caption' => strtr($match[2], ['\\"' => '"', '\\\\' => '\\']),
+                ])->render();
+
+                return "\n\n{$key}\n\n";
+            },
+            $body,
+        ) ?? $body;
+
+        $markdown = preg_replace_callback(
             '/^@figure kind=chart type=(line|bar) src=\.\/data\/([a-z0-9-]+\.json) width=wide caption="([^"]+)"\R@endfigure\s*$/m',
             function (array $match) use (&$blocks): string {
                 $key = 'BIRDCARBLOCK'.count($blocks).'END';
@@ -46,8 +60,8 @@ class ReadWriting
 
                 return "\n\n{$key}\n\n";
             },
-            $body,
-        ) ?? $body;
+            $markdown,
+        ) ?? $markdown;
 
         $markdown = preg_replace_callback(
             '/^@(aside|callout)(?: title="([^"\r\n]+)"| type=key)\R(.*?)\R@end\1[\t ]*$/ms',

@@ -9,24 +9,22 @@ related_targets: ["resources/css/marketing.css","resources/views/components/mark
 
 ## Scope
 
-Visitor mode: **Read**. This page implements the user-selected **Future, in person** world from 2026-09-13. PRODUCT.md owns approved content and offer; DESIGN.md records the built visual system.
+Visitor mode: **Read**. Extend the owner-approved **The clear argument** world. PRODUCT.md owns facts; Phase 3 preserves every original essay and its metadata.
 
 ## Direction contract
 
-**THESIS:** Silicon Valley technical capability, made personally accessible through a clear typographic presentation.
+**THESIS:** A browsable body of thinking, not another conversion landing page.
 
-**OWN-WORLD:** Black cherry openings, pale orchid reading space, lilac actions and explanatory fields, aubergine support; licensed Alkaline, Karla, and restrained Commit Mono. One Birdcar wordmark in the shared header.
+**OWN-WORLD:** Cyan opening, ink Barlow titles, white archive, thin rules; Alkaline only in the shared header.
 
-**STORY:** Find writing about making a business work better and explore the complete original essay archive.
+**STORY:** Understand the business focus, scan original titles by year, choose an essay or subscribe via RSS.
 
-**FIRST VIEWPORT:** The shared black cherry header continues into an Alkaline Writing title and a business-focused Karla introduction. Pale chronological archive rows follow, with original titles, descriptions, dates, and reading times.
+**FIRST VIEWPORT:** Compact Writing title beside the unchanged introduction; All writing and RSS introduce a chronological ledger with years in the left margin and generous title/description rows.
 
-**FORM:** Future, in person, seed `537c5794`; the homepage's approved Direct conversation composition anchors the public world.
+**FORM:** Reviewed Reading extension of The clear argument, owner-approved Phase 1 foundation; no new direction roll. Whole-row links underline on focus/hover; no entrance motion.
 
-**FINISH:** The built public pages received a full finish review (86% homepage fidelity). The same reviewer scored the focus correction resolved in all eight supplied desktop/mobile examples and returned **ship** at fix-list scope. DESIGN.md and the sidecar record the corrected build; supplied captures remain in `.impeccable/review/`.
+**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. Discharged: ship, no material fixes; DESIGN.md and sidecar updated. No shipping raster; owner launch approval remains outside Phase 3.
 
 ## Content and behavior
 
-All ten original essays are preserved. Years occupy a side column on desktop and move above their entries on mobile. Each whole-row link contains a Karla title and description, Commit Mono metadata, and a small right arrow. RSS stays visible beside All writing.
-
-Preserve original titles, dates, descriptions, links, and URLs. The introduction describes the core business without forcing the archive into new categories or inventing business articles. The homepage does not promote selected archive essays.
+Preserve all ten original essays, ordering, descriptions, dates, reading times and links. Years move above entries on narrow screens. RSS remains visible. No new categories, essays or homepage archive promotions. Print removes site navigation and keeps the chronological hierarchy with 16mm paper margins and no forced paper size. Reviewed at 390/768/1440 plus Letter/A4 local captures.
