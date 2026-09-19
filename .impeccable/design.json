@@ -171,7 +171,8 @@
     ],
     "phaseStatus": {
       "completed": "Phase 1 visual foundation: header, homepage opening, Walkthrough introduction and figure.",
-      "pending": "Owner visual gate remains pending; Phase 2 is blocked. Lower homepage and all other marketing pages await Phases 2-3 despite inherited shared color/type. Print is an early static sketch, not a finished specimen.",
+      "ownerApproval": "Approved 2026-09-19: Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. Phase 2's visual prerequisite is satisfied, not its execution authorization.",
+      "pending": "Phase 2 execution awaits a separate request. Lower homepage and all other marketing pages await Phases 2-3 despite inherited shared color/type. Print is an early static sketch, not a finished specimen.",
       "notCurrent": "No shipping raster was created. Retired horizon assets remain for Phase 4 decisions only. Admin/customer Inter surfaces are unchanged."
     }
   },
@@ -249,7 +250,7 @@
       "**Do** use cyan, ink, white, and yellow to make the first argument clear.",
       "**Do** keep the report/branch relationships visible in static HTML and SVG.",
       "**Do** keep Alkaline to the one header wordmark and Barlow for marketing text.",
-      "**Do** treat Phase 1 as implemented foundation/opening/figure only; record owner visual gate as pending before Phase 2.",
+      "**Do** treat the owner's approval as Phase 1 foundation/opening/figure approval only; request separate execution for Phase 2.",
       "**Do** preserve reduced-motion, print-static, no-JavaScript, and semantic-reading fallbacks."
     ],
     "donts": [

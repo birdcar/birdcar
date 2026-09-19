@@ -4,9 +4,9 @@ Spec: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-1.
 
 ## Owner gate
 
-**PENDING — not approved. Phase 2 is blocked.**
+**APPROVED — owner visual decision recorded on 2026-09-19.**
 
-The direction selection authorizes this prototype, not approval of its finished typography, opening, figure, mobile behavior, or print sketch. No owner verdict has been received. No deployment, live booking, or PostHog account change was performed.
+After reviewing the implemented Phase 1 surface, the owner selected **“Approve Phase 1”** in response to the explicit gate covering the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. This approves implementation commit `0731e62`, not future pages or a finished print specimen. Phase 2's visual prerequisite is satisfied; Phase 2 has not started and requires a separate execution request. No deployment, live booking, or PostHog account change was performed.
 
 ## Execution checklist
 
@@ -18,7 +18,7 @@ The direction selection authorizes this prototype, not approval of its finished 
 - [x] Run validation and bounded browser checks.
 - [x] Close independent finish review and record the built foundation in DESIGN.md.
 - [x] Close spec-aware code review.
-- [ ] Obtain and record the owner's visual decision.
+- [x] Obtain and record the owner's visual decision.
 
 ## Validation evidence — 2026-09-19
 

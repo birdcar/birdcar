@@ -93,6 +93,8 @@ The completed Phase 1 surface covers the header, first viewport, Walkthrough exp
 
 Admin and customer project surfaces remain separate Flux UI Pro surfaces using Inter. Marketing uses `--font-marketing` Barlow for text and hierarchy, with Alkaline only for the header wordmark. No shipping raster was created for Phase 1; retired horizon assets remain legacy material for Phase 4 decisions, not current system tokens.
 
+The owner approved the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch on 2026-09-19. Phase 2's visual prerequisite is satisfied; its execution and the remaining surfaces are not approved by this decision.
+
 **Key Characteristics:**
 
 - Cyan opening field with ink typography and a yellow booking action.
@@ -190,7 +192,7 @@ The lower homepage, Writing, Work, and Walkthrough detail pages are not Phase 1 
 - **Do** use cyan, ink, white, and yellow to make the first argument clear.
 - **Do** keep the report/branch relationships visible in static HTML and SVG.
 - **Do** keep Alkaline to the one header wordmark and Barlow for marketing text.
-- **Do** treat Phase 1 as implemented foundation/opening/figure only; record owner visual gate as pending before Phase 2.
+- **Do** treat the owner's approval as Phase 1 foundation/opening/figure approval only; request separate execution for Phase 2.
 - **Do** preserve reduced-motion, print-static, no-JavaScript, and semantic-reading fallbacks.
 
 ### Don't:

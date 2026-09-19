@@ -248,8 +248,9 @@ and permissions remain to be designed.
   tracking. It is the only mandatory visual anchor. The owner selected a new
   visual world, The clear argument, on 2026-09-18: cyan editorial fields,
   blue-green ink, yellow emphasis, white, and upright sans-serif hierarchy.
-  Begin with Barlow through the existing font pipeline, subject to prototype
-  review. Purple, the horizon, Karla, and script headings are not commitments.
+  On 2026-09-19, the owner approved the Phase 1 opening, Barlow typography,
+  Walkthrough figure, mobile behavior, and static/print sketch. Purple, the
+  horizon, Karla, and script headings are not commitments.
 - The brand brings the future of Silicon Valley technology into the client's
   business. Technical sophistication and glitz are welcome; the owner's helpful
   voice and direct involvement carry the personal relationship. Regional buyer
