@@ -23,12 +23,10 @@
     .desktop-nav > a { padding-block: .75rem; text-decoration: none; white-space: nowrap; }
     .desktop-nav > a:not(.nav-booking), .site-footer nav a { position: relative; }
     .desktop-nav > a:not(.nav-booking)::after, .site-footer nav a::after { content: ''; position: absolute; inset: auto 0 .45rem; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; }
-    .desktop-nav > a[aria-current]::after, .desktop-nav > a:focus-visible::after, .site-footer nav a:focus-visible::after { transform: scaleX(1); }
+    .desktop-nav > a[aria-current]::after, .desktop-nav > a:focus-visible::after, .site-footer nav a:is(:focus-visible, [aria-current])::after { transform: scaleX(1); }
     .desktop-nav .nav-booking { transition: background-color var(--transition-feedback), color var(--transition-feedback); }
     .desktop-nav .nav-booking:focus-visible { background: var(--color-paper); color: var(--color-ink); outline: 2px solid var(--color-paper); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-ink); }
     .desktop-nav .nav-booking { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .7rem 1rem; border: 1px solid var(--color-ink); border-radius: 3px; font-size: 1rem; line-height: 1.2; }
-    .work-preview .text-link { padding: 0; line-height: 1.4; font-size: clamp(.875rem, 1.04vw, 1rem); border-bottom: 1px solid; text-decoration: none; gap: .7rem; }
-    .work-preview .text-link .arrow { width: 20px; height: 20px; }
     .nav-booking .arrow { display: none; }
     .arrow { width: 24px; height: 24px; }
     .mobile-menu { display: none; }
@@ -36,10 +34,6 @@
     .skip-link:focus { top: 1rem; }
     .button { min-height: 62px; display: inline-flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1rem 1.6rem; font-size: 1.075rem; font-weight: 600; text-decoration: none; border: 1px solid transparent; border-radius: 5px; transition: background-color var(--transition-feedback), color var(--transition-feedback); }
     .button:focus-visible, .skip-link:focus-visible { outline: 2px solid var(--color-paper); outline-offset: 2px; box-shadow: 0 0 0 6px var(--color-ink); }
-    .button-lilac { background: var(--color-cyan); color: var(--color-ink); }
-    .button-lilac:focus-visible, .button-lilac:active { background: var(--color-paper); }
-    .button-paper { background: var(--color-paper); color: var(--color-ink); }
-    .button-paper:focus-visible, .button-paper:active { background: var(--color-cyan); }
     .button-ink { background: var(--color-ink); color: var(--color-paper); }
     .button-ink:focus-visible, .button-ink:active { background: var(--color-deep-teal); }
     .text-link { display: inline-flex; align-items: center; gap: 1rem; padding-block: .4rem; font-size: 1rem; font-weight: 600; text-decoration: underline; }
@@ -92,27 +86,25 @@
     .button-yellow { background: var(--color-emphasis); color: var(--color-ink); }
     .button-yellow:is(:focus-visible, :active) { background: var(--color-paper); }
     .home-work, .assessment-strip { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 7%; padding-inline: 7%; align-items: start; }
-    .home-work { padding-block: 3.7vw 5vw; }
-    .home-work h2 { font-size: clamp(2.5rem, 3.6vw, 3.5rem); }
-    .work-preview { text-decoration: none; padding-top: 0; }
-    .work-preview h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.35; }
-    .work-preview p { font-size: 1.125rem; line-height: 1.5; margin: .6rem 0 1rem; max-width: 52ch; }
-    .work-preview:focus-visible h3 { text-decoration: underline; }
-    .assessment-strip { padding-block: 5rem; background: var(--color-cyan); }
-    .assessment-strip h2 { font-size: clamp(2.8rem, 4.7vw, 4.5rem); }
+    .home-work { padding-block: clamp(3.5rem, 6vw, 6rem); background: var(--color-cyan); }
+    .home-work h2, .assessment-strip h2 { font-size: clamp(2.3rem, 3.6vw, 3.5rem); }
+    .work-preview h3 { font-size: 1.75rem; font-weight: 600; line-height: 1.2; }
+    .work-preview p { margin: 1rem 0; max-width: 52ch; }
+    .assessment-strip { padding-block: 1rem 4.5rem; }
     .assessment-strip p { max-width: 55ch; }
     .assessment-strip .button { margin-top: 1.5rem; }
-    .approach-section { background: var(--color-ink); color: var(--color-paper); }
+    .offer-detail-link { margin-top: 1rem; display: flex; width: fit-content; }
+    .approach-section { background: var(--color-paper); color: var(--color-ink); }
     .approach-introduction, .personal-note, .closing-invitation, .offer-outcome { display: grid; grid-template-columns: 1.1fr 1fr; gap: 7%; align-items: start; }
     .approach-introduction h2, .personal-note h2 { font-size: clamp(2.8rem, 4.7vw, 4.5rem); }
     .approach-introduction p { max-width: 55ch; }
     .approach-steps { margin-top: 5rem; }
-    .approach-steps section { display: grid; grid-template-columns: 1.1fr 1fr; gap: 7%; padding-block: 2.5rem; border-top: 1px solid #ffffff50; }
+    .approach-steps section { display: grid; grid-template-columns: 1.1fr 1fr; gap: 7%; padding-block: 2.5rem; border-top: 1px solid var(--color-ink); }
     .approach-steps h3 { font-size: clamp(2.3rem, 3.3vw, 3rem); font-weight: 600; }
     .approach-steps p { font-size: 1.0625rem; }
+    .personal-note { background: var(--color-ink); color: var(--color-paper); }
     .personal-note p { max-width: 49ch; }
-    .signature { display: inline-block; font-family: var(--font-alkaline); font-size: 2.8rem; font-weight: 600; transform: rotate(-6deg); margin-top: 1.5rem; }
-    .closing-invitation { background: var(--color-deep-teal); color: var(--color-paper); padding: 5rem 7%; }
+    .closing-invitation { background: var(--color-cyan); color: var(--color-ink); padding: 5rem 7%; }
     .closing-invitation h2 { font-size: clamp(3rem, 5vw, 4.8rem); max-width: 16ch; }
     .closing-invitation p { max-width: 46ch; }
     .closing-invitation .button { margin-top: 1.7rem; }
@@ -126,20 +118,30 @@
     .page-title h1 { font-size: clamp(4rem, 7.5vw, 7.2rem); }
     .page-title p { max-width: 43ch; font-size: 1.35rem; }
     .work-story { display: grid; grid-template-columns: .85fr 1.15fr; gap: 3rem 8%; }
-    .story-heading h2 { font-size: clamp(3rem, 4.7vw, 4.5rem); }
-    .story-heading p { margin-top: 1.5rem; max-width: 26ch; }
+    .work-title { background: var(--color-cyan); color: var(--color-ink); grid-template-columns: 1.35fr 1fr; align-items: end; }
+    .work-title h1 { font-size: clamp(3rem, 6vw, 6rem); }
+    .story-heading h2 { font-size: clamp(2.3rem, 3.6vw, 3.5rem); }
     .story-body { padding-top: .6rem; }
-    .story-body h3 { font-size: 1.45rem; font-weight: 600; line-height: 1.3; margin-bottom: 1.4rem; }
     .story-body p { max-width: 60ch; }
-    .reporting-diagram { grid-column: 1 / -1; margin: 1.5rem 0; }
-    .reporting-flow { background: var(--color-deep-teal); color: var(--color-paper); padding: 3.5rem 4%; display: grid; grid-template-columns: 1fr 40px 1.4fr 40px 1fr; align-items: center; gap: 2rem; }
-    .flow-source { display: grid; gap: 1rem; }
-    .flow-source span { border: 1px solid #ffffffa0; padding: 1.2rem; font-size: 1rem; }
-    .flow-platform { background: var(--color-paper); color: var(--color-ink); padding: 2rem; min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
-    .flow-platform > span { font-family: var(--font-marketing); font-size: 2rem; font-weight: 500; line-height: 1.15; }
-    .flow-platform small { margin-top: 1.5rem; font-size: .9rem; }
-    .flow-client { font-family: var(--font-marketing); font-size: 1.8rem; font-weight: 600; line-height: 1.2; }
-    .reporting-diagram figcaption { font-size: .9rem; margin-top: 1rem; }
+    .reporting-diagram { grid-column: 1 / -1; margin: 3rem 0 0; min-width: 0; }
+    .reporting-comparison { display: grid; grid-template-columns: .8fr 1.2fr; gap: 4rem; align-items: center; }
+    .reporting-before h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; max-width: 18ch; }
+    .reporting-before > p { font-size: 1rem; margin-top: 1rem; max-width: 35ch; }
+    .reporting-before > svg { width: 100%; max-width: 280px; height: auto; margin-block: 1.5rem; fill: none; stroke: var(--color-ink); stroke-width: 1.25; }
+    .reporting-before path { vector-effect: non-scaling-stroke; }
+    .reporting-before .reporting-relationship { display: flex; align-items: center; gap: 1.5rem; font-weight: 500; max-width: none; }
+    .reporting-relationship .arrow { flex: 1; min-width: 24px; }
+    .reporting-platform { background: var(--color-paper); border: 1px solid var(--color-ink); padding: 2rem; }
+    .reporting-platform h3 { font-size: clamp(1.75rem, 2.5vw, 2.25rem); font-weight: 600; line-height: 1.15; max-width: 22ch; }
+    .reporting-platform dl { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-block: 2rem 0; }
+    .reporting-platform dl > div { border-top: 1px solid var(--color-ink); padding-top: 1rem; }
+    .reporting-platform dt { font-weight: 600; }
+    .reporting-platform dd { margin: .5rem 0 0; font-size: 1rem; }
+    .reporting-result { display: flex; align-items: start; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-ink); }
+    .reporting-result > .arrow { transform: rotate(90deg); }
+    .reporting-result strong { display: block; font-size: 1.25rem; font-weight: 600; }
+    .reporting-result span { display: block; font-size: 1rem; margin-top: .5rem; }
+    .reporting-diagram figcaption { border-top: 1px solid var(--color-ink); padding-top: 1.25rem; margin-top: 2rem; font-size: 1rem; max-width: 75ch; }
     .story-bottom-heading { grid-column: 1; font-size: clamp(2.4rem, 3.4vw, 3.2rem); font-weight: 600; line-height: 1.1; }
     .story-bottom { grid-column: 2; padding-top: .6rem; }
     .story-bottom p { max-width: 60ch; }
@@ -213,23 +215,23 @@
     .chart-data table { margin-top: 1rem; }
     .chart-data caption { text-align: left; padding-block: .8rem; font-weight: 500; }
     .essay-end { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid #102a3370; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .essay-end .signature { margin-top: 0; }
-    .offer-opening { background: var(--color-ink); color: var(--color-paper); display: grid; grid-template-columns: 1.2fr 1fr; gap: 8%; align-items: center; padding: 4rem 7% 4.5rem; }
-    .offer-copy h1 { font-size: clamp(3.5rem, 5.8vw, 5.8rem); }
-    .offer-copy .offer-lead { font-size: 1.5rem; line-height: 1.3; font-weight: 600; margin: 1.5rem 0; }
-    .offer-copy > p { max-width: 52ch; font-size: 1.0625rem; }
+    .offer-opening { background: var(--color-cyan); color: var(--color-ink); display: grid; grid-template-columns: 1.2fr 1fr; gap: 8%; align-items: center; padding: 3rem 7% 4.5rem; }
+    .offer-copy h1 { font-size: clamp(3rem, 4.6vw, 4.5rem); margin-bottom: 1.75rem; }
+    .offer-copy > p { max-width: 52ch; font-size: 1.125rem; }
     .offer-copy .button { margin-top: 1.75rem; }
-    .offer-copy .action-note { font-size: .875rem; }
-    .offer-report { background: var(--color-paper); color: var(--color-ink); padding: 2.5rem; border-radius: 5px; }
-    .offer-report h2 { font-family: var(--font-marketing); font-size: 1.8rem; line-height: 1.15; font-weight: 600; }
-    .offer-report > p { font-size: .9rem; margin-top: .75rem; }
-    .offer-report dl { margin-top: 1.5rem; }
-    .offer-report dl > div { padding: 1rem 0; border-top: 1px solid #102a3340; }
-    .offer-report dt { font-size: 1rem; font-weight: 600; }
-    .offer-report dd { font-size: .95rem; line-height: 1.4; margin: .4rem 0 0; }
-    .report-signoff { font-family: var(--font-marketing); font-size: 2.2rem; display: block; color: var(--color-deep-teal); margin-top: 1rem; }
+    .offer-copy .action-note { font-size: 1rem; }
+    .offer-report { position: relative; min-width: 0; }
+    .offer-report .report-outline { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--color-paper); stroke: var(--color-ink); stroke-width: 1.25; }
+    .offer-report .report-outline path { vector-effect: non-scaling-stroke; }
+    .offer-report-content { position: relative; padding: 3rem 2rem 2rem; }
+    .offer-report h2 { font-size: 2rem; max-width: 14ch; }
+    .offer-report-content > p { font-size: 1rem; margin-top: 1rem; }
+    .offer-report .report-contents { padding: 0; margin-block: 1rem; }
+    .report-signoff { font-weight: 500; }
     .offer-outcome h2, .offer-steps h2, .assessment-faq h2 { font-size: clamp(2.8rem, 4.5vw, 4.5rem); }
     .offer-steps { background: var(--color-cyan); color: var(--color-ink); }
+    .offer-choice { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--color-ink); }
+    .offer-choice p { max-width: 65ch; }
     .offer-steps ol { margin: 3rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4%; list-style: none; }
     .offer-steps li { border-top: 1px solid #102a3350; padding-top: 1.5rem; }
     .step-number { display: block; font-size: 1.4rem; font-weight: 500; margin-bottom: 1.5rem; }
@@ -246,7 +248,7 @@
     .assessment-faq summary:focus-visible { color: var(--color-deep-teal); }
     .assessment-faq details[open] summary { color: var(--color-deep-teal); }
     .assessment-faq details p { padding-bottom: 1.5rem; font-size: 1.0625rem; }
-    .offer-close { background: var(--color-deep-teal); color: var(--color-paper); text-align: center; padding: 5rem 7%; }
+    .offer-close { background: var(--color-cyan); color: var(--color-ink); text-align: center; padding: 5rem 7%; }
     .offer-close h2 { font-size: clamp(3.5rem, 5.8vw, 5.8rem); }
     .offer-close > p { margin: 1.5rem auto; max-width: 58ch; }
     .offer-close > .action-note { margin: 1.25rem auto 0; }
@@ -272,24 +274,18 @@
     .report-handoff, .walkthrough-choices::before { display: none; }
     .home-work, .assessment-strip { padding-inline: 6%; column-gap: 6%; }
     .home-work { padding-block: 3rem; }
-    .home-work h2 { font-size: clamp(2.5rem, 4vw, 3.5rem); }
-    .work-preview h3 { font-size: 1.4rem; }
-    .work-preview p { font-size: 1rem; line-height: 1.5; margin: .6rem 0 1rem; }
-    .work-preview .text-link { font-size: 1rem; }
+    .reporting-comparison { gap: 2rem; }
+    .reporting-platform { padding: 1.5rem; }
+    .reporting-platform dl { gap: 1.25rem; }
 }
 @media (max-width: 1050px) {
     .desktop-nav { gap: 1.2rem; font-size: .95rem; }
     .desktop-nav .nav-booking { gap: .6rem; }
-    .assessment-strip .button { max-width: 240px; gap: .8rem; }
     .section-space { padding-inline: 6%; }
     .site-footer { grid-template-columns: 1fr 1fr; }
     .site-footer nav { grid-column: 1 / -1; }
-    .reporting-flow { gap: 1rem; grid-template-columns: 1fr 25px 1.3fr 25px 1fr; }
-    .flow-platform { padding: 1.5rem; }
-    .flow-platform > span { font-size: 2.4rem; }
-    .flow-client { font-size: 2rem; }
     .offer-opening { padding-inline: 6%; gap: 5%; }
-    .offer-report { padding: 1.5rem; }
+    .offer-report-content { padding: 2.5rem 1.5rem 1.5rem; }
 }
 @media (max-width: 760px) {
     .home-hero { padding-block: 2rem 2.5rem; }
@@ -302,9 +298,8 @@
     .home-walkthrough { padding-block: 2.5rem; }
     .home-work, .assessment-strip { grid-template-columns: 1fr; }
     .home-work { row-gap: 1.8rem; }
-    .home-work h2 { margin: 0; font-size: clamp(2.8rem, 11.5vw, 4rem); white-space: normal; }
-    .work-preview h3 { font-size: 1.4rem; }
-    .work-preview p { font-size: 1.0625rem; }
+    .home-work h2 { margin: 0; font-size: 2.6rem; }
+    .work-preview h3 { font-size: 1.5rem; }
     .approach-steps section { display: block; }
 
     body { font-size: 1.0625rem; }
@@ -330,16 +325,12 @@
     .assessment-strip .button { max-width: none; justify-self: start; }
     .button { font-size: 1rem; padding-inline: 1.25rem; min-height: 58px; }
     .section-space { padding: 3.5rem 6%; }
-    .section-introduction { display: block; margin-bottom: 2rem; }
-    .section-introduction h2 { font-size: 2.8rem; }
-    .section-introduction p { margin-top: 1rem; max-width: 40ch; }
     .approach-introduction, .personal-note, .closing-invitation, .offer-outcome, .assessment-faq { grid-template-columns: 1fr; gap: 2rem; }
     .approach-introduction h2, .personal-note h2, .offer-outcome h2, .offer-steps h2, .assessment-faq h2 { font-size: 2.8rem; }
     .desktop-break { display: none; }
     .approach-steps { grid-template-columns: 1fr; margin-top: 2.5rem; padding-top: 0; border: 0; gap: 0; }
-    .approach-steps section { border-top: 1px solid #ffffff70; padding-top: 1.6rem; margin-top: 1.8rem; }
+    .approach-steps section { padding-block: 1.6rem; }
     .approach-steps h3 { font-size: 2.3rem; margin-bottom: .75rem; }
-    .personal-note .signature { margin-top: 1rem; }
     .closing-invitation { padding: 3.5rem 6%; }
     .closing-invitation h2 { font-size: 3rem; }
     .site-footer { padding: 2.5rem 6% 1.5rem; gap: 1.8rem; }
@@ -350,19 +341,19 @@
     .page-title h1 { font-size: clamp(3.8rem, 12vw, 5rem); }
     .page-title p { font-size: 1.25rem; }
     .work-story { grid-template-columns: 1fr; gap: 2rem; }
-    .story-heading h2 { font-size: 3rem; }
-    .story-heading p { margin-top: 1rem; }
+    .work-title { grid-template-columns: 1fr; }
+    .work-title h1 { font-size: clamp(2.6rem, 10.5vw, 4.5rem); }
+    .story-heading h2 { font-size: 2.6rem; }
     .story-body { padding-top: 0; }
-    .story-body h3 { font-size: 1.4rem; }
     .story-bottom-heading { grid-column: 1; font-size: 2.3rem; }
     .story-bottom { grid-column: 1; padding-top: 0; }
-    .reporting-diagram { margin: .5rem 0; }
-    .reporting-flow { grid-template-columns: 1fr; gap: 1.25rem; padding: 2rem; text-align: center; }
-    .flow-source { grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .flow-source span { font-size: .95rem; padding: .8rem; }
-    .flow-arrow { transform: rotate(90deg); justify-self: center; }
-    .flow-platform { min-height: 180px; }
-    .flow-client { font-size: 2.5rem; }
+    .reporting-diagram { margin: 1rem 0; }
+    .reporting-comparison { grid-template-columns: 1fr; gap: 1.5rem; }
+    .reporting-before .reporting-relationship { flex-direction: column; align-items: start; gap: .75rem; }
+    .reporting-relationship .arrow { flex: none; transform: rotate(90deg); }
+    .reporting-platform { padding: 1.25rem; }
+    .reporting-platform dl { grid-template-columns: 1fr; }
+    .reporting-diagram figcaption { font-size: .95rem; }
     .archive-heading { font-size: .875rem; margin-bottom: 1.5rem; }
     .archive-year { grid-template-columns: 1fr; }
     .archive-year h2 { padding-top: 1.7rem; font-size: .95rem; }
@@ -385,14 +376,12 @@
     .article-chart { padding: 1.5rem .8rem; margin-inline: -.5rem; }
     .bar-row { grid-template-columns: 85px minmax(0, 1fr) 20px; gap: .5rem; font-size: .875rem; }
     .essay-end { flex-wrap: wrap; }
-    .essay-end .signature { font-size: 2.3rem; }
     .offer-opening { grid-template-columns: 1fr; padding: 3rem 6%; gap: 3rem; }
-    .offer-copy h1 { font-size: clamp(3.2rem, 10.4vw, 4.5rem); }
-    .offer-copy .offer-lead { font-size: 1.4rem; }
-    .offer-copy > p { font-size: 1rem; }
+    .offer-copy h1 { font-size: clamp(2.6rem, 10.4vw, 4.5rem); }
+    .offer-copy > p { font-size: 1.0625rem; }
     .offer-copy .button { width: 100%; }
-    .offer-report { transform: none; padding: 1.7rem; }
-    .offer-report h2 { font-size: 1.7rem; }
+    .offer-report h2 { font-size: 1.75rem; }
+    .offer-choice { grid-template-columns: 1fr; gap: .5rem; }
     .offer-steps ol { grid-template-columns: 1fr; margin-top: 2rem; gap: 1.5rem; }
     .offer-steps li { display: grid; grid-template-columns: 24px 1fr; gap: 1.3rem; }
     .step-number { margin: 0; font-size: 1.25rem; }
@@ -408,10 +397,9 @@
 @media (hover: hover) and (pointer: fine) {
     .desktop-nav > a:not(.nav-booking):hover::after, .site-footer nav a:hover::after { transform: scaleX(1); }
     .desktop-nav .nav-booking:hover { background: var(--color-paper); color: var(--color-ink); }
-    .button-lilac:hover, .button-yellow:hover { background: var(--color-paper); }
-    .button-paper:hover { background: var(--color-cyan); }
+    .button-yellow:hover { background: var(--color-paper); }
     .button-ink:hover { background: var(--color-deep-teal); }
-    .work-preview:hover h3, .back-link:hover { text-decoration: underline; }
+    .back-link:hover { text-decoration: underline; }
     .essay-row:hover h3 { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: .15em; }
     .assessment-faq summary:hover, .mobile-menu nav a:hover { color: var(--color-deep-teal); }
 }
@@ -472,4 +460,14 @@
     .stage-connection span, .report-contents .first-recommendation { background: white; color: black; border: 1px solid black; transform: none !important; }
     .walkthrough-stages p, .walkthrough-choices, .report-contents { font-size: 11pt; }
     .walkthrough-diagram figcaption { break-before: avoid; }
+    .reporting-comparison { grid-template-columns: 1fr 1.5fr; gap: 1.5rem; }
+    .reporting-diagram { color: black; break-inside: avoid; }
+    .reporting-platform { background: white; border-color: black; padding: 1rem; }
+    .reporting-platform dl { grid-template-columns: 1fr; gap: .75rem; margin-top: 1rem; }
+    .reporting-before h3, .reporting-platform h3 { font-size: 16pt; }
+    .reporting-diagram p, .reporting-platform dd, .reporting-diagram figcaption { font-size: 11pt; }
+    .reporting-before .reporting-relationship { display: block; }
+    .reporting-relationship .arrow { display: none; }
+    .reporting-result { margin-top: 1rem; padding-top: 1rem; }
+    .offer-report .first-recommendation { background: white; border: 1px solid black; }
 }

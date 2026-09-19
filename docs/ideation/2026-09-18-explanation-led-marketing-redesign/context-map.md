@@ -67,3 +67,91 @@
 - **Repeated SVG/component instances** — New walkthrough diagram must avoid duplicate IDs or generate per-instance IDs; repeated component tests are required.
 - **Semantic diagram risk** — Essential offer meaning cannot live only in SVG paths, color, arrows, hover, or animation. Visible text and captions must contain the complete explanation.
 - **Acceptance gate risk** — `acceptance.md` is new and must record actual evidence. Owner visual approval blocks Phase 2; an agent review cannot mark it approved.
+
+---
+
+# Phase 2 Context Map: Referral-led marketing journey
+
+**Phase**: 2
+**Spec**: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-2.md`
+**Prerequisite**: satisfied — `docs/ideation/2026-09-18-explanation-led-marketing-redesign/acceptance.md` records owner visual approval on 2026-09-19.
+**Gates**: 5/5 ready
+**Verdict**: GO
+
+## Phase 2 Gates
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Scope clarity | ready | `spec-phase-2.md` has concrete new/modified file lists, page-specific jobs, reporting-figure requirements, booking/navigation constraints, validation commands, and acceptance-recording expectations. |
+| Pattern familiarity | ready | Read all in-scope existing files and analogues: current homepage, Walkthrough, Work, layout, booking link, assessment invitation, arrow, CSS, booking JS, walkthrough diagram, article chart, tests, PRODUCT/DESIGN, acceptance, and surface briefs. |
+| Dependency awareness | ready | Grep mapped consumers for layout, booking markers, Cal hooks, route names, diagram selectors, CSS classes, analytics placement assertions, and layout invariants across `resources/`, `tests/`, `.impeccable/surfaces`, and specs. |
+| Edge case coverage | ready | Spec and current tests cover JS-disabled booking fallbacks, modifier-click preservation, inline vs modal Cal behavior, native menu behavior, current-page nav, repeated static figure semantics, mobile/print/readability, no invented claims, and GHX/DataDash/proof boundaries. |
+| Test strategy | ready | Inner loop and validation are explicit. Existing Pest coverage is strong for page facts/routes/analytics; Bun currently covers mobile menu and walkthrough diagram behavior. Note: contract references future `analytics.test.js`/`booking.test.js`, but Phase 2 validation does not require them. |
+
+## Phase 2 Key Patterns
+
+- `resources/views/pages/index.blade.php` — Phase 1 homepage is only partially complete: opening and walkthrough diagram are in The clear argument world, while lower sections (`.home-work`, `.assessment-strip`, approach/person/invitation) still need Phase 2 narrative completion.
+- `resources/views/pages/walkthrough.blade.php` — Current page already contains the approved offer facts, inline `#choose-a-time` calendar, native FAQ disclosures, fit requirement, optional implementation, and single unpriced paid-discovery-week mention. Visual/copy is partly stale (`button-lilac`, older report panel).
+- `resources/views/pages/work.blade.php` — Current Craft & Communicate story has an inline simple reporting flow. Phase 2 should extract/replace this with `resources/views/components/marketing/reporting-diagram.blade.php`, preserving only owner-supplied facts.
+- `resources/views/components/marketing/walkthrough-diagram.blade.php` — Best analogue for the new reporting figure: authored semantic HTML figure, decorative SVG only, complete visible text, no IDs, reusable repeated-instance safety, visible figcaption.
+- `resources/views/components/marketing/article-chart.blade.php` — Accessible figure precedent: `role="img"`/`aria-label`, visible caption, and source table. Reporting figure should copy the semantic completeness principle, not the chart implementation.
+- `resources/css/marketing.css` — Central blast-radius file. Current selectors include both approved Phase 1 (`.home-opening`, `.walkthrough-diagram`) and retained/stale sections (`.button-lilac`, `.reporting-flow`, `.signature`, older work/walkthrough layouts). Phase 2 should remove obsolete selectors as part of replacement, not leave parallel old/new themes indefinitely.
+- `resources/views/components/marketing/booking-link.blade.php` — Critical fallback component. Non-inline CTAs keep `href="{{ route('public.walkthrough') }}"`, `data-cal-link`, `data-cal-namespace`, and `data-cal-config`; inline CTAs point to `#choose-a-time`.
+- `resources/js/booking.js` — Loader and click-preservation behavior is already aligned with spec intent: prevents navigation only after `customElements.get('cal-modal-box')`; modifier clicks are not intercepted. Theme tokens still reference obsolete purple names (`--color-lilac`, `--color-aubergine`) and need Phase 2 palette alignment only.
+- `resources/views/components/marketing/layout.blade.php` — Single Alkaline wordmark, native mobile `<details>`, `How I work` anchor, current-page markers, footer links, PostHog data attributes. Footer has no repeated wordmark/signature.
+- `tests/Feature/MarketingSiteTest.php` — Strong assertions for approved offer/proof boundaries, homepage walkthrough semantic order, repeated walkthrough figures, work story privacy, Walkthrough calendar/fallback facts, redirects, archive preservation, and wordmark count.
+- `tests/Feature/MarketingAnalyticsTest.php` — Protects PostHog layout config and exact booking CTA placement markers; Phase 2 must update only if placements intentionally change and remain equally strong.
+- `tests/Unit/MarketingLayoutTest.php` — Current owner-alignment test requires `.home-work` and `.assessment-strip` to share horizontal layout declarations at every breakpoint. Phase 2 can adapt this invariant but should not delete it silently.
+
+## Phase 2 Dependencies
+
+- `docs/ideation/.../acceptance.md` — Prerequisite is met. Owner approved Phase 1 opening/Barlow/Walkthrough figure/mobile/static-print sketch. Phase 2 must append actual Phase 2 evidence without converting QA into owner approval.
+- `.ai/rules/resources.md` — Current durable rule explicitly says The clear argument supersedes Future, in person; marketing uses bundled Alkaline wordmark and Barlow body text; admin/customer stay Inter. This resolves the Phase 1 font contradiction.
+- `PRODUCT.md` — Owns offer truth and proof boundaries: “I help businesses,” “fifteen years,” GitHub/Heroku/Zapier allowed, WorkOS/GHX omitted, Craft & Communicate only, no DataDash public title, free roughly one-hour pitch-free Walkthrough, written report within three business days, optional separate implementation.
+- `DESIGN.md` — Records Phase 1 as approved foundation only; explicitly says lower homepage, Work, Walkthrough detail, Writing, and print are not finished. Phase 2 should update this to reflect reviewed homepage/Walkthrough/Work and leave Writing for Phase 3.
+- `.impeccable/surfaces/resources-views-pages-index-blade-php.md` — Current homepage brief is Phase 1-specific and says lower homepage awaits Phase 2. Needs final homepage strategy.
+- `.impeccable/surfaces/resources-views-pages-walkthrough-blade-php.md` — Still describes Future, in person, Karla, lilac/aubergine, black cherry opening. Must be rewritten for The clear argument.
+- `.impeccable/surfaces/resources-views-pages-work-blade-php.md` — Still describes Future, in person and the old inline reporting diagram. Must be rewritten for The clear argument and reusable reporting figure.
+- `resources/views/components/marketing/reporting-diagram.blade.php` — New file; currently absent. Consumer should be `resources/views/pages/work.blade.php` first, potentially article/static-print in Phase 3. Must support repeated instances and avoid duplicate IDs.
+- `resources/views/pages/index.blade.php` — Folio route `public.index`; consumed by `MarketingSiteTest`, `MarketingAnalyticsTest`, CSS selectors, layout test, surface brief, discovery metadata through shared layout.
+- `resources/views/pages/walkthrough.blade.php` — Folio route `public.walkthrough`; consumed by redirects, discovery structured data, inline Cal tests, mobile current-page assertions, booking JS via `[data-cal-inline]`.
+- `resources/views/pages/work.blade.php` — Folio route `public.work`; consumed by homepage link, sitemap/discovery tests, work proof assertions, booking modal/fallback tests.
+- `resources/views/components/marketing/layout.blade.php` — Consumed by all marketing pages and analytics/discovery tests. Nav/footer changes have site-wide blast radius including Writing.
+- `resources/views/components/marketing/booking-link.blade.php` — Consumed by layout header/mobile menu, homepage hero/strip/closing, walkthrough hero, work closing invitation, writing modal CTAs. Breakage affects fallback, analytics, Cal modal, and tests.
+- `resources/views/components/marketing/assessment-invitation.blade.php` — Consumed by homepage and work page. Name remains historical; visual/copy may change, factual offer may not.
+- `resources/views/components/marketing/arrow.blade.php` — Shared inline SVG used throughout marketing links, FAQ summaries, and current reporting flow; visual changes affect many controls.
+- `resources/css/marketing.css` — Imported by `resources/css/app.css`; affects every marketing page, article typography/charts, diagrams, mobile nav, print. Unit tests inspect this file directly.
+- `resources/js/booking.js` — Loaded by `resources/js/app.js`; controls Cal loader, inline/modal mode, event tracking, and no-JS fallback preservation.
+- `resources/js/app.js` — Initializes `initInteractions()`, `initDiagrams()`, `initAnalytics()`, `initBooking()`. Phase 2 likely should not change ordering unless necessary.
+- `resources/js/interactions.js` / `resources/js/interactions.test.js` — Mobile menu only after Phase 1. Phase 2 nav changes must preserve selectors or update tests.
+- `resources/js/diagrams.js` / `resources/js/diagrams.test.js` — Currently only targets `[data-walkthrough-diagram]`. Reporting figure motion is optional; if added, either reuse carefully or extend tests.
+- `tests/Feature/MarketingSiteTest.php` — Needs stronger Phase 2 assertions for full homepage journey, Walkthrough deliverable/objections, and static reporting figure relationships.
+- `tests/Feature/MarketingAnalyticsTest.php` — Must preserve `data-booking-cta` markers: header, mobile-menu, hero/homepage/closing, walkthrough hero/fallback.
+- `tests/Feature/MarketingDiscoveryTest.php` — Not directly modified, but Phase 2 validation includes it; changes to route names, metadata, sitemap page count, or visible service offer can break it.
+- `tests/Unit/MarketingLayoutTest.php` — Must be adapted if `.home-work`/`.assessment-strip` are replaced; preserve owner intent as a new shared-layout invariant.
+- `tests/Unit/MarketingFontsTest.php` — Not listed for Phase 2 modification, but CSS/token changes can still break Barlow/wordmark invariants.
+
+## Phase 2 Conventions
+
+- **Routes/pages**: Folio pages use `name('public.*')`; canonical public paths are `/`, `/walkthrough`, `/work`, `/writing/`, and `/writing/{slug}/`.
+- **Blade components**: Marketing components live under `resources/views/components/marketing/` and are invoked as `<x-marketing.*>`. Components should preserve real anchors and no-JS fallbacks.
+- **Copy/product truth**: `PRODUCT.md` is authoritative. Use first-person singular. Do not invent metrics, testimonials, screenshots, timelines, scarcity, or unsupported client results.
+- **Visual system**: The clear argument is current: cyan `#b7edf1`, ink `#102a33`, yellow `#f7cb58`, white, deep teal support, Barlow for marketing text, Alkaline once as the header wordmark.
+- **Accessibility/static semantics**: Essential figure meaning belongs in visible HTML text and captions. SVG arrows/lines are decorative unless explicitly given accessible labels backed by complete text.
+- **Booking behavior**: Inline on `/walkthrough` uses `#choose-a-time` and `[data-cal-inline]`; non-walkthrough CTAs use route fallback plus Cal data attributes. Modifier clicks must pass through.
+- **Analytics hooks**: Use existing `data-booking-cta` placement markers and `data-booking-fallback`; do not rename events in Phase 2.
+- **JS tests**: Bun tests mock browser APIs directly; do not require browser automation for unit behavior.
+- **PHP tests**: Pest feature tests assert rendered strings/DOM. Avoid weakening proof-boundary assertions when copy changes.
+- **Dev server**: If browser work is performed later, use `POSTHOG_DISABLED=true php artisan dev` / configured `localhost`, not `php artisan serve` or raw IP.
+
+## Phase 2 Risks
+
+- **Obsolete surface-brief contradiction** — Walkthrough and Work surface briefs still mandate Future, in person/Karla/lilac/aubergine. Phase 2 explicitly modifies them; builder must not follow their stale content while editing the pages.
+- **Booking theme stale tokens** — `resources/js/booking.js` still looks up `--color-lilac` and `--color-aubergine`, which no longer exist in `app.css`; Phase 2 must align Cal theme to current tokens without refactoring event semantics.
+- **High CSS blast radius** — `marketing.css` affects homepage, Walkthrough, Work, Writing, articles, charts, mobile menu, and print. Removing old selectors can regress Phase 3 surfaces if not checked.
+- **Reporting-figure truth boundary** — The new reporting diagram must not imply measured savings, full automation, a fake dashboard screenshot, a software subscription, or a report-only product.
+- **Offer expectation risk** — Homepage/Walkthrough visuals must keep report vs optional implementation distinction clear; free report cannot look like free implementation within three business days.
+- **Analytics hook regression** — Layout/CTA rewrites can drop `data-booking-cta`, `data-cal-link`, `data-cal-namespace`, `data-booking-fallback`, or real hrefs.
+- **Layout-test fragility** — `MarketingLayoutTest.php` currently hardcodes `.home-work` + `.assessment-strip`; Phase 2 probably changes section names/structure. Adapt to new owner-intent invariant rather than deleting.
+- **No JS booking tests yet** — Contract later calls for `analytics.test.js`/`booking.test.js`, but they do not exist and are not Phase 2 validation. Do not over-scope Phase 2 by adding a broad JS analytics suite unless necessary.
+- **Acceptance-recording risk** — `acceptance.md` currently contains Phase 1 evidence. Phase 2 should record actual commands/review evidence only after they happen; no pre-filled approval.

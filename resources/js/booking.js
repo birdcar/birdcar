@@ -50,16 +50,21 @@ function ensureCal() {
  * Cal's document listener opens the modal for any `[data-cal-link]` element
  * but does not cancel an anchor's navigation. Keep the href as the
  * no-JavaScript fallback and only cancel it once the embed can take over.
+ * Capture modified clicks before Cal's delegated listener opens a second UI.
  */
 function keepTriggersOnPage() {
     document.addEventListener('click', (event) => {
         const trigger = event.target.closest('a[data-cal-link]');
 
-        if (!trigger || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+        if (!trigger || event.defaultPrevented) return;
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            event.stopPropagation();
+            return;
+        }
         if (!customElements.get('cal-modal-box')) return;
 
         event.preventDefault();
-    });
+    }, { capture: true });
 }
 
 function themeColor(name, fallback) {
@@ -80,15 +85,15 @@ export function initBooking() {
     Cal.config = Cal.config || {};
     Cal.config.forwardQueryParams = true;
 
-    const ink = themeColor('--color-ink', '#291e2e');
-    const paper = themeColor('--color-paper', '#f3eaf3');
-    const lilac = themeColor('--color-lilac', '#d9c9f8');
-    const aubergine = themeColor('--color-aubergine', '#563750');
+    const ink = themeColor('--color-ink', '#102a33');
+    const paper = themeColor('--color-paper', '#ffffff');
+    const cyan = themeColor('--color-cyan', '#b7edf1');
+    const teal = themeColor('--color-deep-teal', '#214b57');
 
     Cal.ns[namespace]('ui', {
         cssVarsPerTheme: {
-            light: { 'cal-brand': ink, 'cal-brand-emphasis': aubergine, 'cal-brand-text': paper, 'cal-bg': paper },
-            dark: { 'cal-brand': lilac, 'cal-brand-emphasis': paper, 'cal-brand-text': ink },
+            light: { 'cal-brand': ink, 'cal-brand-emphasis': teal, 'cal-brand-text': paper, 'cal-bg': paper },
+            dark: { 'cal-brand': cyan, 'cal-brand-emphasis': paper, 'cal-brand-text': ink },
         },
         hideEventTypeDetails: false,
         layout: 'month_view',

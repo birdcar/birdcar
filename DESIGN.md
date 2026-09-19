@@ -1,6 +1,6 @@
 ---
 name: Birdcar — The clear argument
-description: "Phase 1 marketing foundation: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, upright Barlow, and one Alkaline wordmark."
+description: "Reviewed Phase 2 marketing system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, ink personal notes, Barlow hierarchy, and one Alkaline wordmark."
 colors:
   ink: "#102a33"
   paper: "#ffffff"
@@ -8,6 +8,9 @@ colors:
   emphasis: "#f7cb58"
   deep-teal: "#214b57"
   cyan-wash: "#b7edf130"
+  ink-rule-soft: "#102a3330"
+  ink-rule-mid: "#102a3360"
+  ink-code-wash: "#102a3309"
 typography:
   wordmark:
     fontFamily: "Alkaline, cursive"
@@ -20,26 +23,70 @@ typography:
     fontWeight: 600
     lineHeight: 1.02
     letterSpacing: "-.025em"
-  headline:
+  page-display:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2rem, 3.3vw, 3rem)"
+    fontSize: "clamp(4rem, 7.5vw, 7.2rem)"
     fontWeight: 600
     lineHeight: 1.08
-  body:
+  section-display:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 400
-    lineHeight: 1.55
+    fontSize: "clamp(2.8rem, 4.7vw, 4.5rem)"
+    fontWeight: 600
+    lineHeight: 1.08
+  headline:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.3rem, 3.6vw, 3.5rem)"
+    fontWeight: 600
+    lineHeight: 1.08
+  title:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.75rem, 2.5vw, 2.25rem)"
+    fontWeight: 600
+    lineHeight: 1.15
+  subhead:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 600
+    lineHeight: 1.2
   lead:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(1.35rem, 1.7vw, 1.6rem)"
     fontWeight: 400
     lineHeight: 1.4
+  body:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: 1.55
+  body-article:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.1875rem"
+    fontWeight: 400
+    lineHeight: 1.8
+  body-compact:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  caption:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: ".95rem"
+    fontWeight: 400
+    lineHeight: 1.45
+  fine:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: ".875rem"
+    fontWeight: 400
+    lineHeight: 1.45
   button:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.075rem"
     fontWeight: 600
     lineHeight: 1.55
+  chart-label:
+    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
 rounded:
   nav: "3px"
   control: "5px"
@@ -51,6 +98,8 @@ spacing:
   button-y: "1rem"
   button-x: "1.6rem"
   section-y: "clamp(4.5rem, 7vw, 7rem)"
+  section-y-mobile: "3.5rem"
+  rule-gap: "2.5rem"
 components:
   button-yellow:
     backgroundColor: "{colors.emphasis}"
@@ -58,8 +107,15 @@ components:
     typography: "{typography.button}"
     rounded: "{rounded.control}"
     padding: "1rem 1.6rem"
-  button-yellow-active:
+  button-ink:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+    typography: "{typography.button}"
+    rounded: "{rounded.control}"
+    padding: "1rem 1.6rem"
+  button-hover-paper:
     backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
   navigation:
     backgroundColor: "{colors.cyan}"
     textColor: "{colors.ink}"
@@ -79,6 +135,11 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.square}"
     padding: "1rem"
+  calendar-shell:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: ".5rem"
 ---
 
 # Design System: Birdcar
@@ -87,118 +148,150 @@ components:
 
 **Creative North Star: "The clear argument"**
 
-Phase 1 establishes the new marketing visual foundation through the homepage opening and the Walkthrough figure only. The built world is direct and explanatory: cyan editorial fields, blue-green ink, white explanatory space, yellow recommendation emphasis, upright Barlow type, and a single retained Alkaline wordmark. The composition makes the argument readable before it becomes decorative.
+Phase 2 extends the approved Phase 1 foundation across the reviewed homepage, Walkthrough page, and Work page. The system is still direct and explanatory: cyan editorial fields introduce invitations and offers, blue-green ink carries copy and linework, white creates implementation and reading space, yellow marks the useful action or first recommendation, and Barlow makes the reasoning feel upright rather than decorative.
 
-The completed Phase 1 surface covers the header, first viewport, Walkthrough explanation, geometric SVG/HTML report figure, and their responsive/static behavior. The lower homepage still carries retained narrative and older section structure; Writing, Work, Walkthrough detail, and other marketing pages have inherited some shared color/type CSS but are not visually finished. They await Phases 2–3. Print support is an early static sketch, not a finished print specimen.
+The reviewed Phase 2 surfaces are complete at bounded-review scope: homepage, Walkthrough, and Work. That is not an owner approval of new pages, and it does not expand the existing Phase 1 owner approval beyond the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. The finish reviewer disposition was ship with no fixes, and the independent proof-boundary review reported no findings.
 
-Admin and customer project surfaces remain separate Flux UI Pro surfaces using Inter. Marketing uses `--font-marketing` Barlow for text and hierarchy, with Alkaline only for the header wordmark. No shipping raster was created for Phase 1; retired horizon assets remain legacy material for Phase 4 decisions, not current system tokens.
-
-The owner approved the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch on 2026-09-19. Phase 2's visual prerequisite is satisfied; its execution and the remaining surfaces are not approved by this decision.
+Writing/articles and a finished print specimen await Phase 3. The current article CSS is an inherited, usable reading treatment in the same token family, not a completed Phase 2 article design. No shipping raster was created; the reviewed screenshots are evidence, not product assets.
 
 **Key Characteristics:**
 
-- Cyan opening field with ink typography and a yellow booking action.
-- Upright Barlow hierarchy; Alkaline appears once as the native-tracked wordmark.
-- Figure-led explanation: preparatory stages fold into a geometric report, then branch to three optional choices.
-- Flat surfaces, hard SVG strokes, square report geometry, and sparse rounded controls.
-- Static meaning first; optional Motion only emphasizes already-visible diagram relationships.
+- Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.
+- Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.
+- Authored static figures: the Walkthrough report diagram and the shared reporting component used on the homepage and Work page.
+- Flat surfaces, thin ink rules, square report/platform geometry, and sparse rounded controls.
+- Current navigation in header and footer: How I work, Selected work, Writing, and The Walkthrough, with native mobile details/summary fallback.
 
 ## Colors
 
-The Phase 1 palette is functional and editorial: cyan sets the opening field, ink carries the argument, white holds explanation and the folded report, yellow marks the recommended starting point, and deep teal supports shared states outside the completed opening.
+The palette is small and semantic. Cyan is the public invitation field, ink is both text and drawing material, white is the explanatory workspace, yellow is a constrained action/recommendation marker, and deep teal supports states and calendar theming.
 
 ### Primary
 
-- **Cyan field:** opening/header background and stage-number fills. It is the launch field for the clear argument.
-- **Yellow emphasis:** primary homepage action and the report's “Where I’d start” recommendation. Use it sparingly for the one thing to act on.
+- **Cyan field:** header, homepage opening, offer sections, Work opening, steps fields, and closing invitations. It creates the editorial field where the offer is made.
+- **Yellow emphasis:** primary Walkthrough buttons and the “Where I’d start” recommendation. It marks the next useful action, not a whole-page mood.
 
 ### Secondary
 
-- **Deep teal:** shared selection, hover/active support, and inherited lower-page accents. It is present in code but not the focal Phase 1 opening accent.
+- **Deep teal state:** selection, active/focus support, article/chart emphasis, scrollbar, and Cal brand-emphasis fallback. It is a state/support color, not a second marketing voice.
 
 ### Neutral
 
-- **Blue-green ink:** text, strokes, outlines, rules, and diagram connectors.
-- **White paper:** explanation space and the report document surface.
-- **Cyan wash:** light article/figure tint inherited by shared CSS; not a new finished page surface by itself.
+- **Blue-green ink:** body text, large headings, borders, rules, arrows, SVG connectors, selected calendar day, and the dark personal-note field.
+- **White paper:** page background, report/platform cards, mobile menu, calendar shell, and implementation approach sections.
+- **Cyan wash:** article notes, blockquotes, chart panels, and inherited reading aids awaiting Phase 3 refinement.
+- **Soft ink rules:** translucent ink rules separate footer, article rows, FAQ rows, and archive lines.
 
 **The Argument Contrast Rule.** Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.
+
+**The Proof Boundary Color Rule.** Use yellow for a recommendation or booking action only when the copy already states the boundary. Color may emphasize “where I’d start”; it must not imply free implementation, measured results, or proof that was not supplied.
 
 ## Typography
 
 **Display Font:** Barlow via `--font-marketing`, with UI sans-serif/system fallbacks.
 **Wordmark Font:** licensed Alkaline, with cursive fallback.
 **Operational Font:** Inter remains for Admin/customer surfaces only.
+**Mono Font:** Commit Mono exists for code in articles, not marketing labels.
 
-Barlow supplies the new marketing voice: upright, plainspoken, and strong enough for large sentence-case questions. Alkaline survives as a brand mark only; it is not a display-heading system in Phase 1.
+Barlow supplies the marketing voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, FAQs, captions, and article prose. Phase 2 intentionally uses more steps than Phase 1 documented; the 87 detector advisories are all literal font-size values already present in CSS and now represented as actual typography roles rather than CSS changes.
 
 ### Hierarchy
 
-- **Wordmark:** Alkaline header mark, once per page, native tracking, desktop `3.4rem`, mobile `2.7rem`.
-- **Display:** Barlow semibold homepage problem statement, large sentence-case, tight line-height, slight negative tracking.
-- **Headline:** Barlow semibold section and diagram headings, balanced but not ornamental.
-- **Lead:** larger explanatory first-person paragraph under the opening question.
-- **Body:** Barlow regular for supporting explanation, diagram copy, terms, and captions.
-- **Button:** Barlow semibold, sentence case, paired with the shared arrow.
+- **Wordmark:** Alkaline header mark, once per page, desktop `3.4rem`, mobile `2.7rem`.
+- **Display:** homepage problem statement, large sentence-case, tight line-height, slight negative tracking.
+- **Page display:** Work and generic page titles; oversized but still Barlow semibold.
+- **Section display:** major section questions and closing invitations, generally `2.8rem–4.8rem` fluid steps.
+- **Headline:** two-column editorial section headings and offer/story headings.
+- **Title/Subhead:** cards, report/platform headings, diagram stage labels, FAQ/step headings.
+- **Lead:** first-person opening explanation and larger page-summary copy.
+- **Body:** marketing explanation, report body, diagram copy, FAQ answers, and invitation copy.
+- **Compact, caption, and fine:** navigation, figure labels, terms, footer, metadata, chart labels, and small fallback text.
+- **Article prose:** inherited Phase 3 candidate treatment with looser line-height for sustained reading.
 
-**The One Script Rule.** Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, or footer logos from the retired direction.
+**The One Script Rule.** Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, footer logos, or decorative script emphasis.
 
-**The Upright Argument Rule.** Marketing headings in this phase are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.
+**The Upright Argument Rule.** Marketing headings are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.
+
+**The Documented Step Rule.** Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.
 
 ## Layout
 
-Phase 1 uses a full-width cyan opening with a `7%` page gutter, reduced to `6%` below `1100px`. The desktop hero separates the explanatory copy and booking action into a two-column grid after the large question; mobile stacks them in reading order and makes the action full width.
+The base page uses a `7%` gutter, reduced to `6%` below `1100px`, with section padding around `clamp(4.5rem, 7vw, 7rem)` and mobile sections around `3.5rem`. Desktop layouts favor two-column editorial grids: a large claim or heading on the left, explanatory copy or an authored figure on the right. Mobile follows document order and keeps labels readable instead of shrinking diagrams into thumbnails.
 
-The Walkthrough section begins immediately after the opening on white. Desktop uses a three-zone diagram: preparatory stages on the left, folded report in the center, choices on the right. The reviewer-requested focal relationship is explicit: stages 1–2 prepare the conversation, stage 3 produces the report, and the report branches to three optional choices. Below `1100px`, the figure becomes a vertical sequence with the same labels, arrows, and report meaning intact.
+The homepage sequence is complete: approved opening, Walkthrough figure, cyan/white offer strip, shared reporting component, white implementation approach, ink personal note, and cyan closing invitation. The Walkthrough page uses a cyan offer opening with a square folded report, white outcome explanation, cyan three-step process, white FAQ, and cyan calendar close. The Work page uses a cyan client title, white story/proof section, shared reporting figure, and cyan closing invitation.
 
-**The Static Meaning Rule.** The page must read completely as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.
+The current header and footer share the same navigation destinations. Desktop shows inline navigation and an outlined Walkthrough booking control. Mobile uses native `details`/`summary`; JavaScript may close it, but the native fallback remains. Footer navigation keeps the same public destinations and active underline state.
+
+**The Static Meaning Rule.** Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.
 
 ## Elevation & Depth
 
-The completed foundation is flat. Hierarchy comes from fields, typography, hard rules, SVG connectors, and the folded-paper outline, not shadows. The only shadow-like treatment is the keyboard focus ring on buttons and the skip link.
+The system is flat. Depth comes from field changes, white paper/platform surfaces on cyan, thin ink outlines, folded-corner geometry, separators, and focus rings. Shadows are not used for marketing cards at rest. The Cal embed brings its own native light UI inside the white calendar shell; Birdcar only supplies the surrounding cyan/paper/ink palette and fallback link.
 
-**The Flat Report Rule.** The report figure is a geometric explanation, not a mock client artifact or screenshot. Keep it level, stroked, and readable.
+### Shadow Vocabulary
+
+- **Keyboard focus outer:** `0 0 0 6px var(--color-ink)` paired with a paper outline. Use for interactive focus visibility only.
+
+**The Flat Report Rule.** Reports and platforms are geometric explanations, not mock screenshots. Keep them level, stroked, static, and labeled.
 
 ## Shapes
 
-Controls use small radii: the header booking link uses a tighter corner, shared buttons use the existing control radius, and stage numbers are true circles. The report document is square, with an SVG folded corner. Diagram lines use thin ink strokes, square/miter arrow geometry, and non-scaling strokes.
+Controls use small radii: `3px` for the outlined nav booking control and `5px` for primary buttons and the calendar shell. Reports and the shared reporting platform are square ink-outlined surfaces. Stage numbers are true circles. SVG arrows and connectors use thin ink strokes with square/miter geometry and non-scaling strokes.
 
-The Phase 1 figure's signature shape is relational: vertical preparatory stages, a central folded report, and right-side branching choices. Preserve that relationship when adapting the diagram.
+The recurring signature shape is a square white document/platform on a cyan or white field: folded report for the Walkthrough, outlined platform for Craft & Communicate, and native white calendar shell for booking. These shapes say “authored explanation,” not software chrome.
 
 ## Components
 
 ### Header and navigation
 
-The header is cyan with ink text. It contains the single Alkaline wordmark, desktop Barlow links, and an outlined Walkthrough booking control. Mobile uses native `details`/`summary`; JavaScript enhancement may close it, but the native control remains usable.
+The header is cyan with ink text. It contains the single Alkaline wordmark, desktop Barlow links, an outlined Walkthrough booking control, and native mobile `details`/`summary`. Current-page links use an underline; hover/focus underlines are animated when motion is allowed.
 
-### Yellow booking button
+### Footer
 
-The hero action is yellow on ink text, with a shared right arrow, minimum height, and small radius. Hover/focus/active states move toward white paper; focus keeps the two-part visible ring.
+The footer is white with a short two-line statement, the current public navigation, active underline state, and copyright. There is no footer wordmark; this preserves the one-script rule.
 
-### Walkthrough diagram
+### Buttons and links
 
-The diagram is semantic HTML with decorative SVG connectors. Four numbered stages explain the process: Bring the work, Talk it through, Keep the report, Choose what happens next. The report contains three sections, with “Where I’d start” highlighted in yellow. The choices branch from the report and remain optional: use the recommendations independently, discuss implementation, or do nothing.
+Yellow buttons are the primary booking action. Ink buttons appear inside white offer strips. Text links use underline plus the shared line arrow. Hover/focus/active states move yellow toward white and ink buttons toward deep teal; focus keeps the two-part visible ring.
 
-Motion from `resources/js/diagrams.js` scales/highlights each stage number in sequence, then nudges the recommendation. It runs only when the figure intersects, fonts are ready, reduced motion is not requested, print is not active, and the page remains visible.
+### Walkthrough report figure
 
-### Retained lower homepage and shared page pieces
+The Walkthrough figure is semantic HTML with decorative SVG connectors. Preparatory stages lead to a folded report, and the report branches to optional choices. “Where I’d start” is yellow. The same meaning remains in vertical, print, no-JavaScript, and reduced-motion states.
 
-The lower homepage, Writing, Work, and Walkthrough detail pages are not Phase 1 finished specimens. Shared tokens already affect them, but their layouts and narrative surfaces are awaiting Phases 2–3. Do not document inherited reach as full visual approval.
+### Shared reporting component
+
+The authored static reporting component appears on the homepage and Work page. It contrasts “Finding the numbers by hand” with a white outlined “client-facing reporting platform,” then connects performance data and client management to “Part of the agency’s service.” Its caption explicitly says it is an illustration, not a screenshot or measured result.
+
+### Walkthrough page report card
+
+The offer opening uses a square folded report card with observed problems, recommendations, and the yellow first recommendation. It explains the free deliverable without making implementation look included.
+
+### FAQ disclosures
+
+FAQ rows are native `details` elements with ink rules, a small rotating arrow, deep-teal open/focus state, and no dependency on JavaScript.
+
+### Calendar and booking modal
+
+The inline calendar sits in a white rounded shell on cyan with a plain Cal.com fallback link. The Cal UI uses Birdcar palette inputs: ink brand, deep-teal brand emphasis, paper background, and cyan/dark fallbacks. Modal booking uses the same Cal theme over the page with a native close affordance and the real anchor fallback when the embed cannot take over.
+
+### Article and Writing surfaces
+
+Writing index and article styles currently share Barlow, ink, white, cyan wash notes/charts, deep teal links/charts, and Commit Mono code. They are not Phase 2 finished specimens; Phase 3 owns article art direction and print completion.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** use cyan, ink, white, and yellow to make the first argument clear.
-- **Do** keep the report/branch relationships visible in static HTML and SVG.
+- **Do** use cyan for offers/invitations, white for implementation explanation and proof reading, ink for personal-note contrast, and yellow for actions or first recommendations.
+- **Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.
 - **Do** keep Alkaline to the one header wordmark and Barlow for marketing text.
-- **Do** treat the owner's approval as Phase 1 foundation/opening/figure approval only; request separate execution for Phase 2.
-- **Do** preserve reduced-motion, print-static, no-JavaScript, and semantic-reading fallbacks.
+- **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, and no-JavaScript readability.
+- **Do** describe Phase 2 as reviewed and shipped at bounded scope for homepage, Walkthrough, and Work only; keep the existing owner approval scoped to Phase 1.
 
 ### Don't:
 
-- **Don't** describe all marketing pages as visually finished because shared CSS reaches them.
+- **Don't** claim owner approval for Phase 2 pages.
+- **Don't** describe Writing/articles or print as finished Phase 2 design work.
 - **Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.
-- **Don't** turn the diagram into proof, a client screenshot, or a fabricated report artifact.
-- **Don't** make yellow a general field color; reserve it for action/recommendation emphasis.
-- **Don't** start Phase 2 until the owner visual gate approves the real desktop/mobile opening and static/print sketch.
+- **Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.
+- **Don't** change CSS merely to silence undocumented-font-size advisories; document real type roles first.

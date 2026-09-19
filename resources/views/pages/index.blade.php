@@ -28,22 +28,23 @@ name('public.index');
         </div>
         <x-marketing.walkthrough-diagram />
     </section>
-    <section class="home-work" aria-labelledby="work-heading">
-        <h2 id="work-heading">Work in practice.</h2>
-        <a class="work-preview" href="{{ route('public.work') }}#craft-and-communicate">
-            <h3>Craft &amp; Communicate</h3>
-            <p>I built a client-facing reporting platform that brings together performance data and gives the agency something it can offer its customers.</p>
-            <span class="text-link">Read about the work <x-marketing.arrow /></span>
-        </a>
-    </section>
     <section class="assessment-strip" aria-labelledby="assessment-heading">
-        <h2 id="assessment-heading">Let’s start with what’s painful.</h2>
+        <h2 id="assessment-heading">Which part of the week would you change?</h2>
         <div>
             <p>The reporting someone spends Friday assembling. The follow-up that depends on your memory. The process that keeps landing back on your desk.</p>
-            <p>What does it cost when the only fix is another hire, another subscription, or another hour of your evening? And what would the week look like if the report assembled itself and the follow-up went out without you?</p>
-            <p>About an hour with you, then a written report: what’s going wrong, what I’d change, and where I’d start. Free, within three business days, and yours to keep.</p>
+            <p>Before another hire, another subscription, or another hour of your evening, let’s look at what’s making that work difficult.</p>
             <x-marketing.booking-link class="button button-ink" placement="homepage-strip">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+            <a class="text-link offer-detail-link" href="{{ route('public.walkthrough') }}">What happens in a Walkthrough? <x-marketing.arrow /></a>
         </div>
+    </section>
+    <section class="home-work" aria-labelledby="work-heading">
+        <h2 id="work-heading">A report is a start.<br>I also build the change.</h2>
+        <div class="work-preview">
+            <h3>Craft &amp; Communicate</h3>
+            <p>Finding performance numbers by hand was part of the agency’s reporting work. I built a client-facing reporting platform with client management and live-updating data: something the agency can offer its customers.</p>
+            <a class="text-link" href="{{ route('public.work') }}#craft-and-communicate">Read about the work <x-marketing.arrow /></a>
+        </div>
+        <x-marketing.reporting-diagram />
     </section>
     <section class="approach-section section-space" id="how-i-work" aria-labelledby="approach-heading">
         <div class="approach-introduction">
@@ -55,7 +56,7 @@ name('public.index');
         </div>
         <div class="approach-steps">
             <section id="understand"><h3>Understand</h3><p>You and your team walk me through the work. I follow it through the business and look for where it gets difficult. Then you and I decide what better means: for you, and for the people doing it.</p></section>
-            <section id="build"><h3>Build</h3><p>You and I agree on a manageable scope. I build the improvement and test it with the people who’ll use it. That might mean connecting the tools you already have, building something specific to your business, or changing how the work moves between people.</p></section>
+            <section id="build"><h3>Build</h3><p>Implementation is a separate purchase, if you want my help. You and I agree on a manageable scope. I build the improvement and test it with the people who’ll use it. That might mean connecting the tools you already have, building something specific to your business, or changing how the work moves between people.</p></section>
             <section id="care"><h3>Care</h3><p>You get a working system, documentation, and training. When continued help makes sense, I stay involved as your people learn the system and the business changes.</p></section>
         </div>
     </section>

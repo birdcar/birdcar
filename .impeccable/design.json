@@ -1,179 +1,57 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-19T15:20:54.582685+00:00",
+  "generatedAt": "2026-09-19T00:00:00+00:00",
   "title": "Design System: Birdcar",
   "extensions": {
     "colorMeta": {
-      "ink": {
-        "role": "neutral",
-        "displayName": "Blue-green ink",
-        "canonical": "#102a33",
-        "tonalRamp": [
-          "oklch(0.15 0.035 220)",
-          "oklch(0.264 0.035 220)",
-          "oklch(0.379 0.035 220)",
-          "oklch(0.493 0.035 220)",
-          "oklch(0.607 0.035 220)",
-          "oklch(0.721 0.035 220)",
-          "oklch(0.836 0.035 220)",
-          "oklch(0.95 0.035 220)"
-        ]
-      },
-      "paper": {
-        "role": "neutral",
-        "displayName": "White paper",
-        "canonical": "#ffffff",
-        "tonalRamp": [
-          "oklch(0.15 0 0)",
-          "oklch(0.264 0 0)",
-          "oklch(0.379 0 0)",
-          "oklch(0.493 0 0)",
-          "oklch(0.607 0 0)",
-          "oklch(0.721 0 0)",
-          "oklch(0.836 0 0)",
-          "oklch(0.95 0 0)"
-        ]
-      },
-      "cyan": {
-        "role": "primary",
-        "displayName": "Cyan field",
-        "canonical": "#b7edf1",
-        "tonalRamp": [
-          "oklch(0.15 0.045 210)",
-          "oklch(0.264 0.045 210)",
-          "oklch(0.379 0.045 210)",
-          "oklch(0.493 0.045 210)",
-          "oklch(0.607 0.045 210)",
-          "oklch(0.721 0.045 210)",
-          "oklch(0.836 0.045 210)",
-          "oklch(0.95 0.045 210)"
-        ]
-      },
-      "emphasis": {
-        "role": "primary",
-        "displayName": "Yellow recommendation",
-        "canonical": "#f7cb58",
-        "tonalRamp": [
-          "oklch(0.15 0.105 85)",
-          "oklch(0.264 0.105 85)",
-          "oklch(0.379 0.105 85)",
-          "oklch(0.493 0.105 85)",
-          "oklch(0.607 0.105 85)",
-          "oklch(0.721 0.105 85)",
-          "oklch(0.836 0.105 85)",
-          "oklch(0.95 0.105 85)"
-        ]
-      },
-      "deep-teal": {
-        "role": "secondary",
-        "displayName": "Deep teal state",
-        "canonical": "#214b57",
-        "tonalRamp": [
-          "oklch(0.15 0.04 220)",
-          "oklch(0.264 0.04 220)",
-          "oklch(0.379 0.04 220)",
-          "oklch(0.493 0.04 220)",
-          "oklch(0.607 0.04 220)",
-          "oklch(0.721 0.04 220)",
-          "oklch(0.836 0.04 220)",
-          "oklch(0.95 0.04 220)"
-        ]
-      },
-      "cyan-wash": {
-        "role": "neutral",
-        "displayName": "Cyan wash",
-        "canonical": "#b7edf130",
-        "tonalRamp": [
-          "oklch(0.15 0.045 210 / 0.19)",
-          "oklch(0.264 0.045 210 / 0.19)",
-          "oklch(0.379 0.045 210 / 0.19)",
-          "oklch(0.493 0.045 210 / 0.19)",
-          "oklch(0.607 0.045 210 / 0.19)",
-          "oklch(0.721 0.045 210 / 0.19)",
-          "oklch(0.836 0.045 210 / 0.19)",
-          "oklch(0.95 0.045 210 / 0.19)"
-        ]
-      }
+      "ink": { "role": "neutral", "displayName": "Blue-green ink", "canonical": "#102a33", "tonalRamp": ["oklch(0.15 0.035 220)", "oklch(0.264 0.035 220)", "oklch(0.379 0.035 220)", "oklch(0.493 0.035 220)", "oklch(0.607 0.035 220)", "oklch(0.721 0.035 220)", "oklch(0.836 0.035 220)", "oklch(0.95 0.035 220)"] },
+      "paper": { "role": "neutral", "displayName": "White paper", "canonical": "#ffffff", "tonalRamp": ["oklch(0.15 0 0)", "oklch(0.264 0 0)", "oklch(0.379 0 0)", "oklch(0.493 0 0)", "oklch(0.607 0 0)", "oklch(0.721 0 0)", "oklch(0.836 0 0)", "oklch(0.95 0 0)"] },
+      "cyan": { "role": "primary", "displayName": "Cyan field", "canonical": "#b7edf1", "tonalRamp": ["oklch(0.15 0.045 210)", "oklch(0.264 0.045 210)", "oklch(0.379 0.045 210)", "oklch(0.493 0.045 210)", "oklch(0.607 0.045 210)", "oklch(0.721 0.045 210)", "oklch(0.836 0.045 210)", "oklch(0.95 0.045 210)"] },
+      "emphasis": { "role": "primary", "displayName": "Yellow emphasis", "canonical": "#f7cb58", "tonalRamp": ["oklch(0.15 0.105 85)", "oklch(0.264 0.105 85)", "oklch(0.379 0.105 85)", "oklch(0.493 0.105 85)", "oklch(0.607 0.105 85)", "oklch(0.721 0.105 85)", "oklch(0.836 0.105 85)", "oklch(0.95 0.105 85)"] },
+      "deep-teal": { "role": "secondary", "displayName": "Deep teal state", "canonical": "#214b57", "tonalRamp": ["oklch(0.15 0.04 220)", "oklch(0.264 0.04 220)", "oklch(0.379 0.04 220)", "oklch(0.493 0.04 220)", "oklch(0.607 0.04 220)", "oklch(0.721 0.04 220)", "oklch(0.836 0.04 220)", "oklch(0.95 0.04 220)"] },
+      "cyan-wash": { "role": "neutral", "displayName": "Cyan wash", "canonical": "#b7edf130", "tonalRamp": ["oklch(0.15 0.045 210 / 0.19)", "oklch(0.264 0.045 210 / 0.19)", "oklch(0.379 0.045 210 / 0.19)", "oklch(0.493 0.045 210 / 0.19)", "oklch(0.607 0.045 210 / 0.19)", "oklch(0.721 0.045 210 / 0.19)", "oklch(0.836 0.045 210 / 0.19)", "oklch(0.95 0.045 210 / 0.19)"] }
     },
     "typographyMeta": {
-      "wordmark": {
-        "displayName": "Header wordmark",
-        "purpose": "The only Alkaline use in the Phase 1 marketing foundation."
-      },
-      "display": {
-        "displayName": "Opening question",
-        "purpose": "Large Barlow problem statement in the cyan opening."
-      },
-      "headline": {
-        "displayName": "Explanatory heading",
-        "purpose": "Section and diagram headings in upright Barlow."
-      },
-      "body": {
-        "displayName": "Marketing body",
-        "purpose": "Plainspoken explanation, captions, and terms."
-      },
-      "lead": {
-        "displayName": "Hero lead",
-        "purpose": "First-person opening explanation under the main question."
-      },
-      "button": {
-        "displayName": "Action",
-        "purpose": "Walkthrough booking actions."
-      }
+      "wordmark": { "displayName": "Header wordmark", "purpose": "The only Alkaline use in the marketing system." },
+      "display": { "displayName": "Opening question", "purpose": "Large homepage problem statement." },
+      "page-display": { "displayName": "Page title", "purpose": "Work and other large page openings." },
+      "section-display": { "displayName": "Section question", "purpose": "Major two-column claims and invitations." },
+      "headline": { "displayName": "Editorial heading", "purpose": "Offer, story, and approach headings." },
+      "title": { "displayName": "Card title", "purpose": "Report, platform, and compact component headings." },
+      "subhead": { "displayName": "Diagram/FAQ subhead", "purpose": "Stage labels, report labels, and step headings." },
+      "lead": { "displayName": "Lead copy", "purpose": "Opening summaries and first-person explanation." },
+      "body": { "displayName": "Marketing body", "purpose": "Primary explanatory prose." },
+      "body-article": { "displayName": "Article prose", "purpose": "Inherited Writing/article reading step awaiting Phase 3 refinement." },
+      "body-compact": { "displayName": "Compact body", "purpose": "Navigation, diagram body, FAQ rows, terms, and captions." },
+      "caption": { "displayName": "Caption", "purpose": "Figure captions and small fallback text." },
+      "fine": { "displayName": "Fine print", "purpose": "Footer, metadata, byline, and tiny labels." },
+      "button": { "displayName": "Action", "purpose": "Booking buttons and strong calls to action." },
+      "chart-label": { "displayName": "Chart label", "purpose": "Inherited chart label step." }
     },
     "shadows": [
-      {
-        "name": "keyboard-focus-outer",
-        "value": "0 0 0 6px var(--color-ink, #102a33)",
-        "purpose": "Button and skip-link focus only, combined with a 2px paper outline at 2px offset."
-      }
+      { "name": "keyboard-focus-outer", "value": "0 0 0 6px var(--color-ink, #102a33)", "purpose": "Interactive focus only, paired with a 2px paper outline at 2px offset." }
     ],
     "motion": [
-      {
-        "name": "state-feedback",
-        "value": "160ms ease",
-        "purpose": "Button and nav booking color feedback."
-      },
-      {
-        "name": "settle",
-        "value": "400ms linear(0, .2175, .5207, .7361, .8631, .9317, .9668, .9842, .9926, .9966, .9984, .9993, 1)",
-        "purpose": "Arrow movement and subtle active transform."
-      },
-      {
-        "name": "diagram-stage-emphasis",
-        "value": "0.55s, delay index * 0.32s, cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Stage circles scale from 1 to 1.12 and back while flashing yellow, then return to cyan."
-      },
-      {
-        "name": "diagram-recommendation-emphasis",
-        "value": "0.65s after stage sequence, cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "The first recommendation moves up 3px and returns."
-      },
-      {
-        "name": "reduced-motion",
-        "value": "prefers-reduced-motion: reduce",
-        "purpose": "Disable transitions and animations; diagram restores complete static state."
-      }
+      { "name": "state-feedback", "value": "160ms ease", "purpose": "Button, nav, and color feedback." },
+      { "name": "settle", "value": "400ms linear(0, .2175, .5207, .7361, .8631, .9317, .9668, .9842, .9926, .9966, .9984, .9993, 1)", "purpose": "Arrow movement and subtle active transform." },
+      { "name": "ease-arrive", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "FAQ, menu, and diagram emphasis arrival." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Disable transitions and animations while preserving complete static meaning." }
     ],
     "breakpoints": [
-      {
-        "name": "diagram-vertical",
-        "value": "1100px"
-      },
-      {
-        "name": "supporting-layout",
-        "value": "1050px"
-      },
-      {
-        "name": "mobile",
-        "value": "760px"
-      }
+      { "name": "diagram-vertical", "value": "1100px" },
+      { "name": "supporting-layout", "value": "1050px" },
+      { "name": "mobile", "value": "760px" }
     ],
     "phaseStatus": {
-      "completed": "Phase 1 visual foundation: header, homepage opening, Walkthrough introduction and figure.",
-      "ownerApproval": "Approved 2026-09-19: Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. Phase 2's visual prerequisite is satisfied, not its execution authorization.",
-      "pending": "Phase 2 execution awaits a separate request. Lower homepage and all other marketing pages await Phases 2-3 despite inherited shared color/type. Print is an early static sketch, not a finished specimen.",
-      "notCurrent": "No shipping raster was created. Retired horizon assets remain for Phase 4 decisions only. Admin/customer Inter surfaces are unchanged."
+      "phase1OwnerApproval": "Approved 2026-09-19: Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. This remains correctly scoped to Phase 1.",
+      "phase2Reviewed": "Homepage complete; Walkthrough complete; Work complete at bounded-review scope. Fresh finish review disposition: ship, no fixes. Independent proof-boundary review: no findings.",
+      "notClaimed": "No owner Phase 2 approval is claimed. Writing/articles and a finished print specimen await Phase 3.",
+      "artifacts": "Reviewed captures exist under .impeccable/review/phase-2-*.png for home, walkthrough, work, calendar, modal, no-JS, print, and grayscale/repeated reporting. No shipping raster was created.",
+      "detector": "87 detector advisories were design-system-font-size advisories in existing CSS against the older Phase 1 DESIGN.md. The actual typography steps are now documented; CSS was not changed to appease the detector."
+    },
+    "calendar": {
+      "palette": "Cal embed receives ink brand, deep-teal brand emphasis, paper background, paper brand text, cyan/dark fallback values, and month_view layout.",
+      "fallbacks": "Inline calendar keeps the plain Cal.com fallback link. Modal triggers keep their real href and only prevent navigation once the embed can take over."
     }
   },
   "components": [
@@ -181,84 +59,74 @@
       "name": "Cyan marketing header",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Phase 1 header: cyan field, single Alkaline wordmark, Barlow links, and outlined Walkthrough booking control.",
-      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough</a></nav></header>",
-      "css": ".ds-site-header{box-sizing:border-box;background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 7%;}.ds-wordmark{font-family:var(--font-alkaline,'Alkaline',cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;color:inherit;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav a{color:inherit;text-decoration:none;padding-block:.75rem;white-space:nowrap}.ds-desktop-nav a:hover{text-decoration:underline;text-underline-offset:.22em}.ds-nav-booking{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.7rem 1rem;border:1px solid currentColor;border-radius:3px;line-height:1.2;transition:background-color 160ms ease,color 160ms ease}.ds-nav-booking:hover,.ds-nav-booking:focus-visible{background:var(--color-paper,#fff);color:var(--color-ink,#102a33)}.ds-site-header :focus-visible{outline:3px solid currentColor;outline-offset:6px}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}}"
+      "description": "Static visual preview: cyan field, single Alkaline wordmark, Barlow navigation, outlined Walkthrough control, and native mobile menu. Fragment destinations are schematic; production booking must use booking-link.blade.php with its real route/Cal attributes, or #choose-a-time in inline context.",
+      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\" aria-current=\"page\">Selected work</a><a href=\"#writing\">Writing</a><a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough</a></nav><details class=\"ds-mobile-menu\"><summary>Menu <span class=\"ds-menu-icon\" aria-hidden=\"true\"></span></summary><nav><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a href=\"#walkthrough\">Book a free Walkthrough</a></nav></details></header>",
+      "css": ".ds-site-header{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 7%;}.ds-wordmark{font-family:var(--font-alkaline,'Alkaline',cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;color:inherit;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav a{color:inherit;text-decoration:none;padding-block:.75rem}.ds-desktop-nav a[aria-current]{text-decoration:underline;text-underline-offset:.22em}.ds-nav-booking{display:inline-flex;align-items:center;min-height:44px;padding:.7rem 1rem;border:1px solid currentColor;border-radius:3px;line-height:1.2}.ds-nav-booking:hover,.ds-nav-booking:focus-visible{background:var(--color-paper,#fff);outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-mobile-menu{display:none}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%;position:relative}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}.ds-mobile-menu{display:block}.ds-mobile-menu summary{display:flex;gap:.8rem;align-items:center;list-style:none}.ds-menu-icon{width:19px;height:12px;border-top:1px solid currentColor;border-bottom:1px solid currentColor}.ds-mobile-menu nav{position:absolute;inset:100% 0 auto;display:flex;flex-direction:column;background:var(--color-paper,#fff);padding:1rem 6% 1.8rem;border-bottom:1px solid var(--color-ink,#102a33)}}"
     },
     {
       "name": "Yellow Walkthrough button",
       "kind": "button",
       "refersTo": "button-yellow",
-      "description": "Primary Phase 1 action in the opening: yellow emphasis, ink text, shared arrow, paper feedback state.",
-      "html": "<a class=\"ds-button\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-button{box-sizing:border-box;min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33);transition:background-color 160ms ease,color 160ms ease,transform 400ms linear(0,.2175,.5207,.7361,.8631,.9317,.9668,.9842,.9926,.9966,.9984,.9993,1)}.ds-button:hover,.ds-button:focus-visible,.ds-button:active{background:var(--color-paper,#fff)}.ds-button:active{transform:scale(.985)}.ds-button:focus-visible{outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px;flex-shrink:0;transition:transform 400ms linear(0,.2175,.5207,.7361,.8631,.9317,.9668,.9842,.9926,.9966,.9984,.9993,1)}.ds-button:hover .ds-arrow,.ds-button:focus-visible .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px;width:100%}}@media(prefers-reduced-motion:reduce){.ds-button,.ds-arrow{transition:none}}"
+      "description": "Primary booking action: yellow emphasis, ink text, small radius, arrow motion, paper hover/focus state.",
+      "html": "<a class=\"ds-button ds-button-yellow\" href=\"/walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
+      "css": ".ds-button{min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;transition:background-color 160ms ease,color 160ms ease,transform 400ms linear(0,.2175,.5207,.7361,.9317,1)}.ds-button-yellow{background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33)}.ds-button-yellow:hover,.ds-button-yellow:focus-visible,.ds-button-yellow:active{background:var(--color-paper,#fff)}.ds-button:focus-visible{outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px}.ds-button:hover .ds-arrow,.ds-button:focus-visible .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px;width:100%}}"
     },
     {
-      "name": "Opening argument block",
+      "name": "Shared reporting component",
       "kind": "custom",
-      "description": "The completed Phase 1 first viewport: large Barlow question, first-person explanation, and yellow Walkthrough action on cyan.",
-      "html": "<section class=\"ds-home-opening\" aria-labelledby=\"ds-home-heading\"><div class=\"ds-home-hero\"><h1 id=\"ds-home-heading\">Why does everything<br> come back to you?</h1><div class=\"ds-hero-copy\"><div><p class=\"ds-hero-introduction\">I help businesses untangle work that’s become harder to keep up with.</p><p class=\"ds-hero-explanation\">Your team shows me where the work gets stuck. I build the fix, so it stops coming back to you.</p></div><div class=\"ds-hero-action\"><a class=\"ds-button\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a><p class=\"ds-terms\">A pitch-free hour. A written report within three business days. Yours to keep.</p></div></div></div></section>",
-      "css": ".ds-home-opening{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif)}.ds-home-hero{padding:clamp(2.5rem,4vw,4rem) 7% clamp(3rem,5vw,5rem)}.ds-home-hero h1{max-width:22ch;margin:0;font-size:clamp(3rem,6.65vw,6rem);font-weight:600;line-height:1.02;letter-spacing:-.025em}.ds-hero-copy{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:8%;align-items:center;margin-top:2.5rem}.ds-hero-introduction{font-size:clamp(1.35rem,1.7vw,1.6rem);line-height:1.4;max-width:46ch;margin:0}.ds-hero-explanation{font-size:1.125rem;line-height:1.55;margin:1rem 0 0;max-width:54ch}.ds-hero-action{justify-self:end;max-width:25rem}.ds-button{box-sizing:border-box;min-height:62px;width:100%;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-size:1.075rem;font-weight:600;text-decoration:none;border-radius:5px;background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px}.ds-terms{font-size:1rem;line-height:1.5;margin:1rem 0 0;max-width:38ch}@media(max-width:1100px){.ds-home-hero{padding-inline:6%}.ds-hero-copy{gap:5%}}@media(max-width:760px){.ds-home-hero{padding:2rem 6% 2.5rem}.ds-home-hero h1{font-size:clamp(2.7rem,10.8vw,4.5rem)}.ds-hero-copy{grid-template-columns:1fr;gap:1.5rem;margin-top:1.5rem}.ds-hero-introduction{font-size:1.25rem}.ds-hero-explanation{font-size:1.0625rem}.ds-hero-action{justify-self:stretch;max-width:none}.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px}.ds-terms{font-size:.95rem}}"
+      "description": "Authored static component shared by homepage and Work page: manual number gathering to client-facing reporting platform and agency offering.",
+      "html": "<figure class=\"ds-reporting\"><div class=\"ds-reporting-grid\"><div class=\"ds-before\"><h3>Finding the numbers by hand</h3><p>Performance numbers had to be gathered for reporting.</p><svg viewBox=\"0 0 280 110\" aria-hidden=\"true\"><path d=\"M12 8h60v54H12z M25 24h34 M25 35h24 M110 8h60v54h-60z M123 24h34 M123 35h24 M208 8h60v54h-60z M221 24h34 M221 35h24\"/><path d=\"M42 70v18h98 M238 70v18h-98 M140 70v34m-6-6 6 6 6-6\"/></svg><p class=\"ds-relation\">The work I brought together →</p></div><div class=\"ds-platform\"><h3>A client-facing reporting platform</h3><dl><div><dt>Performance data</dt><dd>Live-updating data for reporting.</dd></div><div><dt>Client management</dt><dd>The agency’s clients managed alongside their reporting.</dd></div></dl><p class=\"ds-result\"><strong>↓ Part of the agency’s service</strong><span>An offering Craft & Communicate can sell to its customers.</span></p></div></div><figcaption>Craft & Communicate’s reporting, illustrated. This shows how the work fits together, not a product screenshot or measured results.</figcaption></figure>",
+      "css": ".ds-reporting{font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);color:var(--color-ink,#102a33)}.ds-reporting-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:4rem;align-items:center}.ds-before h3{font-size:1.5rem;line-height:1.2;margin:0 0 1rem;font-weight:600}.ds-before p{font-size:1rem;line-height:1.5}.ds-before svg{width:100%;max-width:280px;margin-block:1.5rem;fill:none;stroke:currentColor;stroke-width:1.25}.ds-before path{vector-effect:non-scaling-stroke}.ds-platform{background:var(--color-paper,#fff);border:1px solid var(--color-ink,#102a33);padding:2rem}.ds-platform h3{font-size:clamp(1.75rem,2.5vw,2.25rem);line-height:1.15;margin:0;font-weight:600}.ds-platform dl{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0 0}.ds-platform dl>div{border-top:1px solid currentColor;padding-top:1rem}.ds-platform dt{font-weight:600}.ds-platform dd{margin:.5rem 0 0;font-size:1rem;line-height:1.5}.ds-result{border-top:1px solid currentColor;margin-top:2rem;padding-top:1.5rem}.ds-result strong,.ds-result span{display:block}.ds-result strong{font-size:1.25rem}.ds-result span{font-size:1rem;margin-top:.5rem}.ds-reporting figcaption{border-top:1px solid currentColor;padding-top:1.25rem;margin-top:2rem;font-size:1rem;max-width:75ch}@media(max-width:760px){.ds-reporting-grid{grid-template-columns:1fr;gap:1.5rem}.ds-platform{padding:1.25rem}.ds-platform dl{grid-template-columns:1fr}}"
     },
     {
-      "name": "Walkthrough report figure",
-      "kind": "custom",
+      "name": "Walkthrough report card",
+      "kind": "card",
       "refersTo": "report-document",
-      "description": "Static extraction of the implemented Phase 1 figure, including its report, connectors, three optional choices, responsive sequence, and print rules.",
-      "html": "<figure class=\"ds-walkthrough-diagram\">\n    <ol class=\"ds-walkthrough-stages\" role=\"list\">\n        <li class=\"ds-bring-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>1</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Bring the work</h3>\n            <p>Pick a process your team actually performs: chasing a follow-up, putting a report together, getting a new client started.</p>\n            <p>You don’t need to diagnose the problem or specify software.</p>\n        </li>\n        <li class=\"ds-conversation-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>2</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Talk it through</h3>\n            <p>Then spend roughly one hour with me and the person doing the work. Show me what happens, including the awkward bits.</p>\n            <p>Free and pitch-free. If you want to talk about hiring me, you’ll bring it up, not me.</p>\n            <svg class=\"ds-report-handoff\" viewBox=\"0 0 100 24\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M0 12H98m-8-7 8 7-8 7\" /></svg>\n        </li>\n        <li class=\"ds-report-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\">\n                <span>3</span>\n                <svg viewBox=\"0 0 24 100\" preserveAspectRatio=\"none\" focusable=\"false\"><path d=\"M12 0V98m-7-8 7 8 7-8\" /></svg>\n            </div>\n            <h3>Keep the report</h3>\n            <p>Within three business days of our conversation, I’ll send you a written report with:</p>\n            <div class=\"ds-report-document\">\n                <svg class=\"ds-report-outline\" viewBox=\"0 0 360 380\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 1H322L359 38V379H1ZM322 1V38H359\" /></svg>\n                <dl class=\"ds-report-contents\">\n                    <div><dt>What’s getting in the way</dt><dd>The problems I observed in the work.</dd></div>\n                    <div><dt>What I’d change</dt><dd>Recommended improvements and why they help.</dd></div>\n                    <div class=\"ds-first-recommendation\"><dt>Where I’d start</dt><dd>The first change and why it comes first.</dd></div>\n                </dl>\n            </div>\n        </li>\n        <li class=\"ds-choice-stage\">\n            <div class=\"ds-stage-connection\" aria-hidden=\"true\"><span>4</span></div>\n            <h3>Choose what happens next</h3>\n            <p>Once you have the report, the next step is yours:</p>\n            <ul class=\"ds-walkthrough-choices\" role=\"list\">\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V60M1 30H30m-8-6 8 6-8 6\" /></svg>Use the recommendations independently.</li>\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V60M1 30H30m-8-6 8 6-8 6\" /></svg>Discuss separate implementation with me.</li>\n                <li><svg viewBox=\"0 0 32 60\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M1 0V30H30m-8-6 8 6-8 6\" /></svg>Or do nothing. No purchase obligation.</li>\n            </ul>\n        </li>\n    </ol>\n    <figcaption>A real process, a free conversation, a report you keep. What you do with it is up to you.</figcaption>\n</figure>",
-      "css": ".ds-walkthrough-diagram{font-family:var(--font-marketing,Barlow,ui-sans-serif,system-ui,sans-serif);font-size:1.125rem;line-height:1.55;color:var(--color-ink,#102a33)}.ds-walkthrough-diagram *{box-sizing:border-box}.ds-walkthrough-diagram :is(h3,p,dl,ul){margin:0}.ds-walkthrough-diagram p+p{margin-top:1em}.ds-walkthrough-diagram { margin: 2.5rem 0 0; }.ds-walkthrough-stages { display: grid; grid-template-columns: .95fr 1.25fr .85fr; gap: 0 4rem; margin: 0; padding: 0; list-style: none; }.ds-walkthrough-stages > li { min-width: 0; position: relative; }.ds-bring-stage, .ds-conversation-stage { grid-column: 1; padding-left: 3.5rem; }.ds-bring-stage { padding-bottom: 2.5rem; }.ds-conversation-stage { grid-row: 2; }.ds-report-stage { grid-column: 2; grid-row: 1 / span 2; }.ds-choice-stage { grid-column: 3; grid-row: 1 / span 2; align-self: center; }.ds-stage-connection { margin-bottom: 1rem; }.ds-stage-connection span { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border: 1px solid var(--color-ink,#102a33); border-radius: 50%; font-weight: 600; background: var(--color-cyan,#b7edf1); flex-shrink: 0; }.ds-walkthrough-diagram svg { overflow: visible; fill: none; stroke: var(--color-ink,#102a33); stroke-width: 1.25; }.ds-walkthrough-diagram path { vector-effect: non-scaling-stroke; }.ds-stage-connection svg { display: none; }.ds-bring-stage .ds-stage-connection, .ds-conversation-stage .ds-stage-connection { position: absolute; inset: 0 auto 0 0; width: 2.5rem; margin: 0; }.ds-bring-stage .ds-stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); }.ds-report-handoff { position: absolute; right: -3.4rem; top: 1.25rem; width: 2.8rem; height: 24px; }.ds-walkthrough-stages h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.15; margin-bottom: 1rem; text-wrap: initial; }.ds-walkthrough-stages p, .ds-walkthrough-choices { font-size: 1rem; line-height: 1.5; }.ds-report-stage h3 { font-size: 2rem; }.ds-report-document { position: relative; margin-top: 1.5rem; }.ds-report-document .ds-report-outline { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--color-paper,#fff); }.ds-report-contents { position: relative; padding: 2rem 1.5rem 1.5rem; font-size: 1.125rem; }.ds-report-contents > div { padding-block: 1rem; }.ds-report-contents > div + div { border-top: 1px solid var(--color-ink,#102a33); }.ds-report-contents dt { font-weight: 600; }.ds-report-contents dd { margin: .35rem 0 0; font-size: 1rem; }.ds-report-contents .ds-first-recommendation { background: var(--color-emphasis,#f7cb58); padding: 1rem; border: 0; }.ds-walkthrough-choices { position: relative; list-style: none; padding: 0; margin-top: 1.5rem; }.ds-walkthrough-choices::before { content: ''; position: absolute; top: 0; left: -4rem; width: 4rem; border-top: 1px solid var(--color-ink,#102a33); }.ds-walkthrough-choices li { position: relative; padding: .8rem 0 .8rem 2.8rem; }.ds-walkthrough-choices svg { position: absolute; top: 0; left: 0; width: 32px; height: 100%; }.ds-walkthrough-diagram figcaption { border-top: 1px solid var(--color-ink,#102a33); padding-top: 1.25rem; margin-top: 2rem; font-size: 1rem; }@media (max-width: 1100px) { .ds-walkthrough-stages { grid-template-columns: 1fr; gap: 0; } }@media (max-width: 1100px) { .ds-walkthrough-stages > li { grid-column: auto; grid-row: auto; padding: 0 0 2rem 3.5rem; } }@media (max-width: 1100px) { .ds-walkthrough-stages > li:last-child { padding-bottom: 0; } }@media (max-width: 1100px) { .ds-stage-connection { position: absolute; top: 0; left: 0; bottom: 0; width: 2.5rem; margin: 0; } }@media (max-width: 1100px) { .ds-stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); } }@media (max-width: 1100px) { .ds-walkthrough-stages h3 { padding-top: .3rem; } }@media (max-width: 1100px) { .ds-walkthrough-stages p { max-width: 62ch; } }@media (max-width: 1100px) { .ds-report-document { max-width: 32rem; } }@media (max-width: 1100px) { .ds-report-contents { padding: 1.5rem 1rem 1rem; } }@media (max-width: 1100px) { .ds-report-handoff, .ds-walkthrough-choices::before { display: none; } }@media print { .ds-walkthrough-stages { display: block; } }@media print { .ds-walkthrough-stages > li { position: relative; padding: 0 0 1.25rem 3.5rem; break-inside: avoid; } }@media print { .ds-stage-connection { position: absolute; top: 0; left: 0; } }@media print { .ds-stage-connection svg, .ds-bring-stage .ds-stage-connection svg, .ds-report-handoff, .ds-walkthrough-choices::before { display: none; } }@media print { .ds-report-stage h3 { font-size: 1.5rem; } }@media print { .ds-report-document { max-width: 32rem; } }@media print { .ds-report-contents { padding: 1.5rem; } }@media print { .ds-stage-connection span, .ds-report-contents .ds-first-recommendation { background: white; color: black; border: 1px solid black; transform: none !important; } }@media print { .ds-walkthrough-stages p, .ds-walkthrough-choices, .ds-report-contents { font-size: 11pt; } }@media print { .ds-walkthrough-diagram figcaption { break-before: avoid; } }"
+      "description": "Folded report card used in the Walkthrough opening to show the free written deliverable and yellow first recommendation.",
+      "html": "<aside class=\"ds-offer-report\"><svg class=\"ds-outline\" viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M1 1H83L99 13V99H1Z M83 1V13H99\"/></svg><div class=\"ds-report-content\"><h2>Your Walkthrough report</h2><p>In writing, within three business days.</p><dl><div><dt>What’s happening</dt><dd>The problems in your work as I’ve understood them.</dd></div><div><dt>What I recommend</dt><dd>What I’d change, and what each change fixes for you.</dd></div><div class=\"ds-first\"><dt>Where I’d start</dt><dd>The first change I’d make for you, and why it comes first.</dd></div></dl><p><strong>Yours to keep. No purchase required.</strong></p></div></aside>",
+      "css": ".ds-offer-report{position:relative;color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif)}.ds-outline{position:absolute;inset:0;width:100%;height:100%;fill:var(--color-paper,#fff);stroke:currentColor;stroke-width:1.25}.ds-outline path{vector-effect:non-scaling-stroke}.ds-report-content{position:relative;padding:3rem 2rem 2rem}.ds-report-content h2{font-size:2rem;line-height:1.08;margin:0;max-width:14ch}.ds-report-content p,.ds-report-content dd{font-size:1rem;line-height:1.5}.ds-report-content dl{margin:1rem 0}.ds-report-content dl>div{padding-block:1rem}.ds-report-content dl>div+div{border-top:1px solid currentColor}.ds-report-content dt{font-weight:600}.ds-report-content dd{margin:.35rem 0 0}.ds-first{background:var(--color-emphasis,#f7cb58);padding:1rem!important;border:0!important}@media(max-width:760px){.ds-report-content{padding:2.5rem 1.5rem 1.5rem}.ds-report-content h2{font-size:1.75rem}}"
+    },
+    {
+      "name": "Calendar shell and fallback",
+      "kind": "custom",
+      "refersTo": "calendar-shell",
+      "description": "Inline Cal area: white rounded shell on cyan with plain Cal.com fallback and Birdcar palette supplied to the native embed.",
+      "html": "<section class=\"ds-offer-close\"><h2>Make a little room<br>to figure it out.</h2><p>Pick an hour that suits you. The report follows within three business days, and it’s yours whatever you decide.</p><div class=\"ds-calendar\"></div><p class=\"ds-fallback\">If the calendar doesn’t load, <a href=\"https://cal.com/birdcar/walkthrough\">book on Cal.com</a>.</p></section>",
+      "css": ".ds-offer-close{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);text-align:center;padding:5rem 7%}.ds-offer-close h2{font-size:clamp(3.5rem,5.8vw,5.8rem);line-height:1.08;margin:0}.ds-offer-close>p{max-width:58ch;margin:1.5rem auto;font-size:1rem;line-height:1.5}.ds-calendar{margin:3rem auto 0;max-width:1080px;min-height:620px;padding:.5rem;background:var(--color-paper,#fff);border-radius:5px;text-align:left}.ds-fallback{font-size:.9rem}.ds-fallback a{color:inherit;text-decoration:underline}@media(max-width:760px){.ds-offer-close{padding:3.5rem 6%}.ds-offer-close h2{font-size:3.4rem}.ds-calendar{min-height:560px;padding:.25rem}}"
     }
   ],
   "narrative": {
     "northStar": "The clear argument",
-    "overview": "Phase 1 establishes the new marketing visual foundation through the homepage opening and the Walkthrough figure only. The built world is direct and explanatory: cyan editorial fields, blue-green ink, white explanatory space, yellow recommendation emphasis, upright Barlow type, and a single retained Alkaline wordmark. The composition makes the argument readable before it becomes decorative.\n\nThe completed Phase 1 surface covers the header, first viewport, Walkthrough explanation, geometric SVG/HTML report figure, and their responsive/static behavior. The lower homepage still carries retained narrative and older section structure; Writing, Work, Walkthrough detail, and other marketing pages have inherited some shared color/type CSS but are not visually finished. They await Phases 2–3. Print support is an early static sketch, not a finished print specimen.\n\nAdmin and customer project surfaces remain separate Flux UI Pro surfaces using Inter. Marketing uses `--font-marketing` Barlow for text and hierarchy, with Alkaline only for the header wordmark. No shipping raster was created for Phase 1; retired horizon assets remain legacy material for Phase 4 decisions, not current system tokens.",
+    "overview": "Phase 2 extends the approved Phase 1 foundation across the reviewed homepage, Walkthrough page, and Work page. The system is still direct and explanatory: cyan editorial fields introduce invitations and offers, blue-green ink carries copy and linework, white creates implementation and reading space, yellow marks the useful action or first recommendation, and Barlow makes the reasoning feel upright rather than decorative.\n\nThe reviewed Phase 2 surfaces are complete at bounded-review scope: homepage, Walkthrough, and Work. That is not an owner approval of new pages, and it does not expand the existing Phase 1 owner approval beyond the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. The finish reviewer disposition was ship with no fixes, and the independent proof-boundary review reported no findings.\n\nWriting/articles and a finished print specimen await Phase 3. The current article CSS is an inherited, usable reading treatment in the same token family, not a completed Phase 2 article design. No shipping raster was created; the reviewed screenshots are evidence, not product assets.",
     "keyCharacteristics": [
-      "Cyan opening field with ink typography and a yellow booking action.",
-      "Upright Barlow hierarchy; Alkaline appears once as the native-tracked wordmark.",
-      "Figure-led explanation: preparatory stages fold into a geometric report, then branch to three optional choices.",
-      "Flat surfaces, hard SVG strokes, square report geometry, and sparse rounded controls.",
-      "Static meaning first; optional Motion only emphasizes already-visible diagram relationships."
+      "Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.",
+      "Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.",
+      "Authored static figures: the Walkthrough report diagram and the shared reporting component used on the homepage and Work page.",
+      "Flat surfaces, thin ink rules, square report/platform geometry, and sparse rounded controls.",
+      "Current navigation in header and footer: How I work, Selected work, Writing, and The Walkthrough, with native mobile details/summary fallback."
     ],
     "rules": [
-      {
-        "name": "The Argument Contrast Rule",
-        "body": "Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.",
-        "section": "colors"
-      },
-      {
-        "name": "The One Script Rule",
-        "body": "Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, or footer logos from the retired direction.",
-        "section": "typography"
-      },
-      {
-        "name": "The Upright Argument Rule",
-        "body": "Marketing headings in this phase are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.",
-        "section": "typography"
-      },
-      {
-        "name": "The Static Meaning Rule",
-        "body": "The page must read completely as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.",
-        "section": "layout"
-      },
-      {
-        "name": "The Flat Report Rule",
-        "body": "The report figure is a geometric explanation, not a mock client artifact or screenshot. Keep it level, stroked, and readable.",
-        "section": "elevation"
-      }
+      { "name": "The Argument Contrast Rule", "body": "Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.", "section": "colors" },
+      { "name": "The Proof Boundary Color Rule", "body": "Use yellow for a recommendation or booking action only when the copy already states the boundary. Color may emphasize “where I’d start”; it must not imply free implementation, measured results, or proof that was not supplied.", "section": "colors" },
+      { "name": "The One Script Rule", "body": "Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, footer logos, or decorative script emphasis.", "section": "typography" },
+      { "name": "The Upright Argument Rule", "body": "Marketing headings are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.", "section": "typography" },
+      { "name": "The Documented Step Rule", "body": "Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.", "section": "typography" },
+      { "name": "The Static Meaning Rule", "body": "Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Motion can point at relationships; it cannot supply missing meaning.", "section": "layout" },
+      { "name": "The Flat Report Rule", "body": "Reports and platforms are geometric explanations, not mock screenshots. Keep them level, stroked, static, and labeled.", "section": "elevation" }
     ],
     "dos": [
-      "**Do** use cyan, ink, white, and yellow to make the first argument clear.",
-      "**Do** keep the report/branch relationships visible in static HTML and SVG.",
+      "**Do** use cyan for offers/invitations, white for implementation explanation and proof reading, ink for personal-note contrast, and yellow for actions or first recommendations.",
+      "**Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.",
       "**Do** keep Alkaline to the one header wordmark and Barlow for marketing text.",
-      "**Do** treat the owner's approval as Phase 1 foundation/opening/figure approval only; request separate execution for Phase 2.",
-      "**Do** preserve reduced-motion, print-static, no-JavaScript, and semantic-reading fallbacks."
+      "**Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, and no-JavaScript readability.",
+      "**Do** describe Phase 2 as reviewed and shipped at bounded scope for homepage, Walkthrough, and Work only; keep the existing owner approval scoped to Phase 1."
     ],
     "donts": [
-      "**Don't** describe all marketing pages as visually finished because shared CSS reaches them.",
+      "**Don't** claim owner approval for Phase 2 pages.",
+      "**Don't** describe Writing/articles or print as finished Phase 2 design work.",
       "**Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.",
-      "**Don't** turn the diagram into proof, a client screenshot, or a fabricated report artifact.",
-      "**Don't** make yellow a general field color; reserve it for action/recommendation emphasis.",
-      "**Don't** start Phase 2 until the owner visual gate approves the real desktop/mobile opening and static/print sketch."
+      "**Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.",
+      "**Don't** change CSS merely to silence undocumented-font-size advisories; document real type roles first."
     ]
   }
 }

@@ -2,33 +2,31 @@
 version: 1
 slug: "resources-views-pages-index-blade-php"
 primary_target: "resources/views/pages/index.blade.php"
-related_targets: ["resources/css/marketing.css","resources/js/diagrams.js","resources/views/components/marketing/layout.blade.php"]
+related_targets: ["resources/css/marketing.css","resources/views/components/marketing/reporting-diagram.blade.php","resources/views/components/marketing/layout.blade.php"]
 ---
 
 # Marketing homepage
 
 ## Scope
 
-Visitor mode: **Persuade**. Build the owner-selected **The clear argument** opening and Walkthrough explanation. PRODUCT.md owns offer truth. This is a code-led replacement world, not a refinement of Future, in person.
+Visitor mode: **Persuade**. Referral and outreach prospects recognize an operating problem, understand my help, and can book without reading a case study first. PRODUCT.md owns facts; the owner-approved Phase 1 foundation is the visual authority.
 
 ## Direction contract
 
-**THESIS:** Recognize the work that keeps coming back to the owner; explain useful help, not a report product.
+**THESIS:** Understand the work, explain the change, then build it. Not a report-only product or software subscription.
 
-**OWN-WORLD:** Cyan editorial fields, blue-green ink, white explanation space, yellow recommendation emphasis; upright Barlow and the single Alkaline wordmark.
+**OWN-WORLD:** Cyan fields, blue-green ink, white explanatory space, restrained yellow actions and recommendation; upright Barlow, one Alkaline wordmark.
 
-**STORY:** Recognize the problem, understand the free conversation and report, inspect real implementation, choose to book.
+**STORY:** Problem → free Walkthrough and useful report → real reporting implementation → approach and person → invitation.
 
-**FIRST VIEWPORT:** Large sentence-case problem across the cyan field. First-person explanation below left; free-Walkthrough action and timing right. A connected explanation follows immediately.
+**FIRST VIEWPORT:** Preserve the approved large problem question, first-person explanation left, yellow booking action and report timing right. Follow with the complete authored Walkthrough figure.
 
-**FORM:** The clear argument, grounded pick (second presented card), seed `d5125406`, kind `pick`.
+**FORM:** The clear argument, approved grounded pick, seed `d5125406`; Phase 2 extends it without new exploration.
 
 **FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 ## Content and behavior
 
-Bring the work → talk it through → keep the report → choose what happens next. Semantic HTML carries the complete meaning. Decorative SVG connections support it. The report names observed problems, recommended improvements, and Where I’d start. No invented client artifact or results.
+Craft & Communicate is the sole proof story. A reusable static reporting illustration connects manual number gathering, client management/live data, and the client-facing agency offering. It is explicitly not a screenshot or a measured result. The explanatory report remains distinct from separately purchased implementation and ongoing care.
 
-Signature interaction: a single emphasis passes through the already-visible stages, then the first recommendation. No entrance hiding, scroll interception, or loop. Offscreen figures wait; reduced motion, print, and page hiding restore the complete static state. Mobile becomes a vertical sequence with full-sized labels.
-
-The native menu, single wordmark, real booking links, approved public proof, original archive, and operational typography remain protected. The lower homepage retains its existing facts; its narrative and other public pages await phases 2–3. Agent QA is not owner approval. On 2026-09-19, the owner explicitly approved the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. Phase 2's visual prerequisite is satisfied; execution awaits a separate request.
+Keep `hero`, `homepage-strip`, and `closing-invitation` booking placements, the `#how-i-work` anchor, native menu, real route fallbacks, and no archived essay promotion. The Phase 1 figure is the only authored motion; all meaning remains visible without it. Desktop uses aligned two-column editorial sections, mobile follows document order with full-sized labels. Owner approval covers Phase 1 only. Phase 2 received an independent **ship** finish verdict on 2026-09-19 with no material fixes, covering the homepage at 1440/768/390px, static/no-JS figures, and booking fallbacks. DESIGN.md records the built system; acceptance.md records tests and browser evidence.

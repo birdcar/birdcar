@@ -8,23 +8,25 @@ name('public.walkthrough');
 <x-marketing.layout title="Book a free Walkthrough" active="walkthrough" description="A free hour with me on the work that keeps coming back to you, then a written report within three business days. Yours to keep.">
     <section class="offer-opening" aria-labelledby="offer-heading">
         <div class="offer-copy">
-            <h1 id="offer-heading">Does it all come<br>back to you?</h1>
-            <p class="offer-lead">Let’s work out what would change that.</p>
+            <h1 id="offer-heading">An hour on the work.<br>A report you can use.</h1>
             <p>When you’re the person keeping track of everything, it’s hard to step back far enough to see what needs to change. So I start with the people doing the work, not with software.</p>
             <p>In a free Walkthrough, you spend about an hour showing me the work that’s giving you trouble. Within three business days you get my recommendations in writing.</p>
             <p>The hour is about your work. If you want to talk about hiring me, you’ll bring it up, not me.</p>
-            <x-marketing.booking-link inline placement="walkthrough-hero" class="button button-lilac">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+            <x-marketing.booking-link inline placement="walkthrough-hero" class="button button-yellow">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
             <p class="action-note">About an hour with me. A written report within three business days. Free.</p>
         </div>
         <aside class="offer-report" aria-labelledby="report-heading">
-            <h2 id="report-heading">A clearer picture.<br>A useful next step.</h2>
-            <p>Your Walkthrough report</p>
-            <dl>
-                <div><dt>What’s happening</dt><dd>The problems in your work as I’ve understood them.</dd></div>
-                <div><dt>What I recommend</dt><dd>What I’d change, and what each change fixes for you.</dd></div>
-                <div><dt>Where I’d start</dt><dd>The first change I’d make for you, and why it comes first.</dd></div>
-            </dl>
-            <span class="report-signoff">Yours to keep.</span>
+            <svg class="report-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 1H83L99 13V99H1Z M83 1V13H99" /></svg>
+            <div class="offer-report-content">
+                <h2 id="report-heading">Your Walkthrough report</h2>
+                <p>In writing, within three business days.</p>
+                <dl class="report-contents">
+                    <div><dt>What’s happening</dt><dd>The problems in your work as I’ve understood them.</dd></div>
+                    <div><dt>What I recommend</dt><dd>What I’d change, and what each change fixes for you.</dd></div>
+                    <div class="first-recommendation"><dt>Where I’d start</dt><dd>The first change I’d make for you, and why it comes first.</dd></div>
+                </dl>
+                <p class="report-signoff">Yours to keep. No purchase required.</p>
+            </div>
         </aside>
     </section>
     <section class="offer-outcome section-space" aria-labelledby="outcome-heading">
@@ -36,8 +38,12 @@ name('public.walkthrough');
         <ol>
             <li><span class="step-number">1</span><div><h3>Choose a time.</h3><p>Book an hour that works for you. It’s a video call unless you’d rather meet in person. Bring an example of the work you’d like to talk through; a few notes are plenty.</p></div></li>
             <li><span class="step-number">2</span><div><h3>Walk me through it.</h3><p>You walk me through how the work happens, who’s involved, and where it gets difficult. I keep asking until the problem makes sense in your context.</p></div></li>
-            <li><span class="step-number">3</span><div><h3>Keep the report.</h3><p>After the conversation, you get my observations and recommendations in writing, to use on your own or with my help.</p></div></li>
+            <li><span class="step-number">3</span><div><h3>Keep the report.</h3><p>Within three business days of the conversation, you get my observations and recommendations in writing, to use on your own or with my help.</p></div></li>
         </ol>
+        <div class="offer-choice">
+            <h3>The next step is your choice.</h3>
+            <p>The free Walkthrough gives you a report, not a working implementation. Use the recommendations yourself, talk to me about a separate implementation purchase, or leave it there. You keep the report either way.</p>
+        </div>
     </section>
     <section class="assessment-faq section-space" aria-labelledby="questions-heading">
         <h2 id="questions-heading">A few fair questions.</h2>
@@ -53,7 +59,7 @@ name('public.walkthrough');
     </section>
     <section class="offer-close" id="choose-a-time" aria-labelledby="book-heading">
         <h2 id="book-heading">Make a little room<br>to figure it out.</h2>
-        <p>Pick an hour that suits you. The report follows within three business days,<br>and it’s yours whatever you decide.</p>
+        <p>Pick an hour that suits you. The report follows within three business days, and it’s yours whatever you decide.</p>
         <div class="booking-calendar" data-cal-inline data-cal-link="{{ config('marketing.booking_calendar') }}" data-cal-namespace="{{ config('marketing.booking_namespace') }}"></div>
         <p class="action-note">If the calendar doesn’t load, <a href="{{ config('marketing.booking_url') }}" data-booking-fallback>book on Cal.com</a>.</p>
     </section>

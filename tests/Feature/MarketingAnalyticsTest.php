@@ -22,14 +22,26 @@ test('the marketing layout omits the PostHog browser config when the token is bl
         ->assertDontSee('data-posthog-token');
 });
 
-test('every booking control on the homepage carries its placement marker', function () {
-    $this->get('/')
-        ->assertSee('data-booking-cta="header"', false)
-        ->assertSee('data-booking-cta="mobile-menu"', false)
-        ->assertSee('data-booking-cta="hero"', false)
-        ->assertSee('data-booking-cta="homepage-strip"', false)
-        ->assertSee('data-booking-cta="closing-invitation"', false);
-});
+test('booking controls preserve their exact placements and real route or anchor destinations', function (string $path, array $placements) {
+    $response = $this->get($path);
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+    $controls = $xpath->query('//a[@data-booking-cta]');
+    $actual = [];
+
+    foreach ($controls as $control) {
+        $actual[] = $control->getAttribute('data-booking-cta');
+        expect($control->getAttribute('href'))->toBe($path === '/walkthrough' ? '#choose-a-time' : route('public.walkthrough'));
+        expect($control->getAttribute('data-cal-namespace'))->toBe($path === '/walkthrough' ? '' : 'walkthrough');
+    }
+
+    expect($actual)->toBe($placements);
+})->with([
+    ['/', ['header', 'mobile-menu', 'hero', 'homepage-strip', 'closing-invitation']],
+    ['/work', ['header', 'mobile-menu', 'closing-invitation']],
+    ['/walkthrough', ['header', 'mobile-menu', 'walkthrough-hero']],
+]);
 
 test('the walkthrough page marks its hero control and the plain Cal.com fallback link', function () {
     $this->get('/walkthrough')

@@ -19,13 +19,15 @@ test('the homepage presents the approved offer and only the approved work story'
         ->assertSee('fifteen years')
         ->assertSee('GitHub, Heroku, and Zapier')
         ->assertSee('another hire, another subscription, or another hour of your evening')
-        ->assertSee('if the report assembled itself')
+        ->assertSee('Implementation is a separate purchase')
+        ->assertSee('working system, documentation, and training')
         ->assertSee('within three business days')
         ->assertSee('Craft &amp; Communicate', false)
         ->assertSee(route('public.walkthrough'), false)
         ->assertSee('Book a free Walkthrough')
         ->assertDontSee('GHX')
         ->assertDontSee('DataDash')
+        ->assertDontSee('WorkOS')
         ->assertDontSee('more than fifteen years')
         ->assertDontSee('Your AI wrote a bug');
 });
@@ -107,19 +109,37 @@ test('the walkthrough explains the free report and embeds the actual Cal event w
         ->assertDontSee('You’re booked');
 });
 
-test('each conversion page speaks to the reader at least as much as about me', function (string $path) {
-    $prose = marketingProse($this->get($path)->getContent());
+test('conversion pages make the readers independent next steps visible without opening a disclosure', function (string $path, array $choices) {
+    $response = $this->get($path);
+    $document = new DOMDocument;
+    @$document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());
+    $xpath = new DOMXPath($document);
+    $visible = '';
 
-    $reader = preg_match_all("/\\b(you|your|yours|you're|you'll|you'd|you've)\\b/u", $prose);
-    $me = preg_match_all("/\\b(i|i'll|i've|i'd|i'm|me|my)\\b/u", $prose);
+    foreach ($xpath->query('//main//text()[not(ancestor::details or ancestor::*[@hidden or @aria-hidden="true"])]') as $text) {
+        $visible .= $text->textContent.' ';
+    }
 
-    expect($reader)->toBeGreaterThanOrEqual($me, "reader words {$reader} vs first-person words {$me} on {$path}");
-})->with(['/', '/walkthrough']);
+    expect($visible)->toContain(...$choices);
+})->with([
+    ['/', ['Use the recommendations independently.', 'Discuss separate implementation with me.', 'Or do nothing. No purchase obligation.']],
+    ['/walkthrough', ['Use the recommendations yourself', 'separate implementation purchase', 'or leave it there', 'not a working implementation']],
+]);
 
-test('the homepage asks the reader at least two questions', function () {
-    preg_match('#<main[^>]*>(.*)</main>#s', $this->get('/')->getContent(), $main);
-
-    expect(substr_count(marketingProse($main[1] ?? ''), '?'))->toBeGreaterThanOrEqual(2);
+test('the homepage connects a recognizable problem to help without requiring a case study visit', function () {
+    $this->get('/')->assertSeeTextInOrder([
+        'Why does everything',
+        'Book a free Walkthrough',
+        'Keep the report',
+        'The follow-up that depends on your memory.',
+        'Book a free Walkthrough',
+        'Craft &amp; Communicate',
+        'Understand',
+        'Build',
+        'Care',
+        'fifteen years',
+        'Book a free Walkthrough',
+    ], false);
 });
 
 test('booking buttons away from the walkthrough page open the calendar in place and keep the walkthrough link as fallback', function (string $path) {
@@ -221,7 +241,7 @@ test('the old marketing entry points redirect to the new destinations', function
     ['/assessment', '/walkthrough'],
 ]);
 
-test('mobile navigation identifies the current destination without relying on JavaScript', function (string $path, string $label) {
+test('mobile and footer navigation identify the current destination without relying on JavaScript', function (string $path, string $label) {
     $response = $this->get($path)->assertOk();
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
@@ -231,6 +251,11 @@ test('mobile navigation identifies the current destination without relying on Ja
 
     expect($currentLinks)->toHaveCount(1);
     expect(trim($currentLinks->item(0)->textContent))->toBe($label);
+
+    $footerLinks = $xpath->query('//footer/nav/a[@aria-current="page"]');
+
+    expect($footerLinks)->toHaveCount(1);
+    expect(trim($footerLinks->item(0)->textContent))->toBe($path === '/walkthrough' ? 'The Walkthrough' : $label);
 })->with([
     ['/work', 'Selected work'],
     ['/writing/', 'Writing'],
@@ -250,14 +275,43 @@ test('the approach navigation resolves to a real section and the logo appears on
     $response->assertSee('href="'.route('public.index').'#how-i-work"', false);
 });
 
-/**
- * Reduce a rendered marketing page to the lowercase prose a visitor reads: metadata scripts and
- * styles removed, tags replaced by spaces so words on either side of a tag stay separate words,
- * and typographic apostrophes normalised so contractions match plain patterns.
- */
-function marketingProse(string $html): string
-{
-    $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#si', ' ', $html);
+test('the reporting illustration connects only the supplied project facts in static reading order', function (string $path) {
+    $this->get($path)->assertSeeTextInOrder([
+        'Finding the numbers by hand',
+        'Performance numbers had to be gathered for reporting.',
+        'A client-facing reporting platform',
+        'Performance data',
+        'Live-updating data',
+        'Client management',
+        'Part of the agency’s service',
+        'An offering Craft &amp; Communicate can sell to its customers.',
+        'not a product screenshot or measured results',
+    ], false)
+        ->assertDontSee('GHX')
+        ->assertDontSee('WorkOS')
+        ->assertDontSee('DataDash')
+        ->assertDontSee('hours saved')
+        ->assertDontSee('revenue increased')
+        ->assertDontSee('fully automated');
+})->with(['/', '/work']);
 
-    return mb_strtolower(str_replace('’', "'", preg_replace('/<[^>]+>/', ' ', $html)));
-}
+test('repeated reporting figures preserve their full explanation without identifier collisions', function () {
+    $html = Blade::render('<x-marketing.reporting-diagram /><x-marketing.reporting-diagram />');
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+    $xpath = new DOMXPath($document);
+
+    expect($xpath->query('//figure'))->toHaveCount(2);
+    expect($xpath->query('//figure/figcaption'))->toHaveCount(2);
+    expect($xpath->query('//figure//dl/div'))->toHaveCount(4);
+    expect($xpath->query('//figure//svg[not(@aria-hidden="true")]'))->toHaveCount(0);
+    expect($xpath->query('//figure//*[@hidden or @aria-hidden="true"]//*[self::p or self::dt or self::dd]'))->toHaveCount(0);
+    expect($xpath->query('//*[@id or @aria-labelledby or @aria-describedby]'))->toHaveCount(0);
+});
+
+test('the deeper paid discovery week is mentioned once without a price', function () {
+    $response = $this->get('/walkthrough');
+
+    expect(substr_count($response->getContent(), 'paid discovery week'))->toBe(1);
+    $response->assertDontSee('$')->assertDontSee('£')->assertDontSee('€');
+});

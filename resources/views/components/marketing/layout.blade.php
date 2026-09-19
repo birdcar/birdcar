@@ -37,9 +37,10 @@
         <footer class="site-footer">
             <p>Thoughtful systems.<br>Room for better work.</p>
             <nav aria-label="Footer navigation">
-                <a href="{{ route('public.work') }}">Selected work</a>
-                <a href="{{ route('public.writing') }}">Writing</a>
-                <a href="{{ route('public.walkthrough') }}">The Walkthrough</a>
+                <a href="{{ route('public.index') }}#how-i-work">How I work</a>
+                <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
+                <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
+                <a href="{{ $active === 'walkthrough' ? '#choose-a-time' : route('public.walkthrough') }}" @if ($active === 'walkthrough') aria-current="page" @endif>The Walkthrough</a>
             </nav>
             <span class="copyright">© {{ date('Y') }} Birdcar</span>
         </footer>

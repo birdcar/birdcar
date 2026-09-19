@@ -2,31 +2,35 @@
 version: 1
 slug: "resources-views-pages-work-blade-php"
 primary_target: "resources/views/pages/work.blade.php"
-related_targets: ["resources/css/marketing.css","resources/views/components/marketing/layout.blade.php","resources/views/components/marketing/assessment-invitation.blade.php"]
+related_targets: ["resources/css/marketing.css","resources/views/components/marketing/reporting-diagram.blade.php","resources/views/components/marketing/assessment-invitation.blade.php"]
 ---
 
 # Selected work
 
 ## Scope
 
-Visitor mode: **Persuade**. This page implements the user-selected **Future, in person** world from 2026-09-13. PRODUCT.md owns approved content and offer; DESIGN.md records the built visual system.
+Visitor mode: **Persuade**. Craft & Communicate shows that I implement useful systems, not just deliver reports. Preserve only owner-supplied project facts.
 
 ## Direction contract
 
-**THESIS:** Silicon Valley technical capability, made personally accessible through a clear typographic presentation.
+**THESIS:** Reporting belongs to the agency’s service, not only its internal process.
 
-**OWN-WORLD:** Black cherry openings, pale orchid reading space, lilac actions and explanatory fields, aubergine support; licensed Alkaline, Karla, and restrained Commit Mono. One Birdcar wordmark in the shared header.
+**OWN-WORLD:** Cyan opening, ink Barlow, white reading space, square outlined reporting figure, sparse yellow booking action; one Alkaline wordmark.
 
-**STORY:** Understand the Craft & Communicate reporting platform through the problem, my work, and what clients can do with it.
+**STORY:** Name the client → explain manual number gathering → show the client-facing platform and relationships → explain my reasoning → invite a conversation.
 
-**FIRST VIEWPORT:** The shared dark header and Alkaline Selected work title lead to one generous pale story. A heading and introduction face the explanation; a flat aubergine diagram spans the story below.
+**FIRST VIEWPORT:** Craft & Communicate leads the cyan field, paired with a short description of the reporting platform. The manual reporting problem opens the white story beneath.
 
-**FORM:** Future, in person, seed `537c5794`; the homepage's approved Direct conversation composition anchors the public world.
+**FORM:** The clear argument, approved grounded pick, seed `d5125406`; proof-page extension without new exploration.
 
-**FINISH:** The built public pages received a full finish review (86% homepage fidelity). The same reviewer scored the focus correction resolved in all eight supplied desktop/mobile examples and returned **ship** at fix-list scope. DESIGN.md and the sidecar record the corrected build; supplied captures remain in `.impeccable/review/`.
+**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 ## Content and behavior
 
-Craft & Communicate is the sole public work story. The reporting diagram explains relationships using labeled source blocks, a pale reporting platform, arrows, and the client service; its caption identifies it as illustrated. It is not a client screenshot or measured results artifact.
+The authored reporting figure contrasts gathering performance numbers by hand with client management and live-updating data in the client-facing platform. An explicit connection leads to an offering the agency can sell. Labels and caption carry all meaning; no screenshot, numeric result, fully automatic claim, testimonial, GHX, WorkOS, DataDash title, or engagement status.
 
-On mobile, the title and story stack in reading order, the diagram runs vertically, and the source pair remains side by side. The closing block places its Alkaline heading in the left column facing its paragraph on the right, matching the story rows above; both stack on mobile. The page ends with the shared assessment invitation. Preserve the approved copy: no GHX, DataDash title, engagement-status claim, invented result, or testimonial.
+Use the same figure on the homepage and work page, without a diagram registry or motion dependency. Mobile reflows from problem to platform to agency offering in document order. Grayscale and print retain labels and visible connections. The shared closing invitation preserves modal booking hooks and real Walkthrough-route fallback.
+
+## Finish evidence
+
+Independent finish review on 2026-09-19: **ship**, no material fixes, at 1440/768/390px and for repeated/grayscale/print/no-JS figures. Independent proof-boundary review found no unsupported claims. DESIGN.md records the built system; acceptance.md records the actual tests. Owner approval of Phase 2 is not claimed.
