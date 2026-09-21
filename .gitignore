@@ -34,3 +34,6 @@ frankenphp-worker.php
 /.impeccable/questions/*.log
 /.impeccable/questions/*.state.json
 /.impeccable/hook.cache.json
+
+# Playwright MCP screenshots and snapshots from browser review sessions.
+/.playwright-mcp/
