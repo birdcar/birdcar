@@ -62,7 +62,11 @@ name('public.index');
     </section>
     <section class="personal-note section-space" aria-labelledby="personal-heading">
         <h2 id="personal-heading">Complicated work.<br>A person to talk to.</h2>
-        <div><p>I’ve spent fifteen years working on customer-facing technical systems, including internal tools, solutions engineering, and building a software business. Some of that work was for GitHub, Heroku, and Zapier.</p><p>I like making complicated things understandable, especially when that understanding makes someone’s working day better.</p></div>
+        <div>
+            <p>I’m Nick Cannariato, also known as Birdcar. Cannariato sounds like “canary auto”—a bird and a car. The nickname has stuck for more than twenty years.</p>
+            <p>I’ve spent fifteen years working on customer-facing technical systems, including internal tools, solutions engineering, and building a software business. Some of that work was for GitHub, Heroku, and Zapier.</p>
+            <p>I like making complicated things understandable, especially when that understanding makes someone’s working day better.</p>
+        </div>
     </section>
     <x-marketing.assessment-invitation />
 </x-marketing.layout>

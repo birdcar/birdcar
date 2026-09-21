@@ -16,6 +16,7 @@ test('the homepage presents the approved offer and only the approved work story'
     $this->get('/')
         ->assertOk()
         ->assertSee('I help businesses untangle work')
+        ->assertSeeTextInOrder(['I’m Nick Cannariato', 'also known as Birdcar', 'canary auto', 'more than twenty years'])
         ->assertSee('fifteen years')
         ->assertSee('GitHub, Heroku, and Zapier')
         ->assertSee('another hire, another subscription, or another hour of your evening')
