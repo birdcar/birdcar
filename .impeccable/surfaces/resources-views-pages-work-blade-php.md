@@ -23,7 +23,7 @@ Visitor mode: **Persuade**. Craft & Communicate shows that I implement useful sy
 
 **FORM:** The clear argument, approved grounded pick, seed `d5125406`; proof-page extension without new exploration.
 
-**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. Discharged for the integrated local build: Phase 4 independent finish review returned ship with no material fixes; DESIGN.md and sidecar now describe the complete reviewed system. No deployment, shipping raster, production booking, remote PostHog write, native-toolbar 200% zoom proof, or owner launch acceptance is claimed.
 
 ## Content and behavior
 
@@ -33,4 +33,4 @@ Use the same figure on the homepage and work page, without a diagram registry or
 
 ## Finish evidence
 
-Independent finish review on 2026-09-19: **ship**, no material fixes, at 1440/768/390px and for repeated/grayscale/print/no-JS figures. Independent proof-boundary review found no unsupported claims. DESIGN.md records the built system; acceptance.md records the actual tests. Owner approval of Phase 2 is not claimed.
+Independent finish review on 2026-09-19 and the integrated Phase 4 review both returned **ship**, no material fixes, at 1440/768/390px and for repeated/grayscale/print/no-JS figures. Independent proof-boundary review found no unsupported claims. DESIGN.md records the complete built system; acceptance.md records the actual tests and print evidence. Owner launch approval is not claimed.

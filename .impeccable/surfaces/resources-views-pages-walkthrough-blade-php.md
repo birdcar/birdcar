@@ -23,7 +23,7 @@ Visitor mode: **Persuade**. Explain exactly what the free conversation produces 
 
 **FORM:** The clear argument, approved grounded pick, seed `d5125406`; page-specific extension, not a new visual world.
 
-**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. Discharged for the integrated local build: Phase 4 independent finish review returned ship with no material fixes; DESIGN.md and sidecar now describe the complete reviewed system. No deployment, shipping raster, production booking, remote PostHog write, native-toolbar 200% zoom proof, or owner launch acceptance is claimed.
 
 ## Content and behavior
 
@@ -33,4 +33,4 @@ All booking CTAs on this page lead to `#choose-a-time`; inline Cal uses namespac
 
 ## Finish evidence
 
-Independent finish review on 2026-09-19: **ship**, no material fixes. The reviewed page covers 1440/768/390px, native/static content, and separate loaded calendar captures; full-page screenshots do not paint the offscreen external iframe. Keyboard anchor navigation and the plain fallback were verified without selecting a time. DESIGN.md records the built system. This is not owner Phase 2 approval.
+Independent finish review on 2026-09-19 and the integrated Phase 4 review both returned **ship**, no material fixes. The reviewed page covers 1440/768/390px, native/static/no-JavaScript content, blocked-script fallbacks, and separate loaded calendar/modal captures; full-page screenshots do not paint the offscreen external iframe. `booking_embed_opened` remains the legacy readiness event from Cal `linkReady`, not visitor-open behavior. Keyboard anchor navigation and the plain fallback were verified without selecting a time. DESIGN.md records the built system. This is not owner launch approval.

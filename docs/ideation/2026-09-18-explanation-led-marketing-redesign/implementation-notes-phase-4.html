@@ -1,0 +1,99 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 4 (phase number, twice), Explanation-led marketing redesign, 2026-09-19, Integrated verification and design records —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 4</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 4</h1>
+      <p class="doc-meta">Explanation-led marketing redesign · 2026-09-19 · Integrated verification and design records</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Shared rules — owner-authorized reconciliation</h3>
+        <dl>
+          <dt>Context</dt><dd>Boost record-rule only appends entries; the spec requires retiring contradictory visual instructions.</dd>
+          <dt>Decision</dt><dd>The owner explicitly selected “Reconcile directly” on 2026-09-19: edit superseded entries, then record current durable guidance through Boost.</dd>
+          <dt>Alternative</dt><dd>Leave records reconciliation blocked; do not conceal the tool limitation with another contradictory append.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Documenter — paired sidecar inventory</h3>
+        <dl>
+          <dt>Context</dt><dd>The phase inventory named DESIGN.md but omitted its existing paired Impeccable sidecar.</dd>
+          <dt>Decision</dt><dd>Record .impeccable/design.json in the affected-file inventory before the documenter refreshes it. Preserve the implemented world and owner gate.</dd>
+          <dt>Alternative</dt><dd>Leave stale narrative in the sidecar or hide the extra changed file.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Analytics review — preserve the existing callback contract</h3>
+        <dl>
+          <dt>Context</dt><dd>The focused reviewer requested explicit null eventTypeId coverage and proposed omitting undefined fields before track. The existing callback deliberately hands optional values to the SDK.</dd>
+          <dt>Decision</dt><dd>Add null coverage in both modes and incomplete inline coverage, and distinguish undefined-valued SDK handoff from JSON serialization in acceptance.md. Keep runtime code unchanged because no normalization defect was demonstrated; the controlled browser SDK exercise showed the allowed properties without private fixture text.</dd>
+          <dt>Alternative</dt><dd>Add a payload normalizer solely to simplify tests, contrary to the phase's narrow-fix scope.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Evidence — external tools and local worker state</h3>
+        <dl>
+          <dt>Context</dt><dd>The research child lacked MCP tools; long-lived local workers still emitted analytics despite the disabled environment flag. Native browser zoom shortcuts did not change measured viewport metrics.</dd>
+          <dt>Decision</dt><dd>Use available Boost/browser tools in the main thread; block PostHog before navigation, temporarily cache disabled configuration and reload workers, then remove the temporary cache. Record browser-toolbar 200% zoom as unverified; equivalent reflow screenshots are not a substitute pass. Lerd was unavailable.</dd>
+          <dt>Alternative</dt><dd>Claim that configuration files, screenshots at a smaller viewport, or mocks proved runtime behavior. No new dependency or environment integration was installed.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

@@ -198,3 +198,103 @@ Final spec-aware reviewer: **PASS**, cycle 1 of 3, zero critical/high/medium/low
 ## Remaining scope
 
 Phase 4 owns integrated validation and owner launch acceptance. No deployment, new essay, public PDF endpoint, reusable report-template system, registry, arbitrary SVG loader, or new commercial claim was introduced.
+
+---
+
+# Phase 4 acceptance — Integrated verification and design records
+
+Spec: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-4.md`
+
+## Owner launch gate
+
+**PENDING — no owner launch acceptance, deployment, or production booking is recorded.** Phase 1 approval does not approve the integrated site. Release cutover: **not deployed; owner to fill after separately authorized deployment**.
+
+## Execution checklist — 2026-09-19
+
+- [x] Clean entry tree at `4996c02`; Phases 1–3 and the actual Phase 1 owner decision verified.
+- [x] Scout GO, 5/5 gates; existing maps preserved.
+- [x] Add focused analytics tests and extend existing booking tests without changing application APIs or event names.
+- [x] Retrieve current official Cal documentation and separate it from fake and real-browser evidence.
+- [x] Exercise controlled completion callbacks in the browser with outbound analytics intercepted locally.
+- [x] Capture all five public page types and representative articles at 390/768/1440px; inspect saved Letter/A4 PDFs in grayscale.
+- [x] Independent integrated design review: **ship**, no material fixes.
+- [x] Complete final documenter pass, preserving the built system and actual approval scope.
+- [x] Reconcile PRODUCT/DESIGN/surface/shared-rule authorities and retire unreferenced horizon assets.
+- [x] Run all final validation commands.
+- [x] Spec-aware review: **PASS**, cycle 1, zero findings; independent final record-consistency review: no findings.
+- [ ] Owner answers comprehension questions, reviews final evidence, and approves or lists corrections.
+
+## Evidence boundaries and current Cal semantics
+
+Official sources retrieved **2026-09-19**:
+
+- <https://cal.com/docs/developing/guides/embeds/embed-events> — points to the Help Center for public events; explicitly warns against relying on internal `__` events.
+- <https://cal.com/help/embedding/embed-events> — `linkReady`: “Tells that the link is ready to be shown now”; `linkFailed`: link-load failure; `bookingSuccessfulV2`: a fresh successful booking that “might not be confirmed.” `uid`, `startTime`, and `status` may be undefined; `eventTypeId` may also be null. The docs separately define `bookerViewed`, `bookerReopened`, and `bookerReady`.
+
+The actual installed PostHog JS is **1.433.10**. Cal is externally loaded and unpinned. No new events or dependency changes were introduced.
+
+Existing application events and custom property allowlists:
+
+- `booking_cta_clicked`: `placement`, `page_path`. The path excludes query-string text. Tests cover configured placements; PHP checks protect the rendered placement/destination contracts.
+- `booking_embed_opened`: `mode` (`inline` or `modal`), emitted for each received `linkReady`. **Treat this legacy name as embed readiness, not a visitor-open funnel step.** There is no application deduplication or once-per-page-load guarantee.
+- `booking_completed`: `mode`, `booking_uid`, `event_type_id`, `start_time`, `status`. Missing optional fields are tolerated. Unit tests observe undefined-valued keys at the SDK handoff; the controlled browser's JSON event summaries omit those keys. No new application-side payload normalizer was added. A null event-type ID is allowed by Cal; status remains necessary to distinguish unconfirmed bookings. Attendees, email, title, responses, notes, and the full payload are not forwarded.
+- `booking_fallback_clicked`: `page_path`. It measures a direct-link click, not completion, and has no placement property today.
+
+PostHog adds its normal SDK context (browser/device, distinct/session identifiers, current URL, and available acquisition context). The allowlist above describes application-added booking properties, not the entire SDK envelope. `autocapture` remains disabled; tests make no live PostHog calls.
+
+**Mocked application evidence:** focused Bun tests cover missing token/host, enabled initialization, SDK opt-in/out delegation, CTA/fallback properties, unrelated clicks, Cal theme/loader queues, script-error native navigation, missing custom element, modifier/middle/already-cancelled clicks, inline/modal callbacks, repeated readiness, and incomplete completion data. These are controlled dependency fakes, not remote-library guarantees.
+
+**Real external observation:** the loaded modal and inline calendars were reachable. In the observed modal sequence, `linkReady` preceded `bookerViewed`/`bookerReady`; closing and reopening created another iframe and another readiness event. The inline calendar also emitted readiness without any booking CTA click. This disproves a universal once-per-page-load or visitor-click interpretation. It does not promise future Cal behavior. Calendar screenshots wait for actual date controls, not just loader presence; no slot was selected and no booking submitted.
+
+**Controlled browser completion, not a booking:** imported the actual app modules, substituted a local Cal callback registry, and supplied synthetic complete and incomplete `bookingSuccessfulV2` payloads in both modes. The real PostHog SDK's `before_send` inspection showed exactly the permitted custom properties; forbidden fixture text was absent. All four requests were fulfilled locally at `https://analytics.invalid` using a synthetic token, with production PostHog blocked. A subsequent opted-out SDK capture produced zero requests. This proves application callback handling and SDK handoff, not Cal's real booking-success flow or production receipt.
+
+## Integrated rendered evidence
+
+Boost resolved the running site and specimen to `http://localhost:8000` and `http://localhost:8000/__design/figures`. Artifacts are local-only under `.impeccable/review/` and `.impeccable/review/print/`.
+
+- `phase-4-{home,walkthrough,work,writing,bugs,prompts,long,specimen}-{1440,768,390}.png`: final source rendered at all three widths, Barlow loaded, no document horizontal overflow. Opening captures provide readable first-viewport detail; full-page captures provide composition/reading continuity. `long` is the original longest title; `bugs` and `prompts` cover both original chart types. Full-page offscreen calendar boxes are **not** evidence of a loaded calendar; see separate `phase-4-calendar-{1440,768,390}.png` and `phase-4-modal.png`.
+- `phase-4-no-js-{home,walkthrough,writing,specimen}.png`: complete static explanations. With JavaScript disabled, the native menu opens, homepage booking navigates to `/walkthrough`, and the direct Cal fallback remains available. With the embed script blocked, the same native navigation/fallback works.
+- `phase-4-cold-blocked.png`: real mobile render with font files and Cal script blocked. The main CTA is visible in the first viewport and retains its href; meaning does not wait for third parties or animation.
+- Keyboard order starts with skip link → wordmark → menu → primary booking link at 390px. Enter opens the native menu; Escape closes it and restores summary focus; an outside content click dismisses it. `phase-4-focus-390.png` shows the 2px action outline and contrasting ring.
+- `phase-4-reduced.png`: complete static meaning. A separate runtime probe observed nine property animations before changing the preference, then zero after the media-change event and no remaining transforms. `phase-4-repeated.png` contains two copies of each figure, eight visible numbered stages, and no figure IDs/reference collisions.
+- `phase-4-zoom-reflow-{home,walkthrough,long}.png`: 720×450 CSS-pixel viewport, equivalent reflow to 1440×900 at 200%. No overflow. **Actual browser-toolbar 200% zoom remains unverified:** synthetic browser zoom shortcuts did not change viewport/device metrics. These captures must not be described as a completed native browser-zoom check.
+- `print/phase-4-{specimen,bugs,prompts}-{Letter,A4}.pdf`: actual saved Chromium PDFs, fonts awaited, print media, backgrounds disabled, no browser headers/footers. Grayscale rasterizations from those PDFs were visually inspected, including both authored figures, notes, both charts, all source-table values, captions, and pagination. The specimen is three pages in each paper size; each representative article is four. Figures remain complete and captions adjacent; source tables print even with the screen disclosures closed. `pdffonts` confirms embedded Barlow subsets; Phase 3's Barlow/Commit Mono OFL findings remain applicable. No Alkaline appears in specimen output. No physical printer or Safari/Firefox pagination was tested.
+
+The exhaustive archive diff against `3247b6da2d3b3dfa3fa0f0d2711967ae657cb75d` is empty. No article source, metadata, original link, or chart-data file changed.
+
+Initial local workers still emitted analytics configuration despite `POSTHOG_DISABLED=true`. QA blocked PostHog before navigation, then used temporary cached disabled configuration and reloaded workers; subsequent ordinary pages rendered no analytics attributes. The temporary cache was removed after capture; the pre-existing development processes were left running. Lerd is unavailable in this session; no Lerd profiler result is claimed. Recent application browser logs showed development-server events; deliberately blocked requests and synthetic config probes are not application defects.
+
+Failed probes are not passes: the first prompt-essay path incorrectly included “of” and returned 404; corrected to the original `/writing/six-months-talking-to-a-machine/` and replaced captures. A long capture batch timed out at the tool boundary but wrote its artifacts; files were independently inspected, and no-JS navigation was checked separately. An outside-click target was covered by the open menu; a corrected content click passed. Early tablet calendar captures included loading placeholders and were replaced after real date controls loaded. Compressed PostHog bodies were not successfully decoded in the browser probe; the final controlled exercise inspected the SDK's actual `before_send` payload and intercepted outbound requests instead.
+
+## Independent finish review and affected-file record
+
+Fresh independent Impeccable reviewer returned **ship**, no material fixes: persistence pass, faithful type/material/ground/page/print treatment, and the agreed craft level reached. Its disposition covers supplied evidence, not owner approval. Native toolbar zoom remains unverified and explicitly disclosed. One detector run returned 30 advisories (28 intentional type steps, two grayscale print colors), zero non-advisory findings.
+
+The analytics/test reviewer requested explicit nullable event-type coverage and clearer separation of SDK handoff from serialization. Added the null case in both modes, incomplete inline coverage, and clarified the record; no application normalizer is warranted merely to remove undefined properties before JSON serialization. No runtime defect has been demonstrated.
+
+Affected-file inventory addition before documentation execution: **`.impeccable/design.json`**, the existing paired design sidecar required by Impeccable's documenter. This is a record-only consistency update, not added UI scope. Process records remain the context map, this acceptance file, and `implementation-notes-phase-4.html`. No application file outside the original inventory is changed.
+
+## Final validation and records
+
+- Required focused PHP command: **PASS**, 110 tests / 653 assertions.
+- Required four-file Bun command: **PASS**, 63 tests / 223 assertions, including the review-driven nullable/incomplete callback cases.
+- `vendor/bin/pint --dirty --format agent`: **PASS**.
+- `composer types:check`: **PASS**, zero errors.
+- `bun run build`: **PASS**.
+- Complete PHP suite: **not run**; request the owner run `php artisan test --compact` before launch. Focused results are not a full-suite claim.
+
+No application JS, PHP, CSS, or Blade runtime change was required. Added `analytics.test.js`, expanded `booking.test.js`, refreshed the built-system records and all relevant briefs, and deleted only the retired `future-horizon.png`/`.json` pair after confirming zero shipping references. The existing negative asset assertion remains. The owner explicitly authorized direct reconciliation of stale shared-rule entries after the append-only Boost limitation was disclosed; current guidance was then recorded with Boost `record-rule`.
+
+The final documenter refreshed DESIGN.md and its paired sidecar from the reviewed implementation. Integration restored Impeccable's required verbatim FINISH clause and clarified that archive-index PDFs are Phase 3 evidence, not a new Phase 4 print capture. Four decisions are recorded in `implementation-notes-phase-4.html`. Final spec-aware review passed in cycle 1 with zero critical/high/medium/low findings. Independent final record-consistency review found no material conflict across source, product/design records, briefs, and shared rules. YAML/JSON parsing and `git diff --check` pass. The owner authorized this commit on 2026-09-21; the owner launch gate remains open.
+
+## Post-launch measurement handoff
+
+No PostHog dashboard, insight, account setting, production data, or booking was created or changed.
+
+1. **Release cutover:** owner fills actual deployed timestamp/timezone, commit, and observation window after separate deployment authorization. There is no release date or redesign outcome yet.
+2. Use existing PostHog views for public visits/pageviews and `booking_cta_clicked`, broken down by `placement` and `page_path`; inspect available referral/UTM/source context. Offline introductions need owner notes, not fabricated attribution.
+3. Use `booking_cta_clicked` → `booking_completed` progression and completed bookings over comparable windows, reporting the chosen unique-visitor/session denominator, CTA counts, completed-event counts, and known booking UIDs/statuses. Deduplicate by UID when available and note missing IDs. A successful callback can still be unconfirmed; the owner checks actual booking status.
+4. Keep `booking_embed_opened` in a separate readiness view, not an opened-calendar stage. No events were renamed, so existing insights retain compatibility but misleading labels must be interpreted carefully.
+5. `booking_fallback_clicked` is an exit-path signal only. Completion on the standalone Cal site is not observed by this page's callback; cross-domain journey continuity and remote receipt were not verified. Do not infer zero actual bookings from missing embedded completion events or count fallback clicks as bookings.
+6. Report traffic/conversion denominators, sample sizes, equal-length windows, outreach volume, and source-mix changes. Low-volume before/after comparisons are descriptive; neither this review nor those comparisons establishes redesign causality or uplift.
+7. The owner separately assesses whether booked conversations are qualified and records real prospect misunderstandings. PostHog cannot infer conversation quality or comprehension. No A/B program, promised percentage gain, or new reporting infrastructure is part of acceptance.

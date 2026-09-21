@@ -249,8 +249,11 @@ and permissions remain to be designed.
   visual world, The clear argument, on 2026-09-18: cyan editorial fields,
   blue-green ink, yellow emphasis, white, and upright sans-serif hierarchy.
   On 2026-09-19, the owner approved the Phase 1 opening, Barlow typography,
-  Walkthrough figure, mobile behavior, and static/print sketch. Purple, the
-  horizon, Karla, and script headings are not commitments.
+  Walkthrough figure, mobile behavior, and static/print sketch. The integrated
+  implementation extends that foundation to all five public page types and both
+  authored figures; final owner launch acceptance is recorded separately in the
+  redesign's acceptance.md. Purple, the horizon, Karla, and script headings are
+  retired, not alternative current directions.
 - The brand brings the future of Silicon Valley technology into the client's
   business. Technical sophistication and glitz are welcome; the owner's helpful
   voice and direct involvement carry the personal relationship. Regional buyer
@@ -372,8 +375,11 @@ avoid inventing savings, revenue, testimonials, or guaranteed results.
 - The boundaries of each report, the paid report's turnaround, and the
   preparation effort for the free Walkthrough and report.
 - Paid prices, implementation acceptance criteria, and any guarantees.
-- Booking measurement and concrete lead-generation experiments within the chosen
-  initial channels. The booking destination and launch flow are settled above.
+- Concrete lead-generation experiments within the chosen initial channels. The
+  booking destination and launch flow are settled above. Use the existing
+  PostHog events and Phase 4 measurement handoff; embed readiness is not a
+  visitor-open metric, and completed callbacks alone do not establish qualified
+  conversations, confirmed appointments, or redesign causality.
 - Retainer pricing, included maintenance/change work versus separately billed
   work, and support response expectations.
 - Sustainable intake and the extent/duration of temporary overtime during growth.

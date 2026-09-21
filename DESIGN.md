@@ -1,6 +1,6 @@
 ---
 name: Birdcar — The clear argument
-description: "Reviewed Phase 3 marketing and Reading/print system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, Barlow reading hierarchy, Commit Mono code, static figures, and one Alkaline wordmark."
+description: "Integrated locally built and reviewed marketing system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, Barlow hierarchy, Commit Mono code, static figures, Cal booking shells, print review, and one Alkaline wordmark."
 colors:
   ink: "#102a33"
   paper: "#ffffff"
@@ -148,20 +148,20 @@ components:
 
 **Creative North Star: "The clear argument"**
 
-Phase 3 extends the approved Phase 1 foundation and shipped Phase 2 marketing system into Writing, long-form articles, authored article figures, and local print review. The system remains direct and explanatory: cyan editorial fields introduce invitations and archives, blue-green ink carries prose and linework, white creates sustained reading space, yellow marks useful recommendations, Barlow keeps the argument upright, and Commit Mono appears only for code.
+Phase 4 records the integrated locally built marketing system after full rendered review. The homepage, Walkthrough, Work, Writing index, individual articles, authored figures, booking shells, no-JavaScript states, reduced-motion states, and local print specimen now share one direct explanatory world: cyan editorial fields introduce invitations and archives, blue-green ink carries prose and linework, white creates sustained reading space, yellow marks useful recommendations and booking actions, Barlow keeps the argument upright, and Commit Mono appears only for code.
 
-The reviewed Phase 3 Reading/print extension is complete at bounded-review scope: Writing index, individual article pages, article note/chart/diagram treatments, and the local-only figure specimen. This does not expand the existing Phase 1 owner approval beyond the opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. Phase 2 remains the shipped homepage/Walkthrough/Work system. Phase 3 QA is a finish-review disposition, not owner launch approval.
+The integrated system is built and independently reviewed at bounded local scope; it is not deployed. This record does not expand the existing owner approval beyond the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. Phase 4 finish review returned ship with no material fixes, but owner launch acceptance remains pending and no production booking or remote PostHog write is claimed.
 
-The Phase 3 independent review disposition was ship with no material fixes. Evidence includes 390/768/1440 Reading captures and Letter/A4 print captures for archive, articles, and the specimen under `.impeccable/review/phase-3-*` and `.impeccable/review/print/phase-3-specimen-{Letter,A4}-{1,2,3}.png`. No shipping raster or PDF product was created; print artifacts are local review evidence only.
+Phase 4 evidence includes 390/768/1440 captures for home, Walkthrough, Work, Writing, representative articles, and specimen under `.impeccable/review/phase-4-*`, plus saved Chromium PDF rasters under `.impeccable/review/print/phase-4-*`. Full-page calendar blanks are offscreen capture artifacts; separate calendar and modal captures loaded. The 720×450 captures are 200% equivalent reflow evidence only; native browser-toolbar 200% zoom remains unverified. Print artifacts are local review evidence, not a PDF product or deployed handout system.
 
 **Key Characteristics:**
 
 - Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.
 - Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.
-- Authored static figures: the Walkthrough report diagram, the shared reporting component, and the article diagram wrapper for only those two approved subjects.
+- Authored static figures: the Walkthrough report diagram, the shared reporting component, and the article diagram wrapper for only those two approved subjects, all reviewed in integrated page, no-JavaScript, reduced-motion, repeated-instance, and print contexts.
 - 65ch article prose, article headings capped at `4.5rem`, visible chart data tables in print, scrollable small-screen plots with explicit hints, and 16mm paper margins without forced page size.
 - Flat surfaces, thin ink rules, square report/platform geometry, sparse rounded controls, and two-column numbered Walkthrough stages in print.
-- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough.” Native mobile details/summary remains; print hides navigation and booking chrome.
+- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough.” Native mobile details/summary remains; Cal booking preserves real href fallbacks; print hides navigation and booking chrome.
 
 ## Colors
 
@@ -194,7 +194,7 @@ The palette is small and semantic. Cyan is the public invitation field, ink is b
 **Operational Font:** Inter remains for Admin/customer surfaces only.
 **Mono Font:** Commit Mono OFL is used for inline code and code blocks in articles, not marketing labels.
 
-Barlow supplies the marketing and Reading voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, archive rows, long-form prose, captions, and print. Phase 3 intentionally keeps the additional CSS type steps; the 28 font-size detector advisories are documentation advisories, not defects to flatten.
+Barlow supplies the marketing and Reading voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, archive rows, long-form prose, captions, and print. The integrated system intentionally keeps the additional CSS type steps; the detector's type-step advisories are documentation advisories, not defects to flatten.
 
 ### Hierarchy
 
@@ -232,7 +232,7 @@ Print uses browser output with `@page` margins of 16mm and no forced paper size,
 
 ## Elevation & Depth
 
-The system is flat. Depth comes from field changes, white paper/platform surfaces on cyan, thin ink outlines, folded-corner geometry, separators, and focus rings. Shadows are not used for marketing cards at rest. The Cal embed brings its own native light UI inside the white calendar shell; Birdcar only supplies the surrounding cyan/paper/ink palette and fallback link.
+The system is flat. Depth comes from field changes, white paper/platform surfaces on cyan, thin ink outlines, folded-corner geometry, separators, and focus rings. Shadows are not used for marketing cards at rest. The Cal embed brings its own native light UI inside the white calendar shell; Birdcar only supplies the surrounding cyan/paper/ink palette and fallback link. The legacy `booking_embed_opened` event name is readiness from Cal `linkReady`, not a visitor-open metric.
 
 ### Shadow Vocabulary
 
@@ -303,15 +303,15 @@ Article notes are cyan-wash callouts with preserved titles. Charts keep their so
 - **Do** use cyan for offers/invitations, white for implementation explanation and proof reading, ink for personal-note contrast, and yellow for actions or first recommendations.
 - **Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.
 - **Do** keep Alkaline to the one header wordmark and Barlow for marketing text.
-- **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, and no-JavaScript readability.
+- **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, no-JavaScript readability, and the distinction between Cal readiness and actual booking/open behavior.
 - **Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.
-- **Do** describe Phase 2 as reviewed and shipped at bounded scope for homepage, Walkthrough, and Work; describe Phase 3 as implemented and reviewed at bounded Reading/print scope; keep the existing owner approval scoped to Phase 1.
+- **Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending.
 
 ### Don't:
 
-- **Don't** claim owner launch approval for Phase 2 or Phase 3 pages.
-- **Don't** describe local print artifacts as a PDF product, public handout system, or shipping raster.
+- **Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, or native browser-toolbar 200% zoom verification.
+- **Don't** describe local print artifacts as a PDF product, public handout system, deployed asset, or shipping raster.
 - **Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.
 - **Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.
 - **Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.
-- **Don't** change CSS merely to silence detector advisories; the 28 type-step and 2 print-grayscale color advisories are accepted documentation advisories, not UI changes.
+- **Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes.

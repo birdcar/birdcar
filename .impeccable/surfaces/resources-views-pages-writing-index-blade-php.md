@@ -23,8 +23,8 @@ Visitor mode: **Read**. Extend the owner-approved **The clear argument** world. 
 
 **FORM:** Reviewed Reading extension of The clear argument, owner-approved Phase 1 foundation; no new direction roll. Whole-row links underline on focus/hover; no entrance motion.
 
-**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. Discharged: ship, no material fixes; DESIGN.md and sidecar updated. No shipping raster; owner launch approval remains outside Phase 3.
+**FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. Discharged for the integrated local build: Phase 4 independent finish review returned ship with no material fixes; DESIGN.md and sidecar now describe the complete reviewed system. No deployment, shipping raster, production booking, remote PostHog write, native-toolbar 200% zoom proof, or owner launch acceptance is claimed.
 
 ## Content and behavior
 
-Preserve all ten original essays, ordering, descriptions, dates, reading times and links. Years move above entries on narrow screens. RSS remains visible. No new categories, essays or homepage archive promotions. Print removes site navigation and keeps the chronological hierarchy with 16mm paper margins and no forced paper size. Reviewed at 390/768/1440 plus Letter/A4 local captures.
+Preserve all ten original essays, ordering, descriptions, dates, reading times and links. Years move above entries on narrow screens. RSS remains visible. No new categories, essays or homepage archive promotions. Print removes site navigation and keeps the chronological hierarchy with 16mm paper margins and no forced paper size. Reviewed at 390/768/1440 plus Letter/A4 local captures in Phase 3, then rechecked on screen in Phase 4 under `.impeccable/review/phase-4-writing-*`. Phase 4 saved print rasters cover the specimen and representative articles, not a fresh archive-index PDF. The archive remains preserved; this is local review evidence, not deployment or owner launch acceptance.

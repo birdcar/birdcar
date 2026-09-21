@@ -189,3 +189,75 @@ Scout run `56e90f0d` confirmed Phase 1 owner approval and Phase 2 implementation
 Use existing custom CSS, Barlow/ink/cyan/white, one Alkaline header mark, Pest feature/DOM tests, Bun Motion tests. Preserve all prior sections above as historical maps.
 
 Writing briefs still describe the retired identity and are explicit Phase 3 update targets. CSS has site-wide blast radius. Captions must remain escaped, repeated figures collision-free, and source data visible even when disclosures are closed during print. Tests alone do not prove archive preservation or PDF legibility. Compare `resources/writing` with baseline `3247b6da2d3b3dfa3fa0f0d2711967ae657cb75d` and execution HEAD. Record only observed evidence; font embedding rights and owner launch acceptance remain separate gates.
+
+
+---
+
+---
+
+# Phase 4 Context Map: Integrated verification and design records
+
+**Phase**: 4
+**Spec**: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-4.md`
+**Prerequisite**: satisfied — `acceptance.md` records Phase 1 owner approval and Phase 3 completion evidence.
+**Gates**: 5/5 ready
+**Verdict**: GO
+
+## Phase 4 Gates
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Scope clarity | ready | Spec defines Phase 4 as verification/fix-only, names all potential owned files, distinguishes automated checks vs browser/rendered evidence vs owner acceptance, and explicitly limits analytics/booking work to existing PostHog/Cal contracts. |
+| Pattern familiarity | ready | Read current analytics/booking modules and tests, layout/booking components, all public page types, diagram/chart/note components, specimen route/view, CSS/print rules, surface briefs, acceptance record, PRODUCT/DESIGN/rules. |
+| Dependency awareness | ready | Mapped PostHog layout config → `analytics.js`; Cal hooks → `booking.js`/booking-link/Walkthrough inline calendar; diagrams → marketing pages/article renderer/specimen/print CSS; discovery routes/tests; historical horizon assets. |
+| Edge case coverage | ready | Spec plus current code cover no config, opt-in/out, CTA/fallback placements, modifier clicks, missing custom element, inline/modal mode, payload allowlist, unavailable embed/browser evidence, reduced motion/runtime print, no-JS fallback, repeated figures, grayscale print, stale docs/rules. |
+| Test strategy | ready | Specific validation commands are listed. Phase 4 needs new/expanded Bun tests for analytics and booking semantics, focused PHP regressions only for real fixes, final build/type/Pint, browser matrix, Cal docs/evidence recording, Impeccable finish review, and owner launch acceptance. |
+
+## Phase 4 Key Patterns
+
+- `resources/js/analytics.js` — Imports `posthog-js`, defines existing event names, initializes from `document.body.dataset.posthogToken/posthogHost`, handles `ph_opt_out`/`ph_opt_in`, captures `booking_cta_clicked` and `booking_fallback_clicked` from delegated click handlers. No current `analytics.test.js`.
+- `resources/js/booking.js` — Embeds Cal from `https://app.cal.com/embed/embed.js`, queues namespaced `Cal`, configures existing `walkthrough` namespace, themes from current CSS tokens, keeps link fallbacks until `customElements.get('cal-modal-box')`, emits `booking_embed_opened` on `linkReady`, and allowlists completed-booking properties from `bookingSuccessfulV2`.
+- `resources/js/booking.test.js` — Existing Phase 2 coverage is narrow: theme tokens, inline setup shape, native navigation until modal element exists, modifier/middle/unrelated clicks. It does **not** yet mock analytics tracking, loader script insertion/failure, Cal callbacks, incomplete payloads, or prove property allowlists.
+- `resources/views/components/marketing/layout.blade.php` — Emits PostHog body data only when configured, includes single Vite JS entry, native `<details class="mobile-menu">`, shared booking placements `header`/`mobile-menu`, and shared footer/nav.
+- `resources/views/components/marketing/booking-link.blade.php` — Inline Walkthrough CTAs are real `#choose-a-time` anchors with placement markers only; modal CTAs keep real `/walkthrough` href plus `data-cal-link`, namespace, config.
+- `tests/Feature/MarketingAnalyticsTest.php` — Server-side analytics/placement contracts protect PostHog config emission/omission and exact booking CTA placements/destinations for `/`, `/work`, `/walkthrough`; Phase 4 JS tests should complement rather than duplicate this.
+- `resources/js/diagrams.js` and `resources/js/diagrams.test.js` — Current motion is opt-in via `[data-walkthrough-diagram]`, waits for fonts and IntersectionObserver, skips/cleans up on reduced motion, print, hidden/pagehide. Phase 4 only fixes regressions found by integrated review.
+- `resources/css/marketing.css` — Current shared visual/print system includes responsive marketing pages, mobile menu, article figures, print unfolding, grayscale tokens, and hides booking/calendar/nav in print. High blast radius for any final CSS fix.
+- `app/Actions/ReadWriting.php` — Curated directive handling only permits diagram names `walkthrough|reporting`, restores trusted Blade after safe Markdown conversion, and preserves chart/aside/callout behavior.
+- `resources/views/figure-specimen.blade.php` and `routes/web.php` — Local/testing-only `/__design/figures`, noindex, CSS-only Vite entry, real renderer/components, no analytics/calendar JS.
+
+## Phase 4 Dependencies
+
+- `package.json` — `posthog-js` is installed (`^1.433.10`); Cal is external script only, so callback semantics must be checked against current external documentation/observed browser behavior, not package locks.
+- `resources/js/app.js` — Initializes `initInteractions()`, `initDiagrams()`, `initAnalytics()`, `initBooking()`. Ordering matters for delegated analytics/booking handlers.
+- `resources/js/analytics.js` — Consumer: Vite entry and new `resources/js/analytics.test.js`; indirect consumers are all marketing pages through layout.
+- `resources/js/booking.js` — Consumers: Vite entry, all `data-cal-link`/`data-cal-inline` controls, `booking.test.js`, browser Cal review.
+- `resources/views/pages/walkthrough.blade.php` — Owns inline calendar `data-cal-inline`, namespace, fallback Cal link, and all inline booking CTAs.
+- `resources/views/pages/index.blade.php`, `work.blade.php`, `assessment-invitation.blade.php` — Own modal booking CTAs and `data-booking-cta` placements.
+- `resources/views/pages/writing/*`, `article-*` components, `ReadWriting.php`, `figure-specimen.blade.php` — Must remain stable while integrated print/static review happens.
+- `tests/Feature/MarketingSiteTest.php`, `MarketingDiscoveryTest.php`, `MarketingAnalyticsTest.php`, `MarketingDiagramTest.php`, `MarketingFontsTest.php`, `MarketingLayoutTest.php` — Full required focused PHP suite for Phase 4.
+- `.ai/rules/resources.md` — Still contains an unqualified stale “Future, in person marketing identity” section before the superseding clear-argument section; Phase 4 explicitly owns reconciliation using required shared-rule tooling.
+- `.impeccable/surfaces/resources-views-welcome-blade-php.md` — Still says homepage brief is approved “Future, in person / Direct conversation”; must be corrected/superseded in records.
+- `public/images/future-horizon.png` and `.json` — Still present; grep finds no shipping references outside spec/context/tests. Delete only after execution reconfirms no references.
+- `docs/ideation/.../acceptance.md` — Must append actual Phase 4 evidence, Cal docs retrieval date/source, simulated vs live integration limits, owner launch decision, and release-cutover placeholder only.
+
+## Phase 4 Conventions
+
+- **Analytics**: Keep existing event names. Preserve `placement` and `page_path`; do not add taxonomy or remote dashboard work. Tests should mock PostHog and avoid live writes.
+- **Booking**: Preserve real href/anchor fallbacks. Do not intercept modifier/middle clicks. Completed-booking tracking may forward only booking UID, event type ID, start time, status, and mode.
+- **Evidence language**: Separate HTTP/DOM assertions, mocked application behavior, real browser/rendered behavior, external Cal availability/docs, and owner/business outcomes.
+- **Visual fixes**: Modify UI files only for material findings. Do not chase detector-only polish or broaden scope beyond launch review defects.
+- **Documentation**: Final records must describe the built system, not proposed boards or superseded identity. Old Future/horizon/Karla guidance must not remain as active authority.
+- **Owner gates**: Independent Impeccable review is required QA but not owner approval. Final launch acceptance must be an actual owner decision, not inferred from tests.
+
+## Phase 4 Risks / Readiness Gaps to Carry
+
+- **Missing `analytics.test.js`** — Phase 4 must create it. Current JS coverage does not prove enable/disable, opt-in/out forwarding, placement capture, or no-capture when disabled.
+- **Booking tests are incomplete for Phase 4** — Existing `booking.test.js` does not cover Cal loader insertion/failure, `linkReady`, `bookingSuccessfulV2`, missing payload fields, or analytics property allowlist.
+- **Potential analytics module state hazard** — `analytics.js` keeps private `enabled`; tests must isolate module state or explicitly reset imports so a prior enabled init does not contaminate disabled cases.
+- **`booking_embed_opened` name is misleading** — Current code emits it on Cal `linkReady`; Phase 4 must document whether this is readiness, once-per-load, or actual open behavior before using it in funnel language.
+- **External Cal documentation/evidence required** — Implementation must retrieve current official Cal embed event docs and record retrieval date; if unreachable, record limitation rather than passing live integration evidence.
+- **Stale durable guidance remains** — `.ai/rules/resources.md` and welcome surface brief still contain Future/in-person wording; Phase 4 must reconcile without losing product truth.
+- **High CSS/page blast radius** — `marketing.css` changes affect homepage, Walkthrough, Work, Writing, article charts/diagrams, mobile nav, and print specimen.
+- **Historical asset deletion is conditional** — `future-horizon.*` files are currently unreferenced by grep, but deletion must be reconfirmed at execution entry.
+- **Browser/print evidence cannot be faked by tests** — Saved PDFs, real browser widths/zoom/no-JS/reduced-motion/keyboard checks, and Cal embed reachability are required evidence categories.
