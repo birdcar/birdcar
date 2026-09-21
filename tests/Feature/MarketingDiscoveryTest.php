@@ -21,6 +21,23 @@ test('canonical and social metadata use the configured origin without tracking p
         ->assertSee('name="robots" content="index, follow, max-image-preview:large"', false);
 });
 
+test('marketing pages declare current browser and home screen branding', function () {
+    $this->get('/')
+        ->assertSee('<link rel="icon" href="'.asset('favicon.ico?v=2').'" sizes="16x16 32x32 48x48" type="image/x-icon">', false)
+        ->assertSee('<link rel="icon" href="'.asset('favicon.svg?v=2').'" sizes="any" type="image/svg+xml">', false)
+        ->assertSee('<link rel="apple-touch-icon" href="'.asset('apple-touch-icon.png?v=2').'" sizes="180x180">', false)
+        ->assertSee('name="theme-color" content="#b7edf1"', false);
+});
+
+test('the favicon uses the current cyan field and ink mark', function () {
+    $icon = simplexml_load_file(public_path('favicon.svg'));
+
+    expect((string) $icon->rect['fill'])->toBe('#b7edf1');
+    expect((string) $icon->path['fill'])->toBe('#102a33');
+    expect(getimagesize(public_path('apple-touch-icon.png')))
+        ->toMatchArray([0 => 180, 1 => 180, 2 => IMAGETYPE_PNG]);
+});
+
 test('structured article data identifies its real author and original publication date', function () {
     config(['marketing.url' => 'https://birdcar.dev']);
 

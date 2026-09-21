@@ -79,7 +79,7 @@ class MarketingSite
         Head::title($title.' — Birdcar', exact: true)
             ->description($description)
             ->canonical($canonical, forceHttps: false)
-            ->themeColor('#291e2e')
+            ->themeColor('#b7edf1')
             ->robots($this->indexable() ? 'index, follow, max-image-preview:large' : 'noindex, nofollow')
             ->og(type: $publishedAt ? 'article' : 'website', title: $title.' — Birdcar', description: $description, url: $canonical, siteName: 'Birdcar', locale: 'en_US')
             ->twitter(card: 'summary', title: $title.' — Birdcar', description: $description);

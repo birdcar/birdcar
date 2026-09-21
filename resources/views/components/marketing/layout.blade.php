@@ -6,7 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough'))
         @head
-        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+        <link rel="icon" href="{{ asset('favicon.ico?v=2') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
+        <link rel="icon" href="{{ asset('favicon.svg?v=2') }}" sizes="any" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png?v=2') }}" sizes="180x180">
         <link rel="alternate" type="application/rss+xml" title="Birdcar Writing" href="{{ route('public.feed') }}">
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
