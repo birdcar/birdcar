@@ -161,7 +161,10 @@ test('no page still calls the offer a free assessment', function (string $path) 
 
 test('the archive lists all essays in chronological order under the business introduction', function () {
     $this->get('/writing/')->assertOk()
-        ->assertSee('Better ways to run the work.')
+        ->assertSee('Better work, fewer workarounds.')
+        ->assertSee('A report rebuilt by hand. A follow-up someone has to remember.')
+        ->assertSee('what software can and can’t help with')
+        ->assertSee('how to make the work better for the people doing it.')
         ->assertSeeInOrder(['Just build it twice', 'Your AI wrote a bug', 'The tools that build the tools', 'Six months of talking to a machine', 'The other side of empathy', 'Your metrics are bullshit', 'Yetto values: Joy Matters', 'Data is a curse', 'You&#039;re already doing all hands support', 'Stop giving me take homes'], false);
 });
 

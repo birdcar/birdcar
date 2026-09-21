@@ -145,13 +145,15 @@
     .writing-archive { padding-top: 3rem; }
     .archive-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; font-size: 1rem; margin-bottom: 1rem; }
     .archive-heading > span { font-weight: 600; }
-    .archive-heading a { display: flex; align-items: center; gap: .6rem; text-decoration: underline; }
+    .archive-heading a { display: flex; align-items: center; min-height: 44px; gap: .6rem; text-decoration: underline; }
     .archive-heading .arrow { width: 20px; }
     .archive-year { display: grid; grid-template-columns: minmax(5rem, 1fr) minmax(0, 6fr); gap: 2rem; border-top: 1px solid var(--color-ink); }
     .archive-year h2 { font-size: 1.5rem; font-weight: 500; padding-top: 2.2rem; font-variant-numeric: tabular-nums; }
     .archive-year ol { list-style: none; padding: 0; margin: 0; }
     .archive-year li + li { border-top: 1px solid #102a3335; }
-    .essay-row { display: flex; align-items: center; justify-content: space-between; gap: 2rem; text-decoration: none; padding: 2.2rem 0; }
+    .essay-row { display: flex; align-items: flex-start; gap: 2rem; text-decoration: none; padding: 2.2rem 0; }
+    .essay-row > div { flex: 0 1 66ch; min-width: 0; }
+    .essay-row > .arrow { margin-top: .45rem; }
     .essay-row h3 { font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 600; line-height: 1.2; }
     .essay-row p { max-width: 66ch; font-size: 1.05rem; margin-top: .8rem; }
     .essay-row h3 { transition: color var(--transition-feedback); }

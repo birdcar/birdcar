@@ -14,8 +14,8 @@ render(fn (View $view, ReadWriting $writing): View => $view->with('articles', $w
     <header class="page-title writing-title">
         <h1>Writing.</h1>
         <div>
-            <p>Better ways to run the work.</p>
-            <p>I write about the systems, tools, and decisions that shape how a business runs. What helps people do good work, what gets in their way, and what’s worth changing.</p>
+            <p>Better work, fewer workarounds.</p>
+            <p>A report rebuilt by hand. A follow-up someone has to remember. I write about how those small demands shape a business, what software can and can’t help with, and how to make the work better for the people doing it.</p>
         </div>
     </header>
     <section class="writing-archive section-space" aria-label="Essay archive">
