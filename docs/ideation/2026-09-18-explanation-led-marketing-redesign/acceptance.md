@@ -207,7 +207,7 @@ Spec: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-4.
 
 ## Owner launch gate
 
-**PENDING — no owner launch acceptance, deployment, or production booking is recorded.** Phase 1 approval does not approve the integrated site. Release cutover: **not deployed; owner to fill after separately authorized deployment**.
+**APPROVED — 2026-09-21.** The owner reviewed the final evidence summary and approved launch by direct instruction; no corrections were listed. Phase 1 approval did not approve the integrated site; this decision does. No production booking is recorded. Release cutover: pushed to `main` on 2026-09-21 at 13:00 CDT (UTC-0500); deployed source is `ef7e7f1` plus this approval record; deployment is automatic from GitHub on push to `main`. Observation window: owner to set after confirming the deployment finished.
 
 ## Execution checklist — 2026-09-19
 
@@ -222,7 +222,7 @@ Spec: `docs/ideation/2026-09-18-explanation-led-marketing-redesign/spec-phase-4.
 - [x] Reconcile PRODUCT/DESIGN/surface/shared-rule authorities and retire unreferenced horizon assets.
 - [x] Run all final validation commands.
 - [x] Spec-aware review: **PASS**, cycle 1, zero findings; independent final record-consistency review: no findings.
-- [ ] Owner answers comprehension questions, reviews final evidence, and approves or lists corrections.
+- [x] Owner reviewed the final evidence summary and approved launch on 2026-09-21; no corrections listed.
 
 ## Evidence boundaries and current Cal semantics
 
@@ -285,13 +285,13 @@ Affected-file inventory addition before documentation execution: **`.impeccable/
 
 No application JS, PHP, CSS, or Blade runtime change was required. Added `analytics.test.js`, expanded `booking.test.js`, refreshed the built-system records and all relevant briefs, and deleted only the retired `future-horizon.png`/`.json` pair after confirming zero shipping references. The existing negative asset assertion remains. The owner explicitly authorized direct reconciliation of stale shared-rule entries after the append-only Boost limitation was disclosed; current guidance was then recorded with Boost `record-rule`.
 
-The final documenter refreshed DESIGN.md and its paired sidecar from the reviewed implementation. Integration restored Impeccable's required verbatim FINISH clause and clarified that archive-index PDFs are Phase 3 evidence, not a new Phase 4 print capture. Four decisions are recorded in `implementation-notes-phase-4.html`. Final spec-aware review passed in cycle 1 with zero critical/high/medium/low findings. Independent final record-consistency review found no material conflict across source, product/design records, briefs, and shared rules. YAML/JSON parsing and `git diff --check` pass. The owner authorized this commit on 2026-09-21; the owner launch gate remains open.
+The final documenter refreshed DESIGN.md and its paired sidecar from the reviewed implementation. Integration restored Impeccable's required verbatim FINISH clause and clarified that archive-index PDFs are Phase 3 evidence, not a new Phase 4 print capture. Four decisions are recorded in `implementation-notes-phase-4.html`. Final spec-aware review passed in cycle 1 with zero critical/high/medium/low findings. Independent final record-consistency review found no material conflict across source, product/design records, briefs, and shared rules. YAML/JSON parsing and `git diff --check` pass. The owner authorized the verification commit `ef7e7f1` on 2026-09-21; the launch decision is recorded in the owner launch gate above.
 
 ## Post-launch measurement handoff
 
 No PostHog dashboard, insight, account setting, production data, or booking was created or changed.
 
-1. **Release cutover:** owner fills actual deployed timestamp/timezone, commit, and observation window after separate deployment authorization. There is no release date or redesign outcome yet.
+1. **Release cutover:** recorded in the owner launch gate above (2026-09-21, automatic GitHub deployment on push to `main`). The observation window remains for the owner to set. There is no redesign outcome yet.
 2. Use existing PostHog views for public visits/pageviews and `booking_cta_clicked`, broken down by `placement` and `page_path`; inspect available referral/UTM/source context. Offline introductions need owner notes, not fabricated attribution.
 3. Use `booking_cta_clicked` → `booking_completed` progression and completed bookings over comparable windows, reporting the chosen unique-visitor/session denominator, CTA counts, completed-event counts, and known booking UIDs/statuses. Deduplicate by UID when available and note missing IDs. A successful callback can still be unconfirmed; the owner checks actual booking status.
 4. Keep `booking_embed_opened` in a separate readiness view, not an opened-calendar stage. No events were renamed, so existing insights retain compatibility but misleading labels must be interpreted carefully.
