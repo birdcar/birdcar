@@ -52,34 +52,27 @@
     .walkthrough-introduction h2 { font-size: clamp(2rem, 3.3vw, 3rem); }
     .walkthrough-introduction > p { max-width: 45ch; }
     .walkthrough-diagram { margin: 2.5rem 0 0; }
-    .walkthrough-stages { display: grid; grid-template-columns: .95fr 1.25fr .85fr; gap: 0 4rem; margin: 0; padding: 0; list-style: none; }
+    .walkthrough-stages { display: grid; grid-template-columns: 1fr 1.15fr .95fr; gap: 0 4rem; margin: 0; padding: 0; list-style: none; }
     .walkthrough-stages > li { min-width: 0; position: relative; }
-    .bring-stage, .conversation-stage { grid-column: 1; padding-left: 3.5rem; }
-    .bring-stage { padding-bottom: 2.5rem; }
-    .conversation-stage { grid-row: 2; }
-    .report-stage { grid-column: 2; grid-row: 1 / span 2; }
-    .choice-stage { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
     .stage-connection { margin-bottom: 1rem; }
-    .stage-connection span { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border: 1px solid var(--color-ink); border-radius: 50%; font-weight: 600; background: var(--color-cyan); flex-shrink: 0; }
-    .walkthrough-diagram svg { overflow: visible; fill: none; stroke: var(--color-ink); stroke-width: 1.25; }
+    .stage-connection span { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border: 1px solid var(--color-ink); border-radius: 50%; font-weight: 600; background: var(--color-cyan); }
+    .walkthrough-diagram svg { overflow: hidden; fill: none; stroke: var(--color-ink); stroke-width: 1.25; }
     .walkthrough-diagram path { vector-effect: non-scaling-stroke; }
     .stage-connection svg { display: none; }
-    .bring-stage .stage-connection, .conversation-stage .stage-connection { position: absolute; inset: 0 auto 0 0; width: 2.5rem; margin: 0; }
-    .bring-stage .stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); }
-    .report-handoff { position: absolute; right: -3.4rem; top: 1.25rem; width: 2.8rem; height: 24px; }
+    .walkthrough-diagram .stage-handoff { position: absolute; top: .5rem; left: 2.5rem; width: calc(100% + 1.5rem); height: 24px; }
     .walkthrough-stages h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.15; margin-bottom: 1rem; text-wrap: initial; }
     .walkthrough-stages p, .walkthrough-choices { font-size: 1rem; line-height: 1.5; }
-    .report-stage h3 { font-size: 2rem; }
-    .report-document { position: relative; margin-top: 1.5rem; }
-    .report-document .report-outline { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--color-paper); }
+    .report-document { position: relative; margin-top: 1.5rem; background: var(--color-paper); border: 1px solid var(--color-ink); clip-path: polygon(0 0, calc(100% - 37px) 0, 100% 37px, 100% 100%, 0 100%); }
+    .report-document::before, .report-document::after { content: ''; position: absolute; pointer-events: none; }
+    .report-document::before { top: -1px; right: -1px; width: 37px; height: 37px; box-sizing: border-box; border-left: 1px solid var(--color-ink); border-bottom: 1px solid var(--color-ink); }
+    .report-document::after { top: 17.5px; right: -7.5px; width: 53px; height: 1px; background: var(--color-ink); transform: rotate(45deg); }
     .report-contents { position: relative; padding: 2rem 1.5rem 1.5rem; font-size: 1.125rem; }
     .report-contents > div { padding-block: 1rem; }
     .report-contents > div + div { border-top: 1px solid var(--color-ink); }
     .report-contents dt { font-weight: 600; }
     .report-contents dd { margin: .35rem 0 0; font-size: 1rem; }
     .report-contents .first-recommendation { background: var(--color-emphasis); padding: 1rem; border: 0; }
-    .walkthrough-choices { position: relative; list-style: none; padding: 0; margin-top: 1.5rem; }
-    .walkthrough-choices::before { content: ''; position: absolute; top: 0; left: -4rem; width: 4rem; border-top: 1px solid var(--color-ink); }
+    .walkthrough-choices { list-style: none; padding: 0; margin: 0; }
     .walkthrough-choices li { position: relative; padding: .8rem 0 .8rem 2.8rem; }
     .walkthrough-choices svg { position: absolute; top: 0; left: 0; width: 32px; height: 100%; }
     .walkthrough-diagram figcaption { border-top: 1px solid var(--color-ink); padding-top: 1.25rem; margin-top: 2rem; font-size: 1rem; }
@@ -227,9 +220,9 @@
     .article-diagram .walkthrough-stages > li:last-child { padding-bottom: 0; }
     .article-diagram .stage-connection { position: absolute; inset: 0 auto 0 0; width: 2.5rem; margin: 0; }
     .article-diagram .stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); }
-    .article-diagram .report-handoff, .article-diagram .walkthrough-choices::before { display: none; }
+    .article-diagram .stage-handoff { display: none; }
     .article-diagram .report-contents { padding: 1.5rem 1rem 1rem; }
-    .article-diagram .walkthrough-choices { list-style: none; padding: 0; margin: 1rem 0 0; }
+    .article-diagram .walkthrough-choices { list-style: none; padding: 0; margin: 0; }
     .article-diagram .walkthrough-choices li { padding: .8rem 0 .8rem 2.8rem; margin: 0; }
     .article-diagram .reporting-comparison { grid-template-columns: 1fr; gap: 1.5rem; }
     .article-diagram .reporting-before .reporting-relationship { flex-direction: column; align-items: start; gap: .75rem; }
@@ -286,7 +279,7 @@
     .walkthrough-introduction { grid-template-columns: 1fr; gap: 1.25rem; }
     .walkthrough-introduction > p { max-width: 62ch; }
     .walkthrough-stages { grid-template-columns: 1fr; gap: 0; }
-    .walkthrough-stages > li { grid-column: auto; grid-row: auto; padding: 0 0 2rem 3.5rem; }
+    .walkthrough-stages > li { padding: 0 0 2rem 3.5rem; }
     .walkthrough-stages > li:last-child { padding-bottom: 0; }
     .stage-connection { position: absolute; top: 0; left: 0; bottom: 0; width: 2.5rem; margin: 0; }
     .stage-connection svg { display: block; position: absolute; top: 3rem; left: .5rem; width: 24px; height: calc(100% - 3.5rem); }
@@ -294,7 +287,7 @@
     .walkthrough-stages p { max-width: 62ch; }
     .report-document { max-width: 32rem; }
     .report-contents { padding: 1.5rem 1rem 1rem; }
-    .report-handoff, .walkthrough-choices::before { display: none; }
+    .stage-handoff { display: none; }
     .home-work, .assessment-strip { padding-inline: 6%; column-gap: 6%; }
     .home-work { padding-block: 3rem; }
     .reporting-comparison { gap: 2rem; }
@@ -517,8 +510,7 @@
     .walkthrough-stages { display: block; }
     .walkthrough-stages > li { position: relative; padding: 0 0 1.25rem 3.5rem; break-inside: avoid; }
     .stage-connection { position: absolute; top: 0; left: 0; }
-    .stage-connection svg, .bring-stage .stage-connection svg, .report-handoff, .walkthrough-choices::before { display: none; }
-    .report-stage h3 { font-size: 1.5rem; }
+    .stage-connection svg, .stage-handoff { display: none; }
     .report-document { max-width: 32rem; }
     .report-contents { padding: 1.5rem; }
     .stage-connection span, .report-contents .first-recommendation { background: white; color: black; border: 1px solid black; transform: none !important; }
@@ -536,7 +528,7 @@
     .offer-report .first-recommendation { background: white; border: 1px solid black; }
     .article-diagram { background: white; margin: 1.5rem 0; padding: 0; }
     .article-diagram .walkthrough-stages { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .article-diagram .walkthrough-stages > li { grid-column: auto; grid-row: auto; align-self: start; padding: 0 0 0 2.5rem; }
+    .article-diagram .walkthrough-stages > li { align-self: start; padding: 0 0 0 2.5rem; }
     .article-diagram .stage-connection { width: 1.75rem; }
     .article-diagram .stage-connection span { width: 1.75rem; height: 1.75rem; font-size: 10pt; }
     .article-diagram .stage-connection svg { display: none; }

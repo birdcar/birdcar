@@ -262,7 +262,7 @@ Yellow buttons are the primary booking action. Ink buttons appear inside white o
 
 ### Walkthrough report figure
 
-The Walkthrough figure is semantic HTML with decorative SVG connectors. Preparatory stages lead to a folded report, and the report branches to optional choices. “Where I’d start” is yellow. The same meaning remains in vertical, print, no-JavaScript, and reduced-motion states.
+The Walkthrough figure is semantic HTML with decorative SVG connectors. Three numbered stages sit on one line: the conversation about real work leads to a folded report, and the report branches to optional choices. “Where I’d start” is yellow. The figure has no fixed caption; articles supply their own. The same meaning remains in vertical, print, no-JavaScript, and reduced-motion states.
 
 ### Shared reporting component
 

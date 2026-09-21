@@ -24,7 +24,7 @@ name('public.index');
     <section class="home-walkthrough" aria-labelledby="walkthrough-heading">
         <div class="walkthrough-introduction">
             <h2 id="walkthrough-heading">Start with the work.<br>Leave with a way forward.</h2>
-            <p>You don’t need a software brief. Just a process that’s harder than it should be. Here’s how the free Walkthrough turns that conversation into something you can use.</p>
+            <p>You don’t need a software brief, just a process that’s harder than it should be. The free Walkthrough takes it from there.</p>
         </div>
         <x-marketing.walkthrough-diagram :animate="true" />
     </section>

@@ -36,22 +36,22 @@ test('the homepage explains the whole walkthrough in visible reading order befor
     $response = $this->get('/')->assertOk()->assertSeeTextInOrder([
         'Why does everything',
         'Book a free Walkthrough',
-        'Bring the work',
-        'You don’t need to diagnose the problem or specify software.',
-        'Talk it through',
-        'roughly one hour',
-        'Free and pitch-free.',
+        'The free Walkthrough takes it from there.',
+        'Show me the work',
+        'Pick a process your team actually performs',
+        'about an hour with me and the person doing the work',
+        'you’ll bring it up, not me',
         'Keep the report',
-        'Within three business days of our conversation',
+        'Within three business days, I’ll send you a written report',
         'What’s getting in the way',
         'What I’d change',
         'Where I’d start',
         'The first change and why it comes first.',
         'Choose what happens next',
-        'Use the recommendations independently.',
-        'Discuss separate implementation with me.',
+        'Use the recommendations yourself.',
+        'Hire me for a separate implementation.',
         'Or do nothing. No purchase obligation.',
-        'A real process, a free conversation, a report you keep.',
+        'Which part of the week would you change?',
         'Craft &amp; Communicate',
     ], false);
 
@@ -59,21 +59,23 @@ test('the homepage explains the whole walkthrough in visible reading order befor
     @$document->loadHTML($response->getContent());
     $xpath = new DOMXPath($document);
 
-    expect($xpath->query('//figure[@data-walkthrough-diagram]/ol/li'))->toHaveCount(4);
+    expect($xpath->query('//figure[@data-walkthrough-diagram]/ol/li'))->toHaveCount(3);
+    expect($xpath->query('//figure[@data-walkthrough-diagram]/figcaption'))->toHaveCount(0);
     expect($xpath->query('//figure[@data-walkthrough-diagram]//*[@hidden or @aria-hidden="true"]//p'))->toHaveCount(0);
     expect($xpath->query('//figure[@data-walkthrough-diagram]//svg[not(@aria-hidden="true" or ancestor::*[@aria-hidden="true"])]'))->toHaveCount(0);
     $response->assertDontSee('future-horizon')->assertDontSee('Direction contract');
 });
 
 test('repeated walkthrough figures keep complete semantic explanations without duplicate identifiers', function () {
-    $html = Blade::render('<x-marketing.walkthrough-diagram /><x-marketing.walkthrough-diagram />');
+    $html = Blade::render('<x-marketing.walkthrough-diagram caption="First." /><x-marketing.walkthrough-diagram caption="Second." />');
     $document = new DOMDocument;
     @$document->loadHTML($html);
     $xpath = new DOMXPath($document);
 
     expect($xpath->query('//figure'))->toHaveCount(2);
     expect($xpath->query('//figure/figcaption'))->toHaveCount(2);
-    expect($xpath->query('//figure/ol/li/h3'))->toHaveCount(8);
+    expect($xpath->query('//figure/ol/li/h3'))->toHaveCount(6);
+    expect(Blade::render('<x-marketing.walkthrough-diagram />'))->not->toContain('<figcaption');
     expect($xpath->query('//*[@id or @aria-labelledby or @aria-describedby]'))->toHaveCount(0);
 });
 
@@ -122,7 +124,7 @@ test('conversion pages make the readers independent next steps visible without o
 
     expect($visible)->toContain(...$choices);
 })->with([
-    ['/', ['Use the recommendations independently.', 'Discuss separate implementation with me.', 'Or do nothing. No purchase obligation.']],
+    ['/', ['Use the recommendations yourself.', 'Hire me for a separate implementation.', 'Or do nothing. No purchase obligation.']],
     ['/walkthrough', ['Use the recommendations yourself', 'separate implementation purchase', 'or leave it there', 'not a working implementation']],
 ]);
 

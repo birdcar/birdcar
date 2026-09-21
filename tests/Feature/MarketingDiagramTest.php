@@ -10,7 +10,7 @@ test('curated diagrams keep their complete explanation between adjacent markdown
     expect($html)->toContain('<strong>the figure</strong>', '<em>the figure</em>', 'A reading figure.', ...$meaning)
         ->not->toContain('@figure', 'BIRDCARBLOCK', 'data-walkthrough-diagram');
 })->with([
-    'walkthrough' => ['walkthrough', ['Bring the work', 'Talk it through', 'Keep the report', 'three business days', 'Where I’d start', 'separate implementation', 'No purchase obligation']],
+    'walkthrough' => ['walkthrough', ['Show me the work', 'Keep the report', 'Choose what happens next', 'three business days', 'Where I’d start', 'separate implementation', 'No purchase obligation']],
     'reporting' => ['reporting', ['Finding the numbers by hand', 'Performance data', 'Client management', 'Part of the agency’s service', 'not a product screenshot or measured results']],
 ]);
 
@@ -22,7 +22,7 @@ test('repeated article diagrams do not duplicate identifiers or lose captions', 
     $xpath = new DOMXPath($document);
 
     expect($xpath->query('//figure'))->toHaveCount(2);
-    expect($xpath->query('//figure/ol/li/h3'))->toHaveCount(8);
+    expect($xpath->query('//figure/ol/li/h3'))->toHaveCount(6);
     expect($xpath->query('//*[@id or @aria-labelledby or @aria-describedby]'))->toHaveCount(0);
     expect($html)->toContain('First.', 'Second.');
 });

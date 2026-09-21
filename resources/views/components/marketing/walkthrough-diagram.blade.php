@@ -1,51 +1,41 @@
 @props(['animate' => false, 'caption' => null])
 <figure {{ $attributes->class(['walkthrough-diagram']) }} @if ($animate) data-walkthrough-diagram @endif>
     <ol class="walkthrough-stages" role="list">
-        <li class="bring-stage">
+        <li>
             <div class="stage-connection" aria-hidden="true">
                 <span data-diagram-emphasis>1</span>
-                <svg viewBox="0 0 24 100" preserveAspectRatio="none" focusable="false"><path d="M12 0V98m-7-8 7 8 7-8" /></svg>
+                <svg viewBox="0 0 24 24" preserveAspectRatio="xMidYMax meet" focusable="false"><path d="M12 -4000V22m-7-8 7 8 7-8" /></svg>
             </div>
-            <h3>Bring the work</h3>
+            <h3>Show me the work</h3>
             <p>Pick a process your team actually performs: chasing a follow-up, putting a report together, getting a new client started.</p>
-            <p>You don’t need to diagnose the problem or specify software.</p>
+            <p>Then spend about an hour with me and the person doing the work. Walk me through what happens, including the awkward bits. If you want to talk about hiring me, you’ll bring it up, not me.</p>
+            <svg class="stage-handoff" viewBox="0 0 64 24" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><path d="M-4000 12H62m-8-7 8 7-8 7" /></svg>
         </li>
-        <li class="conversation-stage">
+        <li>
             <div class="stage-connection" aria-hidden="true">
                 <span data-diagram-emphasis>2</span>
-                <svg viewBox="0 0 24 100" preserveAspectRatio="none" focusable="false"><path d="M12 0V98m-7-8 7 8 7-8" /></svg>
-            </div>
-            <h3>Talk it through</h3>
-            <p>Then spend roughly one hour with me and the person doing the work. Show me what happens, including the awkward bits.</p>
-            <p>Free and pitch-free. If you want to talk about hiring me, you’ll bring it up, not me.</p>
-            <svg class="report-handoff" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 12H98m-8-7 8 7-8 7" /></svg>
-        </li>
-        <li class="report-stage">
-            <div class="stage-connection" aria-hidden="true">
-                <span data-diagram-emphasis>3</span>
-                <svg viewBox="0 0 24 100" preserveAspectRatio="none" focusable="false"><path d="M12 0V98m-7-8 7 8 7-8" /></svg>
+                <svg viewBox="0 0 24 24" preserveAspectRatio="xMidYMax meet" focusable="false"><path d="M12 -4000V22m-7-8 7 8 7-8" /></svg>
             </div>
             <h3>Keep the report</h3>
-            <p>Within three business days of our conversation, I’ll send you a written report with:</p>
+            <p>Within three business days, I’ll send you a written report:</p>
             <div class="report-document">
-                <svg class="report-outline" viewBox="0 0 360 380" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 1H322L359 38V379H1ZM322 1V38H359" /></svg>
                 <dl class="report-contents">
                     <div><dt>What’s getting in the way</dt><dd>The problems I observed in the work.</dd></div>
                     <div><dt>What I’d change</dt><dd>Recommended improvements and why they help.</dd></div>
                     <div class="first-recommendation" data-diagram-recommendation><dt>Where I’d start</dt><dd>The first change and why it comes first.</dd></div>
                 </dl>
             </div>
+            <svg class="stage-handoff" viewBox="0 0 64 24" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false"><path d="M-4000 12H62m-8-7 8 7-8 7" /></svg>
         </li>
-        <li class="choice-stage">
-            <div class="stage-connection" aria-hidden="true"><span data-diagram-emphasis>4</span></div>
+        <li>
+            <div class="stage-connection" aria-hidden="true"><span data-diagram-emphasis>3</span></div>
             <h3>Choose what happens next</h3>
-            <p>Once you have the report, the next step is yours:</p>
             <ul class="walkthrough-choices" role="list">
-                <li><svg viewBox="0 0 32 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 0V60M1 30H30m-8-6 8 6-8 6" /></svg>Use the recommendations independently.</li>
-                <li><svg viewBox="0 0 32 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 0V60M1 30H30m-8-6 8 6-8 6" /></svg>Discuss separate implementation with me.</li>
-                <li><svg viewBox="0 0 32 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 0V30H30m-8-6 8 6-8 6" /></svg>Or do nothing. No purchase obligation.</li>
+                <li><svg viewBox="0 0 32 24" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path d="M1 -4000V4000M1 12H30m-8-7 8 7-8 7" /></svg>Use the recommendations yourself.</li>
+                <li><svg viewBox="0 0 32 24" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path d="M1 -4000V4000M1 12H30m-8-7 8 7-8 7" /></svg>Hire me for a separate implementation.</li>
+                <li><svg viewBox="0 0 32 24" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path d="M1 -4000V12H30m-8-7 8 7-8 7" /></svg>Or do nothing. No purchase obligation.</li>
             </ul>
         </li>
     </ol>
-    <figcaption>@if ($caption)<strong class="diagram-caption">{{ $caption }}</strong>@endif A real process, a free conversation, a report you keep. What you do with it is up to you.</figcaption>
+    @if ($caption)<figcaption>{{ $caption }}</figcaption>@endif
 </figure>
