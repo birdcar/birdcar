@@ -8,6 +8,7 @@ use App\Models\ArticleRevision;
 use App\Models\EditorialApproval;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\User;
+use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\PublishingFingerprint;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,10 @@ use RuntimeException;
 
 class WriteArticle
 {
-    public function __construct(private PublishingFingerprint $fingerprint) {}
+    public function __construct(
+        private PublishingFingerprint $fingerprint,
+        private ArticleDocument $articleDocument,
+    ) {}
 
     public function capture(User $actor, string $idea, ?string $slug = null): Article
     {
@@ -44,7 +48,7 @@ class WriteArticle
         string $origin = 'human',
     ): ArticleRevision {
         $this->authorize($actor, PublishingPermission::Write->value);
-        $this->validateDocument($document, $metadata);
+        $document = $this->validateDocument($document, $metadata);
         $contentHash = $this->fingerprint->hash([
             'document' => $document,
             'metadata' => $metadata,
@@ -72,6 +76,8 @@ class WriteArticle
             if ((int) ($lockedArticle->working_revision_id ?? 0) !== (int) ($expectedRevisionId ?? 0)) {
                 throw new RuntimeException('The article has changed since this edit began.');
             }
+
+            $this->ensureProtectedBlocksAreUnchanged($origin, $lockedArticle, $document);
 
             $nextNumber = ((int) ArticleRevision::query()
                 ->whereBelongsTo($lockedArticle)
@@ -148,17 +154,103 @@ class WriteArticle
     /**
      * @param  array<string, mixed>  $document
      * @param  array<string, mixed>  $metadata
+     * @return array<string, mixed>
      */
-    private function validateDocument(array $document, array $metadata): void
+    private function validateDocument(array $document, array $metadata): array
     {
-        if (($document['version'] ?? null) !== 1 || ($document['type'] ?? null) !== 'doc' || ! is_array($document['content'] ?? null)) {
-            throw new InvalidArgumentException('Documents must use the version 1 doc envelope.');
+        $canonical = $this->articleDocument->canonicalize($document);
+        $encoded = json_encode(['document' => $canonical, 'metadata' => $metadata], JSON_THROW_ON_ERROR);
+
+        if (mb_strlen($encoded, '8bit') > 1_048_576) {
+            throw new InvalidArgumentException('Article payloads must not exceed the document size limit.');
         }
 
-        $encoded = json_encode(['document' => $document, 'metadata' => $metadata], JSON_THROW_ON_ERROR);
+        return $canonical;
+    }
 
-        if (mb_strlen($encoded, '8bit') > 262_144) {
-            throw new InvalidArgumentException('Article payloads must not exceed the phase-one size limit.');
+    /**
+     * @param  array<string, mixed>  $document
+     */
+    private function ensureProtectedBlocksAreUnchanged(string $origin, Article $article, array $document): void
+    {
+        if ($origin !== 'agent' || $article->working_revision_id === null) {
+            return;
+        }
+
+        $currentRevision = ArticleRevision::query()->whereKey($article->working_revision_id)->first();
+
+        if ($currentRevision === null) {
+            return;
+        }
+
+        $currentDocumentValue = $currentRevision->getAttribute('document');
+        $currentDocument = is_array($currentDocumentValue) ? $currentDocumentValue : [];
+        $existingProtected = $this->protectedBlocks($currentDocument);
+
+        if ($existingProtected === []) {
+            return;
+        }
+
+        $incomingBlocks = $this->blocksById($document);
+
+        foreach ($existingProtected as $id => $block) {
+            if (! array_key_exists($id, $incomingBlocks)) {
+                throw new RuntimeException('Agent edits cannot remove protected blocks.');
+            }
+
+            if ($incomingBlocks[$id] !== $block) {
+                throw new RuntimeException('Agent edits cannot modify protected blocks.');
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, array<string, mixed>>
+     */
+    private function protectedBlocks(array $document): array
+    {
+        return array_filter(
+            $this->blocksById($document),
+            static fn (array $block): bool => is_array($block['attrs'] ?? null) && ($block['attrs']['protected'] ?? false) === true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, array<string, mixed>>
+     */
+    private function blocksById(array $document): array
+    {
+        $blocks = [];
+        $this->collectBlocksById($document['content'] ?? [], $blocks);
+
+        return $blocks;
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $blocks
+     */
+    private function collectBlocksById(mixed $nodes, array &$blocks): void
+    {
+        if (! is_array($nodes)) {
+            return;
+        }
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $node */
+            $attrs = $node['attrs'] ?? null;
+            $id = is_array($attrs) ? ($attrs['id'] ?? null) : null;
+
+            if (is_string($id)) {
+                $blocks[$id] = $node;
+            }
+
+            $this->collectBlocksById($node['content'] ?? [], $blocks);
         }
     }
 }

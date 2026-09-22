@@ -1,0 +1,8 @@
+{
+    "x": "category",
+    "series": [{"key": "value", "label": "Value"}],
+    "data": [
+        {"category": "first", "value": 0},
+        {"category": "second", "value": 3}
+    ]
+}

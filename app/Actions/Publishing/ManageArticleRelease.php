@@ -11,6 +11,7 @@ use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\PublishingFingerprint;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -21,7 +22,10 @@ use RuntimeException;
 
 class ManageArticleRelease
 {
-    public function __construct(private PublishingFingerprint $fingerprint) {}
+    public function __construct(
+        private PublishingFingerprint $fingerprint,
+        private ArticleDocument $articleDocument,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $deliveryIntent
@@ -50,10 +54,20 @@ class ManageArticleRelease
             }
 
             $canonicalSlug = $this->canonicalSlug($article, $slug);
+            $revisionDocumentValue = $revision->getAttribute('document');
+            $revisionMetadataValue = $revision->getAttribute('metadata');
+            $revisionDocument = is_array($revisionDocumentValue) ? $revisionDocumentValue : [];
+            $revisionMetadata = is_array($revisionMetadataValue) ? $revisionMetadataValue : [];
+            $renderedHtml = $this->articleDocument->renderHtml($revisionDocument);
             $payload = [
-                'document' => $revision->document,
-                'metadata' => $revision->metadata,
+                'document' => $revisionDocument,
+                'metadata' => $revisionMetadata,
                 'rendered_content_version' => 1,
+                'rendered_document' => [
+                    'htmlVersion' => 1,
+                    'html' => $renderedHtml,
+                    'hash' => $this->fingerprint->hash($renderedHtml),
+                ],
                 'original_public_date' => $this->timestampIsoString($article->first_published_at),
                 'canonical_slug' => $canonicalSlug,
                 'supporting_evidence_manifest' => [],

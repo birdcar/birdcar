@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\ReadWriting;
+use App\Services\Publishing\ArticleDocument;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
@@ -120,6 +121,47 @@ test('a registered specimen route refuses production and staging at request time
         app()->instance('env', $original);
     }
 })->with(['production', 'staging']);
+
+test('truthful charts render zero and one row without false divisions', function () {
+    $zeroChart = view('components.marketing.article-chart', [
+        'type' => 'bar',
+        'caption' => 'Zero values.',
+        'chart' => ['x' => 'label', 'series' => [['key' => 'value', 'label' => 'Value']], 'data' => [['label' => 'Only', 'value' => 0]]],
+    ])->render();
+    $lineChart = view('components.marketing.article-chart', [
+        'type' => 'line',
+        'caption' => 'One point.',
+        'chart' => ['x' => 'month', 'series' => [['key' => 'prompts', 'label' => 'Prompts']], 'data' => [['month' => 'Now', 'prompts' => 0]]],
+    ])->render();
+
+    expect($zeroChart)->toContain('width: 0%')
+        ->and($lineChart)->toContain('320')
+        ->not->toContain('NAN', 'INF', 'nan', 'inf');
+});
+
+test('server validated source svg diagrams keep safe static meaning only', function () {
+    $document = [
+        'version' => 1,
+        'type' => 'doc',
+        'content' => [[
+            'type' => 'diagram',
+            'attrs' => [
+                'id' => 'blk_0123456789abcdef',
+                'sourceType' => 'svg',
+                'caption' => 'Safe diagram.',
+                'source' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><title>Safe</title><desc>Safe</desc><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" /></svg>',
+            ],
+        ]],
+    ];
+
+    $html = app(ArticleDocument::class)->renderHtml($document);
+
+    expect($html)->toContain('<svg', '<title>Safe</title>', 'Safe diagram.')
+        ->not->toContain('onload', '<script', 'foreignObject', 'href=');
+
+    $document['content'][0]['attrs']['source'] = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+    expect(fn () => app(ArticleDocument::class)->validate($document))->toThrow(InvalidArgumentException::class);
+});
 
 test('the specimen is not reachable on application or arbitrary hosts', function (string $host) {
     $this->get('https://'.$host.'/__design/figures')->assertNotFound();

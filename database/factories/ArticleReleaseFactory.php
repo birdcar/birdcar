@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
 use App\Models\PublishingAttempt;
+use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\PublishingFingerprint;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -207,10 +208,18 @@ class ArticleReleaseFactory extends Factory
      */
     private function payloadFor(array $document, array $metadata, string $slug, array $deliveryIntent = [], ?string $scheduledAt = null): array
     {
+        $fingerprint = new PublishingFingerprint;
+        $renderedHtml = (new ArticleDocument($fingerprint))->renderHtml($document);
+
         return [
             'document' => $document,
             'metadata' => $metadata,
             'rendered_content_version' => 1,
+            'rendered_document' => [
+                'htmlVersion' => 1,
+                'html' => $renderedHtml,
+                'hash' => $fingerprint->hash($renderedHtml),
+            ],
             'canonical_slug' => $slug,
             'supporting_evidence_manifest' => [],
             'review_manifest' => [],
