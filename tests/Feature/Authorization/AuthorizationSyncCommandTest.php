@@ -3,6 +3,7 @@
 use App\Authorization\Admin\Catalog as AdminCatalog;
 use App\Authorization\Contracts\AuthorizationCatalog;
 use App\Authorization\Organizations\Catalog as OrganizationsCatalog;
+use App\Authorization\Publishing\Catalog as PublishingCatalog;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -16,6 +17,7 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
     config()->set('authorization.catalogs', [
         AdminCatalog::class,
         OrganizationsCatalog::class,
+        PublishingCatalog::class,
     ]);
 
     $this->artisan('authorization:sync')
@@ -26,13 +28,28 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
     $this->assertDatabaseHas('permissions', ['name' => 'admin.view', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'organizations.view', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'organizations.update', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.view', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.write', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.develop', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.approve', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.publish', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'publishing.budget', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'admin.access', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.viewer', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.editor', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('roles', ['name' => 'publishing.author', 'guard_name' => 'web']);
 
     expect(permissionNamesForRole('admin.access'))->toBe(['admin.view'])
         ->and(permissionNamesForRole('organizations.viewer'))->toBe(['organizations.view'])
-        ->and(permissionNamesForRole('organizations.editor'))->toBe(['organizations.update']);
+        ->and(permissionNamesForRole('organizations.editor'))->toBe(['organizations.update'])
+        ->and(permissionNamesForRole('publishing.author'))->toBe([
+            'publishing.approve',
+            'publishing.budget',
+            'publishing.develop',
+            'publishing.publish',
+            'publishing.view',
+            'publishing.write',
+        ]);
 });
 
 test('unregistered catalogs are ignored', function (): void {
