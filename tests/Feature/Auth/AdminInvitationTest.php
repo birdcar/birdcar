@@ -7,6 +7,9 @@ use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\User;
 use App\Notifications\AdminInvitation;
+use Illuminate\Contracts\Notifications\Dispatcher;
+use Illuminate\Mail\MailManager;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +17,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Spatie\Permission\Models\Role as RoleModel;
 use Spatie\Permission\PermissionRegistrar;
+use Symfony\Component\Mailer\Transport\NullTransport;
+use Symfony\Component\Mailer\Transport\SendmailTransport;
 
 beforeEach(function (): void {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -59,6 +64,30 @@ test('inviting a new admin provisions root roles and sends an admin-origin setup
         ->and($user->can(PublishingPermission::Write->value))->toBeTrue()
         ->and($user->getDirectPermissions()->count())->toBe(0)
         ->and(Artisan::output())->not->toContain($capturedUrl ?? 'missing-url');
+});
+
+test('notification setup URL preserves a nondefault admin port and custom broker expiry', function (): void {
+    Notification::fake();
+    config([
+        'admin.url' => 'http://admin.birdcar.test:8088',
+        'auth.passwords.users.expire' => 17,
+    ]);
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'port-expiry@example.com',
+        '--no-interaction' => true,
+    ]);
+
+    $user = User::query()->where('email', 'port-expiry@example.com')->firstOrFail();
+    Notification::assertSentTo($user, AdminInvitation::class, function (AdminInvitation $notification) use ($user): bool {
+        $message = $notification->toMail($user);
+
+        return is_string($message->actionUrl)
+            && str_starts_with($message->actionUrl, 'http://admin.birdcar.test:8088/reset-password/')
+            && in_array('This password setup link will expire in 17 minutes.', $message->outroLines, true);
+    });
+
+    expect($exitCode)->toBe(0);
 });
 
 test('inviting an existing admin preserves credentials profile two factor and unrelated roles', function (): void {
@@ -112,6 +141,22 @@ test('missing bootstrap roles fail before provisioning an account', function ():
         ->and(Artisan::output())->toContain('authorization:sync');
 });
 
+test('malformed invitation emails fail before provisioning or role mutation', function (): void {
+    Notification::fake();
+    $roleAssignments = DB::table('model_has_roles')->count();
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'not-an-email',
+        '--no-interaction' => true,
+    ]);
+
+    Notification::assertNothingSent();
+    expect($exitCode)->toBe(1)
+        ->and(User::query()->where('email', 'not-an-email')->exists())->toBeFalse()
+        ->and(DB::table('model_has_roles')->count())->toBe($roleAssignments)
+        ->and(Artisan::output())->toContain('valid invitation email');
+});
+
 test('direct unsafe mail transports fail before provisioning an account', function (): void {
     Notification::fake();
 
@@ -132,6 +177,126 @@ test('direct unsafe mail transports fail before provisioning an account', functi
     }
 
     Notification::assertNothingSent();
+});
+
+test('custom delivery transports are resolved through the mail manager', function (): void {
+    Notification::fake();
+    app(MailManager::class)->extend('custom-safe', fn (array $config): SendmailTransport => new SendmailTransport('/usr/sbin/sendmail -bs'));
+    config([
+        'mail.default' => 'custom_safe',
+        'mail.mailers.custom_safe' => ['transport' => 'custom-safe'],
+    ]);
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'custom-safe@example.com',
+        '--no-interaction' => true,
+    ]);
+
+    $user = User::query()->where('email', 'custom-safe@example.com')->firstOrFail();
+    Notification::assertSentTo($user, AdminInvitation::class);
+    expect($exitCode)->toBe(0);
+});
+
+test('unsafe custom mail transport aliases fail before provisioning an account', function (): void {
+    Notification::fake();
+    app(MailManager::class)->extend('custom-array', fn (array $config): ArrayTransport => new ArrayTransport);
+    app(MailManager::class)->extend('custom-null', fn (array $config): NullTransport => new NullTransport);
+
+    $cases = [
+        'custom_array' => ['transport' => 'custom-array', 'unsafe' => 'array'],
+        'custom_null' => ['transport' => 'custom-null', 'unsafe' => 'null'],
+    ];
+
+    foreach ($cases as $mailer => $case) {
+        config([
+            'mail.default' => $mailer,
+            "mail.mailers.{$mailer}" => ['transport' => $case['transport']],
+        ]);
+
+        $exitCode = Artisan::call('admin:invite', [
+            'email' => "unsafe-{$mailer}@example.com",
+            '--no-interaction' => true,
+        ]);
+
+        expect($exitCode)->toBe(1)
+            ->and(User::query()->where('email', "unsafe-{$mailer}@example.com")->exists())->toBeFalse()
+            ->and(Artisan::output())->toContain("unsafe [{$case['unsafe']}] transport");
+    }
+
+    Notification::assertNothingSent();
+});
+
+test('unsafe URL mail transport overrides fail before provisioning an account', function (): void {
+    Notification::fake();
+
+    foreach (['log', 'array'] as $transport) {
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp' => [
+                'transport' => 'smtp',
+                'url' => "{$transport}://default",
+                'host' => '127.0.0.1',
+                'port' => 2525,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('admin:invite', [
+            'email' => "unsafe-url-{$transport}@example.com",
+            '--no-interaction' => true,
+        ]);
+
+        expect($exitCode)->toBe(1)
+            ->and(User::query()->where('email', "unsafe-url-{$transport}@example.com")->exists())->toBeFalse()
+            ->and(Artisan::output())->toContain("unsafe [{$transport}] transport");
+    }
+
+    Notification::assertNothingSent();
+});
+
+test('unsupported mail transports fail before provisioning an account', function (): void {
+    Notification::fake();
+
+    $cases = [
+        'unsupported_mailer' => ['transport' => 'unsupported'],
+        'null_url_mailer' => ['transport' => 'smtp', 'url' => 'null://default'],
+    ];
+
+    foreach ($cases as $mailer => $config) {
+        config([
+            'mail.default' => $mailer,
+            "mail.mailers.{$mailer}" => $config,
+        ]);
+
+        $exitCode = Artisan::call('admin:invite', [
+            'email' => "{$mailer}@example.com",
+            '--no-interaction' => true,
+        ]);
+
+        expect($exitCode)->toBe(1)
+            ->and(User::query()->where('email', "{$mailer}@example.com")->exists())->toBeFalse()
+            ->and(Artisan::output())->toContain('supported delivery transport');
+    }
+
+    Notification::assertNothingSent();
+});
+
+test('cyclic aggregate mail transports fail before provisioning an account', function (): void {
+    Notification::fake();
+    config([
+        'mail.default' => 'cycle_a',
+        'mail.mailers.cycle_a' => ['transport' => 'failover', 'mailers' => ['cycle_b']],
+        'mail.mailers.cycle_b' => ['transport' => 'roundrobin', 'mailers' => ['cycle_a']],
+    ]);
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'cyclic-mailer@example.com',
+        '--no-interaction' => true,
+    ]);
+
+    Notification::assertNothingSent();
+    expect($exitCode)->toBe(1)
+        ->and(User::query()->where('email', 'cyclic-mailer@example.com')->exists())->toBeFalse()
+        ->and(Artisan::output())->toContain('cyclic');
 });
 
 test('nested unsafe failover and round-robin mail transports fail before provisioning an account', function (): void {
@@ -193,13 +358,18 @@ test('invalid admin origins fail before provisioning an account', function (): v
 });
 
 test('delivery failure happens after safe provisioning and a later retry sends one invitation', function (): void {
-    config([
-        'mail.default' => 'smtp',
-        'mail.mailers.smtp.transport' => 'smtp',
-        'mail.mailers.smtp.host' => '127.0.0.1',
-        'mail.mailers.smtp.port' => 65000,
-        'mail.mailers.smtp.timeout' => 1,
-    ]);
+    $this->app->instance(Dispatcher::class, new class implements Dispatcher
+    {
+        public function send($notifiables, $notification): void
+        {
+            throw new RuntimeException('deterministic notification transport failure with provider detail');
+        }
+
+        public function sendNow($notifiables, $notification, ?array $channels = null): void
+        {
+            throw new RuntimeException('deterministic notification transport failure with provider detail');
+        }
+    });
 
     $firstExitCode = Artisan::call('admin:invite', [
         'email' => 'delivery-failure@example.com',
@@ -213,12 +383,12 @@ test('delivery failure happens after safe provisioning and a later retry sends o
         ->and($user->hasRole(AdminRole::Access->value))->toBeTrue()
         ->and($user->hasRole(PublishingRole::Author->value))->toBeTrue()
         ->and(Artisan::output())->toContain('Invitation delivery failed after account provisioning')
-        ->and(Artisan::output())->not->toContain('127.0.0.1')
-        ->and(Artisan::output())->not->toContain('65000')
+        ->and(Artisan::output())->not->toContain('provider detail')
         ->and(Artisan::output())->not->toContain('/reset-password/');
 
     $this->travel(61)->seconds();
-    Notification::fake();
+    $notificationFake = Notification::fake();
+    $this->app->instance(Dispatcher::class, $notificationFake);
 
     $retryExitCode = Artisan::call('admin:invite', [
         'email' => 'DELIVERY-FAILURE@example.com',

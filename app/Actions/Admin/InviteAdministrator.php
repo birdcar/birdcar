@@ -6,6 +6,9 @@ use App\Models\User;
 use App\Notifications\AdminInvitation;
 use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Database\QueryException;
+use Illuminate\Mail\MailManager;
+use Illuminate\Mail\Transport\ArrayTransport;
+use Illuminate\Mail\Transport\LogTransport;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ConfigurationUrlParser;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +17,10 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 use Spatie\Permission\Models\Role as RoleModel;
+use Symfony\Component\Mailer\Transport\FailoverTransport;
+use Symfony\Component\Mailer\Transport\NullTransport;
+use Symfony\Component\Mailer\Transport\RoundRobinTransport;
+use Symfony\Component\Mailer\Transport\TransportInterface;
 use Throwable;
 
 class InviteAdministrator
@@ -106,16 +113,16 @@ class InviteAdministrator
             throw new AdminInvitationException('Configuration [mail.default] must name a delivery-capable mailer.');
         }
 
-        $this->effectiveTransportFor($defaultMailer, []);
+        $this->assertSafeMailerNamed(trim($defaultMailer), [], app(MailManager::class));
     }
 
     /**
      * @param  list<string>  $seen
      */
-    private function effectiveTransportFor(string $mailer, array $seen): string
+    private function assertSafeMailerNamed(string $mailer, array $seen, MailManager $manager): void
     {
         if (in_array($mailer, $seen, true)) {
-            throw new AdminInvitationException("Mailer [{$mailer}] cannot be used for invitations because its failover chain is cyclic.");
+            throw new AdminInvitationException("Mailer [{$mailer}] cannot be used for invitations because its failover or round-robin chain is cyclic.");
         }
 
         $config = config("mail.mailers.{$mailer}");
@@ -125,41 +132,77 @@ class InviteAdministrator
         }
 
         $config = $this->parsedMailerConfig($mailer, $config);
+        $transportName = $this->configuredTransportName($config);
+        $isVerifiableAggregate = in_array($transportName, ['failover', 'roundrobin'], true);
+
+        if ($isVerifiableAggregate) {
+            $this->assertAggregateChildrenAreSafe($mailer, $config, $seen, $manager);
+        }
+
+        $manager->purge($mailer);
+
+        try {
+            $transport = $manager->mailer($mailer)->getSymfonyTransport();
+        } catch (InvalidArgumentException) {
+            throw new AdminInvitationException("Mailer [{$mailer}] is not configured with a supported delivery transport.");
+        } catch (Throwable) {
+            throw new AdminInvitationException("Mailer [{$mailer}] could not be resolved for invitation delivery.");
+        }
+
+        $this->assertResolvedTransportIsSafe($mailer, $transport, $isVerifiableAggregate);
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    private function configuredTransportName(array $config): ?string
+    {
         $transport = $config['transport'] ?? null;
 
         if (! is_string($transport) || trim($transport) === '') {
-            throw new AdminInvitationException("Mailer [{$mailer}] must declare a supported transport.");
+            return null;
         }
 
-        $transport = Str::lower($transport);
+        return Str::lower(trim($transport));
+    }
 
-        if (in_array($transport, ['array', 'log'], true)) {
-            throw new AdminInvitationException("Mailer [{$mailer}] uses the unsafe [{$transport}] transport for invitations.");
+    /**
+     * @param  array<string, mixed>  $config
+     * @param  list<string>  $seen
+     */
+    private function assertAggregateChildrenAreSafe(string $mailer, array $config, array $seen, MailManager $manager): void
+    {
+        $mailers = $config['mailers'] ?? null;
+
+        if (! is_array($mailers) || $mailers === []) {
+            throw new AdminInvitationException("Mailer [{$mailer}] must include delivery-capable child mailers.");
         }
 
-        if (in_array($transport, ['failover', 'roundrobin'], true)) {
-            $mailers = $config['mailers'] ?? null;
-
-            if (! is_array($mailers) || $mailers === []) {
-                throw new AdminInvitationException("Mailer [{$mailer}] must include delivery-capable child mailers.");
+        foreach ($mailers as $childMailer) {
+            if (! is_string($childMailer) || trim($childMailer) === '') {
+                throw new AdminInvitationException("Mailer [{$mailer}] contains an invalid child mailer.");
             }
 
-            foreach ($mailers as $childMailer) {
-                if (! is_string($childMailer) || trim($childMailer) === '') {
-                    throw new AdminInvitationException("Mailer [{$mailer}] contains an invalid child mailer.");
-                }
+            $this->assertSafeMailerNamed(trim($childMailer), [...$seen, $mailer], $manager);
+        }
+    }
 
-                $this->effectiveTransportFor($childMailer, [...$seen, $mailer]);
-            }
+    private function assertResolvedTransportIsSafe(string $mailer, TransportInterface $transport, bool $isVerifiableAggregate): void
+    {
+        $unsafeTransport = match (true) {
+            $transport instanceof LogTransport => 'log',
+            $transport instanceof ArrayTransport => 'array',
+            $transport instanceof NullTransport => 'null',
+            default => null,
+        };
 
-            return $transport;
+        if ($unsafeTransport !== null) {
+            throw new AdminInvitationException("Mailer [{$mailer}] uses the unsafe [{$unsafeTransport}] transport for invitations.");
         }
 
-        if (! in_array($transport, ['smtp', 'sendmail', 'mailgun', 'ses', 'ses-v2', 'postmark', 'resend', 'cloudflare'], true)) {
-            throw new AdminInvitationException("Mailer [{$mailer}] uses unsupported transport [{$transport}] for invitations.");
+        if (($transport instanceof FailoverTransport || $transport instanceof RoundRobinTransport) && ! $isVerifiableAggregate) {
+            throw new AdminInvitationException("Mailer [{$mailer}] uses an aggregate transport whose child mailers cannot be verified for invitations.");
         }
-
-        return $transport;
     }
 
     /**
