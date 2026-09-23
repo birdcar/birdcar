@@ -1,0 +1,61 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-23",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": [
+      "First Admin publishing workspace"
+    ],
+    "noops": [],
+    "failed": [
+      "Agent development, evidence and bounded reviews"
+    ],
+    "skipped": [
+      "Release delivery and public cutover"
+    ],
+    "results": [
+      {
+        "title": "First Admin publishing workspace",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "9c044ea30509e8145fa9accb5eede3ffaa65ccc4",
+        "summary": "Implemented the Admin publishing workspace and fixed retry regressions for stale approval hashes, autosave rebasing, logout recovery clearing, ADMIN_URL redirects, attempt locking, and blank SVG accessibility fallback. All declared validation commands pass. — Prior blocking issues around article ownership and stable editor IDs appear addressed, and the retry coverage for stale approvals, autosave rebasing, logout recovery cleanup, and conflict choices is substantially improved. Remaining findings are non-blocking gaps in conflict latest-revision behavior and lock/revalidation coverage; implementation is ready to commit if those are accepted as follow-ups.",
+        "findings": [
+          "medium/spec-deviation resources/views/components/admin/publishing/⚡article-workspace.blade.php:88 — Conflict handling keeps currentRevisionId/article data at the stale base revision, so the compare/preview UI cannot show the authoritative latest saved revision required by the spec → Refresh the article/working revision on conflict and expose latest revision metadata/preview without overwriting local editor content",
+          "medium/testing app/Actions/Publishing/WriteArticle.php:135 — The new current-attempt revalidation/locking path has no targeted regression for a changed or mismatched current_attempt_id before invalidation → Add a ReleaseIntegrity/WriteArticle test that asserts the guard fires and approvals/schedules remain unchanged"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Agent development, evidence and bounded reviews",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review FAILED after 3 cycle(s) with 2 blocking finding(s). Headless runs do not commit at the cycle cap; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation app/Actions/Publishing/ApprovePublishingStage.php:198 — Persists from cycle 2 — plan approval now checks for completed research, but only by review_cycle/input_version; changing the brief or angle and re-approving in the same cycle leaves stale research eligible for plan approval and draft dispatch → Bind research completion to the current frozen brief/angle approval input or mark prior research stale when those inputs change",
+          "high/spec-deviation app/Actions/Publishing/RunEditorialActivity.php:114 — Activity execution claims queued work without revalidating the activity stage/input_version/frozen input against the current attempt, so pending research/draft work can spend and apply after its human gate was invalidated → Under the claim lock, verify current stage/version/prerequisite approval hashes still match the activity or mark it stale before reserving budget",
+          "medium/spec-deviation app/Actions/Publishing/FinishEditorialReview.php:79 — Finish review unconditionally consumes and queues the one recheck even when all three reviews have no findings or no owner edits/decisions requiring affected-area review → Only start the recheck when there are affected areas to recheck, otherwise finish without spending the entitlement"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Release delivery and public cutover",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

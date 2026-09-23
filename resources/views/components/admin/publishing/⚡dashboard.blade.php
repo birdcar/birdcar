@@ -49,7 +49,7 @@ new #[Layout('layouts.admin')] class extends Component
             ->get();
 
         $active = Article::query()
-            ->with('currentAttempt')
+            ->with(['currentAttempt.editorialActivities'])
             ->where('author_id', auth()->id())
             ->whereNotNull('current_attempt_id')
             ->whereNull('published_release_id')
@@ -100,7 +100,8 @@ new #[Layout('layouts.admin')] class extends Component
                 @forelse ($active as $article)
                     <a class="block rounded bg-zinc-950 p-3 hover:bg-zinc-900" href="{{ route('admin.publishing.articles.show', $article) }}">
                         <span class="block">{{ $article->idea }}</span>
-                        <span class="text-xs text-zinc-500">{{ $article->currentAttempt?->stage?->value ?? 'active' }}</span>
+                        @php($latestActivity = $article->currentAttempt?->editorialActivities->sortByDesc('id')->first())
+                        <span class="text-xs text-zinc-500">{{ $article->currentAttempt?->stage?->value ?? 'active' }} @if($article->currentAttempt?->paused_at) · blocked: {{ $article->currentAttempt?->pause_reason }} @elseif($latestActivity) · {{ $latestActivity->kind->value }} {{ $latestActivity->status->value }} @endif</span>
                     </a>
                 @empty
                     <p class="text-sm text-zinc-400">No active writing yet.</p>

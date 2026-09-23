@@ -5,8 +5,10 @@ namespace App\Actions\Publishing;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRevision;
+use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\Publishing\ApprovalKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
@@ -78,6 +80,12 @@ class WriteArticle
                 throw new RuntimeException('The article has changed since this edit began.');
             }
 
+            if ($article instanceof Article && $article->current_attempt_id !== null && (int) $article->current_attempt_id !== (int) ($lockedArticle->current_attempt_id ?? 0)) {
+                throw new RuntimeException('The current publishing attempt changed before this edit was saved.');
+            }
+
+            $lockedAttempt = $lockedArticle->current_attempt_id === null ? null : $this->lockedCurrentAttempt($lockedArticle);
+
             $this->ensureProtectedBlocksAreUnchanged($origin, $lockedArticle, $document);
 
             $nextNumber = ((int) ArticleRevision::query()
@@ -96,11 +104,12 @@ class WriteArticle
                 'client_mutation_id' => $mutationId === '' ? null : $mutationId,
             ]);
 
+            $previousRevisionId = $lockedArticle->working_revision_id;
             $lockedArticle->forceFill(['working_revision_id' => $revision->id])->save();
 
-            if ($lockedArticle->current_attempt_id !== null) {
-                $lockedAttempt = $this->lockedCurrentAttempt($lockedArticle);
+            if ($lockedAttempt instanceof PublishingAttempt) {
                 $this->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Release]);
+                $this->markReviewedRevisionStale((int) $lockedAttempt->id, (int) $lockedAttempt->review_cycle, $previousRevisionId, $origin);
                 app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
             }
 
@@ -108,6 +117,24 @@ class WriteArticle
         });
 
         return $revision;
+    }
+
+    private function markReviewedRevisionStale(int $attemptId, int $reviewCycle, mixed $previousRevisionId, string $origin): void
+    {
+        if (! in_array($origin, ['human', 'agent-accepted'], true) || $previousRevisionId === null) {
+            return;
+        }
+
+        EditorialActivity::query()
+            ->where('attempt_id', $attemptId)
+            ->where('review_cycle', $reviewCycle)
+            ->where('revision_id', (int) $previousRevisionId)
+            ->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck'])
+            ->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Running->value, EditorialActivityStatus::Failed->value])
+            ->update([
+                'status' => EditorialActivityStatus::Stale->value,
+                'error_reason' => 'The reviewed revision changed after human edits.',
+            ]);
     }
 
     /**
@@ -224,7 +251,7 @@ class WriteArticle
                 if (is_string($id) && preg_match('/^(blk|imp)_[0-9a-f]{16}$/', $id) && ! isset($ids[$id])) {
                     $ids[$id] = true;
                     $node['attrs'] = $attrs;
-                } elseif (! array_key_exists('attrs', $node) && array_key_exists('text', $node)) {
+                } else {
                     $prefix = ($node['type'] ?? null) === 'importedBlock' ? 'imp' : 'blk';
                     $id = $this->stableBlockId($prefix, $path.'.'.$index, $node, $ids);
                     $attrs['id'] = $id;
@@ -265,7 +292,7 @@ class WriteArticle
      */
     private function ensureProtectedBlocksAreUnchanged(string $origin, Article $article, array $document): void
     {
-        if ($origin !== 'agent' || $article->working_revision_id === null) {
+        if (! in_array($origin, ['agent', 'agent-initial', 'agent-accepted'], true) || $article->working_revision_id === null) {
             return;
         }
 

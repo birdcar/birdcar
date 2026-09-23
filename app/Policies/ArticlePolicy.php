@@ -21,7 +21,8 @@ class ArticlePolicy
      */
     public function view(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::View->value);
+        return $user->can(PublishingPermission::View->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     /**
@@ -37,27 +38,32 @@ class ArticlePolicy
      */
     public function update(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::Write->value);
+        return $user->can(PublishingPermission::Write->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     public function develop(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::Develop->value);
+        return $user->can(PublishingPermission::Develop->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     public function approve(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::Approve->value);
+        return $user->can(PublishingPermission::Approve->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     public function publish(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::Publish->value);
+        return $user->can(PublishingPermission::Publish->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     public function budget(User $user, Article $article): bool
     {
-        return $user->can(PublishingPermission::Budget->value);
+        return $user->can(PublishingPermission::Budget->value)
+            && (int) $article->author_id === (int) $user->id;
     }
 
     /**

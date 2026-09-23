@@ -183,6 +183,52 @@ describe('document helpers', () => {
         expect(bases).toEqual([10, 11]);
     });
 
+    test('autosave conflict preserves local base and exposes latest revision metadata', async () => {
+        const savedPayloads = [];
+        const queue = createAutosaveQueue({
+            delay: 0,
+            persist: (payload) => savedPayloads.push(payload),
+            save: async () => ({
+                ok: false,
+                conflict: 'The article has changed since this edit began.',
+                revisionId: 10,
+                latestRevision: { id: 12, number: 2, excerpt: 'Saved elsewhere' },
+            }),
+        });
+
+        queue.enqueue({ userId: 1, articleId: 2, baseRevisionId: 10, document });
+        await queue.flush();
+
+        expect(queue.state.status).toBe('conflict');
+        expect(queue.state.latestRevision.id).toBe(12);
+        expect(savedPayloads[0].baseRevisionId).toBe(10);
+        expect(shouldWarnBeforeUnload(queue.state)).toBe(true);
+    });
+
+    test('autosave conflict blocks later edits from flushing until explicitly resolved', async () => {
+        const savedPayloads = [];
+        const queue = createAutosaveQueue({
+            delay: 0,
+            persist: (payload) => savedPayloads.push(payload.document.content[0].content[0].text),
+            save: async (payload) => {
+                savedPayloads.push(`save:${payload.document.content[0].content[0].text}`);
+                return {
+                    ok: false,
+                    conflict: 'The article has changed since this edit began.',
+                    latestRevision: { id: 12, number: 2, excerpt: 'Saved elsewhere' },
+                };
+            },
+        });
+
+        queue.enqueue({ userId: 1, articleId: 2, baseRevisionId: 10, document });
+        await queue.flush();
+        queue.enqueue({ userId: 1, articleId: 2, baseRevisionId: 10, document: { ...document, content: [{ ...document.content[0], content: [{ type: 'text', text: 'Blocked local edit' }] }] } });
+        await queue.flush();
+
+        expect(queue.state.status).toBe('conflict');
+        expect(savedPayloads).toEqual(['Hello', 'save:Hello', 'Blocked local edit']);
+    });
+
     test('autosave keeps recovery warnings active after failed non-conflict responses', async () => {
         const queue = createAutosaveQueue({ delay: 0, save: async () => ({ ok: false, error: 'Validation failed.' }) });
         queue.enqueue({ document });

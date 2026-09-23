@@ -50,7 +50,8 @@
     "Make every essay in the initial ten-article archive editable in the CMS while preserving its public prose, title, original date, URL, links, chart data and diagram meaning; keep original source files intact as migration evidence.",
     "Keep Nick in control: agents advance only within an authorized stage, changes to human prose remain proposals, stale work cannot overwrite newer work, and a published release stays live while a replacement is developed.",
     "Bound automatic work to a $5 allowance per publishing attempt, including model calls, research tools and retries; permit one three-lens review batch and one affected-area recheck before further work requires a deliberate human restart or allowance increase.",
-    "Complete a three-piece pilot covering an opinion-led piece, a practical explanation and an evidence-heavy article, with Nick approving voice and reader usefulness, all material factual/publication blockers resolved, and editing time, retained prose and actual spending recorded."
+    "Complete a three-piece pilot covering an opinion-led piece, a practical explanation and an evidence-heavy article, with Nick approving voice and reader usefulness, all material factual/publication blockers resolved, and editing time, retained prose and actual spending recorded.",
+    "Provision the first root Admin through an operator-only Artisan email invitation runnable from Laravel Cloud, without entering or printing a password, while reusing existing identities and domain-local roles."
   ],
   "successCriteria": [
     {
@@ -110,10 +111,17 @@
       }
     },
     {
-      "criterion": "The application builds and passes its configured formatting and static-analysis checks with the production editor integration and all required publishing tests present. Skipped and incomplete Publishing tests fail acceptance.",
+      "criterion": "The root Admin invitation command grants all current Admin-domain roles (admin.access and publishing.author), safely reuses an existing account without replacing its password or 2FA, and emails an expiring single-use password-setup link for the configured Admin origin. No password, token or setup URL is printed in command output, unsafe logging mail transports are refused, and failures/retries do not duplicate identities or grant direct permissions.",
       "check": {
-        "cmd": "bun run build && bun test resources/js/admin/publishing/document-helpers.test.js && composer lint:check && composer types:check && vendor/bin/pest --compact --fail-on-skipped --fail-on-incomplete tests/Feature/Publishing tests/Feature/Auth/AdminFortifyFlowTest.php",
-        "expect": "Every command exits 0; required feature-test files are exercised by the other named checks, and any skipped or incomplete Publishing test produces a nonzero exit code."
+        "cmd": "php artisan test --compact tests/Feature/Auth/AdminInvitationTest.php",
+        "expect": "Exits 0 with new/existing-user, role-bundle, mail failure/throttle, secret-output denial, unsafe-mailer, Admin-origin, password setup, expiry/replay and retained 2FA cases using fake mail only."
+      }
+    },
+    {
+      "criterion": "The application builds and passes its configured formatting and static-analysis checks with the production editor integration and all required publishing tests present. Skipped and incomplete Publishing and Admin-authentication tests fail acceptance.",
+      "check": {
+        "cmd": "bun run build && bun test resources/js/admin/publishing/document-helpers.test.js && composer lint:check && composer types:check && vendor/bin/pest --compact --fail-on-skipped --fail-on-incomplete tests/Feature/Publishing tests/Feature/Auth",
+        "expect": "Every command exits 0; required feature-test files are exercised by the other named checks, and any skipped or incomplete Publishing or Admin-authentication test produces a nonzero exit code."
       }
     },
     {
@@ -139,7 +147,7 @@
     "mvp": [
       {
         "item": "First Admin shell and usable sign-in path, reusing Fortify, standard Admin routes, existing global identity and domain-local permission catalogs; Flux UI Pro with Inter.",
-        "reason": "The repository currently has no usable Admin UI. Publishing must have real authenticated entry and action-level authorization, including an explicit operator procedure to provision Nick's confirmed existing account with the catalog-defined Admin and publishing roles, without building a general administration suite."
+        "reason": "The repository currently has no usable Admin UI. Publishing must have real authenticated entry and action-level authorization, including an operator-only root Admin email invitation that reuses Nick's confirmed account when present and grants the catalog-defined Admin and publishing roles, without building a general administration suite."
       },
       {
         "item": "Flux Composer idea entry with Develop idea and Save for later; Ideas/Active writing dashboard, attention indicators and a separate published archive.",
@@ -172,6 +180,10 @@
       {
         "item": "Purposeful structured visuals, release metadata/link/asset checks, exact-release approval, publish/schedule, and safe replacement of public Writing/RSS/sitemap content.",
         "reason": "A usable publishing product must deliver the approved release, not stop at generating a draft. New diagrams use editable source plus preview rather than a visual drawing application."
+      },
+      {
+        "item": "Operator-only root Admin email invitations from Artisan, with password setup in the browser, all current Admin-domain roles by default and safe reuse of existing accounts.",
+        "reason": "Nick needs to provision the first/root admin from the Laravel Cloud command dashboard without typing passwords into recorded commands. This replaces manual account/role bootstrap, not a general role-management UI. Actual account creation, privileged grants and email sending occur only when the operator deliberately invokes the command."
       },
       {
         "item": "Owner-reviewed three-piece pilot and explicit acceptance gate, plus focused automated regressions and rendered archive/desktop/mobile review.",
@@ -325,11 +337,31 @@
       "decision": "Commit environment guidance and planning artifacts separately, then let the watched engine commit each phase after passing tests and code review without additional message prompts.",
       "rejected": "Mixing unrelated environment guidance into feature commits or requiring repeated commit-message approvals during the already-approved express build.",
       "reason": "Nick explicitly approved both initial commit messages and subsequent tested/reviewed conventional phase commits. Include the exact phase spec path in each phase commit body, never add Co-Authored-By trailers, and retain interactive failure and authorization gates."
+    },
+    {
+      "decision": "Provision the first/root Admin by an Artisan email invitation with all current Admin-domain roles by default: admin.access and publishing.author.",
+      "rejected": "Admin admission only with publishing as an opt-in, or requiring a plaintext password in a Laravel Cloud command.",
+      "reason": "Nick explicitly identified the invitee as the first/root admin. Compose existing global domain roles rather than direct permissions, a new User type, Spatie Teams or a blanket Gate bypass; tenant membership checks remain intact. Future Admin modules extend the explicit bootstrap role bundle."
+    },
+    {
+      "decision": "Reuse existing accounts when invited, preserving their password, 2FA and unrelated roles until the recipient chooses to set/reset a password through the email link.",
+      "rejected": "Refusing existing accounts unless a separate flag is passed.",
+      "reason": "Nick selected safe account reuse. Repeat invitations must not duplicate identities or silently reset credentials; emailed setup credentials must expire and be single-use."
+    },
+    {
+      "decision": "Retry the agent-phase findings, finish release delivery, then implement root Admin invitations before owner acceptance.",
+      "rejected": "Pausing implementation after planning invitations or ending with unresolved agent defects.",
+      "reason": "Nick explicitly approved continuing the strict watched build with this addition. No real invitations, account creation, role grants, paid pilot calls or deployment are authorized during implementation; tests use factories and fake mail."
+    },
+    {
+      "decision": "Continue in-scope implementation and strict fix/review retries automatically until the remaining build phases pass; a three-review-cycle engine cap is not a new owner decision gate.",
+      "rejected": "Repeatedly asking Nick to approve routine defect fixes after each failed review run, or weakening review to force completion.",
+      "reason": "After run-2026-09-23-3, Nick explicitly approved fixing and retrying and asked to keep going until done. Consolidate end-to-end findings and regression coverage before retrying; preserve every run receipt and commit only tested/reviewed passing phases. Pause only for new scope, dependencies, missing access, privileged provisioning, live email, paid calls, deployment or owner acceptance. This does not authorize any of those operations."
     }
 
   ],
   "execution": {
-    "strategy": "Sequential execution of five build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation and watched execution; specs now exist. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.",
+    "strategy": "Sequential execution of six build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation, watched execution and automatic in-scope fix/review retries after engine cycle caps, without weakening strict review or committing failed phases. Escalate only real scope/access/operational authorization decisions, not routine code defects. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.",
     "phases": [
       {
         "title": "Publishing foundation and release integrity",
@@ -371,13 +403,21 @@
         "notes": "Complete release packaging, material-blocker resolution, deterministic publish/schedule delivery and CMS-backed public Writing/RSS/sitemap reads. Cut over only after archive parity passes and preserve existing public SEO, rendering and route boundaries. Exercise retries, schedule withdrawal and live-version isolation; run affected public tests and configured code-quality checks. Document the local cutover/recovery procedure in the implementation spec; production deployment remains a separately authorized action."
       },
       {
+        "title": "Root Admin invitations",
+        "risk": "high",
+        "blocking": true,
+        "prereqs": ["Release delivery and public cutover"],
+        "specPath": "docs/ideation/2026-09-22-agent-publishing-studio/spec-admin-invitations.md",
+        "notes": "Add an operator-only Artisan invitation command runnable from Laravel Cloud without password arguments/prompts. Use the existing password broker and Fortify setup form, the explicit root Admin role bundle, configured Admin origin, fake mail tests and secret-safe output. Reuse existing users without changing password/2FA or unrelated roles; fail safely on missing catalogs, unsafe mail transports and delivery errors. No real invitations or privileged provisioning during implementation."
+      },
+      {
         "title": "Owner editorial and usability acceptance",
         "kind": "gate",
         "risk": "high",
         "blocking": true,
-        "prereqs": ["Release delivery and public cutover"],
+        "prereqs": ["Root Admin invitations"],
         "specPath": "docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-6.md",
-        "notes": "Human checkpoint, not unattended proof of completion. Before the pilot, the operator completes the documented authorization:sync and approved role-provisioning procedure for Nick's confirmed existing account and verifies sign-in. Nick authorizes/configures real provider credentials and paid pilot work, reviews public archive fidelity and desktop/mobile workflow, then accepts or rejects the three representative manuscripts with effort/cost observations. Agent code review, successful tests or automatic verification cannot grant this approval or authorize production deployment."
+        "notes": "Human checkpoint, not unattended proof of completion. Before the pilot, the operator completes authorization:sync, explicitly invokes the root Admin invitation for Nick's confirmed email (reusing an existing account when present), completes password setup if needed and verifies sign-in. Production mail transport and Admin origin must be configured; the command never accepts or prints a password. Nick authorizes/configures real provider credentials and paid pilot work, reviews public archive fidelity and desktop/mobile workflow, then accepts or rejects the three representative manuscripts with effort/cost observations. Agent code review, successful tests or automatic verification cannot grant this approval or authorize production deployment."
       }
     ]
   }

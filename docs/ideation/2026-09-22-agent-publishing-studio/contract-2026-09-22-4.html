@@ -2149,7 +2149,7 @@ body {
               <span class="meta">drafted 2026-09-22</span>
               <span class="meta">express · one confirmation</span>
               <span class="meta">branch ideation/2026-09-22-agent-publishing-studio</span>
-              <span class="meta">supersedes contract-2026-09-22-4.html</span>
+              <span class="meta">supersedes contract-2026-09-22-3.html</span>
             </div>
             <button type="button" class="theme-toggle" id="theme-toggle" data-mode="auto" aria-label="Colour theme: follow system">
       <svg class="i-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M8 3v10" /><path d="M8 3a5 5 0 010 10z" fill="currentColor" stroke="none"/></svg>
@@ -2368,7 +2368,7 @@ body {
       <div class="sec-head">
         <div>
           <h2 id="plan-h">What gets built, in what order</h2>
-          <p class="sec-sub">Sequential execution of six build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation, watched execution and automatic in-scope fix/review retries after engine cycle caps, without weakening strict review or committing failed phases. Escalate only real scope/access/operational authorization decisions, not routine code defects. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.. Columns are dependency waves — nothing in a column waits on anything else in it, but two phases naming the same file are still serialised, so a column is an upper bound on concurrency rather than a promise of it.</p>
+          <p class="sec-sub">Sequential execution of six build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation and watched execution; specs now exist. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.. Columns are dependency waves — nothing in a column waits on anything else in it, but two phases naming the same file are still serialised, so a column is an upper bound on concurrency rather than a promise of it.</p>
         </div>
         <span class="sec-count">6 phases + 1 gate</span>
       </div>
@@ -2772,7 +2772,7 @@ body {
           <h2 id="decisions-h">What was considered and turned down</h2>
           <p class="sec-sub">A rejected alternative is evidence, not an oversight. Before proposing one of these, read why it lost.</p>
         </div>
-        <span class="sec-count">×29</span>
+        <span class="sec-count">×28</span>
       </div>
       <ul class="decisions">
         <li class="decision">
@@ -2886,10 +2886,6 @@ body {
         <li class="decision">
           <h3>Retry the agent-phase findings, finish release delivery, then implement root Admin invitations before owner acceptance.</h3>
           <p><span class="rejected">Instead of</span> Pausing implementation after planning invitations or ending with unresolved agent defects.. Nick explicitly approved continuing the strict watched build with this addition. No real invitations, account creation, role grants, paid pilot calls or deployment are authorized during implementation; tests use factories and fake mail.</p>
-        </li>
-        <li class="decision">
-          <h3>Continue in-scope implementation and strict fix/review retries automatically until the remaining build phases pass; a three-review-cycle engine cap is not a new owner decision gate.</h3>
-          <p><span class="rejected">Instead of</span> Repeatedly asking Nick to approve routine defect fixes after each failed review run, or weakening review to force completion.. After run-2026-09-23-3, Nick explicitly approved fixing and retrying and asked to keep going until done. Consolidate end-to-end findings and regression coverage before retrying; preserve every run receipt and commit only tested/reviewed passing phases. Pause only for new scope, dependencies, missing access, privileged provisioning, live email, paid calls, deployment or owner acceptance. This does not authorize any of those operations.</p>
         </li>
       </ul>
       </div>
@@ -3007,7 +3003,7 @@ Done when the most recent VERIFY line reads fail=0 and commits=6/6 — or when t
           <div>
             <span class="kicker">the commitment</span>
             <h2 id="close-h">This plan is what was agreed.</h2>
-            <p>7 phases · Sequential execution of six build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation, watched execution and automatic in-scope fix/review retries after engine cycle caps, without weakening strict review or committing failed phases. Escalate only real scope/access/operational authorization decisions, not routine code defects. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.. Scope changes mean a new revision that supersedes this document — not silent drift. Express run — approved in one confirmation after the interview, so the review lives in the branch diff rather than in a per-artifact sign-off.</p>
+            <p>7 phases · Sequential execution of six build phases on the express isolation branch, followed by an explicit owner acceptance gate. All agreed first-release items are MVP, with no additional Full or Stretch scope. The owner approved express generation and watched execution; specs now exist. The kind=gate phase is a human checklist, excluded from unattended build/commit dispatch and never counted as automatically accepted.. Scope changes mean a new revision that supersedes this document — not silent drift. Express run — approved in one confirmation after the interview, so the review lives in the branch diff rather than in a per-artifact sign-off.</p>
           </div>
           <div class="close-meta">
             <span class="stamp is-go">approved</span>

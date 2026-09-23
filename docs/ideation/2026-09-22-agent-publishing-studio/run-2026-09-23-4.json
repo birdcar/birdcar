@@ -1,0 +1,51 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-23",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": [],
+    "noops": [],
+    "failed": ["Agent development, evidence and bounded reviews"],
+    "skipped": ["Release delivery and public cutover", "Root Admin invitations"],
+    "results": [
+      {
+        "title": "Agent development, evidence and bounded reviews",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review FAILED after 3 cycle(s) with 2 blocking finding(s). Headless runs do not commit at the cycle cap; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation app/Actions/Publishing/ManageArticleRelease.php:420 — Release approval checks unresolved blocking/conflict findings only on the release revision, but still-valid preserved findings after an accepted edit remain anchored to the reviewed base revision and can be ignored once a targeted recheck exists → Include non-stale findings from the reviewed base batch tied to the targeted recheck, or explicitly carry forward/stale them, before allowing release approval",
+          "high/spec-deviation app/Actions/Publishing/ManageArticleRelease.php:466 — Targeted recheck readiness treats any completed recheck for the target revision as sufficient and does not inspect unresolved recheck output or require new blocking findings to be resolved → Require completed rechecks to have no unresolved affected areas and ensure new blocking findings are persisted and resolved before release approval"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Release delivery and public cutover",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      },
+      {
+        "title": "Root Admin invitations",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

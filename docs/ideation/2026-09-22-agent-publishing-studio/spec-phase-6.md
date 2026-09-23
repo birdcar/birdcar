@@ -1,11 +1,11 @@
-# Acceptance Gate: Agent Publishing Studio — Phase 6
+# Acceptance Gate: Agent Publishing Studio
 
 **Contract**: ./contract.md\
 **Kind**: Human gate — not a build/commit phase\
-**Prerequisite**: Release delivery and public cutover
+**Prerequisite**: Root Admin invitations
 **Owner**: Nick
 
-This file is an executable review checklist for the owner and assisting agent, not authorization to publish, spend money, grant permissions or deploy. Do not dispatch it as an unattended implementation phase, report it as a no-op, create a phase-completion commit, or mark it passed from automated verification. The five implementation phases can finish while this gate remains pending.
+This file is an executable review checklist for the owner and assisting agent, not authorization to publish, spend money, grant permissions or deploy. Do not dispatch it as an unattended implementation phase, report it as a no-op, create a phase-completion commit, or mark it passed from automated verification. The six implementation phases can finish while this gate remains pending. The original gate filename is retained for stable references.
 
 ## Decisions Considered and Rejected
 
@@ -32,8 +32,8 @@ No application changes are authorized by this gate. Record actual human outcomes
 
 - Confirm that the target is local/staging, not production. Resolve the real scheme/host/port with the project URL tools; do not assume the sandbox address or hard-coded Admin production domain is the local app.
 - Confirm migrations and the complete importer dry-run/parity report. Ask for authorization before writing the real local archive records. Preserve originals; no `migrate:fresh` against an existing application database.
-- Run `php artisan authorization:sync --no-interaction`. Ask Nick to identify his existing account. Obtain approval before assigning the existing `admin.access` and new `publishing.author` roles. No guessed email, newly created account, direct permission grants or automatic boot-time access.
-- Verify login/logout and, if enabled on that account, its existing two-factor challenge. Confirm admission-only users cannot access editorial content. Admin routing is standard Laravel; marketing stays on Folio.
+- Configure an actual delivery-capable mailer and the trusted Admin origin; production uses HTTPS. Run `php artisan authorization:sync --no-interaction`. Ask Nick to confirm the invite email and explicitly authorize the real invitation. The operator then runs `php artisan admin:invite <confirmed-email> --name="<display-name>" --no-interaction`, reusing an existing account or creating it only through that authorized invocation. The root bundle grants `admin.access` and `publishing.author`; never type a password, print a setup link, guess the recipient, assign direct permissions or grant access in boot/migrations. No live test invitation is sent by the build agent.
+- Have the recipient complete the emailed password setup if needed; confirm successful sign-in without disclosing the token or password in chat/artifacts. Verify login/logout and, if enabled on that account, its existing two-factor challenge. Confirm admission-only users cannot access editorial content. Admin routing is standard Laravel; marketing stays on Folio.
 - Select the database public reader only after parity succeeds. Confirm queue/scheduler availability using the actual environment's existing workers; do not provision or restart unrelated services.
 - Have Nick supply the OpenRouter credential through the environment's secret mechanism, not this document/chat artifacts. Validate configured default and optional escalation model/provider IDs, required capabilities and current prices. Missing/unpriced configuration is a pause, not a reason to make real experimental calls secretly.
 - Obtain explicit authorization for the three real editorial pilot attempts and their automatic $5 allowances. Disclose the OpenRouter/search-provider data path. Do not automatically approve top-ups or assume the app's allowance guarantees a provider invoice cap.

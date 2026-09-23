@@ -4,7 +4,9 @@ namespace App\Actions\Publishing;
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
+use App\Models\EditorialActivity;
 use App\Models\Publishing\ApprovalKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
@@ -52,6 +54,9 @@ class AdvancePublishingAttempt
                 'plan' => [],
                 'interview_context' => [],
                 'allowance_nano_usd' => 5_000_000_000,
+                'review_cycle' => 1,
+                'recheck_used' => false,
+                'allowance_changes' => [],
             ]);
 
             $lockedArticle->forceFill(['current_attempt_id' => $attempt->id])->save();
@@ -157,6 +162,78 @@ class AdvancePublishingAttempt
         return $updated;
     }
 
+    public function selectAngleOption(User $actor, PublishingAttempt|int $attempt, string $optionKey): PublishingAttempt
+    {
+        $this->authorize($actor, PublishingPermission::Develop->value);
+
+        /** @var PublishingAttempt $updated */
+        $updated = DB::transaction(function () use ($attempt, $optionKey): PublishingAttempt {
+            $attemptId = $this->attemptId($attempt);
+            $lockedArticle = $this->lockedArticleForAttemptId($attemptId);
+            $lockedAttempt = $this->lockedAttemptById($attemptId);
+            $this->ensureAttemptCanBeMutated($lockedAttempt, $lockedArticle);
+
+            $contextValue = $lockedAttempt->getAttribute('interview_context');
+            $context = is_array($contextValue) ? $contextValue : [];
+            $optionsValue = $context['angle_options'] ?? null;
+            $options = is_array($optionsValue) ? $optionsValue : [];
+            if (! array_key_exists($optionKey, $options)) {
+                throw new RuntimeException('Selected angle option is no longer available.');
+            }
+
+            $selected = $options[$optionKey];
+            if (! is_array($selected)) {
+                throw new RuntimeException('Selected angle option is invalid.');
+            }
+
+            $context['selected_angle_option'] = $optionKey;
+            $lockedAttempt->forceFill([
+                'angle' => $selected,
+                'interview_context' => $context,
+                'stage' => $this->earliestInvalidatedStage($lockedAttempt, [ApprovalKind::Angle, ApprovalKind::Plan, ApprovalKind::Release]),
+            ])->save();
+
+            $this->writeArticle->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Angle, ApprovalKind::Plan, ApprovalKind::Release]);
+            app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
+
+            return $lockedAttempt->refresh();
+        });
+
+        return $updated;
+    }
+
+    public function submitInterviewAnswers(User $actor, PublishingAttempt|int $attempt, string $answers): PublishingAttempt
+    {
+        $this->authorize($actor, PublishingPermission::Develop->value);
+
+        /** @var PublishingAttempt $updated */
+        $updated = DB::transaction(function () use ($actor, $attempt, $answers): PublishingAttempt {
+            $attemptId = $this->attemptId($attempt);
+            $lockedArticle = $this->lockedArticleForAttemptId($attemptId);
+            $lockedAttempt = $this->lockedAttemptById($attemptId);
+            $this->ensureAttemptCanBeMutated($lockedAttempt, $lockedArticle);
+
+            $contextValue = $lockedAttempt->getAttribute('interview_context');
+            $context = is_array($contextValue) ? $contextValue : [];
+            $context['answers'] = $answers;
+            $context['answered_interview_activity_id'] = $context['latest_interview_activity_id'] ?? null;
+            $context['answered_at'] = now()->toISOString();
+            $context['answered_by'] = $actor->id;
+
+            $lockedAttempt->forceFill([
+                'interview_context' => $context,
+                'stage' => $this->earliestInvalidatedStage($lockedAttempt, [ApprovalKind::Angle, ApprovalKind::Plan, ApprovalKind::Release]),
+            ])->save();
+
+            $this->writeArticle->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Angle, ApprovalKind::Plan, ApprovalKind::Release]);
+            app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
+
+            return $lockedAttempt->refresh();
+        });
+
+        return $updated;
+    }
+
     /**
      * @param  list<ApprovalKind>  $invalidatedKinds
      */
@@ -210,6 +287,30 @@ class AdvancePublishingAttempt
             $lockedAttempt = $this->lockedAttemptById($attemptId);
             $this->ensureAttemptCanBeMutated($lockedAttempt, $lockedArticle);
             $lockedAttempt->forceFill($attributes)->save();
+
+            if (array_key_exists('paused_at', $attributes) && $attributes['paused_at'] !== null) {
+                EditorialActivity::query()
+                    ->where('attempt_id', $lockedAttempt->id)
+                    ->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Failed->value])
+                    ->update([
+                        'status' => EditorialActivityStatus::Paused->value,
+                        'paused_at' => now(),
+                        'pause_reason' => 'Publishing attempt paused.',
+                    ]);
+            }
+
+            if (array_key_exists('paused_at', $attributes) && $attributes['paused_at'] === null) {
+                EditorialActivity::query()
+                    ->where('attempt_id', $lockedAttempt->id)
+                    ->where('status', EditorialActivityStatus::Paused->value)
+                    ->where('pause_reason', 'Publishing attempt paused.')
+                    ->update([
+                        'status' => EditorialActivityStatus::Pending->value,
+                        'paused_at' => null,
+                        'pause_reason' => null,
+                        'available_at' => now(),
+                    ]);
+            }
 
             return $lockedAttempt->refresh();
         });

@@ -94,16 +94,18 @@ test('saves require stable ids and persist canonical documents with matching has
         ->and($revision->content_hash)->toBe(app(PublishingFingerprint::class)->hash(['document' => $stored, 'metadata' => ['title' => 'Canonical']]));
 
     $missingId = drtDocument();
-    unset($missingId['content'][0]['attrs']['id']);
+    unset($missingId['content'][0]['attrs']['id'], $missingId['content'][2]['content'][0]['attrs']['id']);
 
-    expect(fn () => $write->save($actor, $article, $revision->id, $missingId, ['title' => 'Missing id'], 'missing-id'))
-        ->toThrow(ArticleDocumentValidationException::class, 'is required');
+    $withGeneratedIds = $write->save($actor, $article, $revision->id, $missingId, ['title' => 'Missing id'], 'missing-id');
+    expect($withGeneratedIds->document['content'][0]['attrs']['id'])->toMatch('/^blk_[0-9a-f]{16}$/')
+        ->and($withGeneratedIds->document['content'][2]['content'][0]['attrs']['id'])->toMatch('/^blk_[0-9a-f]{16}$/');
 
     $legacyTextWithoutId = drtDocument();
     $legacyTextWithoutId['content'][0] = ['type' => 'paragraph', 'attrs' => [], 'text' => 'Legacy text still needs an id.'];
 
-    expect(fn () => $write->save($actor, $article, $revision->id, $legacyTextWithoutId, ['title' => 'Legacy missing id'], 'legacy-missing-id'))
-        ->toThrow(ArticleDocumentValidationException::class, 'is required');
+    $legacyWithGeneratedId = $write->save($actor, $article, $withGeneratedIds->id, $legacyTextWithoutId, ['title' => 'Legacy missing id'], 'legacy-missing-id');
+    expect($legacyWithGeneratedId->document['content'][0]['attrs']['id'])->toMatch('/^blk_[0-9a-f]{16}$/')
+        ->and($legacyWithGeneratedId->document['content'][0]['content'][0]['text'])->toBe('Legacy text still needs an id.');
 });
 
 test('failed saves and protected agent edits do not mutate the working revision', function (): void {
