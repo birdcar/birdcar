@@ -1,13 +1,13 @@
 <?php
 
-use App\Actions\ReadWriting;
+use App\Actions\Publishing\ReadPublishedWriting;
 use Illuminate\View\View;
 
 use function Laravel\Folio\{name, render};
 
 name('public.writing');
 
-render(fn (View $view, ReadWriting $writing): View => $view->with('articles', $writing->all()));
+render(fn (View $view, ReadPublishedWriting $writing): View => $view->with('articles', $writing->all()));
 
 ?>
 <x-marketing.layout title="Writing" active="writing" :canonical="route('public.writing').'/'" description="Ideas about making a business work better: the systems, tools, and decisions that shape how people spend their days.">

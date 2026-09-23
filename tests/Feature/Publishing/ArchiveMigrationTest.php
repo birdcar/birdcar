@@ -78,6 +78,23 @@ test('dry run parses every real baseline essay with independent parity and refer
         ->and($bugs['parity']['source']['charts'][0]['data'])->toBe(json_decode(File::get(resource_path('writing/data/bug-fix-loops.json')), true, flags: JSON_THROW_ON_ERROR)['data']);
 });
 
+test('imported releases are visible through the database public reader after cutover', function (): void {
+    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    $directory = archiveFixtureDirectory(['minimal.md'], ['minimal-chart.json']);
+
+    app(ImportWritingArchive::class)->write($directory, 'baseline', archiveAuthor());
+
+    $this->get('/writing/')->assertOk()
+        ->assertSee('Minimal archive')
+        ->assertSee('minimal');
+    $this->get('/writing/minimal/')->assertOk()
+        ->assertSee('A fixture')
+        ->assertSee('About this fixture')
+        ->assertDontSee('@figure');
+    $this->get('/rss.xml')->assertOk()->assertSee('Minimal archive');
+    $this->get('/sitemap.xml')->assertOk()->assertSee('https://birdcar.dev/writing/minimal/');
+});
+
 test('write creates import revisions and releases once without clobbering repeats', function (): void {
     $directory = archiveFixtureDirectory(['minimal.md'], ['minimal-chart.json']);
     $actor = archiveAuthor();

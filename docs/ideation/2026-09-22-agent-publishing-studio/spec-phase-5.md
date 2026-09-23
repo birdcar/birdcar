@@ -7,6 +7,15 @@
 
 **Controller artifact boundary**: Preserve existing `run-*.json`, generated `run-*.html` and approved planning artifacts. They record historical runs and must not be deleted or rewritten when their findings are fixed. Leave new controller reports outside this phase's commit if unrelated; do not remove them to clean the diff. Reuse the verified Herd hosts/local Admin configuration; do not start another PHP server or change the environment.
 
+**Retry authorization**: The owner authorized automatic in-scope fix/review retries through completion; do not request another approval merely at the engine's review-cycle cap. Phase 4 is committed as `940218c605cc5fde20bdf11b7af70da737cfd617`. Continue the existing uncommitted Phase 5 work after `run-2026-09-23-5.json`, fixing both findings below. Preserve strict review, historical receipts and all operational gates.
+
+## Required Retry Regressions
+
+1. `CheckArticleRelease` currently hashes only maximum finding/activity IDs for editorial freshness. Hash deterministic, ordered evidence and review/disposition manifests, including release-affecting contents, provenance/content hashes, publication permission, relevant activity outcomes and dispositions/reasons/actors—not merely row identity or counts. Reuse the existing manifest/fingerprint mechanisms rather than creating another source of truth. Freeze these inputs in the package and recheck them inside both approval and delivery boundaries. Cover in-place evidence content/hash/rights changes and existing finding disposition/reason changes after preparation, and again after approval but before manual/scheduled delivery. Assert denial, unchanged live pointer and no effective stale approval/delivery; a freshly prepared/reapproved package can proceed. Preserve Phase 4's base/target review-lineage checks. Unrelated budget bookkeeping must not invalidate editorial approval.
+2. Capture and validate an explicit owner-selected scheduling timezone, resolve the intended wall time to UTC, and persist/display the zone and actual UTC offset in the frozen confirmation payload. Do not parse a freeform time using server defaults and label it with `config('app.timezone')` afterward. Cover a non-server timezone, correct UTC delivery instant, invalid zone/time, past input and daylight-saving edge cases; reject nonexistent or ambiguous wall times unless explicitly disambiguated rather than silently changing the intended instant. Changing time/zone/offset requires a new exact release approval.
+
+Run failing regressions before fixes, then all phase validation and strict review. This retry is ordinary authorized implementation work, not permission for real cutover/import, provisioning, invitations, paid calls or deployment.
+
 ## Technical Approach
 
 Complete the concrete `Article` / `ArticleRevision` / `PublishingAttempt` / `EditorialApproval` / `ArticleRelease` domain already delivered. `ManageArticleRelease` must freeze and deliver the owner's exact approved package, never read the latest draft at delivery time. Use the existing Laravel scheduler and transactional database; a periodic due-release command makes recovery independent of one delayed queue message surviving. Queue delivery is at-least-once; the database transition is idempotent.
@@ -44,6 +53,8 @@ Before changes, read `.ai/rules/{general,services,resources,writing}.md`, activa
 | `config/publishing.php` | Explicit files/database public-reader cutover setting |
 | `tests/Feature/Publishing/ReleaseReadinessTest.php` | Material blockers and package completeness |
 | `tests/Feature/Publishing/PublicWritingTest.php` | Public visibility and atomic cutover boundaries |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.json` | Preserve immutable controller-owned run receipts. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.html` | Preserve official controller-owned run reports. |
 
 ### Modified Files
 
@@ -65,6 +76,10 @@ Before changes, read `.ai/rules/{general,services,resources,writing}.md`, activa
 | `tests/Feature/MarketingSiteTest.php` | Preserve existing requirements using imported test records in CMS mode |
 | `tests/Feature/MarketingDiagramTest.php` | Preserve static/accessible figure assertions in CMS mode |
 | `tests/Feature/MarketingDiscoveryTest.php` | Preserve canonical/feed/sitemap behavior in CMS mode |
+| `resources/views/components/admin/publishing/partials/release-checklist.blade.php` | Actual readiness feedback and exact schedule confirmation. |
+| `tests/Feature/Publishing/AdminPublishingEditorTest.php` | Workspace release/schedule wiring and complete prerequisite fixtures. |
+| `tests/Feature/Publishing/EditorialWorkflowTest.php` | Preserve workflow assertions with complete release prerequisites. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-5.md` | Controller-authorized retry requirements. |
 
 ### Deleted Files
 

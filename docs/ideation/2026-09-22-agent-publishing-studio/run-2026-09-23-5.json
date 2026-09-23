@@ -1,0 +1,51 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-23",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": ["Agent development, evidence and bounded reviews"],
+    "noops": [],
+    "failed": ["Release delivery and public cutover"],
+    "skipped": ["Root Admin invitations"],
+    "results": [
+      {
+        "title": "Agent development, evidence and bounded reviews",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "940218c605cc5fde20bdf11b7af70da737cfd617",
+        "summary": "Implemented the remaining Phase 4 boundary fixes around published voice snapshots, authorized context mutations, domain angle invalidation, targeted recheck/release readiness, restartable reviews, and stricter prompt validation coverage. — Cycle 3 review found the prior blocking issues addressed: successor activities and reconciliation are now persisted within the transaction before after-commit dispatch, draft write permission is revalidated before paid work, and completed draft reuse is tied to the active plan approval with restart support. The required Livewire denial/stale/angle-regression coverage is present, so this phase is ready to commit from the reviewed diff.",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Release delivery and public cutover",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review FAILED after 3 cycle(s) with 1 blocking finding(s). Headless runs do not commit at the cycle cap; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation app/Actions/Publishing/CheckArticleRelease.php:126 — Readiness staleness only tracks max finding/activity IDs and omits current evidence-manifest hashes and existing review/disposition data, so evidence hash or disposition changes after package preparation can still pass approval/delivery despite the spec requiring frozen evidence/review inputs to invalidate the package → Include hashed evidence manifests and review/disposition identifiers/hashes in the readiness input hash, recheck them before approval/delivery, and add stale-evidence/disposition tests",
+          "medium/spec-deviation resources/views/components/admin/publishing/⚡article-workspace.blade.php:211 — Scheduled release intent records only config('app.timezone') after parsing the freeform time with server defaults, so it does not persist/display the owner's selected zone and offset as required → Capture an explicit timezone/offset in the schedule confirmation payload and cover it in ReleaseIntegrity tests"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Root Admin invitations",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

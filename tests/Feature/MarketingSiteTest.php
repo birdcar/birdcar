@@ -1,8 +1,12 @@
 <?php
 
+use App\Actions\Publishing\ImportWritingArchive;
 use App\Actions\ReadWriting;
+use App\Authorization\Publishing\Role as PublishingRole;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Blade;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-12');
@@ -259,6 +263,21 @@ test('the complete archive preserves metadata and feed access in the reading lay
     $this->get('/writing/your-ai-wrote-a-bug/')->assertSee('Subscribe via RSS')->assertSee(route('public.feed'), false);
 });
 
+test('cms-mode imported archive preserves listing metadata links and original article content', function () {
+    marketingSiteImportArchive($this);
+
+    $this->get('/writing/')->assertOk()
+        ->assertSeeInOrder(['Just build it twice', 'Your AI wrote a bug', 'Stop giving me take homes'], false)
+        ->assertSee('href="'.route('public.article', ['slug' => 'just-build-it-twice']).'/"', false)
+        ->assertSee('datetime="2026-05-26"', false);
+
+    $this->get('/writing/just-build-it-twice/')->assertOk()
+        ->assertSee('Just build it twice')
+        ->assertSee('The agent has lowered the cost of building the same thing twice.')
+        ->assertSee('href="https://www.birdcar.dev/writing/your-ai-wrote-a-bug/"', false)
+        ->assertDontSee('@figure');
+});
+
 test('unknown essays return a not found response', function () {
     $this->get('/writing/not-a-published-essay/')->assertNotFound();
 });
@@ -359,3 +378,14 @@ test('the deeper paid discovery week is mentioned once without a price', functio
     expect(substr_count($response->getContent(), 'paid discovery week'))->toBe(1);
     $response->assertDontSee('$')->assertDontSee('£')->assertDontSee('€');
 });
+
+function marketingSiteImportArchive($test): void
+{
+    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $test->artisan('authorization:sync')->assertSuccessful();
+    $operator = User::factory()->create();
+    $operator->assignRole(PublishingRole::Author->value);
+
+    app(ImportWritingArchive::class)->write('resources/writing', '72f7d8ad8521573cb224022c902447f9ca4c4351', $operator);
+}

@@ -41,6 +41,9 @@ new #[Layout('layouts.admin')] class extends Component
     public string $voiceSample = '';
     public string $interviewAnswers = '';
     public string $selectedAngleOptionKey = '';
+    public string $releaseSlug = '';
+    public string $releaseScheduledAt = '';
+    public string $releaseScheduledTimezone = '';
 
     /** @var list<int> */
     public array $selectedVoiceSampleArticleIds = [];
@@ -62,6 +65,8 @@ new #[Layout('layouts.admin')] class extends Component
         Gate::authorize('view', $article);
         $this->article = $article->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
         $this->currentRevisionId = $article->working_revision_id;
+        $this->releaseSlug = (string) $article->slug;
+        $this->releaseScheduledTimezone = (string) config('app.timezone', 'UTC');
         $revision = $article->workingRevision;
         if ($revision instanceof ArticleRevision) {
             $this->document = $revision->document ?? $this->document;
@@ -188,6 +193,31 @@ new #[Layout('layouts.admin')] class extends Component
         }
     }
 
+    public function prepareRelease(?ManageArticleRelease $releases = null): void
+    {
+        Gate::authorize('publish', $this->article);
+        $releases ??= app(ManageArticleRelease::class);
+        $attempt = $this->article->currentAttempt;
+
+        if ($attempt === null || $this->currentRevisionId === null) {
+            $this->saveError = 'No active publishing attempt and current revision exist.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            $schedule = trim($this->releaseScheduledAt) === ''
+                ? ['scheduled_at' => null, 'delivery_intent' => ['channel' => 'manual']]
+                : $releases->resolveSchedule($this->releaseScheduledAt, $this->releaseScheduledTimezone);
+            $releases->prepare(auth()->user(), $attempt, $this->currentRevisionId, $this->releaseSlug !== '' ? $this->releaseSlug : $this->article->slug, $schedule['scheduled_at'], $schedule['delivery_intent']);
+            $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', $schedule['scheduled_at'] === null ? 'Release package prepared.' : 'Scheduled release package prepared.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
     public function approveRelease(string $expectedReleaseHash = '', ?ManageArticleRelease $releases = null): void
     {
         Gate::authorize('approve', $this->article);
@@ -204,6 +234,49 @@ new #[Layout('layouts.admin')] class extends Component
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
             $this->refreshApprovalInputs();
             session()->flash('status', 'Exact release package approved.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function deliverRelease(?ManageArticleRelease $releases = null): void
+    {
+        Gate::authorize('publish', $this->article);
+        $releases ??= app(ManageArticleRelease::class);
+        $release = $this->currentReleasePackage();
+
+        if ($release === null) {
+            $this->saveError = 'No approved release package is available to deliver.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            $releases->deliver(auth()->user(), $release, $this->article->published_release_id);
+            $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', 'Release delivered to the public reader.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function withdrawRelease(?ManageArticleRelease $releases = null): void
+    {
+        Gate::authorize('publish', $this->article);
+        $attempt = $this->article->currentAttempt;
+
+        if ($attempt === null) {
+            $this->saveError = 'No active publishing attempt exists.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            ($releases ?? app(ManageArticleRelease::class))->withdrawScheduledReleasesForAttemptId((int) $attempt->id);
+            $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', 'Scheduled release withdrawn.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }

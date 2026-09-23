@@ -9,7 +9,6 @@ use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\EditorialFinding;
-use App\Models\EvidenceSource;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialStage;
@@ -17,11 +16,14 @@ use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\PublishingFingerprint;
+use App\Services\Publishing\ReleaseFreshnessManifest;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use DateTimeZone;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use RuntimeException;
 
 class ManageArticleRelease
@@ -29,7 +31,70 @@ class ManageArticleRelease
     public function __construct(
         private PublishingFingerprint $fingerprint,
         private ArticleDocument $articleDocument,
+        private CheckArticleRelease $releaseChecks,
+        private ReleaseFreshnessManifest $releaseFreshness,
     ) {}
+
+    /**
+     * @return array{scheduled_at: CarbonImmutable, delivery_intent: array<string, mixed>}
+     */
+    public function resolveSchedule(string $wallTime, string $timezone): array
+    {
+        $parts = $this->localScheduleParts($wallTime);
+        $timezone = trim($timezone);
+
+        if (! in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
+            throw new InvalidArgumentException('Scheduled releases require a valid IANA timezone.');
+        }
+
+        $normalizedWallTime = sprintf('%04d-%02d-%02d %02d:%02d:%02d', $parts['year'], $parts['month'], $parts['day'], $parts['hour'], $parts['minute'], $parts['second']);
+        $localEpoch = gmmktime($parts['hour'], $parts['minute'], $parts['second'], $parts['month'], $parts['day'], $parts['year']);
+
+        if ($localEpoch === false) {
+            throw new InvalidArgumentException('Scheduled releases require a valid local wall time.');
+        }
+
+        $zone = new DateTimeZone($timezone);
+        $offsets = [$zone->getOffset(CarbonImmutable::createFromTimestampUTC($localEpoch)->toDateTimeImmutable())];
+        $transitions = $zone->getTransitions($localEpoch - 172800, $localEpoch + 172800);
+
+        foreach ($transitions as $transition) {
+            $offsets[] = $transition['offset'];
+        }
+
+        $candidates = [];
+
+        foreach (array_values(array_unique($offsets)) as $offset) {
+            $candidate = CarbonImmutable::createFromTimestampUTC($localEpoch - $offset)->startOfSecond();
+            if ($candidate->setTimezone($timezone)->format('Y-m-d H:i:s') === $normalizedWallTime) {
+                $candidates[$candidate->getTimestamp()] = $candidate;
+            }
+        }
+
+        if ($candidates === []) {
+            throw new RuntimeException('Scheduled wall time does not exist in the selected timezone.');
+        }
+
+        if (count($candidates) > 1) {
+            throw new RuntimeException('Scheduled wall time is ambiguous in the selected timezone.');
+        }
+
+        /** @var CarbonImmutable $scheduledAt */
+        $scheduledAt = array_values($candidates)[0]->utc()->startOfSecond();
+        $this->ensureScheduleIsFuture($scheduledAt);
+        $local = $scheduledAt->setTimezone($timezone);
+
+        return [
+            'scheduled_at' => $scheduledAt,
+            'delivery_intent' => [
+                'channel' => 'scheduled',
+                'scheduled_wall_time' => $normalizedWallTime,
+                'selected_timezone' => $timezone,
+                'scheduled_utc' => $scheduledAt->toISOString(),
+                'utc_offset' => $local->format('P'),
+            ],
+        ];
+    }
 
     /**
      * @param  array<string, mixed>  $deliveryIntent
@@ -45,7 +110,7 @@ class ManageArticleRelease
         $this->authorize($actor, PublishingPermission::Publish->value);
 
         /** @var ArticleRelease $release */
-        $release = DB::transaction(function () use ($attempt, $revisionId, $slug, $scheduledAt, $deliveryIntent): ArticleRelease {
+        $release = DB::transaction(function () use ($actor, $attempt, $revisionId, $slug, $scheduledAt, $deliveryIntent): ArticleRelease {
             $attemptId = $this->attemptId($attempt);
             $article = $this->lockedArticleForAttemptId($attemptId);
             $lockedAttempt = $this->lockedAttemptById($attemptId);
@@ -58,11 +123,20 @@ class ManageArticleRelease
             }
 
             $canonicalSlug = $this->canonicalSlug($article, $slug);
+            [$scheduledAt, $deliveryIntent] = $this->normalizeScheduleIntent($scheduledAt, $deliveryIntent);
+            $this->ensureScheduleIsFuture($scheduledAt);
+            $readiness = $this->releaseChecks->check($actor, $lockedAttempt, (int) $revision->id, $canonicalSlug, $scheduledAt, $deliveryIntent);
+
+            if ($readiness['blocking']) {
+                throw new RuntimeException('Release readiness has blocking findings: '.$this->findingSummary($readiness['findings']));
+            }
+
             $revisionDocumentValue = $revision->getAttribute('document');
             $revisionMetadataValue = $revision->getAttribute('metadata');
             $revisionDocument = is_array($revisionDocumentValue) ? $revisionDocumentValue : [];
             $revisionMetadata = is_array($revisionMetadataValue) ? $revisionMetadataValue : [];
             $renderedHtml = $this->articleDocument->renderHtml($revisionDocument);
+            $originalPublicDate = $this->originalPublicDateForPayload($revisionMetadata, $article);
             $payload = [
                 'document' => $this->documentSnapshotForPayload($revisionDocument),
                 'metadata' => $revisionMetadata,
@@ -72,12 +146,14 @@ class ManageArticleRelease
                     'html' => $renderedHtml,
                     'hash' => $this->fingerprint->hash($renderedHtml),
                 ],
-                'original_public_date' => $this->timestampIsoString($article->first_published_at),
+                'original_public_date' => $this->timestampIsoString($originalPublicDate),
                 'canonical_slug' => $canonicalSlug,
-                'supporting_evidence_manifest' => $this->evidenceManifest((int) $lockedAttempt->id),
-                'review_manifest' => $this->reviewManifest((int) $lockedAttempt->id, (int) $revision->id),
+                'supporting_evidence_manifest' => $this->releaseFreshness->evidenceManifest((int) $lockedAttempt->id),
+                'review_manifest' => $this->releaseFreshness->reviewManifest((int) $lockedAttempt->id, (int) $revision->id),
+                'readiness_check' => $readiness,
                 'delivery_intent' => $deliveryIntent,
                 'scheduled_at' => $scheduledAt?->toISOString(),
+                'expected_previous_live_release_id' => $article->published_release_id,
             ];
             $releaseHash = $this->fingerprint->hash($payload);
 
@@ -153,11 +229,15 @@ class ManageArticleRelease
                 throw new RuntimeException('The release package changed before approval.');
             }
 
+            $this->ensureReleaseReadinessIsCurrent($actor, $lockedAttempt, $lockedRelease);
+
             EditorialApproval::query()
                 ->where('attempt_id', $lockedAttempt->id)
                 ->where('kind', ApprovalKind::Release->value)
                 ->whereNull('invalidated_at')
                 ->update(['invalidated_at' => now()]);
+
+            $this->withdrawScheduledReleasesForAttemptIdExcept((int) $lockedAttempt->id, (int) $lockedRelease->id);
 
             $approval = EditorialApproval::create([
                 'attempt_id' => $lockedAttempt->id,
@@ -187,6 +267,10 @@ class ManageArticleRelease
     {
         $this->authorize($actor, PublishingPermission::Publish->value);
 
+        if ((string) config('publishing.public_reader', 'files') !== 'database') {
+            throw new RuntimeException('CMS release delivery is disabled until publishing.public_reader is database.');
+        }
+
         /** @var ArticleRelease $delivered */
         $delivered = DB::transaction(function () use ($actor, $release, $expectedPreviousLiveReleaseId): ArticleRelease {
             $releaseId = $this->releaseId($release);
@@ -200,7 +284,15 @@ class ManageArticleRelease
 
             $this->ensureReleaseTargetsCurrentWorkingRevision($lockedRelease, $article);
 
-            if ((int) ($article->published_release_id ?? 0) !== (int) ($expectedPreviousLiveReleaseId ?? 0)) {
+            $payload = $this->arrayValue($lockedRelease->payload);
+            $expectedPreviousFromPayload = $this->nullableInt($payload['expected_previous_live_release_id'] ?? null);
+            $currentLiveReleaseId = $this->nullableInt($article->published_release_id);
+
+            if ($currentLiveReleaseId !== $expectedPreviousFromPayload) {
+                throw new RuntimeException('The live article changed before delivery.');
+            }
+
+            if ($expectedPreviousLiveReleaseId !== null && $currentLiveReleaseId !== $expectedPreviousLiveReleaseId) {
                 throw new RuntimeException('The live article changed before delivery.');
             }
 
@@ -210,6 +302,7 @@ class ManageArticleRelease
                 $lockedAttempt = $this->lockedAttemptById((int) $lockedRelease->attempt_id);
                 $this->ensureAttemptIsCurrentForArticle($lockedAttempt, $article);
                 $this->ensureAttemptIsDeliverable($lockedAttempt);
+                $this->ensureReleaseReadinessIsCurrent($actor, $lockedAttempt, $lockedRelease);
             }
 
             if ($lockedRelease->withdrawn_at !== null || $lockedRelease->status === 'withdrawn') {
@@ -225,6 +318,7 @@ class ManageArticleRelease
             }
 
             $publishedAt = now();
+            $firstPublishedAt = $article->first_published_at ?? $this->carbonValue($this->arrayValue($lockedRelease->payload)['original_public_date'] ?? null) ?? $publishedAt;
             $lockedRelease->forceFill([
                 'status' => 'published',
                 'published_by' => $actor->id,
@@ -233,7 +327,7 @@ class ManageArticleRelease
 
             $article->forceFill([
                 'published_release_id' => $lockedRelease->id,
-                'first_published_at' => $article->first_published_at ?? $publishedAt,
+                'first_published_at' => $firstPublishedAt,
             ])->save();
 
             if ($lockedAttempt !== null) {
@@ -248,15 +342,56 @@ class ManageArticleRelease
 
     public function withdrawScheduledReleasesForAttemptId(int $attemptId): void
     {
+        $this->withdrawScheduledReleasesForAttemptIdExcept($attemptId);
+    }
+
+    private function withdrawScheduledReleasesForAttemptIdExcept(int $attemptId, ?int $exceptReleaseId = null): void
+    {
         ArticleRelease::query()
             ->where('attempt_id', $attemptId)
             ->where('status', 'scheduled')
+            ->when($exceptReleaseId !== null, fn ($query) => $query->whereKeyNot($exceptReleaseId))
             ->whereNull('published_at')
             ->whereNull('withdrawn_at')
             ->update([
                 'status' => 'withdrawn',
                 'withdrawn_at' => now(),
             ]);
+    }
+
+    /**
+     * @param  list<array{severity: string, code: string, location: string, message: string, resolution: string}>  $findings
+     */
+    private function findingSummary(array $findings): string
+    {
+        return implode('; ', array_map(
+            static fn (array $finding): string => $finding['code'].' at '.$finding['location'].': '.$finding['message'],
+            array_slice($findings, 0, 5),
+        ));
+    }
+
+    private function ensureReleaseReadinessIsCurrent(User $actor, PublishingAttempt $attempt, ArticleRelease $release): void
+    {
+        $payloadValue = $release->getAttribute('payload');
+        $payload = is_array($payloadValue) ? $payloadValue : [];
+        $storedValue = $payload['readiness_check'] ?? null;
+        $stored = is_array($storedValue) ? $storedValue : [];
+        $current = $this->releaseChecks->check(
+            $actor,
+            $attempt,
+            (int) $release->revision_id,
+            (string) ($payload['canonical_slug'] ?? ''),
+            $this->carbonValue($release->getAttribute('scheduled_at')),
+            $this->arrayValue($payload['delivery_intent'] ?? []),
+        );
+
+        if ($current['blocking']) {
+            throw new RuntimeException('Release readiness has blocking findings: '.$this->findingSummary($current['findings']));
+        }
+
+        if (! is_string($stored['input_hash'] ?? null) || ! hash_equals((string) $stored['input_hash'], $current['input_hash'])) {
+            throw new RuntimeException('The release readiness check is stale.');
+        }
     }
 
     private function ensureAttemptIsDeliverable(PublishingAttempt $attempt): void
@@ -416,6 +551,7 @@ class ManageArticleRelease
         }
 
         $revisionIdsToInspect = array_values(array_unique([(int) $release->revision_id, ...$readiness['reviewed_revision_ids']]));
+        $targetedResolutions = $this->targetedRecheckResolvedReferences($attempt, $release);
         $unresolved = EditorialFinding::query()
             ->where('attempt_id', $attempt->id)
             ->where('review_cycle', $attempt->review_cycle)
@@ -425,18 +561,9 @@ class ManageArticleRelease
                 $query->where('severity', 'blocking')
                     ->orWhere('reconciliation_state', 'conflict');
             })
-            ->where(function ($query): void {
-                $query->whereNull('disposition')
-                    ->orWhere('disposition', 'deferred')
-                    ->orWhereIn('disposition', ['accepted', 'rejected'])
-                    ->orWhere(function ($query): void {
-                        $query->where('disposition', 'false_positive')
-                            ->where(function ($query): void {
-                                $query->whereNull('disposition_reason')->orWhere('disposition_reason', '');
-                            });
-                    });
-            })
-            ->exists();
+            ->orderBy('id')
+            ->get()
+            ->contains(fn (EditorialFinding $finding): bool => ! $this->releaseFindingResolved($finding, $targetedResolutions));
 
         if ($unresolved) {
             throw new RuntimeException('Release approval requires actual resolution or a reasoned false-positive disposition for blocking or conflicting editorial findings.');
@@ -541,6 +668,79 @@ class ManageArticleRelease
         return $reviewedRevisionId;
     }
 
+    /**
+     * @return array{finding_ids: array<int, true>, block_ids: array<string, true>}
+     */
+    private function targetedRecheckResolvedReferences(PublishingAttempt $attempt, ArticleRelease $release): array
+    {
+        $resolved = ['finding_ids' => [], 'block_ids' => []];
+        $releaseRevision = ArticleRevision::query()->whereKey($release->revision_id)->first();
+        if (! $releaseRevision instanceof ArticleRevision) {
+            return $resolved;
+        }
+
+        $rechecks = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::Recheck->value)
+            ->where('status', 'completed')
+            ->where('revision_id', $release->revision_id)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($rechecks as $activity) {
+            if ($this->successfulTargetedRecheckReviewedRevisionId($attempt, $releaseRevision, $activity) === null) {
+                continue;
+            }
+
+            $response = $activity->getAttribute('response');
+            $items = is_array($response) && is_array($response['resolved'] ?? null) ? $response['resolved'] : [];
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $findingId = $item['finding_id'] ?? $item['findingId'] ?? null;
+                if (is_int($findingId)) {
+                    $resolved['finding_ids'][$findingId] = true;
+                }
+
+                $blockId = $item['block_id'] ?? $item['blockId'] ?? null;
+                if (is_string($blockId) && trim($blockId) !== '') {
+                    $resolved['block_ids'][$blockId] = true;
+                }
+            }
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * @param  array{finding_ids: array<int, true>, block_ids: array<string, true>}  $targetedResolutions
+     */
+    private function releaseFindingResolved(EditorialFinding $finding, array $targetedResolutions): bool
+    {
+        if ($finding->disposition === 'false_positive') {
+            return is_string($finding->disposition_reason) && trim($finding->disposition_reason) !== '';
+        }
+
+        if ($finding->disposition === 'accepted') {
+            $blockId = $finding->block_id;
+
+            return isset($targetedResolutions['finding_ids'][(int) $finding->id])
+                || (is_string($blockId) && isset($targetedResolutions['block_ids'][$blockId]));
+        }
+
+        if ($finding->disposition !== 'resolved') {
+            return false;
+        }
+
+        $sourceIds = $finding->getAttribute('supporting_source_ids');
+        $quotations = $finding->getAttribute('supporting_quotations');
+
+        return (is_array($sourceIds) && $sourceIds !== []) || (is_array($quotations) && $quotations !== []);
+    }
+
     private function hasCompletedReviewBatchForRevision(PublishingAttempt $attempt, int $revisionId): bool
     {
         foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation] as $kind) {
@@ -558,51 +758,6 @@ class ManageArticleRelease
         }
 
         return true;
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function evidenceManifest(int $attemptId): array
-    {
-        $manifest = [];
-
-        foreach (EvidenceSource::query()
-            ->where('attempt_id', $attemptId)
-            ->whereNull('unresolved_reason')
-            ->get(['id', 'source_type', 'url', 'final_url', 'title', 'content_hash', 'retrieved_at']) as $source) {
-            $manifest[] = [
-                'id' => $source->id,
-                'source_type' => $source->source_type,
-                'url' => $source->url,
-                'final_url' => $source->final_url,
-                'title' => $source->title,
-                'content_hash' => $source->content_hash,
-                'retrieved_at' => $this->timestampIsoString($source->retrieved_at),
-            ];
-        }
-
-        return $manifest;
-    }
-
-    /** @return array<string, mixed> */
-    private function reviewManifest(int $attemptId, int $revisionId): array
-    {
-        $findings = EditorialFinding::query()
-            ->where('attempt_id', $attemptId)
-            ->where('revision_id', $revisionId)
-            ->whereNull('stale_at')
-            ->get(['id', 'review_cycle', 'lens', 'kind', 'severity', 'disposition', 'input_hash']);
-
-        return [
-            'findings' => $findings->map(fn (EditorialFinding $finding): array => [
-                'id' => $finding->id,
-                'review_cycle' => $finding->review_cycle,
-                'lens' => $finding->lens,
-                'kind' => $finding->kind,
-                'severity' => $finding->severity,
-                'disposition' => $finding->disposition,
-                'input_hash' => $finding->input_hash,
-            ])->values()->all(),
-        ];
     }
 
     private function planInputHash(PublishingAttempt $attempt): string
@@ -638,6 +793,126 @@ class ManageArticleRelease
             'answered_interview_activity_id' => is_numeric($context['answered_interview_activity_id'] ?? null) ? (int) $context['answered_interview_activity_id'] : null,
             'selected_angle_option' => is_scalar($context['selected_angle_option'] ?? null) ? (string) $context['selected_angle_option'] : null,
         ];
+    }
+
+    /**
+     * @return array{year: int, month: int, day: int, hour: int, minute: int, second: int}
+     */
+    private function localScheduleParts(string $wallTime): array
+    {
+        if (! preg_match('/^\s*(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?\s*$/', $wallTime, $matches)) {
+            throw new InvalidArgumentException('Scheduled releases require a valid local wall time in YYYY-MM-DD HH:MM format.');
+        }
+
+        $parts = [
+            'year' => (int) $matches[1],
+            'month' => (int) $matches[2],
+            'day' => (int) $matches[3],
+            'hour' => (int) $matches[4],
+            'minute' => (int) $matches[5],
+            'second' => array_key_exists(6, $matches) ? (int) $matches[6] : 0,
+        ];
+
+        if (! checkdate($parts['month'], $parts['day'], $parts['year']) || $parts['hour'] > 23 || $parts['minute'] > 59 || $parts['second'] > 59) {
+            throw new InvalidArgumentException('Scheduled releases require a valid local wall time.');
+        }
+
+        return $parts;
+    }
+
+    /**
+     * @param  array<string, mixed>  $deliveryIntent
+     * @return array{0: CarbonImmutable|null, 1: array<string, mixed>}
+     */
+    private function normalizeScheduleIntent(?CarbonInterface $scheduledAt, array $deliveryIntent): array
+    {
+        if ($scheduledAt === null) {
+            return [null, $deliveryIntent];
+        }
+
+        $scheduledAt = CarbonImmutable::instance($scheduledAt)->utc()->startOfSecond();
+        $timezone = $deliveryIntent['selected_timezone'] ?? null;
+        $wallTime = $deliveryIntent['scheduled_wall_time'] ?? null;
+
+        if (is_string($timezone) && trim($timezone) !== '') {
+            if (! in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
+                throw new InvalidArgumentException('Scheduled releases require a valid IANA timezone.');
+            }
+
+            if (is_string($wallTime) && trim($wallTime) !== '') {
+                $resolved = $this->resolveSchedule($wallTime, $timezone);
+                if ($resolved['scheduled_at']->getTimestamp() !== $scheduledAt->getTimestamp()) {
+                    throw new RuntimeException('Scheduled release UTC instant does not match the selected wall time and timezone.');
+                }
+
+                $deliveryIntent = array_merge($deliveryIntent, $resolved['delivery_intent']);
+            } else {
+                $local = $scheduledAt->setTimezone($timezone);
+                $deliveryIntent['scheduled_wall_time'] = $local->format('Y-m-d H:i:s');
+                $deliveryIntent['scheduled_utc'] = $scheduledAt->toISOString();
+                $deliveryIntent['utc_offset'] = $local->format('P');
+            }
+        } else {
+            $local = $scheduledAt->setTimezone('UTC');
+            $deliveryIntent['selected_timezone'] = 'UTC';
+            $deliveryIntent['scheduled_wall_time'] = $local->format('Y-m-d H:i:s');
+            $deliveryIntent['scheduled_utc'] = $scheduledAt->toISOString();
+            $deliveryIntent['utc_offset'] = '+00:00';
+        }
+
+        $deliveryIntent['channel'] = 'scheduled';
+
+        return [$scheduledAt, $deliveryIntent];
+    }
+
+    /** @return array<string, mixed> */
+    private function arrayValue(mixed $value): array
+    {
+        return is_array($value) ? $value : [];
+    }
+
+    private function carbonValue(mixed $value): ?CarbonImmutable
+    {
+        if ($value instanceof CarbonInterface) {
+            return CarbonImmutable::instance($value);
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            return CarbonImmutable::parse($value);
+        }
+
+        return null;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return $value === null ? null : (int) $value;
+    }
+
+    private function ensureScheduleIsFuture(?CarbonInterface $scheduledAt): void
+    {
+        if ($scheduledAt !== null && ! CarbonImmutable::instance($scheduledAt)->isFuture()) {
+            throw new RuntimeException('Scheduled releases must use a future scheduled_at instant.');
+        }
+    }
+
+    /** @param array<string, mixed> $metadata */
+    private function originalPublicDateForPayload(array $metadata, Article $article): CarbonImmutable
+    {
+        $firstPublishedAt = $this->carbonValue($article->getAttribute('first_published_at'));
+
+        if ($firstPublishedAt instanceof CarbonImmutable) {
+            return $firstPublishedAt;
+        }
+
+        $date = $metadata['date'] ?? $metadata['published_at'] ?? null;
+        $publicDate = $this->carbonValue($date);
+
+        if (! $publicDate instanceof CarbonImmutable) {
+            throw new RuntimeException('A valid public date is required before preparing a first publication.');
+        }
+
+        return $publicDate;
     }
 
     private function timestampIsoString(mixed $value): ?string

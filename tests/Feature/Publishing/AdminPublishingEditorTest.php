@@ -51,6 +51,16 @@ function simpleDocument(string $text = 'Hello'): array
     ]];
 }
 
+function adminReleaseMetadata(string $title): array
+{
+    return [
+        'title' => $title,
+        'description' => $title.' description.',
+        'date' => '2024-01-01',
+        'tags' => [],
+    ];
+}
+
 function adminCompletedActivity(User $actor, PublishingAttempt $attempt, EditorialActivityKind $kind, ?int $revisionId = null, ?string $revisionHash = null): EditorialActivity
 {
     return EditorialActivity::create([
@@ -247,7 +257,7 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     expect(EditorialApproval::query()->where('attempt_id', $planAttempt->id)->where('kind', ApprovalKind::Plan)->exists())->toBeFalse();
 
     $releaseArticle = $write->capture($user, 'Release stale');
-    $releaseRevision = $write->save($user, $releaseArticle, null, simpleDocument('Release'), [], 'mut_release_seed');
+    $releaseRevision = $write->save($user, $releaseArticle, null, simpleDocument('Release'), adminReleaseMetadata('Release'), 'mut_release_seed');
     $releaseAttempt = $advance->develop($user, $releaseArticle, $releaseRevision->id, ['summary' => 'Brief']);
     $approve->approve($user, $releaseAttempt, ApprovalKind::Angle, $approve->inputHashFor($releaseAttempt, ApprovalKind::Angle));
     $releaseAttempt = adminAttemptWithReviewedPlan($user, $releaseAttempt->fresh(), ['outline' => ['Plan'], 'visualPlan' => ['Visual plan']]);
@@ -259,6 +269,34 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     DB::table('article_releases')->where('id', $release->id)->update(['release_hash' => 'changed-release-hash']);
     $releaseComponent->call('approveRelease', $oldReleaseHash)->assertSet('saveError', 'The release package changed before approval.');
     expect(EditorialApproval::query()->where('attempt_id', $releaseAttempt->id)->where('kind', ApprovalKind::Release)->exists())->toBeFalse();
+});
+
+test('workspace prepares scheduled releases with an explicit timezone confirmation', function (): void {
+    $this->travelTo('2026-06-01 12:00:00 UTC');
+    $user = editorUser();
+    $write = app(WriteArticle::class);
+    $advance = app(AdvancePublishingAttempt::class);
+    $approve = app(ApprovePublishingStage::class);
+    $article = $write->capture($user, 'Workspace scheduled release', 'workspace-scheduled-release');
+    $revision = $write->save($user, $article, null, simpleDocument('Scheduled release'), adminReleaseMetadata('Scheduled Release'), 'mut_workspace_schedule');
+    $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
+    $approve->approve($user, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
+    $attempt = adminAttemptWithReviewedPlan($user, $attempt->fresh(), ['outline' => ['Plan'], 'visualPlan' => ['Visual plan']]);
+    $approve->approve($user, $attempt->fresh(), ApprovalKind::Plan, $approve->inputHashFor($attempt->fresh(), ApprovalKind::Plan));
+    adminAttemptWithCompletedReviews($user, $attempt->fresh());
+
+    Livewire\Livewire::actingAs($user)
+        ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
+        ->set('releaseScheduledAt', '2026-07-01 09:30:00')
+        ->set('releaseScheduledTimezone', 'America/New_York')
+        ->call('prepareRelease')
+        ->assertSet('saveError', null);
+    $this->travelBack();
+
+    $release = ArticleRelease::query()->where('attempt_id', $attempt->id)->latest('id')->firstOrFail();
+    expect($release->scheduled_at?->toISOString())->toBe('2026-07-01T13:30:00.000000Z')
+        ->and($release->payload['delivery_intent']['selected_timezone'])->toBe('America/New_York')
+        ->and($release->payload['delivery_intent']['utc_offset'])->toBe('-04:00');
 });
 
 test('imported published articles show historical published release readiness without a current attempt', function (): void {

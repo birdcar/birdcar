@@ -1,9 +1,13 @@
 <?php
 
+use App\Actions\Publishing\ImportWritingArchive;
 use App\Actions\ReadWriting;
+use App\Authorization\Publishing\Role as PublishingRole;
+use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\PermissionRegistrar;
 
 test('curated diagrams keep their complete explanation between adjacent markdown', function (string $name, array $meaning) {
     $html = app(ReadWriting::class)->render("Before **the figure**.\n\n@figure kind=diagram name={$name} caption=\"A reading figure.\"\n@endfigure\n\nAfter *the figure*.");
@@ -86,6 +90,20 @@ MARKDOWN);
         ->not->toContain('<script', 'href="javascript:', '@figure', '@aside', '@callout', 'BIRDCARBLOCK');
 });
 
+test('cms-mode imported archive preserves figures charts and accessible data tables', function () {
+    marketingDiagramImportArchive($this);
+
+    $bug = $this->get('/writing/your-ai-wrote-a-bug/')->assertOk()->assertSee('View chart data');
+    foreach ([20, 15, 10, 7] as $value) {
+        $bug->assertSee('<td>'.$value.'</td>', false);
+    }
+
+    $prompts = $this->get('/writing/six-months-talking-to-a-machine/')->assertOk()
+        ->assertSee('Scroll for the full chart, or view the data below.')
+        ->assertSee('<svg class="line-chart"', false)
+        ->assertDontSee('@figure');
+});
+
 test('walkthrough motion requires an explicit marketing opt in', function () {
     expect(Blade::render('<x-marketing.walkthrough-diagram />'))->not->toContain('data-walkthrough-diagram');
     expect(Blade::render('<x-marketing.walkthrough-diagram :animate="true" />'))->toContain('data-walkthrough-diagram');
@@ -166,3 +184,14 @@ test('server validated source svg diagrams keep safe static meaning only', funct
 test('the specimen is not reachable on application or arbitrary hosts', function (string $host) {
     $this->get('https://'.$host.'/__design/figures')->assertNotFound();
 })->with(['admin.birdcar.dev', 'customer.birdcar.dev', 'unrelated.example']);
+
+function marketingDiagramImportArchive($test): void
+{
+    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $test->artisan('authorization:sync')->assertSuccessful();
+    $operator = User::factory()->create();
+    $operator->assignRole(PublishingRole::Author->value);
+
+    app(ImportWritingArchive::class)->write('resources/writing', '72f7d8ad8521573cb224022c902447f9ca4c4351', $operator);
+}

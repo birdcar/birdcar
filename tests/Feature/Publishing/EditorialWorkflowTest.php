@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
+    config(['publishing.public_reader' => 'database']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $this->artisan('authorization:sync')->assertSuccessful();
 });
@@ -34,7 +35,7 @@ test('captured ideas stay idle until deliberate develop creates one allowance ba
     $advance = app(AdvancePublishingAttempt::class);
 
     $article = $write->capture($actor, 'Investigate agent publishing.', 'agent-publishing');
-    $revision = $write->save($actor, $article, null, editorialDocument('First draft'), ['title' => 'Agent Publishing'], 'draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('First draft'), editorialMetadata('Agent Publishing'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Publish safely']);
     $duplicateAttempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Publish safely']);
 
@@ -53,7 +54,7 @@ test('develop after publication creates a fresh working attempt without replacin
     $releases = app(ManageArticleRelease::class);
 
     $article = $write->capture($actor, 'Published revisions keep going.', 'published-revisions');
-    $revision = $write->save($actor, $article, null, editorialDocument('Published body'), ['title' => 'Published'], 'draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Published body'), editorialMetadata('Published'), 'draft-1');
     $publishedAttempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Ship it']);
     $approve->approve($actor, $publishedAttempt, ApprovalKind::Angle, $approve->inputHashFor($publishedAttempt, ApprovalKind::Angle));
     $publishedAttempt = publishingAttemptWithReviewedPlan($advance, $actor, $publishedAttempt->fresh());
@@ -80,7 +81,7 @@ test('human approvals advance gates and context changes invalidate downstream ga
     $approve = app(ApprovePublishingStage::class);
 
     $article = $write->capture($actor, 'Approval gates.', 'approval-gates');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Approval Gates'], 'draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Approval Gates'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Gate automatic work']);
 
     $angleApproval = $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
@@ -137,16 +138,16 @@ test('stale saves and conflicting mutation keys do not change the current manusc
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $article = $write->capture($actor, 'Concurrent edits.', 'concurrent-edits');
-    $firstRevision = $write->save($actor, $article, null, editorialDocument('First'), ['title' => 'First'], 'edit-1');
-    $sameMutation = $write->save($actor, $article, $firstRevision->id, editorialDocument('Second'), ['title' => 'Second'], 'edit-2');
+    $firstRevision = $write->save($actor, $article, null, editorialDocument('First'), editorialMetadata('First'), 'edit-1');
+    $sameMutation = $write->save($actor, $article, $firstRevision->id, editorialDocument('Second'), editorialMetadata('Second'), 'edit-2');
 
-    expect(fn () => $write->save($actor, $article, $firstRevision->id, editorialDocument('Stale'), ['title' => 'Stale'], 'edit-3'))
+    expect(fn () => $write->save($actor, $article, $firstRevision->id, editorialDocument('Stale'), editorialMetadata('Stale'), 'edit-3'))
         ->toThrow(RuntimeException::class, 'changed since this edit began');
-    expect(fn () => $write->save($actor, $article, $sameMutation->id, editorialDocument('Different'), ['title' => 'Different'], 'edit-2'))
+    expect(fn () => $write->save($actor, $article, $sameMutation->id, editorialDocument('Different'), editorialMetadata('Different'), 'edit-2'))
         ->toThrow(RuntimeException::class, 'mutation key');
 
-    expect($write->save($actor, $article, $firstRevision->id, editorialDocument('Second'), ['title' => 'Second'], 'edit-2')->is($sameMutation))->toBeTrue()
-        ->and($write->save($actor, $article, $sameMutation->id, editorialDocument('Second'), ['title' => 'Second'], 'edit-2')->is($sameMutation))->toBeTrue()
+    expect($write->save($actor, $article, $firstRevision->id, editorialDocument('Second'), editorialMetadata('Second'), 'edit-2')->is($sameMutation))->toBeTrue()
+        ->and($write->save($actor, $article, $sameMutation->id, editorialDocument('Second'), editorialMetadata('Second'), 'edit-2')->is($sameMutation))->toBeTrue()
         ->and(ArticleRevision::query()->where('article_id', $article->id)->count())->toBe(2)
         ->and($article->fresh()?->working_revision_id)->toBe($sameMutation->id);
 });
@@ -158,7 +159,7 @@ test('approvals cannot skip angle plan or current stage gates', function (): voi
     $approve = app(ApprovePublishingStage::class);
 
     $article = $write->capture($actor, 'Denied gates.', 'denied-gates');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Denied Gates'], 'draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Denied Gates'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
 
     expect(fn () => $approve->approve($actor, $attempt, ApprovalKind::Plan, $approve->inputHashFor($attempt, ApprovalKind::Plan)))
@@ -184,7 +185,7 @@ test('plan approval requires current cycle research and a non empty outline visu
     $approve = app(ApprovePublishingStage::class);
 
     $article = $write->capture($actor, 'Plan prerequisites.', 'plan-prerequisites');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Plan prerequisites'], 'plan-prerequisites-draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Plan prerequisites'), 'plan-prerequisites-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
     $attempt = $attempt->fresh();
@@ -224,7 +225,7 @@ test('plan approval requires research bound to the exact approved brief and angl
     $approve = app(ApprovePublishingStage::class);
 
     $article = $write->capture($actor, 'Exact research binding.', 'exact-research-binding');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Exact research binding'], 'exact-research-draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Exact research binding'), 'exact-research-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Angle A']);
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
     $attempt = $attempt->fresh();
@@ -348,7 +349,7 @@ test('agent generated plan is persisted displayed approved by human and gates dr
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
     $article = $write->capture($actor, 'Agent plan pipeline.', 'agent-plan-pipeline');
-    $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Agent Plan Pipeline'], 'agent-plan-empty-draft');
+    $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], editorialMetadata('Agent Plan Pipeline'), 'agent-plan-empty-draft');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Show the pipeline']);
     $attempt->forceFill(['interview_context' => [
         'voice_sample_ids' => [42],
@@ -421,7 +422,7 @@ test('pause resume park and abandon retain the attempt identity without creating
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $article = $write->capture($actor, 'Interruptions.', 'interruptions');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Interruptions'], 'draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Interruptions'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
 
     $paused = $advance->pause($actor, $attempt, 'Waiting on source material.');
@@ -453,7 +454,7 @@ test('interruption transitions reject non current and terminal attempts', functi
         ->toThrow(RuntimeException::class, 'Terminal publishing attempts cannot be changed');
 
     $abandonedArticle = $write->capture($actor, 'Abandoned terminal.', 'abandoned-terminal');
-    $abandonedRevision = $write->save($actor, $abandonedArticle, null, editorialDocument('Draft'), ['title' => 'Abandoned'], 'abandoned-draft-1');
+    $abandonedRevision = $write->save($actor, $abandonedArticle, null, editorialDocument('Draft'), editorialMetadata('Abandoned'), 'abandoned-draft-1');
     $abandonedAttempt = $advance->develop($actor, $abandonedArticle, $abandonedRevision->id);
     $advance->abandon($actor, $abandonedAttempt, 'Killed.');
 
@@ -461,7 +462,7 @@ test('interruption transitions reject non current and terminal attempts', functi
         ->toThrow(RuntimeException::class, 'Terminal publishing attempts cannot be changed');
 
     $currentArticle = $write->capture($actor, 'Current guard.', 'current-guard');
-    $currentRevision = $write->save($actor, $currentArticle, null, editorialDocument('Draft'), ['title' => 'Current Guard'], 'current-guard-draft-1');
+    $currentRevision = $write->save($actor, $currentArticle, null, editorialDocument('Draft'), editorialMetadata('Current Guard'), 'current-guard-draft-1');
     $oldAttempt = $advance->develop($actor, $currentArticle, $currentRevision->id);
     $replacementAttempt = PublishingAttempt::factory()->create([
         'article_id' => $currentArticle->id,
@@ -478,7 +479,7 @@ test('develop never reuses attempts marked with the abandoned stage', function (
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $article = $write->capture($actor, 'Stage abandoned.', 'stage-abandoned');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Stage Abandoned'], 'stage-abandoned-draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Stage Abandoned'), 'stage-abandoned-draft-1');
     $abandonedAttempt = $advance->develop($actor, $article, $revision->id);
     $abandonedAttempt->forceFill([
         'stage' => EditorialStage::Abandoned,
@@ -514,7 +515,7 @@ function approvedEditorialAttempt(User $actor, string $idea, string $slug): Publ
     $approve = app(ApprovePublishingStage::class);
 
     $article = $write->capture($actor, $idea, $slug);
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => $idea], $slug.'-draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata($idea), $slug.'-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => $idea]);
 
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
@@ -591,6 +592,16 @@ function editorialAuthor(): User
 /**
  * @return array<string, mixed>
  */
+function editorialMetadata(string $title): array
+{
+    return [
+        'title' => $title,
+        'description' => $title.' description.',
+        'date' => '2024-01-01',
+        'tags' => [],
+    ];
+}
+
 function editorialDocument(string $text): array
 {
     return [
@@ -607,7 +618,7 @@ test('pause and resume move pending agent activities without resetting allowance
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $article = $write->capture($actor, 'Agent pause resume.', 'agent-pause-resume');
-    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), ['title' => 'Agent Pause'], 'agent-pause-draft-1');
+    $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Agent Pause'), 'agent-pause-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'pause-resume');
 

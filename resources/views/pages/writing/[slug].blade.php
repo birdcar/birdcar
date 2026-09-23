@@ -1,17 +1,17 @@
 <?php
 
-use App\Actions\ReadWriting;
+use App\Actions\Publishing\ReadPublishedWriting;
 use Illuminate\View\View;
 
 use function Laravel\Folio\{name, render};
 
 name('public.article');
 
-render(function (View $view, string $slug, ReadWriting $writing): View {
+render(function (View $view, string $slug, ReadPublishedWriting $writing): View {
     $article = $writing->find($slug);
     abort_if($article === null, 404);
 
-    return $view->with(['article' => $article, 'content' => $writing->render($article['body'])]);
+    return $view->with(['article' => $article, 'content' => $article['html']]);
 });
 
 ?>

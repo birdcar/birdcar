@@ -1,8 +1,12 @@
 <?php
 
+use App\Actions\Publishing\ImportWritingArchive;
+use App\Authorization\Publishing\Role as PublishingRole;
+use App\Models\User;
 use App\Services\MarketingSite;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-13');
@@ -130,6 +134,28 @@ test('the development specimen is excluded from public discovery and navigation'
     }
 });
 
+test('cms-mode imported archive preserves canonical sitemap and feed discovery', function () {
+    config(['marketing.url' => 'https://birdcar.dev']);
+    marketingDiscoveryImportArchive($this);
+
+    $article = $this->get('/writing/just-build-it-twice/?utm_source=reader')->assertOk();
+    $article->assertSee('<link rel="canonical" href="https://birdcar.dev/writing/just-build-it-twice">', false)
+        ->assertSee('property="og:url" content="https://birdcar.dev/writing/just-build-it-twice/"', false)
+        ->assertSee('datePublished":"2026-05-26T00:00:00+00:00', false);
+
+    $sitemap = $this->get('/sitemap.xml')->assertOk();
+    $xml = simplexml_load_string($sitemap->getContent());
+    expect($xml->url)->toHaveCount(14);
+    $sitemap->assertSee('https://birdcar.dev/writing/just-build-it-twice/')
+        ->assertDontSee('admin.')
+        ->assertDontSee('customer.');
+
+    $feed = $this->get('/rss.xml')->assertOk()->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
+    $rss = simplexml_load_string($feed->getContent());
+    expect($rss->channel->item)->toHaveCount(10)
+        ->and((string) $rss->channel->item[0]->title)->toBe('Just build it twice');
+});
+
 test('future dated writing stays out of the public sitemap', function () {
     CarbonImmutable::setTestNow('2026-04-18');
 
@@ -150,3 +176,14 @@ test('a marketing url without a host fails loudly instead of binding routes to n
     expect(fn (): string => app(MarketingSite::class)->host())
         ->toThrow(RuntimeException::class, 'marketing.url must be an absolute URL with a host');
 })->with(['/relative/path', 'birdcar.dev', 'http:///missing-host']);
+
+function marketingDiscoveryImportArchive($test): void
+{
+    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $test->artisan('authorization:sync')->assertSuccessful();
+    $operator = User::factory()->create();
+    $operator->assignRole(PublishingRole::Author->value);
+
+    app(ImportWritingArchive::class)->write('resources/writing', '72f7d8ad8521573cb224022c902447f9ca4c4351', $operator);
+}

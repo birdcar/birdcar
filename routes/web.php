@@ -1,6 +1,6 @@
 <?php
 
-use App\Actions\ReadWriting;
+use App\Actions\Publishing\ReadPublishedWriting;
 use App\Authorization\Admin\Permission as AdminPermission;
 use App\Services\MarketingSite;
 use Illuminate\Http\Response;
@@ -66,7 +66,7 @@ Route::domain(app(MarketingSite::class)->host())->name('public.')->group(functio
         return response()->view('figure-specimen')
             ->header('X-Robots-Tag', 'noindex, nofollow');
     })->name('figure-specimen');
-    Route::get('/sitemap.xml', function (ReadWriting $writing, MarketingSite $marketing): Sitemap {
+    Route::get('/sitemap.xml', function (ReadPublishedWriting $writing, MarketingSite $marketing): Sitemap {
         $sitemap = Sitemap::create();
 
         foreach (['public.index', 'public.work', 'public.walkthrough', 'public.writing'] as $route) {
@@ -79,7 +79,7 @@ Route::domain(app(MarketingSite::class)->host())->name('public.')->group(functio
 
         return $sitemap;
     })->name('sitemap');
-    Route::get('/rss.xml', fn (ReadWriting $writing): Response => response()
+    Route::get('/rss.xml', fn (ReadPublishedWriting $writing): Response => response()
         ->view('writing-feed', ['articles' => $writing->all()])
         ->header('Content-Type', 'application/rss+xml; charset=UTF-8'))
         ->name('feed');
