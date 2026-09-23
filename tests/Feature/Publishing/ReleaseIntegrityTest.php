@@ -17,6 +17,7 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -99,7 +100,8 @@ test('editing an approved scheduled package invalidates release approval and wit
     $article = $write->capture($actor, 'Schedule withdrawal.', 'schedule-withdrawal');
     $revision = $write->save($actor, $article, null, releaseDocument('Scheduled'), releaseMetadata('Scheduled'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
-    $release = $releases->prepare($actor, $attempt, $revision->id, 'schedule-withdrawal', now()->addMinute());
+    $schedule = releaseSchedule($releases, now()->addMinute());
+    $release = $releases->prepare($actor, $attempt, $revision->id, 'schedule-withdrawal', $schedule['scheduled_at'], $schedule['delivery_intent']);
     $approval = $releases->approve($actor, $release, $release->release_hash);
 
     $write->save($actor, $article, $revision->id, releaseDocument('Changed'), releaseMetadata('Changed'), 'draft-2');
@@ -117,10 +119,12 @@ test('approving a replacement scheduled release withdraws the older schedule for
     $article = $write->capture($actor, 'Schedule replacement.', 'schedule-replacement');
     $revision = $write->save($actor, $article, null, releaseDocument('Scheduled'), releaseMetadata('Scheduled'), 'schedule-replacement-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
-    $oldRelease = $releases->prepare($actor, $attempt, $revision->id, 'schedule-replacement', now()->addHour());
+    $oldSchedule = releaseSchedule($releases, now()->addHour());
+    $oldRelease = $releases->prepare($actor, $attempt, $revision->id, 'schedule-replacement', $oldSchedule['scheduled_at'], $oldSchedule['delivery_intent']);
     $releases->approve($actor, $oldRelease, $oldRelease->release_hash);
 
-    $newRelease = $releases->prepare($actor, $attempt->fresh(), $revision->id, 'schedule-replacement', now()->addHours(2));
+    $newSchedule = releaseSchedule($releases, now()->addHours(2));
+    $newRelease = $releases->prepare($actor, $attempt->fresh(), $revision->id, 'schedule-replacement', $newSchedule['scheduled_at'], $newSchedule['delivery_intent']);
     $releases->approve($actor, $newRelease, $newRelease->release_hash);
 
     expect($oldRelease->fresh()?->status)->toBe('withdrawn')
@@ -228,8 +232,9 @@ test('scheduled delivery refuses approved packages after finding dispositions ch
         'disposition_actor_id' => $actor->id,
         'disposed_at' => now(),
     ]);
-    $scheduledAt = now()->addMinute();
-    $release = $releases->prepare($actor, $attempt, $revision->id, 'finding-stale-due', $scheduledAt, ['channel' => 'scheduled']);
+    $schedule = releaseSchedule($releases, now()->addMinute());
+    $scheduledAt = $schedule['scheduled_at'];
+    $release = $releases->prepare($actor, $attempt, $revision->id, 'finding-stale-due', $scheduledAt, $schedule['delivery_intent']);
     $releases->approve($actor, $release, $release->release_hash);
 
     $finding->forceFill(['disposition_reason' => 'Changed after approval.'])->save();
@@ -474,7 +479,8 @@ test('delivery is idempotent for the same package and cannot let older jobs repl
     $article = $write->capture($actor, 'Compare and swap.', 'compare-swap');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
-    $oldRelease = $releases->prepare($actor, $attempt, $revision->id, 'compare-swap', now()->addDay(), ['channel' => 'scheduled']);
+    $oldSchedule = releaseSchedule($releases, now()->addDay());
+    $oldRelease = $releases->prepare($actor, $attempt, $revision->id, 'compare-swap', $oldSchedule['scheduled_at'], $oldSchedule['delivery_intent']);
     $releases->approve($actor, $oldRelease, $oldRelease->release_hash);
     $newAttempt = PublishingAttempt::factory()->create([
         'article_id' => $article->id,
@@ -561,6 +567,35 @@ test('schedule resolution rejects invalid past nonexistent and ambiguous wall ti
     $this->travelBack();
 });
 
+test('scheduled release preparation requires explicit matching schedule intent without side effects', function (): void {
+    $actor = releaseAuthor();
+    $write = app(WriteArticle::class);
+    $advance = app(AdvancePublishingAttempt::class);
+    $releases = app(ManageArticleRelease::class);
+    $article = $write->capture($actor, 'Explicit schedule intent.', 'explicit-schedule-intent');
+    $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'explicit-schedule-1');
+    $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
+    $existingRelease = $releases->prepare($actor, $attempt, $revision->id, 'explicit-schedule-intent');
+    $approval = $releases->approve($actor, $existingRelease, $existingRelease->release_hash);
+    $scheduledAt = now()->addHour()->utc()->startOfSecond();
+    $matchingWallTime = $scheduledAt->copy()->format('Y-m-d H:i:s');
+    $mismatchedWallTime = $scheduledAt->copy()->addMinute()->format('Y-m-d H:i:s');
+    $releaseCount = ArticleRelease::query()->count();
+
+    expect(fn () => $releases->prepare($actor, $attempt->fresh(), $revision->id, 'explicit-schedule-intent', $scheduledAt))
+        ->toThrow(InvalidArgumentException::class, 'explicit scheduling intent');
+    expect(fn () => $releases->prepare($actor, $attempt->fresh(), $revision->id, 'explicit-schedule-intent', $scheduledAt, ['selected_timezone' => 'UTC']))
+        ->toThrow(InvalidArgumentException::class, 'explicit scheduling intent');
+    expect(fn () => $releases->prepare($actor, $attempt->fresh(), $revision->id, 'explicit-schedule-intent', $scheduledAt, ['scheduled_wall_time' => $matchingWallTime]))
+        ->toThrow(InvalidArgumentException::class, 'explicit scheduling intent');
+    expect(fn () => $releases->prepare($actor, $attempt->fresh(), $revision->id, 'explicit-schedule-intent', $scheduledAt, ['selected_timezone' => 'UTC', 'scheduled_wall_time' => $mismatchedWallTime]))
+        ->toThrow(RuntimeException::class, 'does not match');
+
+    expect(ArticleRelease::query()->count())->toBe($releaseCount)
+        ->and($approval->fresh()?->invalidated_at)->toBeNull()
+        ->and($article->fresh()?->published_release_id)->toBeNull();
+});
+
 test('publish due command delivers scheduled releases with stored actor authorization', function (): void {
     $actor = releaseAuthor();
     $write = app(WriteArticle::class);
@@ -569,8 +604,9 @@ test('publish due command delivers scheduled releases with stored actor authoriz
     $article = $write->capture($actor, 'Due command.', 'due-command');
     $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Due Body'), 'due-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
-    $scheduledAt = now()->addMinute();
-    $release = $releases->prepare($actor, $attempt, $revision->id, 'due-command', $scheduledAt, ['channel' => 'scheduled']);
+    $schedule = releaseSchedule($releases, now()->addMinute());
+    $scheduledAt = $schedule['scheduled_at'];
+    $release = $releases->prepare($actor, $attempt, $revision->id, 'due-command', $scheduledAt, $schedule['delivery_intent']);
     $releases->approve($actor, $release, $release->release_hash);
 
     $this->travelTo($scheduledAt->copy()->addMinute());
@@ -589,8 +625,9 @@ test('publish due command leaves live content unchanged when the approving actor
     $article = $write->capture($actor, 'Revoked due command.', 'revoked-due-command');
     $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Revoked Due Body'), 'revoked-due-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
-    $scheduledAt = now()->addMinute();
-    $release = $releases->prepare($actor, $attempt, $revision->id, 'revoked-due-command', $scheduledAt, ['channel' => 'scheduled']);
+    $schedule = releaseSchedule($releases, now()->addMinute());
+    $scheduledAt = $schedule['scheduled_at'];
+    $release = $releases->prepare($actor, $attempt, $revision->id, 'revoked-due-command', $scheduledAt, $schedule['delivery_intent']);
     $releases->approve($actor, $release, $release->release_hash);
     $actor->removeRole(PublishingRole::Author->value);
 
@@ -637,6 +674,14 @@ function approveReleasePrerequisites(User $actor, PublishingAttempt $attempt): P
     releaseAttemptWithCompletedReviews($actor, $attempt);
 
     return $attempt->fresh();
+}
+
+/**
+ * @return array{scheduled_at: CarbonInterface, delivery_intent: array<string, mixed>}
+ */
+function releaseSchedule(ManageArticleRelease $releases, CarbonInterface $scheduledAt, string $timezone = 'UTC'): array
+{
+    return $releases->resolveSchedule($scheduledAt->copy()->setTimezone($timezone)->format('Y-m-d H:i:s'), $timezone);
 }
 
 function releaseAttemptWithReviewedPlan(User $actor, PublishingAttempt $attempt): PublishingAttempt

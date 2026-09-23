@@ -265,8 +265,12 @@ test('scheduled release preparation rejects past schedule instants', function ()
     $revision = $write->save($actor, $article, null, readinessDocument('Past schedule body.'), readinessMetadata('Past Schedule'), 'past-schedule-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
-    expect(fn () => app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'past-schedule', now()->subSecond()))
-        ->toThrow(RuntimeException::class, 'future scheduled_at');
+    $scheduledAt = now()->subSecond()->utc()->startOfSecond();
+
+    expect(fn () => app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'past-schedule', $scheduledAt, [
+        'selected_timezone' => 'UTC',
+        'scheduled_wall_time' => $scheduledAt->copy()->format('Y-m-d H:i:s'),
+    ]))->toThrow(RuntimeException::class, 'future scheduled_at');
 });
 
 test('malformed public metadata dates are structured blocking readiness findings', function (): void {

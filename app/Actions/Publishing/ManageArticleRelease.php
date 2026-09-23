@@ -834,32 +834,16 @@ class ManageArticleRelease
         $timezone = $deliveryIntent['selected_timezone'] ?? null;
         $wallTime = $deliveryIntent['scheduled_wall_time'] ?? null;
 
-        if (is_string($timezone) && trim($timezone) !== '') {
-            if (! in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
-                throw new InvalidArgumentException('Scheduled releases require a valid IANA timezone.');
-            }
-
-            if (is_string($wallTime) && trim($wallTime) !== '') {
-                $resolved = $this->resolveSchedule($wallTime, $timezone);
-                if ($resolved['scheduled_at']->getTimestamp() !== $scheduledAt->getTimestamp()) {
-                    throw new RuntimeException('Scheduled release UTC instant does not match the selected wall time and timezone.');
-                }
-
-                $deliveryIntent = array_merge($deliveryIntent, $resolved['delivery_intent']);
-            } else {
-                $local = $scheduledAt->setTimezone($timezone);
-                $deliveryIntent['scheduled_wall_time'] = $local->format('Y-m-d H:i:s');
-                $deliveryIntent['scheduled_utc'] = $scheduledAt->toISOString();
-                $deliveryIntent['utc_offset'] = $local->format('P');
-            }
-        } else {
-            $local = $scheduledAt->setTimezone('UTC');
-            $deliveryIntent['selected_timezone'] = 'UTC';
-            $deliveryIntent['scheduled_wall_time'] = $local->format('Y-m-d H:i:s');
-            $deliveryIntent['scheduled_utc'] = $scheduledAt->toISOString();
-            $deliveryIntent['utc_offset'] = '+00:00';
+        if (! is_string($timezone) || trim($timezone) === '' || ! is_string($wallTime) || trim($wallTime) === '') {
+            throw new InvalidArgumentException('Scheduled releases require explicit scheduling intent with a selected timezone and wall time.');
         }
 
+        $resolved = $this->resolveSchedule($wallTime, $timezone);
+        if ($resolved['scheduled_at']->getTimestamp() !== $scheduledAt->getTimestamp()) {
+            throw new RuntimeException('Scheduled release UTC instant does not match the selected wall time and timezone.');
+        }
+
+        $deliveryIntent = array_merge($deliveryIntent, $resolved['delivery_intent']);
         $deliveryIntent['channel'] = 'scheduled';
 
         return [$scheduledAt, $deliveryIntent];
