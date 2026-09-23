@@ -8,6 +8,7 @@ use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Responses\AdminLoginResponse;
 use App\Http\Responses\AdminLogoutResponse;
+use App\Http\Responses\AdminPasswordResetResponse;
 use App\Models\User;
 use App\Services\PostHogService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\LogoutResponse;
+use Laravel\Fortify\Contracts\PasswordResetResponse;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Fortify;
 
@@ -32,6 +34,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(LoginResponse::class, AdminLoginResponse::class);
         $this->app->singleton(TwoFactorLoginResponse::class, AdminLoginResponse::class);
         $this->app->singleton(LogoutResponse::class, AdminLogoutResponse::class);
+        $this->app->singleton(PasswordResetResponse::class, AdminPasswordResetResponse::class);
     }
 
     /**
@@ -46,6 +49,13 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
         Fortify::loginView(fn () => view('auth.login'));
         Fortify::twoFactorChallengeView(fn () => view('auth.two-factor-challenge'));
+        Fortify::resetPasswordView(fn (Request $request) => response()
+            ->view('auth.reset-password', ['request' => $request])
+            ->withHeaders([
+                'Cache-Control' => 'no-store, private',
+                'Pragma' => 'no-cache',
+                'Referrer-Policy' => 'no-referrer',
+            ]));
         Fortify::authenticateUsing(function (Request $request): ?User {
             $user = User::query()
                 ->where('email', $request->input(Fortify::username()))

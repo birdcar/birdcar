@@ -3,6 +3,7 @@
 use App\Authorization\Admin\Role as AdminRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -78,4 +79,35 @@ test('admin url preserves nondefault scheme and port for auth fallbacks', functi
 test('two factor challenge route is registered and guarded by Fortify state', function (): void {
     $this->get('http://admin.birdcar.test/two-factor-challenge')
         ->assertRedirect('/login');
+});
+
+test('password reset success redirects browsers to the admin login and shows status', function (): void {
+    $user = User::factory()->create(['password' => Hash::make('old-password')]);
+    $token = Password::broker('users')->createToken($user);
+
+    $this->post('http://admin.birdcar.test/reset-password', [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'new-secret-password',
+        'password_confirmation' => 'new-secret-password',
+    ])->assertRedirect('http://admin.birdcar.test/login')
+        ->assertSessionHas('status');
+
+    auth()->logout();
+    $this->withSession(['status' => trans(Password::PASSWORD_RESET)])
+        ->get('http://admin.birdcar.test/login')
+        ->assertSee(trans(Password::PASSWORD_RESET));
+});
+
+test('password reset success keeps Fortify JSON response behavior', function (): void {
+    $user = User::factory()->create(['password' => Hash::make('old-password')]);
+    $token = Password::broker('users')->createToken($user);
+
+    $this->postJson('http://admin.birdcar.test/reset-password', [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'new-secret-password',
+        'password_confirmation' => 'new-secret-password',
+    ])->assertOk()
+        ->assertJson(['message' => trans(Password::PASSWORD_RESET)]);
 });

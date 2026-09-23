@@ -4,6 +4,7 @@
 <body class="admin-shell grid min-h-screen place-items-center bg-zinc-950 p-6 text-zinc-100">
     <main class="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-8 shadow-xl">
         <h1 class="text-2xl font-semibold">Sign in to Admin</h1>
+        @if (session('status'))<p class="mt-4 rounded border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">{{ session('status') }}</p>@endif
         <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
             @csrf
             <label class="block text-sm">Email<input name="email" type="email" required autofocus value="{{ old('email') }}" class="mt-1 w-full rounded bg-zinc-950 px-3 py-2"></label>
