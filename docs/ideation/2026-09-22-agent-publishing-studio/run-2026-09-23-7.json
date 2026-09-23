@@ -1,0 +1,48 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-23",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": ["Release delivery and public cutover", "Root Admin invitations"],
+    "noops": [],
+    "failed": [],
+    "skipped": [],
+    "results": [
+      {
+        "title": "Release delivery and public cutover",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "3897155cdc4be4d10753d3e39322e0976e19b803",
+        "summary": "Implemented strict explicit scheduling intent validation for scheduled release packages and updated release tests/fixtures to supply matching timezone and wall-time intent. Added regression coverage for missing, partial, and mismatched schedule intent with no release persistence or approval/live-pointer side effects. — The core scheduling-boundary implementation matches the corrective Phase 5 requirement: scheduled releases now require explicit timezone/wall-time intent and tests cover missing, partial, mismatched, and existing valid schedule flows. Commit readiness is good for code, with only non-blocking cleanup needed around extra documentation artifacts included in the phase diff.",
+        "findings": [
+          "medium/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/spec-admin-invitations.md:11 — Phase 5 diff modifies the separate Root Admin invitations spec and authorizes invitation follow-up work, while spec-phase-5 scopes this corrective rerun to release scheduling and says no invitations/provisioning authority is added → Split this admin-invitations planning change into its own reviewed phase/commit or remove it from the Phase 5 diff",
+          "low/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/context-map.md:1 — Adds a new context map outside the Phase 5 File Changes; the spec lists run receipts/reports and spec-phase-5 as the relevant doc artifacts for this phase → Add it to the spec as an approved artifact or leave it out of the phase commit",
+          "low/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/implementation-notes-2026-09-23-phase-5.html:1 — Adds implementation notes HTML not listed in the Phase 5 File Changes → Add it to the spec if this artifact is required, otherwise keep it out of the phase commit"
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      },
+      {
+        "title": "Root Admin invitations",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "d77559f94e6d1fd72a321781766f3fbb703bbbea",
+        "summary": "Implemented MailManager/Symfony-based invitation mailer validation with aggregate prevalidation and expanded invitation regressions for custom/effective transports, URL overrides, malformed emails, nondefault Admin ports, custom expiry, and deterministic delivery failure retry. — The mailer validation now uses MailManager/Symfony transport resolution, handles unsafe/custom/URL/aggregate cases, and the added invitation tests cover the requested follow-up scenarios. The only issues are non-blocking scope hygiene problems from extra documentation artifacts not listed in the spec. Implementation is commit-ready once those artifacts are removed or explicitly authorized.",
+        "findings": [
+          "medium/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/context-map.md:1 — Adds a planning context-map artifact that is not listed in the spec's File Changes, which only authorizes preserving run receipts/reports and the invitation/spec/test/code changes → Remove this file from the corrective commit or update the controller-owned spec to explicitly authorize it",
+          "medium/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/implementation-notes-2026-09-23-phase-5.html:1 — Adds Phase 5 implementation notes outside the Root Admin invitation follow-up scope and outside the listed run-*.html report artifacts → Remove this unrelated artifact from this phase or obtain explicit spec authorization"
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      }
+    ]
+  },
+  "verify": {
+    "line": "VERIFY 2026-09-22-agent-publishing-studio: commits=6/6 pass=10 fail=0 judgment=3",
+    "exitCode": 0
+  },
+  "notesFiles": ["implementation-notes-2026-09-23-phase-5.html"]
+}

@@ -8,6 +8,16 @@
 
 **Risk / effort**: High / M
 
+## Post-Commit Review Follow-up
+
+`3ff76dcc8d557341ed129da0051264bf93f07e6c` passed strict review with three non-blocking findings recorded in `run-2026-09-23-6.json`. Close them in a tested/reviewed corrective commit rather than accepting known gaps. This is an intentional follow-up despite the existing phase commit, covered by the owner's automatic in-scope retry authorization.
+
+- Replace the hardcoded delivery transport-name whitelist with installed MailManager/Symfony public resolution APIs. Resolve named mailers with `MailManager::mailer($name)->getSymfonyTransport()`, which handles effective URL configuration and registered custom creators; reject resolved `LogTransport`, `ArrayTransport` and Symfony `NullTransport`. Prevalidate nested failover/roundrobin configuration and cycles before resolution (otherwise cyclic configuration can recurse indefinitely). Symfony aggregate transports have no public child getter: inspect their effective configured child names, recursively validate their resolved transports, and fail closed for aggregates whose children cannot be verified; do not use reflection or parse transport string representations. Account for manager caching so validation and eventual sending use the same safe effective transport. Keep sanitized failure output and pre-provisioning validation. Cover supported custom delivery transports, unsafe custom aliases, URL overrides and unresolved/unsupported transport failure without provisioning.
+- Add the missing nondefault Admin port and custom password-broker expiry notification regression, plus malformed-email command coverage asserting no account/role mutation or notification.
+- The existing delivery-failure regression currently attempts a real connection to localhost port 65000. Replace this with a deterministic fake failure at the notification/mail boundary, preserving real account provisioning, real broker behavior, secret-safe failure assertions and the successful retry. No network or live mail should be required by tests.
+
+Run regression tests before production fixes, all invitation validation afterward, and strict review. Preserve historical reports and all live-operation gates.
+
 ## Technical Approach
 
 Provide `php artisan admin:invite person@example.com --name="Person Name" --no-interaction` for an operator running Laravel Cloud commands. There is no password option or prompt. Use the existing User identity, Laravel password broker, Fortify password-reset endpoint and global web-guard domain roles. The invitee sets their password in the browser through an expiring, single-use emailed link. No new dependency, invitation table, custom token protocol, general role-management UI or deployment is needed.
@@ -60,6 +70,9 @@ Preserve controller-owned historical `run-*.json` and generated HTML, even when 
 | `resources/views/auth/login.blade.php` | Display the password-reset success status if not already shown |
 | `tests/Feature/Auth/AdminFortifyFlowTest.php` | Extend existing origin/2FA coverage only where shared behavior changes |
 | `docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-6.md` | Replace manual privileged bootstrap instructions with the operator-controlled invitation procedure |
+| `docs/ideation/2026-09-22-agent-publishing-studio/spec-admin-invitations.md` | Controller-authorized post-review corrective scope |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.json` | Preserve immutable controller-owned run receipts |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.html` | Preserve official controller-owned run reports |
 
 ### Deleted Files
 

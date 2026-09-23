@@ -1,0 +1,42 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-23",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": ["Release delivery and public cutover", "Root Admin invitations"],
+    "noops": [],
+    "failed": [],
+    "skipped": [],
+    "results": [
+      {
+        "title": "Release delivery and public cutover",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "cb56dcc51b6083ee2c73e432604fe8278734edb0",
+        "summary": "Implemented deterministic release freshness manifests for evidence/review inputs and explicit owner-selected scheduling timezone resolution with UTC/offset confirmation. Added regression coverage for stale in-place evidence/finding changes, scheduled delivery refusal, DST/invalid schedule rejection, and workspace timezone scheduling. — The prior cycle blockers are addressed: readiness now checks active same-revision review/reconciliation work before release, and evidence manifests include/normalize blank restriction reasons. The implementation matches the Phase 5 retry requirements sufficiently for commit readiness.",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Root Admin invitations",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "3ff76dcc8d557341ed129da0051264bf93f07e6c",
+        "summary": "Implemented the root Admin invitation command, provisioning action, notification, Admin reset response/view, bootstrap role config, and auth coverage for broker-backed password setup. — Cycle 2 addresses the prior high-severity testing gaps for unsafe mailers, delivery retry semantics, and reset-token edge cases, and the stray context-map artifact is no longer in the diff. Remaining issues are non-blocking spec/test coverage refinements, so the implementation is ready to commit once those are accepted or cleaned up.",
+        "findings": [
+          "medium/spec-deviation app/Actions/Admin/InviteAdministrator.php:158 — Mailer safety preflight hard-codes accepted transports instead of using the MailManager/Symfony APIs specified for effective transport validation → Refactor preflight to use Laravel's mail transport resolution while still recursively rejecting log/array failover and roundrobin members",
+          "medium/testing tests/Feature/Auth/AdminInvitationTest.php:50 — Invitation email coverage checks the default test origin and encoded email, but does not verify nondefault Admin ports or the broker expiry text required by the spec → Add a case with a nondefault admin.url port and custom broker expiry and assert both appear correctly",
+          "medium/testing tests/Feature/Auth/AdminInvitationTest.php:99 — Missing-role preflight is covered, but malformed invitation email input is not tested despite the spec requiring invalid input to produce no account or role changes → Add an invalid-email command test asserting failure, no user, and no notification"
+        ],
+        "warnings": [],
+        "reviewCycles": 2
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

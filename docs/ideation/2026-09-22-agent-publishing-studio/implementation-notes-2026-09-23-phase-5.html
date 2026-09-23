@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Phase 5 Implementation Notes</title>
+</head>
+<body>
+  <h1>Agent Publishing Studio Phase 5 — Release delivery and public cutover</h1>
+  <p>Implemented the corrective scheduling boundary: scheduled release packages now require explicit selected timezone and wall time intent, validate that intent against the supplied UTC instant, and reject missing or mismatched intent before package creation.</p>
+  <p>Updated scheduled release fixtures and added regression coverage for missing, partial, and mismatched schedule intent with no release persistence or approval/live-pointer side effects.</p>
+  <h2>Validation</h2>
+  <ul>
+    <li><code>php artisan test --compact tests/Feature/Publishing/ReleaseIntegrityTest.php</code></li>
+    <li><code>php artisan test --compact tests/Feature/Publishing/ReleaseReadinessTest.php</code></li>
+    <li><code>php artisan test --compact tests/Feature/Publishing/ReleaseReadinessTest.php tests/Feature/Publishing/ReleaseIntegrityTest.php tests/Feature/Publishing/PublicWritingTest.php tests/Feature/Publishing/ArchiveMigrationTest.php</code></li>
+    <li><code>php artisan test --compact tests/Feature/MarketingSiteTest.php tests/Feature/MarketingDiagramTest.php tests/Feature/MarketingDiscoveryTest.php</code></li>
+    <li><code>vendor/bin/pest --compact --fail-on-skipped --fail-on-incomplete tests/Feature/Publishing</code></li>
+    <li><code>vendor/bin/pint --dirty --format agent</code></li>
+    <li><code>composer types:check</code></li>
+    <li><code>bun run build</code></li>
+    <li><code>git diff --exit-code 72f7d8ad8521573cb224022c902447f9ca4c4351 -- resources/writing</code></li>
+  </ul>
+</body>
+</html>
