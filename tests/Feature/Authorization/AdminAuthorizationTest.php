@@ -12,7 +12,7 @@ beforeEach(function (): void {
 });
 
 test('guests cannot reach the admin index', function (): void {
-    $this->get('http://admin.birdcar.dev/')
+    $this->get('http://admin.birdcar.test/')
         ->assertRedirect('/login');
 });
 
@@ -20,7 +20,7 @@ test('authenticated users without admin permission are forbidden', function (): 
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->get('http://admin.birdcar.dev/')
+        ->get('http://admin.birdcar.test/')
         ->assertForbidden();
 });
 
@@ -29,7 +29,7 @@ test('unrelated organization roles do not grant admin access', function (): void
     $user->assignRole(OrganizationRole::Viewer->value);
 
     $this->actingAs($user)
-        ->get('http://admin.birdcar.dev/')
+        ->get('http://admin.birdcar.test/')
         ->assertForbidden();
 });
 
@@ -38,6 +38,7 @@ test('admin access role reaches the admin index', function (): void {
     $user->assignRole(AdminRole::Access->value);
 
     $this->actingAs($user)
-        ->get('http://admin.birdcar.dev/')
-        ->assertNoContent();
+        ->get('http://admin.birdcar.test/')
+        ->assertOk()
+        ->assertSee('Admin workspace');
 });

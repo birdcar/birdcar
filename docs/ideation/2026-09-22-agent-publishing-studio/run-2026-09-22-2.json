@@ -1,0 +1,88 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-22",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": [
+      "Publishing foundation and release integrity",
+      "Structured documents and archive import"
+    ],
+    "noops": [],
+    "failed": [
+      "First Admin publishing workspace"
+    ],
+    "skipped": [
+      "Agent development, evidence and bounded reviews",
+      "Release delivery and public cutover"
+    ],
+    "results": [
+      {
+        "title": "Publishing foundation and release integrity",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "b546787806ecc7364f95490ca83190b4afa75872",
+        "summary": "Implemented publishing foundation records/actions/authorization with release integrity protections. Added regressions for post-publication develop attempts and stale release package approval/delivery, and validation passes. — Prior cycle blockers around stale release approval/delivery, post-publication develop reuse, terminal interruption transitions, and abandoned-stage reuse appear addressed in the current implementation. Remaining issues are non-blocking spec cleanup/transaction-contract concerns; the code is commit-ready once those are either fixed or consciously accepted.",
+        "findings": [
+          "medium/spec-deviation app/Actions/Publishing/WriteArticle.php:94 — Save mutations lock the article but then invalidate the current attempt’s release approvals/schedules without locking or revalidating that current attempt, while the spec calls for locking the article and current attempt in a consistent order during revision commits → Lock the current attempt after the article when current_attempt_id is present, revalidate it still belongs to the article/current pointer, then invalidate downstream release state",
+          "medium/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/run-2026-09-22.json:23 — New generated run artifacts are outside the spec’s File Changes and record the phase as failed with stale blocking findings that the current code appears to address → Remove these run-report artifacts from the phase diff or regenerate/include them only after final validation if the spec permits"
+        ],
+        "warnings": [],
+        "reviewCycles": 2
+      },
+      {
+        "title": "Structured documents and archive import",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "c37e4a8539e04f0a88522dcebdb828247c0da625",
+        "summary": "Implemented structured article document validation/rendering, archive Markdown import/dry-run/write flow, import command, safe chart/SVG handling, and phase coverage tests/fixtures. — The prior blocking stable-ID issue and the two cycle-2 medium issues appear addressed: saves now require IDs, repeat imports verify stored import identity, and title-only SVGs get a generated description. Remaining concerns are non-blocking edge cleanup around blank SVG accessibility metadata and unrelated generated docs in the diff; implementation is otherwise ready to commit.",
+        "findings": [
+          "medium/spec-deviation app/Services/Publishing/ArticleDocument.php:826 — SVG accessibility fallback only checks whether <title> and <desc> tags exist, so empty or whitespace-only title/description nodes are accepted without the accessible text the spec requires → Treat blank title/desc content as missing, generate from the approved caption, and add coverage for empty-title/desc SVG",
+          "low/spec-deviation docs/ideation/2026-09-22-agent-publishing-studio/context-map.md:1 — Working tree includes generated ideation context/run-report artifacts that are not listed in the Phase 2 File Changes → Revert or leave these unrelated docs out of the phase commit"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "First Admin publishing workspace",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review FAILED after 3 cycle(s) with 2 blocking finding(s). Headless runs do not commit at the cycle cap; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation resources/views/components/admin/publishing/⚡article-workspace.blade.php:105 — Approval actions compute the expected angle/plan/release hash at click time instead of passing the digest that was rendered to and approved by the human, so unseen concurrent changes can be approved and the Phase 1 stale-input guard is bypassed → Store/render the expected input hash and release hash in component state or wire parameters and pass that value into the domain actions, failing with a stale-input message on mismatch",
+          "high/logic resources/js/admin.js:72 — Edits queued while a save is in flight capture the old baseRevisionId; autosave.js then flushes that pending payload after the first save succeeds, causing a false CAS conflict for normal continuous typing → Rebase pending payloads to the successful revision before flushing, or assign baseRevisionId at flush time from the latest acknowledged revision, and add an in-flight edit test",
+          "medium/security app/Http/Responses/AdminLogoutResponse.php:13 — Logout clears only the Laravel intended URL and leaves tab-scoped manuscript recovery payloads in sessionStorage, despite the spec requiring this user's recovery namespace to be cleared on logout → Add an Admin logout client hook or endpoint response flow that removes admin publishing recovery keys for the authenticated user before/when submitting logout",
+          "medium/spec-deviation config/fortify.php:91 — Fortify is configured with config('admin.host') and home '/', so ADMIN_URL scheme/port are not preserved for sign-in/home behavior as required for local configured Admin origins → Use config('admin.url') as the authoritative Admin origin for Fortify home/fallback redirects and ensure local ports survive generated redirects",
+          "medium/spec-deviation bun.lock:33 — The lockfile rewrites many pre-existing packages to socket-firewall tarball URLs, not just the two explicitly approved Tiptap dependencies, contrary to the spec's “lock only approved dependency changes” constraint → Regenerate or edit the lockfile so unrelated package entries remain unchanged and only @tiptap/core/@tiptap/pm plus necessary transitive additions differ"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Agent development, evidence and bounded reviews",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      },
+      {
+        "title": "Release delivery and public cutover",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

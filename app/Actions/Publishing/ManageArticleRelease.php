@@ -60,7 +60,7 @@ class ManageArticleRelease
             $revisionMetadata = is_array($revisionMetadataValue) ? $revisionMetadataValue : [];
             $renderedHtml = $this->articleDocument->renderHtml($revisionDocument);
             $payload = [
-                'document' => $revisionDocument,
+                'document' => $this->documentSnapshotForPayload($revisionDocument),
                 'metadata' => $revisionMetadata,
                 'rendered_content_version' => 1,
                 'rendered_document' => [
@@ -96,6 +96,33 @@ class ManageArticleRelease
         });
 
         return $release;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    private function documentSnapshotForPayload(array $document): array
+    {
+        $snapshot = $document;
+        $content = $snapshot['content'] ?? null;
+
+        if (! is_array($content)) {
+            return $snapshot;
+        }
+
+        foreach ($content as $index => $node) {
+            if (! is_array($node) || array_key_exists('text', $node)) {
+                continue;
+            }
+
+            $children = $node['content'] ?? null;
+            if (is_array($children) && count($children) === 1 && ($children[0]['type'] ?? null) === 'text' && is_string($children[0]['text'] ?? null)) {
+                $snapshot['content'][$index]['text'] = $children[0]['text'];
+            }
+        }
+
+        return $snapshot;
     }
 
     public function approve(User $actor, ArticleRelease|int $release, string $expectedReleaseHash): EditorialApproval

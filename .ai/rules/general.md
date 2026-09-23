@@ -16,3 +16,6 @@ Keep repository history linear. Before integrating a feature branch, rebase it o
 
 ## Greenfield implementation authority
 The user confirms the existing application code is disposable boilerplate and need not be preserved. Treat this work as greenfield: boilerplate does not constrain structure, copy, design, or component behavior. Follow the explicit product, visual, and project requirements recorded for the new work.
+
+## Local development server
+Use the already-running Herd sites for local development; do not start a competing PHP server with Artisan dev/serve. The owner confirmed birdcar.test for marketing and admin.birdcar.test for Admin. Discover actual scheme/port through Herd and Boost instead of assuming them; set the nonsecret ADMIN_URL separately from APP_URL so Admin authentication preserves its origin. Keep Folio marketing-only and Admin routes explicit. Build changed frontend assets with bun run build or an existing asset worker. This replaces the earlier localhost/FrankenPHP startup guidance.

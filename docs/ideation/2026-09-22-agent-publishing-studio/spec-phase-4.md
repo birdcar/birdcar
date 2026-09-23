@@ -5,6 +5,8 @@
 **Estimated effort**: XL
 **Prerequisite**: First Admin publishing workspace
 
+**Controller artifact boundary**: Preserve existing `run-*.json`, generated `run-*.html` and approved planning artifacts. They record historical runs and must not be deleted or rewritten when their findings are fixed. Leave new controller reports outside this phase's commit if unrelated; do not remove them to clean the diff. Reuse the verified Herd hosts/local Admin configuration; do not start another PHP server or change the environment.
+
 ## Technical Approach
 
 Add a small set of explicit editorial activities to the existing publishing domain. Use Laravel HTTP, queues, transactions and persistent records; no `laravel/ai`, additional SDK, provider framework, dynamic tool registry or separate deployment infrastructure. Work is represented by durable activity rows bound to the initiating human, attempt, stage/input version and exact revision. Queue delivery may repeat; local application of results and billing reconciliation must be idempotent. External exactly-once billing is not promised.

@@ -5,6 +5,8 @@
 **Estimated effort**: L
 **Prerequisite**: Agent development, evidence and bounded reviews
 
+**Controller artifact boundary**: Preserve existing `run-*.json`, generated `run-*.html` and approved planning artifacts. They record historical runs and must not be deleted or rewritten when their findings are fixed. Leave new controller reports outside this phase's commit if unrelated; do not remove them to clean the diff. Reuse the verified Herd hosts/local Admin configuration; do not start another PHP server or change the environment.
+
 ## Technical Approach
 
 Complete the concrete `Article` / `ArticleRevision` / `PublishingAttempt` / `EditorialApproval` / `ArticleRelease` domain already delivered. `ManageArticleRelease` must freeze and deliver the owner's exact approved package, never read the latest draft at delivery time. Use the existing Laravel scheduler and transactional database; a periodic due-release command makes recovery independent of one delayed queue message surviving. Queue delivery is at-least-once; the database transition is idempotent.

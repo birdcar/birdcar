@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,5 +53,9 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+
+        Livewire::addPersistentMiddleware([
+            PermissionMiddleware::class,
+        ]);
     }
 }

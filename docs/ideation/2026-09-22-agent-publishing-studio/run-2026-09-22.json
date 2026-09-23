@@ -1,0 +1,78 @@
+{
+  "projectName": "Agent Publishing Studio",
+  "slug": "2026-09-22-agent-publishing-studio",
+  "date": "2026-09-22",
+  "branch": "ideation/2026-09-22-agent-publishing-studio",
+  "baseBranch": "main",
+  "strict": true,
+  "summary": {
+    "completed": [],
+    "noops": [],
+    "failed": [
+      "Publishing foundation and release integrity"
+    ],
+    "skipped": [
+      "Structured documents and archive import",
+      "First Admin publishing workspace",
+      "Agent development, evidence and bounded reviews",
+      "Release delivery and public cutover"
+    ],
+    "results": [
+      {
+        "title": "Publishing foundation and release integrity",
+        "result": "FAIL",
+        "reviewStatus": "failed",
+        "commitHash": null,
+        "summary": "Review FAILED after 3 cycle(s) with 2 blocking finding(s). Headless runs do not commit at the cycle cap; changes left unstaged.",
+        "findings": [
+          "high/spec-deviation app/Actions/Publishing/ManageArticleRelease.php:143 — Delivery only compares the previous live release and never rechecks that the package revision is still the article's current working version; an approved unscheduled package can be invalidated by a later save, re-approved, and delivered from the stale snapshot despite the spec requiring stale release invalidation and a current-version check inside delivery → Reject approval/delivery for packages whose revision_id is no longer current, or mark all invalidated packages withdrawn/stale, and add a regression for edit-after-approval on an unscheduled release",
+          "high/spec-deviation app/Actions/Publishing/AdvancePublishingAttempt.php:40 — develop() returns any non-abandoned current_attempt_id, including a completed Published attempt, so post-publication work can reuse the completed attempt/allowance instead of starting a new working attempt as required by the separate live/working model → Only reuse active in-progress attempts; create a new attempt after Published/terminal stages and cover developing a new revision after publication"
+        ],
+        "warnings": [],
+        "reviewCycles": 3
+      },
+      {
+        "title": "Structured documents and archive import",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      },
+      {
+        "title": "First Admin publishing workspace",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      },
+      {
+        "title": "Agent development, evidence and bounded reviews",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      },
+      {
+        "title": "Release delivery and public cutover",
+        "result": "SKIPPED",
+        "reviewStatus": "not-run",
+        "commitHash": null,
+        "summary": "blocked by an upstream failure",
+        "findings": [],
+        "warnings": [],
+        "reviewCycles": 0
+      }
+    ]
+  },
+  "verify": null,
+  "notesFiles": []
+}

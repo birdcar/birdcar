@@ -16,19 +16,13 @@ use Spatie\Sitemap\Sitemap;
  * Uses both the web middleware (to check if the user is authenticated) and the admin
  * middleware (to check if the user has permission to access the admin)
  */
-Route::domain('admin.birdcar.dev')
+Route::domain(config('admin.host', 'admin.birdcar.dev'))
     ->name('admin.')
     ->middleware([
         'auth',
         PermissionMiddleware::using(AdminPermission::View),
     ])
-    ->group(function (): void {
-        Route::get('/', fn (): Response => response()->noContent())
-            ->name('index');
-
-        // Add admin routes for global management here
-        Route::prefix('settings')->name('settings.')->group(function (): void {});
-    });
+    ->group(base_path('routes/admin.php'));
 
 /**
  * Customer Routes

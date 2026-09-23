@@ -66,6 +66,18 @@ test('documents reject duplicate ids unsafe links string chart numbers and activ
     expect($safeSvg)
         ->toContain('<title>Provided title</title>')
         ->toContain('<desc>Generated description.</desc>');
+
+    $blankSvg = drtDocument();
+    $blankSvg['content'][6]['attrs'] = [
+        'id' => 'blk_bbbbbbbbbbbbbbbb',
+        'sourceType' => 'svg',
+        'caption' => 'Caption fallback.',
+        'source' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><title>   </title><desc>&#x20;</desc><circle cx="5" cy="5" r="4" fill="none" /></svg>',
+    ];
+    $blankSafeSvg = $service->canonicalize($blankSvg)['content'][6]['attrs']['safeSvg'];
+    expect($blankSafeSvg)
+        ->toContain('<title>Caption fallback.</title>')
+        ->toContain('<desc>Caption fallback.</desc>');
 });
 
 test('saves require stable ids and persist canonical documents with matching hashes', function (): void {

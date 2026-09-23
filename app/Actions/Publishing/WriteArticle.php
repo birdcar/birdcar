@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\ArticleRevision;
 use App\Models\EditorialApproval;
 use App\Models\Publishing\ApprovalKind;
+use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\PublishingFingerprint;
@@ -98,8 +99,9 @@ class WriteArticle
             $lockedArticle->forceFill(['working_revision_id' => $revision->id])->save();
 
             if ($lockedArticle->current_attempt_id !== null) {
-                $this->invalidateApprovals((int) $lockedArticle->current_attempt_id, [ApprovalKind::Release]);
-                app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedArticle->current_attempt_id);
+                $lockedAttempt = $this->lockedCurrentAttempt($lockedArticle);
+                $this->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Release]);
+                app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
             }
 
             return $revision;
@@ -130,6 +132,20 @@ class WriteArticle
             ->firstOrFail();
     }
 
+    private function lockedCurrentAttempt(Article $article): PublishingAttempt
+    {
+        $attempt = PublishingAttempt::query()
+            ->whereKey($article->current_attempt_id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ((int) $attempt->article_id !== (int) $article->id || (int) $article->current_attempt_id !== (int) $attempt->id) {
+            throw new RuntimeException('The current publishing attempt changed before this edit was saved.');
+        }
+
+        return $attempt;
+    }
+
     private function authorize(User $actor, string $permission): void
     {
         if (! $actor->can($permission)) {
@@ -158,7 +174,7 @@ class WriteArticle
      */
     private function validateDocument(array $document, array $metadata): array
     {
-        $canonical = $this->articleDocument->canonicalize($document);
+        $canonical = $this->articleDocument->canonicalize($this->ensureBlockIds($document));
         $encoded = json_encode(['document' => $canonical, 'metadata' => $metadata], JSON_THROW_ON_ERROR);
 
         if (mb_strlen($encoded, '8bit') > 1_048_576) {
@@ -166,6 +182,82 @@ class WriteArticle
         }
 
         return $canonical;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    private function ensureBlockIds(array $document): array
+    {
+        $ids = [];
+        $content = $document['content'] ?? [];
+
+        if (is_array($content)) {
+            $document['content'] = $this->ensureNodeIds($content, '$.content', $ids);
+        }
+
+        return $document;
+    }
+
+    /**
+     * @param  array<mixed>  $nodes
+     * @param  array<string, true>  $ids
+     * @return array<mixed>
+     */
+    private function ensureNodeIds(array $nodes, string $path, array &$ids): array
+    {
+        $normalized = [];
+
+        foreach ($nodes as $index => $node) {
+            if (! is_array($node)) {
+                $normalized[$index] = $node;
+
+                continue;
+            }
+
+            /** @var array<string, mixed> $node */
+            if (($node['type'] ?? null) !== 'text') {
+                $attrs = is_array($node['attrs'] ?? null) ? $node['attrs'] : [];
+                $id = $attrs['id'] ?? null;
+
+                if (is_string($id) && preg_match('/^(blk|imp)_[0-9a-f]{16}$/', $id) && ! isset($ids[$id])) {
+                    $ids[$id] = true;
+                    $node['attrs'] = $attrs;
+                } elseif (! array_key_exists('attrs', $node) && array_key_exists('text', $node)) {
+                    $prefix = ($node['type'] ?? null) === 'importedBlock' ? 'imp' : 'blk';
+                    $id = $this->stableBlockId($prefix, $path.'.'.$index, $node, $ids);
+                    $attrs['id'] = $id;
+                    $ids[$id] = true;
+                    $node['attrs'] = $attrs;
+                }
+            }
+
+            if (is_array($node['content'] ?? null)) {
+                $node['content'] = $this->ensureNodeIds($node['content'], $path.'.'.$index.'.content', $ids);
+            }
+
+            $normalized[$index] = $node;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     * @param  array<string, true>  $ids
+     */
+    private function stableBlockId(string $prefix, string $path, array $node, array $ids): string
+    {
+        $counter = 0;
+
+        do {
+            $hash = substr(hash('sha256', $path.'|'.json_encode($node).'|'.$counter), 0, 16);
+            $id = $prefix.'_'.$hash;
+            $counter++;
+        } while (isset($ids[$id]));
+
+        return $id;
     }
 
     /**

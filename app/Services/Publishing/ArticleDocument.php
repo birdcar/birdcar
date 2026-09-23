@@ -823,8 +823,8 @@ class ArticleDocument
         $count = 0;
         $body = $this->rebuildSvgElement($root, 1, $count);
 
-        $hasTitle = preg_match('/<title(?:\s[^>]*)?>/', $body) === 1;
-        $hasDescription = preg_match('/<desc(?:\s[^>]*)?>/', $body) === 1;
+        $hasTitle = $this->hasNonBlankSvgTextElement($body, 'title');
+        $hasDescription = $this->hasNonBlankSvgTextElement($body, 'desc');
 
         if (! $hasTitle || ! $hasDescription) {
             $fallback = (! $hasTitle ? '<title>'.e($caption).'</title>' : '')
@@ -833,6 +833,19 @@ class ArticleDocument
         }
 
         return $body;
+    }
+
+    private function hasNonBlankSvgTextElement(string $svg, string $element): bool
+    {
+        preg_match_all('/<'.preg_quote($element, '/').'(?:\s[^>]*)?>(.*?)<\/'.preg_quote($element, '/').'>/is', $svg, $matches);
+
+        foreach ($matches[1] as $text) {
+            if (trim(html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function rebuildSvgElement(DOMElement $element, int $depth, int &$count): string

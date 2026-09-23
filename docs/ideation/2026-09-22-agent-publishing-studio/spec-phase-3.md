@@ -7,6 +7,10 @@
 
 **Execution authorization (2026-09-22)**: Nick explicitly approved adding exactly `@tiptap/core@2.11.7` and `@tiptap/pm@2.11.7` to the application, including `package.json` and `bun.lock` updates. This dependency gate is satisfied for those two packages only; additional dependencies still require approval.
 
+**Retry authorization/context**: The owner approved retrying Phase 3 and fixing all outstanding review findings from `run-2026-09-22-2.json`, including the prior locking/SVG notes. Phases 1 and 2 are committed; continue from the uncommitted Admin implementation rather than replacing it. The owner confirmed the existing Herd hosts and authorized only the local `ADMIN_URL` override; the controller has set it to `http://admin.birdcar.test` while preserving `APP_URL=https://birdcar.test`. Do not change DNS, TLS, credentials, roles, other environment settings or production configuration.
+
+**Historical records**: Controller-owned `run-*.json` and generated `run-*.html` are immutable receipts of earlier runs, not claims about the current code. Preserve them verbatim, even when their findings are subsequently fixed. Never delete or rewrite a failed report to make a later review look green. Current reports are explicitly included below; future controller reports must be preserved even when outside a phase's commit scope.
+
 ## Technical Approach
 
 Build the first usable Admin application surface with standard Laravel web routes, Livewire 4 single-file components, Flux UI Pro, and a reusable Admin shell. Folio remains marketing-only. The route entry is `routes/web.php` on the configured Admin host with `auth` and `admin.view`; that group requires `routes/admin.php`, which declares explicit publishing routes and action-level publishing capability checks. `admin.index` admits any user with `admin.view`, shows no editorial data when publishing permissions are absent, and routes an authorized owner to Ideas/Active writing. Published is a separate Admin section, not mixed into the writing queue.
@@ -46,6 +50,8 @@ Use Flux Pro primitives with Inter and create decoupled Admin layout/navigation/
 
 | File Path | Purpose |
 | --- | --- |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.json` | Controller-owned historical run records; preserve verbatim. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/run-*.html` | Officially generated historical run reports; preserve verbatim. |
 | `routes/admin.php` | Standard Admin module route file required from `routes/web.php`; declares explicit publishing routes. |
 | `config/admin.php` | One `ADMIN_URL` setting with derived host, preserving scheme/port for local and production use. |
 | `resources/views/auth/login.blade.php` | Minimal Flux existing-account login view. |
@@ -78,6 +84,14 @@ Use Flux Pro primitives with Inter and create decoupled Admin layout/navigation/
 
 | File Path | Changes |
 | --- | --- |
+| `.ai/rules/general.md` | Controller-recorded Herd development rule, replacing obsolete localhost startup instructions. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-3.md` | Controller-approved retry regressions and local routing context. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-4.md` | Controller-added historical artifact preservation boundary only. |
+| `docs/ideation/2026-09-22-agent-publishing-studio/spec-phase-5.md` | Controller-added historical artifact preservation boundary only. |
+| `app/Actions/Publishing/WriteArticle.php` | Preserve save invariants and lock/revalidate the current attempt before invalidating release state. |
+| `app/Actions/Publishing/ManageArticleRelease.php` | Necessary workspace integration only; retain existing snapshot/approval guards. |
+| `tests/Feature/Publishing/ReleaseIntegrityTest.php` | Regression coverage for save/attempt/release invalidation boundaries. |
+| `tests/Feature/Publishing/DocumentRoundTripTest.php` | Empty/whitespace SVG accessibility metadata regression. |
 | `routes/web.php` | Replace empty Admin no-content route with Admin host/auth/`admin.view` group that requires `routes/admin.php`; keep marketing Folio/public infrastructure boundaries unchanged. |
 | `vite.config.js` | Add separate Admin CSS/JS inputs and Inter font loading if needed; do not mix Admin entry with `resources/js/app.js` marketing imports. |
 | `resources/css/app.css` | Keep shared tokens only if necessary; do not place Admin page rules in the marketing bundle. |
@@ -85,7 +99,7 @@ Use Flux Pro primitives with Inter and create decoupled Admin layout/navigation/
 | `app/Providers/AppServiceProvider.php` | Preserve custom Spatie route middleware on Livewire update requests using the installed persistent-middleware API if not already registered. |
 | `config/fortify.php` | Use the configured Admin host for the current Admin sign-in entry and safe home; preserve existing identity and 2FA features. |
 | `.env.example` | Add the nonsecret `ADMIN_URL` example; do not rewrite the live environment or assume local DNS is configured. |
-| `app/Services/Publishing/ArticleDocument.php` | Consume existing Phase 2 validate/canonicalize/render API from Livewire actions; extend only if Phase 2 deliberately left UI-specific hooks. |
+| `app/Services/Publishing/ArticleDocument.php` | Consume the Phase 2 API and fix the reviewed blank SVG title/description fallback edge case. |
 | `tests/Feature/Authorization/AdminAuthorizationTest.php` | Update expectations for `admin.index` rendering and admission-only non-editorial state. |
 | `package.json` | Only with explicit owner approval, add pinned Tiptap core/pm 2.11.7. |
 | `bun.lock` | Lock only the approved dependency changes; otherwise leave unchanged. |
@@ -93,6 +107,18 @@ Use Flux Pro primitives with Inter and create decoupled Admin layout/navigation/
 ### Deleted Files
 
 None.
+
+## Required Retry Regressions
+
+1. Angle, plan and release approval must submit the digest actually rendered to the human. Never recompute the expected digest from fresh server state at click time. Render the page, change the relevant input concurrently, submit the old displayed approval and assert rejection with a visible stale-input message and no new approval. Cover all three gates.
+2. Queue a second edit while the first autosave promise is unresolved. After the first succeeds, the second sends the newly acknowledged base revision, retains its newer document/metadata and succeeds without a false conflict. Preserve pending edits/recovery data; never rebase over a genuine external conflict or silently overwrite human text.
+3. The actual logout control clears only this authenticated user's publishing sessionStorage namespace. Test this client behavior, preservation of unrelated keys, and the server's safe redirect; clearing only Laravel's intended URL is insufficient.
+4. Treat `config('admin.url')` as the authoritative origin for login/2FA/home/fallback/logout behavior while route matching uses the host. Test the confirmed Herd domain and an explicit nondefault scheme/port. Do not force a global request-specific URL root under Octane or weaken intended-redirect validation.
+5. Limit dependency changes to the two exact approved Tiptap versions and necessary transitive additions. Preserve unrelated lock entries. Do not disable Socket Firewall, change registry/security settings, or bypass package inspection to avoid URL rewrites. If preserving unrelated entries is genuinely impossible under the configured tooling, report that approval blocker rather than bypassing it.
+6. In `WriteArticle`, lock the article and then its current attempt in the same transaction, revalidate article/pointer ownership and only then invalidate approvals/schedules. Add meaningful regression coverage; do not claim SQLite sequential tests prove real row-lock contention.
+7. Treat empty or whitespace-only SVG title/description text as missing and generate accessible text from the approved caption. Test both missing and blank nodes without altering source essays.
+
+Run the relevant failing regression before each fix, then the complete Phase 3 validation. Preserve the earlier run records unchanged; their failed status is historical evidence, not a defect to erase.
 
 ## Implementation Details
 
