@@ -29,8 +29,51 @@ test('admission only users see shell but no editorial data', function (): void {
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/')
         ->assertOk()
-        ->assertSee('Admin workspace')
+        ->assertSee('Your workspace is ready')
+        ->assertSee('aria-label="Admin modules"', false)
+        ->assertDontSee('aria-label="Publishing navigation"', false)
+        ->assertDontSee('href="http://admin.birdcar.test/publishing', false)
         ->assertDontSee('Secret editorial title');
+});
+
+test('admin navigation separates modules from publishing sections', function (): void {
+    $user = publishingUser();
+
+    $response = $this->actingAs($user)->get('http://admin.birdcar.test/publishing');
+
+    $response->assertOk()
+        ->assertSeeInOrder(['data-flux-sidebar', 'data-flux-header', 'data-flux-main', 'id="admin-main"'], false)
+        ->assertSee('aria-label="Admin modules"', false)
+        ->assertSee('aria-label="Publishing navigation"', false)
+        ->assertSee('aria-label="Open Admin navigation"', false)
+        ->assertSee('collapsible', false)
+        ->assertSee('Toggle Admin navigation')
+        ->assertDontSee('collapsible="mobile"', false)
+        ->assertSee('data-admin-logout', false)
+        ->assertSee('data-flux-composer', false)
+        ->assertSee('data-flux-button', false)
+        ->assertSee('window.Flux.applyAppearance', false)
+        ->assertSee("window.localStorage.getItem('flux.appearance') || 'system'", false);
+
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+    expect($xpath->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing")]')->length)->toBe(1);
+    expect($xpath->query('//nav[@aria-label="Admin modules"]')->length)->toBe(1);
+    expect($xpath->query('//main')->length)->toBe(1);
+    expect($xpath->query('//a[@data-flux-sidebar-brand and @aria-label="Admin home"]')->item(0)->getAttribute('href'))->toBe(route('admin.index'));
+    expect($xpath->query('//a[@data-flux-sidebar-brand]//img[@src="/favicon.svg"]')->length)->toBe(1);
+    expect(trim($xpath->query('//a[@data-flux-sidebar-brand]')->item(0)->textContent))->toBe('Admin');
+});
+
+test('published navigation identifies the active section', function (): void {
+    $response = $this->actingAs(publishingUser())->get('http://admin.birdcar.test/publishing/published');
+    $response->assertOk();
+
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $xpath = new DOMXPath($document);
+    expect($xpath->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing/published")]')->length)->toBe(1);
 });
 
 test('admission only users cannot open direct publishing urls', function (): void {

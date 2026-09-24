@@ -2,33 +2,11 @@
 
 namespace App\Actions;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Symfony\Component\Yaml\Yaml;
 
-/**
- * @phpstan-type Article array{slug: string, title: string, description: string, date: CarbonImmutable, tags: list<string>, body: string, readMinutes: int}
- */
 class ReadWriting
 {
-    /** @return Collection<int, Article> */
-    public function all(): Collection
-    {
-        return collect(glob(resource_path('writing/*.md')) ?: [])
-            ->map(fn (string $path): ?array => $this->read($path))
-            ->filter()
-            ->sortByDesc(fn (array $article): string => $article['date']->format('Y-m-d').$article['slug'])
-            ->values();
-    }
-
-    /** @return Article|null */
-    public function find(string $slug): ?array
-    {
-        return $this->all()->firstWhere('slug', $slug);
-    }
-
     public function render(string $body): string
     {
         $blocks = [];
@@ -79,40 +57,5 @@ class ReadWriting
         ) ?? $markdown;
 
         return strtr(Str::markdown($markdown, ['html_input' => 'strip', 'allow_unsafe_links' => false]), $blocks);
-    }
-
-    /** @return Article|null */
-    private function read(string $path): ?array
-    {
-        $parts = preg_split('/\A---\R|\R---\R/', File::get($path), 3);
-
-        if ($parts === false || count($parts) !== 3) {
-            return null;
-        }
-
-        /** @var array{title: string, description?: string, date: int|string, tags?: list<string>, draft?: bool} $metadata */
-        $metadata = Yaml::parse($parts[1]);
-
-        if ($metadata['draft'] ?? false) {
-            return null;
-        }
-
-        $date = is_int($metadata['date'])
-            ? CarbonImmutable::createFromTimestampUTC($metadata['date'])
-            : CarbonImmutable::parse($metadata['date']);
-
-        if ($date->isFuture()) {
-            return null;
-        }
-
-        return [
-            'slug' => pathinfo($path, PATHINFO_FILENAME),
-            'title' => $metadata['title'],
-            'description' => $metadata['description'] ?? '',
-            'date' => $date,
-            'tags' => $metadata['tags'] ?? [],
-            'body' => $parts[2],
-            'readMinutes' => max(1, (int) ceil(str_word_count(strip_tags($parts[2])) / 220)),
-        ];
     }
 }

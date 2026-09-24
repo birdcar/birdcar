@@ -12,8 +12,8 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialPrompts;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\EditorialModelBudget;
+use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublicSourceFetcher;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -25,7 +25,7 @@ beforeEach(function (): void {
 
 test('research stores retrieved citation text and fetches pointers without content', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -59,7 +59,7 @@ test('research stores retrieved citation text and fetches pointers without conte
     $fetcher->useTransport(fn (string $url, array $options): array => ['status' => 200, 'headers' => ['Content-Type' => 'text/html'], 'body' => '<p>Fetched public passage.</p>']);
 
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::ResearchChallenge, [], 'research-test');
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class), $fetcher);
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class), $fetcher);
 
     $openRouterText = EvidenceSource::query()->where('retrieval_method', 'openrouter-web')->first()?->extracted_text;
 
@@ -73,7 +73,7 @@ test('research stores retrieved citation text and fetches pointers without conte
 
 test('research records unresolved source when public fetch is denied', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -99,7 +99,7 @@ test('research records unresolved source when public fetch is denied', function 
     $attempt = evidenceAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::ResearchChallenge, [], 'research-denied-source');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class), app(PublicSourceFetcher::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class), app(PublicSourceFetcher::class));
 
     $source = EvidenceSource::query()->where('activity_id', $activity->id)->first();
     expect($activity->fresh()?->status->value)->toBe('completed')
@@ -121,7 +121,7 @@ test('public source fetcher rejects private redirects and pins validated hosts',
 });
 
 test('invented and non-integer evidence references are rejected', function (): void {
-    $prompts = app(EditorialPrompts::class);
+    $prompts = app(EditorialOutput::class);
 
     expect(fn () => $prompts->validate(EditorialActivityKind::ReviewFacts, ['findings' => [[
         'statement' => 'Unsupported claim.',
@@ -134,7 +134,7 @@ test('invented and non-integer evidence references are rejected', function (): v
 });
 
 test('supporting quotations must be grounded in eligible retained source text', function (): void {
-    $prompts = app(EditorialPrompts::class);
+    $prompts = app(EditorialOutput::class);
     $eligibleText = 'The retained passage says customers reduced review time by 42 percent.';
 
     $validFinding = [

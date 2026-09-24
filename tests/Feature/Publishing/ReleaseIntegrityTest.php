@@ -21,7 +21,6 @@ use Carbon\CarbonInterface;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
-    config(['publishing.public_reader' => 'database']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $this->artisan('authorization:sync')->assertSuccessful();
 });

@@ -12,6 +12,11 @@ colors:
   ink-rule-mid: "#102a3360"
   ink-code-wash: "#102a3309"
 typography:
+  admin-operational:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.5
   wordmark:
     fontFamily: "Alkaline, cursive"
     fontSize: "3.4rem"
@@ -295,6 +300,16 @@ Article notes are cyan-wash callouts with preserved titles. Charts keep their so
 ### Article diagrams and local specimen
 
 `article-diagram` only renders the Walkthrough and reporting components. Article diagrams are static by default, flow as labeled stages for reading, and switch to print-specific layouts: the Walkthrough becomes two-column numbered stages and reporting keeps the relationship/caption adjacent. The standalone figure specimen is local/testing only, uses the real renderer and CSS, has no analytics or Cal, and exists only as review evidence.
+
+## Admin operational extension
+
+Admin uses Flux Pro and Inter rather than the marketing typography and page composition. Native Brand components pair the existing `public/favicon.svg` B mark with “Admin”; Alkaline remains exclusive to the marketing wordmark. The shell has one collapsible module sidebar, a contextual header, and module workspaces. Only Home and authorized Publishing are present.
+
+The approved Attention ledger Home answers “What needs me?” before “Where was I?” Blocked work and human decisions occupy the wide column; Continue working is narrower and follows the ledger on mobile. Links lead to authoritative workspaces, not Home-level approval or publishing actions. Empty, unauthorized, unavailable, and loaded states remain distinct.
+
+Native Flux appearance respects saved preferences and defaults to the system theme. Light accent/content uses deep teal `#214b57` with white foreground; dark accent/content uses cyan `#b7edf1` with ink `#102a33` foreground. Current navigation, keyboard focus, and text selection carry restrained accent treatment. Public article previews remain independently styled.
+
+The bounded local finish review returned ship for shell/Home/theme/branding after 390px and 1440px light/dark fixture checks, collapse persistence, and mobile drawer checks. The fixture harness used actual bundles but blocked non-GET requests; this is not authenticated save/publication proof, owner acceptance, or deployment. No shipping raster assets were added. Backend Home findings and editor/authentication follow-ups remain recorded in `docs/production-setup.md`.
 
 ## Do's and Don'ts
 

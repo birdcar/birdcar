@@ -79,7 +79,7 @@ test('dry run parses every real baseline essay with independent parity and refer
 });
 
 test('imported releases are visible through the database public reader after cutover', function (): void {
-    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    config(['marketing.url' => 'https://birdcar.dev']);
     $directory = archiveFixtureDirectory(['minimal.md'], ['minimal-chart.json']);
 
     app(ImportWritingArchive::class)->write($directory, 'baseline', archiveAuthor());

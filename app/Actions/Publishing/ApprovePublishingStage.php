@@ -82,8 +82,11 @@ class ApprovePublishingStage
 
     public function inputHashFor(PublishingAttempt $attempt, ApprovalKind $kind, ?int $revisionId = null, ?int $releaseId = null): string
     {
-        $attempt = $attempt->fresh() ?? $attempt;
+        return $this->snapshotInputHashFor($attempt->fresh() ?? $attempt, $kind, $revisionId, $releaseId);
+    }
 
+    public function snapshotInputHashFor(PublishingAttempt $attempt, ApprovalKind $kind, ?int $revisionId = null, ?int $releaseId = null): string
+    {
         return match ($kind) {
             ApprovalKind::Angle => $this->fingerprint->hash([
                 'kind' => $kind->value,

@@ -11,7 +11,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['article_id', 'attempt_id', 'initiating_user_id', 'kind', 'status', 'stage', 'input_version', 'revision_id', 'revision_hash', 'review_cycle', 'batch_key', 'idempotency_key', 'prompt_version', 'prompt_hash', 'input', 'model_snapshot', 'response', 'proposal', 'run_count', 'available_at', 'started_at', 'completed_at', 'paused_at', 'pause_reason', 'error_reason', 'generation_id'])]
+/**
+ * @property EditorialActivityKind $kind
+ * @property EditorialActivityStatus $status
+ * @property array<string, mixed>|null $input
+ * @property array<string, mixed>|null $model_snapshot
+ * @property list<array{id: string, tool: string, arguments: array<string, mixed>, reason: string|null}>|null $pending_tool_approvals
+ * @property array<string, array{action: 'edit', arguments: array{questions: list<string>, answers: string}}|array{action: 'reject'}>|null $tool_decisions
+ */
+#[Fillable(['article_id', 'attempt_id', 'initiating_user_id', 'kind', 'status', 'stage', 'input_version', 'revision_id', 'revision_hash', 'review_cycle', 'batch_key', 'idempotency_key', 'prompt_version', 'prompt_hash', 'input', 'model_snapshot', 'response', 'proposal', 'run_count', 'available_at', 'started_at', 'completed_at', 'paused_at', 'pause_reason', 'error_reason', 'generation_id', 'ai_conversation_id', 'pending_tool_approvals', 'tool_decisions'])]
 class EditorialActivity extends Model
 {
     /** @use HasFactory<EditorialActivityFactory> */
@@ -29,6 +37,8 @@ class EditorialActivity extends Model
             'model_snapshot' => 'array',
             'response' => 'array',
             'proposal' => 'array',
+            'pending_tool_approvals' => 'array',
+            'tool_decisions' => 'array',
             'review_cycle' => 'integer',
             'run_count' => 'integer',
             'available_at' => 'datetime',
@@ -36,6 +46,11 @@ class EditorialActivity extends Model
             'completed_at' => 'datetime',
             'paused_at' => 'datetime',
         ];
+    }
+
+    public function pendingApprovalHash(): string
+    {
+        return hash('sha256', json_encode($this->pending_tool_approvals ?? [], JSON_THROW_ON_ERROR));
     }
 
     /** @return BelongsTo<Article, $this> */

@@ -14,7 +14,7 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
-use App\Services\Publishing\EditorialPrompts;
+use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublishingFingerprint;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -78,7 +78,7 @@ class StartEditorialActivity
                 'voice_context' => $this->voiceContext($lockedAttempt, $input),
             ]);
             $promptHash = $this->fingerprint->hash([
-                'version' => EditorialPrompts::VERSION,
+                'version' => EditorialOutput::VERSION,
                 'kind' => $kind->value,
                 'input' => $frozenInput,
             ]);
@@ -102,7 +102,7 @@ class StartEditorialActivity
                 'review_cycle' => (int) $lockedAttempt->review_cycle,
                 'batch_key' => $batchKey,
                 'idempotency_key' => $idempotencyKey,
-                'prompt_version' => EditorialPrompts::VERSION,
+                'prompt_version' => EditorialOutput::VERSION,
                 'prompt_hash' => $promptHash,
                 'input' => $frozenInput,
                 'model_snapshot' => [],

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Publishing;
 
+use App\Ai\Agents\EditorialAgent;
 use App\Models\AgentBudgetReservation;
 use App\Models\Article;
 use App\Models\EditorialActivity;
@@ -14,8 +15,9 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialPrompts;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\EditorialModelBudget;
+use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\OpenRouterBilling;
 use App\Services\Publishing\PublicSourceFetcher;
 use App\Services\Publishing\PublishingFingerprint;
 use BackedEnum;
@@ -26,6 +28,14 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Laravel\Ai\Approvals\Decision;
+use Laravel\Ai\Approvals\Decisions;
+use Laravel\Ai\Contracts\ConversationStore;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Models\Conversation;
+use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 use RuntimeException;
 use Throwable;
 
@@ -35,7 +45,7 @@ class RunEditorialActivity implements ShouldQueue
 
     public function __construct(public int $activityId) {}
 
-    public function handle(OpenRouterClient $client, AgentBudget $budget, EditorialPrompts $prompts, WriteArticle $writer, ?PublicSourceFetcher $fetcher = null): void
+    public function handle(EditorialModelBudget $client, AgentBudget $budget, EditorialOutput $prompts, WriteArticle $writer, ?PublicSourceFetcher $fetcher = null): void
     {
         $claim = $this->claimActivity();
         if ($claim === null) {
@@ -45,14 +55,28 @@ class RunEditorialActivity implements ShouldQueue
         [$activity, $actor] = $claim;
         $reservation = null;
         $paidOutcomeResolved = false;
+        $completionReceived = false;
 
         try {
             $kind = $this->kind($activity);
-            $route = $this->routeForKind($kind);
+            $route = filled($activity->tool_decisions) && filled($activity->model_snapshot)
+                ? $activity->model_snapshot : $this->routeForKind($kind);
             $endpoint = $client->pricedEndpoint($route);
-            $inputValue = $activity->getAttribute('input');
-            $input = is_array($inputValue) ? $inputValue : [];
-            $messages = $prompts->messages($kind, $input);
+            $agent = EditorialAgent::forActivity($activity, $endpoint);
+            $conversationId = $this->conversationFor($activity, $actor);
+            $agent->continue($conversationId, as: $actor);
+            $decisions = $this->decisionsFor($activity);
+            if ($decisions !== null && collect($activity->tool_decisions)->every(fn (array $decision): bool => $decision['action'] === 'reject')) {
+                $agent->prompt($decisions, provider: Lab::OpenRouter, model: (string) $endpoint['model']);
+                $activity->forceFill([
+                    'status' => EditorialActivityStatus::Declined,
+                    'pending_tool_approvals' => null,
+                    'tool_decisions' => null,
+                    'completed_at' => now(),
+                ])->save();
+
+                return;
+            }
             $pluginNanoUsd = $kind === EditorialActivityKind::ResearchChallenge ? (int) config('publishing_agents.limits.exa_web_search_nano_usd', 7_000_000) : 0;
             $quote = $client->quote($endpoint, [
                 'prompt_tokens' => $endpoint['context_tokens'] ?? null,
@@ -63,13 +87,25 @@ class RunEditorialActivity implements ShouldQueue
             if (! $reservation instanceof AgentBudgetReservation) {
                 return;
             }
-            $request = $client->chatRequest($endpoint, $messages, $prompts->schema($kind), $this->extraRequestForKind($kind));
-            $response = $client->chat($request);
+            $agentResponse = $agent->prompt(
+                $decisions ?? $agent->promptText(),
+                provider: Lab::OpenRouter,
+                model: (string) $endpoint['model'],
+                timeout: (int) config('publishing_agents.http_timeout', 30),
+            );
+            $completionReceived = true;
+            $response = $agentResponse->raw?->json() ?? [];
+            if (! is_array($response)) {
+                throw new RuntimeException('OpenRouter returned a malformed response.');
+            }
             $generationId = $this->generationId($response);
             $actualNanoUsd = $this->actualCostNanoUsd($response);
+            if ($generationId !== null) {
+                $reservation->forceFill(['provider_generation_id' => $generationId])->save();
+            }
 
             if ($actualNanoUsd === null && $generationId !== null) {
-                $generation = $client->generation($generationId);
+                $generation = app(OpenRouterBilling::class)->generation($generationId);
                 $actualNanoUsd = $this->actualCostNanoUsd($generation);
             }
 
@@ -83,7 +119,15 @@ class RunEditorialActivity implements ShouldQueue
 
             $budget->settle($reservation, $actualNanoUsd, $generationId);
             $paidOutcomeResolved = true;
-            $payload = $this->payloadFromResponse($response);
+            if ($agentResponse->hasPendingApprovals()) {
+                $this->applyResult($activity, $actor, [], $writer, $generationId, $endpoint, [], $agentResponse);
+
+                return;
+            }
+            if (! $agentResponse instanceof StructuredAgentResponse) {
+                throw new RuntimeException('Agent response did not include structured output.');
+            }
+            $payload = $agentResponse->toArray();
             $frozenEvidence = $this->frozenEvidenceTextById($activity);
             $preparedEvidenceSources = [];
             $knownEvidenceIds = array_keys($frozenEvidence);
@@ -99,7 +143,7 @@ class RunEditorialActivity implements ShouldQueue
             $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts);
             $this->applyResult($activity, $actor, $validated, $writer, $generationId, $endpoint, $preparedEvidenceSources);
         } catch (Throwable $throwable) {
-            $this->resolveReservationFailure($budget, $reservation, $throwable, $paidOutcomeResolved);
+            $this->resolveReservationFailure($budget, $reservation, $throwable, $paidOutcomeResolved, $completionReceived);
             if ($reservation instanceof AgentBudgetReservation || $this->isDeterministicPreCallSpendBlocker($throwable)) {
                 $this->pauseActivity($activity, $throwable->getMessage());
 
@@ -255,9 +299,9 @@ class RunEditorialActivity implements ShouldQueue
      * @param  array<string, mixed>  $endpoint
      * @param  list<array<string, mixed>>  $preparedEvidenceSources
      */
-    private function applyResult(EditorialActivity $activity, User $actor, array $payload, WriteArticle $writer, ?string $generationId, array $endpoint, array $preparedEvidenceSources): void
+    private function applyResult(EditorialActivity $activity, User $actor, array $payload, WriteArticle $writer, ?string $generationId, array $endpoint, array $preparedEvidenceSources, ?AgentResponse $agentResponse = null): void
     {
-        DB::transaction(function () use ($activity, $actor, $payload, $writer, $generationId, $endpoint, $preparedEvidenceSources): void {
+        DB::transaction(function () use ($activity, $actor, $payload, $writer, $generationId, $endpoint, $preparedEvidenceSources, $agentResponse): void {
             $locked = EditorialActivity::query()->whereKey($activity->id)->lockForUpdate()->firstOrFail();
             if ($this->status($locked) === EditorialActivityStatus::Completed) {
                 return;
@@ -315,6 +359,31 @@ class RunEditorialActivity implements ShouldQueue
                 return;
             }
 
+            if ($agentResponse?->hasPendingApprovals()) {
+                $pending = $agentResponse->pendingApprovals->map(fn ($approval): array => [
+                    'id' => $approval->id,
+                    'tool' => $approval->tool,
+                    'arguments' => $approval->arguments,
+                    'reason' => $approval->reason,
+                ])->all();
+                Validator::make(['approvals' => $pending], [
+                    'approvals' => ['required', 'array', 'max:10'],
+                    'approvals.*.id' => ['required', 'string', 'max:255', 'distinct'],
+                    'approvals.*.tool' => ['required', 'in:AskAuthor'],
+                    'approvals.*.arguments.questions' => ['required', 'array', 'min:1', 'max:10'],
+                    'approvals.*.arguments.questions.*' => ['required', 'string', 'max:2000'],
+                ])->validate();
+                $locked->forceFill([
+                    'status' => EditorialActivityStatus::AwaitingApproval,
+                    'pending_tool_approvals' => $pending,
+                    'tool_decisions' => null,
+                    'model_snapshot' => $endpoint,
+                    'generation_id' => $generationId,
+                ])->save();
+
+                return;
+            }
+
             if ($kind === EditorialActivityKind::Draft) {
                 $this->applyDraft($locked, $freshActor, $article, $payload, $writer);
             }
@@ -341,6 +410,8 @@ class RunEditorialActivity implements ShouldQueue
 
             $locked->forceFill([
                 'status' => EditorialActivityStatus::Completed,
+                'pending_tool_approvals' => null,
+                'tool_decisions' => null,
                 'response' => $payload,
                 'model_snapshot' => $endpoint,
                 'generation_id' => $generationId,
@@ -361,8 +432,10 @@ class RunEditorialActivity implements ShouldQueue
         $context['latest_interview_activity_id'] = (int) $activity->id;
         $context['questions'] = $payload['questions'];
         $context['angle_options'] = $payload['angleOptions'];
-        $context['answers'] = null;
-        $context['answered_at'] = null;
+        $answers = collect($activity->tool_decisions ?? [])->pluck('arguments.answers')->filter()->implode("\n\n");
+        $context['answers'] = $answers !== '' ? $answers : null;
+        $context['answered_at'] = $answers !== '' ? now()->toISOString() : null;
+        $context['answered_interview_activity_id'] = $answers !== '' ? (int) $activity->id : null;
         $context['selected_angle_option'] = null;
 
         $attempt->forceFill([
@@ -824,28 +897,31 @@ class RunEditorialActivity implements ShouldQueue
         ]);
     }
 
-    private function resolveReservationFailure(AgentBudget $budget, ?AgentBudgetReservation $reservation, Throwable $throwable, bool $paidOutcomeResolved): void
+    private function resolveReservationFailure(AgentBudget $budget, ?AgentBudgetReservation $reservation, Throwable $throwable, bool $paidOutcomeResolved, bool $completionReceived): void
     {
         if (! $reservation instanceof AgentBudgetReservation || $paidOutcomeResolved) {
             return;
         }
 
-        if ($this->isKnownNonBillableFailure($throwable)) {
+        if (! $completionReceived && $this->isKnownNonBillableFailure($throwable)) {
             $budget->release($reservation, $throwable->getMessage());
 
             return;
         }
 
-        $budget->retainUnknown($reservation, 'Exception after reserving budget: '.$throwable->getMessage());
+        $budget->retainUnknown($reservation, 'Exception after reserving budget: '.$throwable->getMessage(), $reservation->provider_generation_id);
     }
 
     private function isKnownNonBillableFailure(Throwable $throwable): bool
     {
-        if (! $throwable instanceof RequestException || $throwable->response === null) {
-            return false;
-        }
+        do {
+            if ($throwable instanceof RequestException && $throwable->response !== null) {
+                return in_array($throwable->response->status(), [400, 401, 402, 403, 404, 422], true);
+            }
+            $throwable = $throwable->getPrevious();
+        } while ($throwable !== null);
 
-        return in_array($throwable->response->status(), [400, 401, 402, 403, 404, 422], true);
+        return false;
     }
 
     private function actorCanRunKind(User $actor, EditorialActivityKind $kind): bool
@@ -1079,42 +1155,42 @@ class RunEditorialActivity implements ShouldQueue
         return $route;
     }
 
-    /** @return array<string, mixed> */
-    private function extraRequestForKind(EditorialActivityKind $kind): array
+    private function conversationFor(EditorialActivity $activity, User $actor): string
     {
-        if ($kind !== EditorialActivityKind::ResearchChallenge) {
-            return [];
+        if ($activity->ai_conversation_id === null) {
+            $id = app(ConversationStore::class)->storeConversation(
+                Conversation::participantType($actor),
+                Conversation::participantKey($actor),
+                'Publishing '.$activity->kind->value.' #'.$activity->id,
+            );
+            $activity->forceFill(['ai_conversation_id' => $id])->save();
         }
 
-        return [
-            'plugins' => [[
-                'id' => 'web',
-                'engine' => 'exa',
-                'mode' => 'auto',
-                'max_results' => 5,
-            ]],
-        ];
+        $id = (string) $activity->ai_conversation_id;
+        if (! Conversation::query()->whereKey($id)
+            ->where('participant_type', Conversation::participantType($actor))
+            ->where('participant_id', Conversation::participantKey($actor))->exists()) {
+            throw new RuntimeException('The agent conversation does not belong to the initiating author.');
+        }
+
+        return $id;
     }
 
-    /**
-     * @param  array<string, mixed>  $response
-     * @return array<string, mixed>
-     */
-    private function payloadFromResponse(array $response): array
+    private function decisionsFor(EditorialActivity $activity): ?Decisions
     {
-        $content = data_get($response, 'choices.0.message.content');
-        if (is_array($content)) {
-            return $content;
-        }
-        if (! is_string($content) || $content === '') {
-            throw new RuntimeException('Agent response did not include JSON content.');
-        }
-        $decoded = json_decode($content, true);
-        if (! is_array($decoded)) {
-            throw new RuntimeException('Agent response was not valid JSON.');
+        if (! is_array($activity->tool_decisions) || $activity->tool_decisions === []) {
+            return null;
         }
 
-        return $decoded;
+        $decisions = [];
+        foreach ($activity->tool_decisions as $id => $decision) {
+            $decisions[$id] = match ($decision['action']) {
+                'edit' => Decision::edit($decision['arguments']),
+                'reject' => Decision::reject(),
+            };
+        }
+
+        return Decisions::from($decisions);
     }
 
     /** @param array<string, mixed> $response */

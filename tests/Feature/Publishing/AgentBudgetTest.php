@@ -5,6 +5,7 @@ use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
+use App\Ai\Agents\Interviewer;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\AgentBudgetReservation;
@@ -15,11 +16,11 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialPrompts;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\EditorialModelBudget;
+use App\Services\Publishing\EditorialOutput;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use Laravel\Ai\Enums\Lab;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -49,8 +50,8 @@ test('budget reservations are atomic idempotent and bounded by allowance', funct
 
 test('openrouter quote converts per million prices and denies hidden fallback', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
-    $client = app(OpenRouterClient::class);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    $client = app(EditorialModelBudget::class);
 
     $endpoint = $client->pricedEndpoint([
         'model' => 'test/model',
@@ -60,7 +61,7 @@ test('openrouter quote converts per million prices and denies hidden fallback', 
         'pricing' => ['prompt' => '2.00', 'completion' => '4.00', 'unit' => 'per_million'],
     ]);
     $quote = $client->quote($endpoint, ['prompt_tokens' => 1000, 'max_completion_tokens' => 100, 'plugin_nano_usd' => 7_000_000]);
-    $request = $client->chatRequest($endpoint, [['role' => 'user', 'content' => 'Return JSON.']]);
+    $request = (new Interviewer(new EditorialActivity, $endpoint))->providerOptions(Lab::OpenRouter);
 
     expect($quote['reserved_nano_usd'])->toBe(9_400_000)
         ->and($request['provider']['only'])->toBe(['TestProvider'])
@@ -70,7 +71,7 @@ test('openrouter quote converts per million prices and denies hidden fallback', 
 
 test('activity execution reserves before fake http and settles exactly once', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -89,8 +90,8 @@ test('activity execution reserves before fake http and settles exactly once', fu
     $attempt = agentBudgetAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'interview-test');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('completed')
         ->and(AgentBudgetReservation::query()->where('activity_id', $activity->id)->count())->toBe(1)
@@ -99,7 +100,7 @@ test('activity execution reserves before fake http and settles exactly once', fu
 
 test('integer provider cost fields are interpreted as usd not nano usd', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -118,7 +119,7 @@ test('integer provider cost fields are interpreted as usd not nano usd', functio
     $attempt = agentBudgetAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'integer-cost');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect(AgentBudgetReservation::query()->where('activity_id', $activity->id)->first()?->actual_nano_usd)->toBe(1_000_000_000);
 });
@@ -134,7 +135,7 @@ test('queued activity with invalidated approval becomes stale before reservation
     app(AdvancePublishingAttempt::class)->rethink($actor, $attempt, angle: ['thesis' => 'Changed after queueing']);
     Http::preventStrayRequests();
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('stale')
         ->and(AgentBudgetReservation::query()->where('activity_id', $activity->id)->exists())->toBeFalse();
@@ -142,7 +143,7 @@ test('queued activity with invalidated approval becomes stale before reservation
 
 test('activity revalidates frozen inputs immediately before budget reservation', function (): void {
     config()->set('publishing_agents.enabled', false);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -158,12 +159,9 @@ test('activity revalidates frozen inputs immediately before budget reservation',
     config()->set('publishing_agents.enabled', true);
     Http::preventStrayRequests();
 
-    $client = new class(app(Factory::class), $actor, $attempt) extends OpenRouterClient
+    $client = new class($actor, $attempt) extends EditorialModelBudget
     {
-        public function __construct(Factory $http, private User $actor, private PublishingAttempt $attempt)
-        {
-            parent::__construct($http);
-        }
+        public function __construct(private User $actor, private PublishingAttempt $attempt) {}
 
         public function quote(array $endpoint, array $request): array
         {
@@ -173,14 +171,14 @@ test('activity revalidates frozen inputs immediately before budget reservation',
         }
     };
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle($client, app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle($client, app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('stale')
         ->and(AgentBudgetReservation::query()->where('activity_id', $activity->id)->exists())->toBeFalse();
 });
 
 test('paid output is settled but not applied when inputs change during http', function (): void {
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -207,7 +205,7 @@ test('paid output is settled but not applied when inputs change during http', fu
         },
     ]);
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('stale')
         ->and(AgentBudgetReservation::query()->where('activity_id', $activity->id)->first()?->state)->toBe(AgentBudgetReservation::STATE_SETTLED);
@@ -215,7 +213,7 @@ test('paid output is settled but not applied when inputs change during http', fu
 
 test('revoked initiating actor cannot have paid output applied after the call', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -238,7 +236,7 @@ test('revoked initiating actor cannot have paid output applied after the call', 
     ]);
 
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'revoked-completion');
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('paused')
         ->and($activity->fresh()?->response)->toBeNull()
@@ -288,13 +286,13 @@ test('draft activities pause before reservation and http when actor loses write 
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     Http::preventStrayRequests();
     Http::fake([
         'https://openrouter.ai/api/v1/chat/completions' => fn () => throw new RuntimeException('Draft HTTP should not be called without write permission.'),
     ]);
 
-    app(RunEditorialActivity::class, ['activityId' => $draft->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $draft->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($draft->fresh()?->status->value)->toBe('paused')
         ->and(AgentBudgetReservation::query()->where('activity_id', $draft->id)->exists())->toBeFalse();
@@ -303,7 +301,7 @@ test('draft activities pause before reservation and http when actor loses write 
 
 test('timeout after reservation retains unknown outcome and is not blindly retried', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -318,16 +316,68 @@ test('timeout after reservation retains unknown outcome and is not blindly retri
     $attempt = agentBudgetAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'timeout-test');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('paused')
         ->and(AgentBudgetReservation::query()->where('activity_id', $activity->id)->count())->toBe(1)
         ->and(AgentBudgetReservation::query()->first()?->state)->toBe(AgentBudgetReservation::STATE_UNKNOWN);
 });
 
+test('SDK billing lookup failures retain the paid reservation and generation identity', function (): void {
+    config()->set([
+        'publishing_agents.enabled' => true,
+        'ai.providers.openrouter.key' => 'test-key',
+        'publishing_agents.routes.default.pricing.prompt' => '0.000001',
+        'publishing_agents.routes.default.pricing.completion' => '0.000002',
+        'publishing_agents.routes.default.context_tokens' => 100,
+        'publishing_agents.routes.default.max_completion_tokens' => 50,
+    ]);
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+            'id' => 'gen-billing-pending',
+            'choices' => [['message' => ['content' => json_encode(['questions' => [], 'brief' => [], 'angleOptions' => []])]]],
+        ]),
+        'https://openrouter.ai/api/v1/generation*' => Http::response(['error' => 'Not yet available'], 404),
+    ]);
+    $actor = agentBudgetAuthor();
+    $activity = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview);
+
+    app()->call([new RunEditorialActivity($activity->id), 'handle']);
+
+    $reservation = AgentBudgetReservation::where('activity_id', $activity->id)->sole();
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused)
+        ->and($reservation->state)->toBe(AgentBudgetReservation::STATE_UNKNOWN)
+        ->and($reservation->provider_generation_id)->toBe('gen-billing-pending');
+    Http::assertSentCount(2);
+});
+
+test('native SDK insufficient credit rejection releases an unspent reservation', function (): void {
+    config()->set([
+        'publishing_agents.enabled' => true,
+        'ai.providers.openrouter.key' => 'test-key',
+        'publishing_agents.routes.default.pricing.prompt' => '0.000001',
+        'publishing_agents.routes.default.pricing.completion' => '0.000002',
+        'publishing_agents.routes.default.context_tokens' => 100,
+        'publishing_agents.routes.default.max_completion_tokens' => 50,
+    ]);
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://openrouter.ai/api/v1/chat/completions' => Http::response(['error' => ['message' => 'Insufficient credits']], 402),
+    ]);
+    $actor = agentBudgetAuthor();
+    $activity = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview);
+
+    app()->call([new RunEditorialActivity($activity->id), 'handle']);
+
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused)
+        ->and(AgentBudgetReservation::where('activity_id', $activity->id)->sole()->state)->toBe(AgentBudgetReservation::STATE_RELEASED);
+    Http::assertSentCount(1);
+});
+
 test('recovery reconciles old running activities with recorded generation ids', function (): void {
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     Http::preventStrayRequests();
     Http::fake([
         'https://openrouter.ai/api/v1/generation*' => Http::response(['data' => ['total_cost' => '0.000003']], 200),
@@ -352,7 +402,7 @@ test('recovery reconciles old running activities with recorded generation ids', 
 });
 
 test('recovery treats integer generation costs as usd not nano usd', function (): void {
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     Http::preventStrayRequests();
     Http::fake([
         'https://openrouter.ai/api/v1/generation*' => Http::response(['data' => ['total_cost' => 1]], 200),
@@ -375,7 +425,7 @@ test('recovery treats integer generation costs as usd not nano usd', function ()
 });
 
 test('recovery reconciles reservation generation ids before pausing null generation activities', function (): void {
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     Http::preventStrayRequests();
     Http::fake([
         'https://openrouter.ai/api/v1/generation*' => Http::response(['data' => ['total_cost' => '0.000004']], 200),
@@ -418,13 +468,13 @@ test('actual cost overrun is recorded truthfully and pauses the attempt', functi
 
 test('missing prices fail before reserving and capability denial releases reservation', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '');
 
     $actor = agentBudgetAuthor();
     $attempt = agentBudgetAttempt($actor);
     $missingPrice = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'missing-price');
-    app(RunEditorialActivity::class, ['activityId' => $missingPrice->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $missingPrice->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect(AgentBudgetReservation::query()->where('activity_id', $missingPrice->id)->exists())->toBeFalse();
 
@@ -436,7 +486,7 @@ test('missing prices fail before reserving and capability denial releases reserv
     Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response(['error' => ['message' => 'capability denied']], 403)]);
 
     $capabilityDenied = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'capability-denied');
-    app(RunEditorialActivity::class, ['activityId' => $capabilityDenied->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $capabilityDenied->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($capabilityDenied->fresh()?->status->value)->toBe('paused')
         ->and(AgentBudgetReservation::query()->where('activity_id', $capabilityDenied->id)->first()?->state)->toBe(AgentBudgetReservation::STATE_RELEASED);
@@ -444,14 +494,14 @@ test('missing prices fail before reserving and capability denial releases reserv
 
 test('pre-call configuration and allowance blockers pause without automatic retry', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '');
 
     $actor = agentBudgetAuthor();
     $attempt = agentBudgetAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'pre-call-blocker');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($activity->fresh()?->status->value)->toBe('paused')
         ->and($activity->fresh()?->run_count)->toBe(1)
@@ -463,7 +513,7 @@ test('pre-call configuration and allowance blockers pause without automatic retr
     config()->set('publishing_agents.routes.default.max_completion_tokens', 1_000_000);
     $allowanceBlocked = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'allowance-blocker');
 
-    app(RunEditorialActivity::class, ['activityId' => $allowanceBlocked->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $allowanceBlocked->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($allowanceBlocked->fresh()?->status->value)->toBe('paused')
         ->and($allowanceBlocked->fresh()?->run_count)->toBe(1)

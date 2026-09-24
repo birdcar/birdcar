@@ -2,61 +2,10 @@
 
 namespace App\Services\Publishing;
 
-use Illuminate\Http\Client\Factory as HttpFactory;
-use Illuminate\Http\Client\PendingRequest;
 use RuntimeException;
 
-class OpenRouterClient
+class EditorialModelBudget
 {
-    public function __construct(private readonly HttpFactory $http) {}
-
-    /**
-     * @param  array<string, mixed>  $request
-     * @return array<string, mixed>
-     */
-    public function chat(array $request): array
-    {
-        $apiKey = (string) config('publishing_agents.openrouter.api_key', '');
-        if ($apiKey === '') {
-            throw new RuntimeException('OpenRouter credentials are not configured.');
-        }
-
-        $response = $this->request()
-            ->withToken($apiKey)
-            ->post('/chat/completions', $request)
-            ->throw()
-            ->json();
-
-        if (! is_array($response)) {
-            throw new RuntimeException('OpenRouter returned a malformed response.');
-        }
-
-        return $response;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function generation(string $id): array
-    {
-        $apiKey = (string) config('publishing_agents.openrouter.api_key', '');
-        if ($apiKey === '') {
-            throw new RuntimeException('OpenRouter credentials are not configured.');
-        }
-
-        $response = $this->request()
-            ->withToken($apiKey)
-            ->get('/generation', ['id' => $id])
-            ->throw()
-            ->json();
-
-        if (! is_array($response)) {
-            throw new RuntimeException('OpenRouter returned malformed generation metadata.');
-        }
-
-        return $response;
-    }
-
     /**
      * @param  array<string, mixed>  $route
      * @return array<string, mixed>
@@ -67,7 +16,7 @@ class OpenRouterClient
             throw new RuntimeException('Publishing agents are disabled.');
         }
 
-        $apiKey = (string) config('publishing_agents.openrouter.api_key', '');
+        $apiKey = (string) config('ai.providers.openrouter.key', '');
         if ($apiKey === '') {
             throw new RuntimeException('OpenRouter credentials are not configured.');
         }
@@ -147,47 +96,6 @@ class OpenRouterClient
                 'plugin_nano_usd' => max(0, $pluginNanoUsd),
             ],
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $endpoint
-     * @param  array<int, array<string, mixed>>  $messages
-     * @param  array<string, mixed>  $schema
-     * @param  array<string, mixed>  $extra
-     * @return array<string, mixed>
-     */
-    public function chatRequest(array $endpoint, array $messages, array $schema = [], array $extra = []): array
-    {
-        $request = array_merge($extra, [
-            'model' => $endpoint['model'],
-            'messages' => $messages,
-            'max_completion_tokens' => (int) $endpoint['max_completion_tokens'],
-            'provider' => [
-                'only' => [(string) $endpoint['provider']],
-                'allow_fallbacks' => false,
-                'require_parameters' => true,
-                'max_price' => $endpoint['max_price'] ?? $this->routingMaxPrice(
-                    (string) data_get($endpoint, 'pricing.prompt', ''),
-                    (string) data_get($endpoint, 'pricing.completion', ''),
-                    (string) data_get($endpoint, 'pricing.unit', 'token'),
-                ),
-            ],
-        ]);
-
-        if ($schema !== []) {
-            $request['response_format'] = $schema;
-        }
-
-        return $request;
-    }
-
-    private function request(): PendingRequest
-    {
-        return $this->http
-            ->baseUrl(rtrim((string) config('publishing_agents.openrouter.base_url'), '/'))
-            ->acceptJson()
-            ->asJson()
-            ->timeout((int) config('publishing_agents.openrouter.timeout', 30));
     }
 
     /** @return array{prompt: string, completion: string} */

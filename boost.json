@@ -21,6 +21,7 @@
     "sail": false,
     "skills": [
         "infer-conventions",
+        "ai-sdk-development",
         "folio-routing",
         "fortify-development",
         "laravel-best-practices",

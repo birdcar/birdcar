@@ -1,4 +1,5 @@
 import './admin/publishing/editor-extensions.js';
+import { Livewire } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import { createAutosaveQueue, restoreRecovery, saveRecovery, shouldWarnBeforeUnload } from './admin/publishing/autosave.js';
 import { clearPublishingRecoveryNamespace, editorToDocumentJson } from './admin/publishing/document-helpers.js';
 
@@ -18,7 +19,7 @@ function updateRevision(element, revisionId) {
 }
 
 
-function bootEditor(element, editor = null) {
+function bootEditor(element, editor) {
     if (queues.has(element)) return queues.get(element);
 
     const queue = createAutosaveQueue({
@@ -79,14 +80,6 @@ document.addEventListener('admin:editor:ready', (event) => {
     });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-admin-editor]').forEach((element) => bootEditor(element));
-});
-
-document.addEventListener('livewire:navigated', () => {
-    document.querySelectorAll('[data-admin-editor]').forEach((element) => bootEditor(element));
-});
-
 document.addEventListener('submit', (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !form.matches('[data-admin-logout]')) return;
@@ -126,3 +119,5 @@ window.addEventListener('beforeunload', (event) => {
     event.preventDefault();
     event.returnValue = '';
 });
+
+Livewire.start();

@@ -12,6 +12,85 @@ beforeEach(function (): void {
     config(['admin.url' => 'http://admin.birdcar.test']);
 });
 
+test('admin guest forms render Flux controls and system appearance', function (string $path, string $submit): void {
+    $this->get('http://admin.birdcar.test'.$path)
+        ->assertOk()
+        ->assertSee('window.Flux.applyAppearance', false)
+        ->assertSee("window.localStorage.getItem('flux.appearance') || 'system'", false)
+        ->assertSee('data-flux-input', false)
+        ->assertSee('data-flux-button', false)
+        ->assertSee('type="submit"', false)
+        ->assertSee('aria-label="Admin sign in"', false)
+        ->assertSee('data-flux-brand', false)
+        ->assertSee('src="/favicon.svg"', false)
+        ->assertSee('name="email"', false)
+        ->assertSee($submit)
+        ->assertDontSee('<html lang="en" class="dark">', false);
+})->with([
+    'sign in' => ['/login', 'Sign in'],
+    'password setup' => ['/reset-password/preview-token?email=reader%40example.com', 'Set password'],
+]);
+
+test('sign in displays field errors and retains only the email input', function (): void {
+    $this->from('http://admin.birdcar.test/login')
+        ->post('http://admin.birdcar.test/login', ['email' => 'reader@example.com', 'password' => 'wrong-password'])
+        ->assertRedirect('http://admin.birdcar.test/login')
+        ->assertSessionHasErrors('email');
+
+    $this->withCookie(config('session.cookie'), session()->getId())
+        ->get('http://admin.birdcar.test/login')
+        ->assertOk()
+        ->assertSee('These credentials do not match our records.')
+        ->assertSee('data-flux-error', false)
+        ->assertSee('value="reader@example.com"', false)
+        ->assertSee('autocomplete="current-password"', false)
+        ->assertDontSee('value="wrong-password"', false);
+});
+
+test('two factor form uses labeled Flux inputs and the existing challenge action', function (): void {
+    $user = User::factory()->create();
+
+    $this->withSession(['login.id' => $user->id])
+        ->get('http://admin.birdcar.test/two-factor-challenge')
+        ->assertOk()
+        ->assertSee('window.Flux.applyAppearance', false)
+        ->assertSee('name="code"', false)
+        ->assertSee('name="recovery_code"', false)
+        ->assertSee('autocomplete="one-time-code"', false)
+        ->assertSee('data-flux-input', false)
+        ->assertSee('type="submit"', false);
+});
+
+test('password setup displays expired invitation errors beside the email field', function (): void {
+    $user = User::factory()->create();
+    $url = 'http://admin.birdcar.test/reset-password/expired-token?email='.urlencode($user->email);
+
+    $this->from($url)->post('http://admin.birdcar.test/reset-password', [
+        'token' => 'expired-token',
+        'email' => $user->email,
+        'password' => 'new-secret-password',
+        'password_confirmation' => 'new-secret-password',
+    ])->assertSessionHasErrors('email');
+
+    $this->withCookie(config('session.cookie'), session()->getId())->get($url)
+        ->assertOk()
+        ->assertSee(trans(Password::INVALID_TOKEN));
+});
+
+test('two factor form displays rejected recovery code errors', function (): void {
+    $user = User::factory()->create();
+
+    $this->withSession([
+        'login.id' => $user->id,
+        'errors' => ['default' => [
+            'format' => ':message',
+            'messages' => ['recovery_code' => ['The provided two factor recovery code was invalid.']],
+        ]],
+    ])->get('http://admin.birdcar.test/two-factor-challenge')
+        ->assertOk()
+        ->assertSee('The provided two factor recovery code was invalid.');
+});
+
 test('existing admin users can log in and reach safe intended admin urls', function (): void {
     $user = User::factory()->create(['password' => Hash::make('secret-password')]);
     $user->assignRole(AdminRole::Access->value);

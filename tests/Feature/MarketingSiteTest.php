@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Publishing\ImportWritingArchive;
+use App\Actions\Publishing\ReadPublishedWriting;
 use App\Actions\ReadWriting;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\User;
@@ -150,6 +151,10 @@ test('the homepage connects a recognizable problem to help without requiring a c
 });
 
 test('booking buttons away from the walkthrough page open the calendar in place and keep the walkthrough link as fallback', function (string $path) {
+    if ($path === '/writing/') {
+        marketingSiteImportArchive($this);
+    }
+
     $this->get($path)->assertOk()
         ->assertSee('href="'.route('public.walkthrough').'"', false)
         ->assertSee('data-cal-link="birdcar/walkthrough"', false)
@@ -159,12 +164,18 @@ test('booking buttons away from the walkthrough page open the calendar in place 
 })->with(['/', '/work', '/writing/']);
 
 test('no page still calls the offer a free assessment', function (string $path) {
+    if ($path === '/writing/') {
+        marketingSiteImportArchive($this);
+    }
+
     $response = $this->get($path)->assertOk();
 
     expect(mb_strtolower($response->getContent()))->not->toContain('free assessment')->not->toContain('free-assessment');
 })->with(['/', '/walkthrough', '/work', '/writing/']);
 
 test('the archive lists all essays in chronological order under the business introduction', function () {
+    marketingSiteImportArchive($this);
+
     $this->get('/writing/')->assertOk()
         ->assertSee('Better work, fewer workarounds.')
         ->assertSee('A report rebuilt by hand. A follow-up someone has to remember.')
@@ -174,6 +185,8 @@ test('the archive lists all essays in chronological order under the business int
 });
 
 test('each original essay remains available at its published URL and date', function (string $slug, string $title, string $date) {
+    marketingSiteImportArchive($this);
+
     $this->get('/writing/'.$slug.'/')->assertOk()
         ->assertSee($title)
         ->assertSee('datetime="'.$date.'"', false)
@@ -197,12 +210,16 @@ test('each original essay remains available at its published URL and date', func
 ]);
 
 test('original prose and link destinations survive article rendering', function () {
+    marketingSiteImportArchive($this);
+
     $this->get('/writing/just-build-it-twice/')->assertOk()
         ->assertSee('The agent has lowered the cost of building the same thing twice.')
         ->assertSee('href="https://www.birdcar.dev/writing/your-ai-wrote-a-bug/"', false);
 });
 
 test('original article notes keep their titles and formatted content', function () {
+    marketingSiteImportArchive($this);
+
     $this->get('/writing/stop-giving-me-take-homes/')->assertOk()
         ->assertSee('<aside', false)
         ->assertSee('<h3 class="article-note-title">About this post</h3>', false)
@@ -216,6 +233,8 @@ test('original article notes keep their titles and formatted content', function 
 });
 
 test('charts retain their source values and expose accessible data tables', function (string $slug, array $values) {
+    marketingSiteImportArchive($this);
+
     $response = $this->get('/writing/'.$slug.'/')->assertOk()->assertSee('View chart data');
     foreach ($values as $value) {
         $response->assertSee('<td>'.$value.'</td>', false);
@@ -226,6 +245,8 @@ test('charts retain their source values and expose accessible data tables', func
 ]);
 
 test('source chart labels and values remain complete in reading order', function (string $slug, array $rows, array $columns) {
+    marketingSiteImportArchive($this);
+
     $response = $this->get('/writing/'.$slug.'/')->assertOk();
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
@@ -241,6 +262,8 @@ test('source chart labels and values remain complete in reading order', function
 ]);
 
 test('the line chart retains its zero based axis and a keyboard accessible full size plot', function () {
+    marketingSiteImportArchive($this);
+
     $response = $this->get('/writing/six-months-talking-to-a-machine/')->assertSee('Scroll for the full chart, or view the data below.');
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
@@ -252,9 +275,11 @@ test('the line chart retains its zero based axis and a keyboard accessible full 
 });
 
 test('the complete archive preserves metadata and feed access in the reading layout', function () {
+    marketingSiteImportArchive($this);
+
     $response = $this->get('/writing/')->assertSee(route('public.feed'), false);
 
-    foreach (app(ReadWriting::class)->all() as $article) {
+    foreach (app(ReadPublishedWriting::class)->all() as $article) {
         $response->assertSee($article['title'])->assertSee($article['description'])
             ->assertSee('datetime="'.$article['date']->format('Y-m-d').'"', false)
             ->assertSee(route('public.article', ['slug' => $article['slug']]).'/', false);
@@ -288,6 +313,8 @@ test('rendering markdown strips executable HTML and unsafe links', function () {
 });
 
 test('the feed includes all original posts with XML-safe text', function () {
+    marketingSiteImportArchive($this);
+
     $response = $this->get('/rss.xml')->assertOk()->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
     $feed = simplexml_load_string($response->getContent());
     expect($feed)->not->toBeFalse();
@@ -305,6 +332,10 @@ test('the old marketing entry points redirect to the new destinations', function
 ]);
 
 test('mobile and footer navigation identify the current destination without relying on JavaScript', function (string $path, string $label) {
+    if (str_starts_with($path, '/writing/')) {
+        marketingSiteImportArchive($this);
+    }
+
     $response = $this->get($path)->assertOk();
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
@@ -381,7 +412,7 @@ test('the deeper paid discovery week is mentioned once without a price', functio
 
 function marketingSiteImportArchive($test): void
 {
-    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $test->artisan('authorization:sync')->assertSuccessful();
     $operator = User::factory()->create();

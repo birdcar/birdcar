@@ -40,5 +40,5 @@ test('admin access role reaches the admin index', function (): void {
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/')
         ->assertOk()
-        ->assertSee('Admin workspace');
+        ->assertSee('Your workspace is ready');
 });

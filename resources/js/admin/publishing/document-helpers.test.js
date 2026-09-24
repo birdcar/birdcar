@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 import {
     clearPublishingRecoveryNamespace,
     createMutationId,
@@ -115,7 +115,30 @@ describe('document helpers', () => {
             querySelectorAll: () => [],
         };
 
+        let started = false;
+        mock.module('../../../../vendor/livewire/livewire/dist/livewire.esm', () => ({
+            Livewire: {
+                start: () => {
+                    expect(listeners.has('flux:editor')).toBe(true);
+                    expect(listeners.has('flux:editor:ready')).toBe(true);
+                    expect(listeners.has('admin:editor:ready')).toBe(true);
+                    started = true;
+                },
+            },
+        }));
+
         await import('../../admin.js');
+        expect(started).toBe(true);
+        const extensions = [];
+        const enabled = [];
+        listeners.get('flux:editor')({ detail: {
+            registerExtensions: (registered) => extensions.push(...registered),
+            enableExtension: (name) => enabled.push(name),
+            init: () => {},
+        } });
+        expect(extensions.map((extension) => extension.name)).toEqual(['stableBlockAttributes', 'note', 'callout', 'chart', 'diagram']);
+        expect(enabled).toEqual([]);
+        expect(extensions[0].config.addProseMirrorPlugins()[0].key).toStartWith('publishingStableBlockIds$');
 
         storage.set('admin:publishing:recovery:v1:u5:a1:r1', 'mine');
         storage.set('admin:publishing:recovery:v1:u6:a1:r1', 'theirs');

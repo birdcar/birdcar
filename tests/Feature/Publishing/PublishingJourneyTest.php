@@ -15,8 +15,8 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\User;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialPrompts;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\EditorialModelBudget;
+use App\Services\Publishing\EditorialOutput;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -190,7 +190,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 function journeyConfigureAgents(): void
 {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -232,7 +232,7 @@ function journeyDrainEditorialActivities(int $limit = 10): void
             return;
         }
 
-        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
     }
 }
 

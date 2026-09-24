@@ -64,47 +64,51 @@ new #[Layout('layouts.admin')] class extends Component
 
 <section class="space-y-8">
     <div>
-        <h1 class="text-3xl font-semibold">Publishing workspace</h1>
-        <p class="mt-2 text-zinc-400">Capture ideas, start active writing, and keep published work separate.</p>
+        <flux:heading level="1" size="xl">Publishing workspace</flux:heading>
+        <flux:text class="mt-2">Capture ideas, start active writing, and keep published work separate.</flux:text>
     </div>
 
-    <form wire:submit="saveForLater" class="rounded-xl border border-white/10 bg-white/5 p-6">
-        <label class="block text-sm font-medium" for="idea">New idea</label>
-        <flux:composer id="idea" wire:model="idea" class="mt-2" placeholder="What should this piece explore?">
-            <x-slot:actionsTrailing>
-                @can(PublishingPermission::Develop->value)
-                    <button type="button" wire:click="developIdea" wire:loading.attr="disabled" class="rounded bg-white px-4 py-2 font-medium text-zinc-950">Develop idea</button>
-                @endcan
-                @can(PublishingPermission::Write->value)
-                    <button class="rounded border border-white/15 px-4 py-2">Save for later</button>
-                @endcan
-            </x-slot:actionsTrailing>
-        </flux:composer>
-        @error('idea') <p class="mt-2 text-sm text-red-300">{{ $message }}</p> @enderror
+    <form wire:submit="saveForLater" class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+        <flux:field>
+            <flux:label>New idea</flux:label>
+            <flux:composer id="idea" wire:model="idea" placeholder="What should this piece explore?">
+                <x-slot:actionsTrailing>
+                    @can(PublishingPermission::Develop->value)
+                        <flux:button type="button" wire:click="developIdea" variant="primary">Develop idea</flux:button>
+                    @endcan
+                    @can(PublishingPermission::Write->value)
+                        <flux:button type="submit">Save for later</flux:button>
+                    @endcan
+                </x-slot:actionsTrailing>
+            </flux:composer>
+            <flux:error name="idea" />
+        </flux:field>
     </form>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <section class="rounded-xl border border-white/10 bg-white/5 p-6">
-            <h2 class="text-xl font-semibold">Ideas</h2>
+    <div class="grid min-w-0 gap-6 lg:grid-cols-2">
+        <section class="min-w-0 rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+            <flux:heading size="lg">Ideas</flux:heading>
             <div class="mt-4 space-y-3">
                 @forelse ($ideas as $article)
-                    <a class="block rounded bg-zinc-950 p-3 hover:bg-zinc-900" href="{{ route('admin.publishing.articles.show', $article) }}">{{ $article->idea }}</a>
+                    <flux:button class="w-full min-w-0 justify-start whitespace-normal" href="{{ route('admin.publishing.articles.show', $article) }}">{{ $article->idea }}</flux:button>
                 @empty
-                    <p class="text-sm text-zinc-400">No saved ideas yet.</p>
+                    <flux:text>No saved ideas yet.</flux:text>
                 @endforelse
             </div>
         </section>
-        <section class="rounded-xl border border-white/10 bg-white/5 p-6">
-            <h2 class="text-xl font-semibold">Active writing</h2>
+        <section class="min-w-0 rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+            <flux:heading size="lg">Active writing</flux:heading>
             <div class="mt-4 space-y-3">
                 @forelse ($active as $article)
-                    <a class="block rounded bg-zinc-950 p-3 hover:bg-zinc-900" href="{{ route('admin.publishing.articles.show', $article) }}">
-                        <span class="block">{{ $article->idea }}</span>
-                        @php($latestActivity = $article->currentAttempt?->editorialActivities->sortByDesc('id')->first())
-                        <span class="text-xs text-zinc-500">{{ $article->currentAttempt?->stage?->value ?? 'active' }} @if($article->currentAttempt?->paused_at) · blocked: {{ $article->currentAttempt?->pause_reason }} @elseif($latestActivity) · {{ $latestActivity->kind->value }} {{ $latestActivity->status->value }} @endif</span>
-                    </a>
+                    <flux:button class="h-auto w-full min-w-0 justify-start whitespace-normal py-3" href="{{ route('admin.publishing.articles.show', $article) }}">
+                        <span class="block min-w-0 text-left">
+                            <span class="block">{{ $article->idea }}</span>
+                            @php($latestActivity = $article->currentAttempt?->editorialActivities->sortByDesc('id')->first())
+                            <span class="block text-xs text-zinc-500">{{ $article->currentAttempt?->stage?->value ?? 'active' }} @if($article->currentAttempt?->paused_at) · blocked: {{ $article->currentAttempt?->pause_reason }} @elseif($latestActivity) · {{ $latestActivity->kind->value }} {{ $latestActivity->status->value }} @endif</span>
+                        </span>
+                    </flux:button>
                 @empty
-                    <p class="text-sm text-zinc-400">No active writing yet.</p>
+                    <flux:text>No active writing yet.</flux:text>
                 @endforelse
             </div>
         </section>

@@ -5,15 +5,18 @@ use App\Actions\Publishing\ApplyEditorialProposal;
 use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\FinishEditorialReview;
 use App\Actions\Publishing\ManageArticleRelease;
+use App\Actions\Publishing\ResumeEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRevision;
+use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Services\Publishing\AgentBudget;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +43,9 @@ new #[Layout('layouts.admin')] class extends Component
     public string $sourceUrl = '';
     public string $voiceSample = '';
     public string $interviewAnswers = '';
+
+    /** @var array<int, string> */
+    public array $agentAnswers = [];
     public string $selectedAngleOptionKey = '';
     public string $releaseSlug = '';
     public string $releaseScheduledAt = '';
@@ -335,6 +341,29 @@ new #[Layout('layouts.admin')] class extends Component
         }
 
         return $excerpts;
+    }
+
+    public function refreshAgentWork(): void
+    {
+        Gate::authorize('view', $this->article);
+        $this->article->refresh()->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+        $this->refreshApprovalInputs();
+    }
+
+    public function answerAgent(int $activityId, string $expectedHash, bool $reject = false): void
+    {
+        Gate::authorize('develop', $this->article);
+        $activity = EditorialActivity::query()->where('article_id', $this->article->id)->findOrFail($activityId);
+
+        try {
+            app(ResumeEditorialActivity::class)->handle(auth()->user(), $activity, $expectedHash, $reject ? null : ($this->agentAnswers[$activityId] ?? ''));
+            unset($this->agentAnswers[$activityId]);
+            $this->saveError = null;
+            $this->refreshAgentWork();
+            session()->flash('status', $reject ? 'Agent request declined.' : 'Your answers were queued for the agent.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
     }
 
     public function startInterview(?StartEditorialActivity $activities = null): void
@@ -755,6 +784,7 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function with(): array
     {
+        Gate::authorize('view', $this->article);
         $previewUrl = $this->currentRevisionId === null ? null : route('admin.publishing.articles.preview', ['article' => $this->article, 'revision' => $this->currentRevisionId]);
         $attempt = $this->article->currentAttempt;
         $release = $this->currentReleasePackage();
@@ -790,6 +820,13 @@ new #[Layout('layouts.admin')] class extends Component
             'protectedBlocks' => $this->protectedBlocks(),
             'agentBudget' => $budget,
             'agentActivities' => $activities,
+            'pendingAgentRequests' => $attempt === null ? collect() : $attempt->editorialActivities()
+                ->where('status', EditorialActivityStatus::AwaitingApproval)
+                ->where('initiating_user_id', auth()->id())
+                ->where('stage', $attempt->stage->value)
+                ->where('review_cycle', $attempt->review_cycle)
+                ->where('revision_id', $this->article->working_revision_id)
+                ->oldest('id')->get(),
             'editorialFindings' => $findings,
             'evidenceSources' => $sources,
             'voiceSampleOptions' => $voiceSampleOptions,
@@ -801,9 +838,9 @@ new #[Layout('layouts.admin')] class extends Component
 
 <section class="space-y-8" data-article-id="{{ $article->id }}" data-current-revision="{{ $currentRevisionId }}" data-user-id="{{ auth()->id() }}">
     <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <p class="text-sm text-zinc-400">Article workspace</p>
-            <h1 class="text-3xl font-semibold">{{ $article->idea }}</h1>
+        <div class="min-w-0">
+            <flux:text>Article workspace</flux:text>
+            <flux:heading level="1" size="xl" class="mt-1 break-words">{{ $article->idea }}</flux:heading>
         </div>
         <x-admin.publishing.partials.save-badge :state="$saveState" />
     </div>
@@ -812,29 +849,59 @@ new #[Layout('layouts.admin')] class extends Component
         <x-admin.publishing.partials.conflict-banner :message="$conflictMessage" :latest="$conflictLatestRevision" />
     @endif
     @if ($saveError)
-        <div class="rounded border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-100">{{ $saveError }}</div>
+        <flux:callout variant="danger" heading="Workspace error" text="{{ $saveError }}" />
     @endif
 
-    <div class="grid gap-6 xl:grid-cols-[1fr_22rem]">
-        <div class="space-y-6">
-            <section class="rounded-xl border border-white/10 bg-white/5 p-6">
-                <h2 class="text-xl font-semibold">Brief, angle, and plan</h2>
-                <dl class="mt-4 grid gap-3 text-sm text-zinc-300">
-                    <div><dt class="font-medium text-zinc-100">Stage</dt><dd>{{ $attempt?->stage?->value ?? 'Idea saved for later' }}</dd></div>
-                    <div><dt class="font-medium text-zinc-100">Agent budget</dt><dd>{{ $agentBudget ? number_format($agentBudget['available'] / 1_000_000_000, 3) : '0.000' }} USD available</dd></div>
-                    <div><dt class="font-medium text-zinc-100">Latest activity</dt><dd>{{ $agentActivities->first()?->kind?->value ?? 'Ready for an agent activity' }} {{ $agentActivities->first()?->status?->value ? '· '.$agentActivities->first()?->status?->value : '' }}</dd></div>
+    <div class="space-y-4" @if ($agentActivities->contains(fn ($activity) => in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true))) wire:poll.5s.visible="refreshAgentWork" @endif>
+        @foreach ($pendingAgentRequests as $request)
+            <flux:callout wire:key="agent-request-{{ $request->id }}" heading="The agent needs your input" data-agent-approval="{{ $request->id }}">
+                <flux:callout.text>The interview is paused. Answer these questions to resume the same conversation, or decline to stop it. This does not approve an angle, plan, or release.</flux:callout.text>
+                <ol class="my-4 list-decimal space-y-2 pl-5">
+                    @foreach ($request->pending_tool_approvals ?? [] as $approval)
+                        @foreach ($approval['arguments']['questions'] ?? [] as $question)
+                            <li>{{ $question }}</li>
+                        @endforeach
+                    @endforeach
+                </ol>
+                @can('develop', $article)
+                    <flux:textarea wire:model="agentAnswers.{{ $request->id }}" label="Your answers" maxlength="4000" rows="3" />
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <flux:button variant="primary" wire:click="answerAgent({{ $request->id }}, '{{ $request->pendingApprovalHash() }}')">Send answers and continue</flux:button>
+                        <flux:button wire:click="answerAgent({{ $request->id }}, '{{ $request->pendingApprovalHash() }}', true)">Decline request</flux:button>
+                    </div>
+                @endcan
+            </flux:callout>
+        @endforeach
+        <flux:button size="sm" icon="arrow-path" wire:click="refreshAgentWork">Refresh agent work</flux:button>
+    </div>
+
+    <div class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <flux:tab.group class="min-w-0">
+            <flux:tabs scrollable>
+                <flux:tab name="brief" selected>Brief & plan</flux:tab>
+                <flux:tab name="manuscript">Manuscript</flux:tab>
+                <flux:tab name="reviews">Reviews</flux:tab>
+            </flux:tabs>
+
+            <flux:tab.panel name="brief" selected>
+            <section class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                <flux:heading size="lg">Brief, angle, and plan</flux:heading>
+                <dl class="mt-4 grid gap-3 text-sm text-zinc-700 dark:text-zinc-300">
+                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Stage</dt><dd>{{ $attempt?->stage?->value ?? 'Idea saved for later' }}</dd></div>
+                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Agent budget</dt><dd>{{ $agentBudget ? number_format($agentBudget['available'] / 1_000_000_000, 3) : '0.000' }} USD available</dd></div>
+                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Latest activity</dt><dd>{{ $agentActivities->first()?->kind?->value ?? 'Ready for an agent activity' }} {{ $agentActivities->first()?->status?->value ? '· '.$agentActivities->first()?->status?->value : '' }}</dd></div>
                 </dl>
                 @php($displayBrief = is_array($attempt?->brief) ? $attempt->brief : [])
                 @php($displayAngle = is_array($attempt?->angle) ? $attempt->angle : [])
                 @php($interviewQuestions = is_array($interviewContext['questions'] ?? null) ? $interviewContext['questions'] : [])
                 @php($angleOptions = is_array($interviewContext['angle_options'] ?? null) ? $interviewContext['angle_options'] : [])
                 @if ($interviewQuestions !== [] || $displayBrief !== [] || $displayAngle !== [])
-                    <div class="mt-4 rounded-lg border border-white/10 bg-zinc-950/60 p-4 text-sm text-zinc-200" data-interview-and-angle>
-                        <h3 class="font-medium text-zinc-100">Interview and angle for approval</h3>
+                    <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200" data-interview-and-angle>
+                        <h3 class="font-medium text-zinc-900 dark:text-zinc-100">Interview and angle for approval</h3>
                         @if ($interviewQuestions !== [])
                             <div class="mt-3">
-                                <p class="font-medium text-zinc-100">Latest interview questions</p>
-                                <ol class="mt-2 list-decimal space-y-1 pl-5 text-zinc-300">
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Latest interview questions</p>
+                                <ol class="mt-2 list-decimal space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
                                     @foreach ($interviewQuestions as $question)
                                         <li>{{ is_array($question) ? ($question['question'] ?? $question['text'] ?? json_encode($question)) : $question }}</li>
                                     @endforeach
@@ -843,196 +910,206 @@ new #[Layout('layouts.admin')] class extends Component
                         @endif
                         @if ($displayBrief !== [])
                             <div class="mt-3">
-                                <p class="font-medium text-zinc-100">Brief to approve</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-300">{{ json_encode($displayBrief, JSON_PRETTY_PRINT) }}</pre>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Brief to approve</p>
+                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayBrief, JSON_PRETTY_PRINT) }}</pre>
                             </div>
                         @endif
                         @if ($angleOptions !== [])
                             <div class="mt-3 space-y-2">
-                                <p class="font-medium text-zinc-100">Angle options</p>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Angle options</p>
                                 @foreach ($angleOptions as $key => $option)
-                                    <button type="button" wire:click="selectAngleOption('{{ $key }}')" class="block w-full rounded border border-white/15 p-3 text-left text-sm {{ (string) ($interviewContext['selected_angle_option'] ?? '') === (string) $key ? 'bg-sky-400/10 text-sky-100' : 'text-zinc-300' }}">
+                                    <flux:button type="button" wire:click="selectAngleOption(@js((string) $key))" class="h-auto w-full justify-start whitespace-normal py-3 {{ (string) ($interviewContext['selected_angle_option'] ?? '') === (string) $key ? 'ring-2 ring-sky-500' : '' }}">
                                         {{ is_array($option) ? ($option['title'] ?? $option['thesis'] ?? json_encode($option)) : $option }}
-                                    </button>
+                                    </flux:button>
                                 @endforeach
                             </div>
                         @endif
                         @if ($displayAngle !== [])
                             <div class="mt-3">
-                                <p class="font-medium text-zinc-100">Selected angle</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-300">{{ json_encode($displayAngle, JSON_PRETTY_PRINT) }}</pre>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Selected angle</p>
+                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayAngle, JSON_PRETTY_PRINT) }}</pre>
                             </div>
                         @endif
                     </div>
                 @endif
                 @php($displayPlan = is_array($attempt?->plan) ? $attempt->plan : [])
                 @if ($displayPlan !== [])
-                    <div class="mt-4 rounded-lg border border-white/10 bg-zinc-950/60 p-4 text-sm text-zinc-200" data-generated-plan-digest>
+                    <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200" data-generated-plan-digest>
                         <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-medium text-zinc-100">Plan digest for approval</h3>
+                            <h3 class="font-medium text-zinc-900 dark:text-zinc-100">Plan digest for approval</h3>
                             @if (($displayPlan['source'] ?? null) === 'agent')
-                                <span class="rounded bg-sky-400/10 px-2 py-1 text-xs text-sky-100">Generated by agent</span>
+                                <span class="rounded bg-sky-50 px-2 py-1 text-xs text-sky-700 dark:bg-sky-400/10 dark:text-sky-100">Generated by agent</span>
                             @endif
                         </div>
                         @if (isset($displayPlan['argument']))
-                            <p class="mt-3 text-zinc-300">{{ is_string($displayPlan['argument']) ? $displayPlan['argument'] : json_encode($displayPlan['argument']) }}</p>
+                            <p class="mt-3 text-zinc-700 dark:text-zinc-300">{{ is_string($displayPlan['argument']) ? $displayPlan['argument'] : json_encode($displayPlan['argument']) }}</p>
                         @endif
                         <div class="mt-3 grid gap-3 md:grid-cols-2">
                             <div>
-                                <p class="font-medium text-zinc-100">Outline</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-300">{{ json_encode($displayPlan['outline'] ?? [], JSON_PRETTY_PRINT) }}</pre>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Outline</p>
+                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayPlan['outline'] ?? [], JSON_PRETTY_PRINT) }}</pre>
                             </div>
                             <div>
-                                <p class="font-medium text-zinc-100">Visual plan</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-300">{{ json_encode($displayPlan['visualPlan'] ?? [], JSON_PRETTY_PRINT) }}</pre>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Visual plan</p>
+                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayPlan['visualPlan'] ?? [], JSON_PRETTY_PRINT) }}</pre>
                             </div>
                         </div>
                     </div>
                 @endif
                 <div class="mt-4 flex flex-wrap gap-3">
                     @can(PublishingPermission::Develop->value)
-                        <button wire:click="startInterview" class="rounded border border-white/15 px-3 py-2 text-sm">Start interview</button>
-                        <button wire:click="submitInterviewAnswers" class="rounded border border-white/15 px-3 py-2 text-sm">Save interview answers</button>
-                        <button wire:click="startResearch" class="rounded border border-white/15 px-3 py-2 text-sm">Research sources</button>
+                        <flux:button wire:click="startInterview">Start interview</flux:button>
+                        <flux:button wire:click="submitInterviewAnswers">Save interview answers</flux:button>
+                        <flux:button wire:click="startResearch">Research sources</flux:button>
                     @endcan
                     @can(PublishingPermission::Approve->value)
-                        <button wire:click="approveAngle('{{ $angleInputHash }}')" class="rounded border border-white/15 px-3 py-2 text-sm">Approve angle</button>
-                        <button wire:click="approvePlan('{{ $planInputHash }}')" class="rounded border border-white/15 px-3 py-2 text-sm">Approve plan</button>
+                        <flux:button wire:click="approveAngle('{{ $angleInputHash }}')">Approve angle</flux:button>
+                        <flux:button wire:click="approvePlan('{{ $planInputHash }}')">Approve plan</flux:button>
                     @endcan
                 </div>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <label class="text-sm text-zinc-300">Source URL <input wire:model="sourceUrl" class="mt-1 w-full rounded bg-zinc-950 px-3 py-2" placeholder="https://example.com/source"></label>
-                    <label class="text-sm text-zinc-300">Interview answers <textarea wire:model="interviewAnswers" class="mt-1 w-full rounded bg-zinc-950 px-3 py-2" rows="3" placeholder="Answer the latest interview questions before angle approval"></textarea></label>
-                    <div class="text-sm text-zinc-300 sm:col-span-2">
-                        <p class="font-medium text-zinc-100">Voice samples from published archive</p>
+                <div class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
+                    <flux:field>
+                        <flux:label>Source URL</flux:label>
+                        <flux:input wire:model="sourceUrl" placeholder="https://example.com/source" />
+                        <flux:error name="sourceUrl" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Interview answers</flux:label>
+                        <flux:textarea wire:model="interviewAnswers" rows="3" placeholder="Answer the latest interview questions before angle approval" />
+                        <flux:error name="interviewAnswers" />
+                    </flux:field>
+                    <div class="text-sm text-zinc-700 dark:text-zinc-300 sm:col-span-2">
+                        <p class="font-medium text-zinc-900 dark:text-zinc-100">Voice samples from published archive</p>
                         <div class="mt-2 grid gap-2">
                             @forelse ($voiceSampleOptions as $sampleArticle)
-                                <label class="flex items-center gap-2 rounded border border-white/10 bg-zinc-950 p-2">
-                                    <input type="checkbox" wire:model="selectedVoiceSampleArticleIds" value="{{ $sampleArticle->id }}">
-                                    <span>{{ $sampleArticle->publishedRelease?->payload['metadata']['title'] ?? $sampleArticle->idea ?? 'Published article #'.$sampleArticle->id }}</span>
-                                </label>
+                                <flux:checkbox wire:model="selectedVoiceSampleArticleIds" value="{{ $sampleArticle->id }}" label="{{ $sampleArticle->publishedRelease?->payload['metadata']['title'] ?? $sampleArticle->idea ?? 'Published article #'.$sampleArticle->id }}" />
                             @empty
-                                <p class="text-zinc-400">Publish or import an archive article before selecting voice samples.</p>
+                                <p class="text-zinc-600 dark:text-zinc-400">Publish or import an archive article before selecting voice samples.</p>
                             @endforelse
                         </div>
                     </div>
-                    <div class="text-sm text-zinc-300 sm:col-span-2">
-                        <p class="font-medium text-zinc-100">Retained owner sources</p>
+                    <div class="text-sm text-zinc-700 dark:text-zinc-300 sm:col-span-2">
+                        <p class="font-medium text-zinc-900 dark:text-zinc-100">Retained owner sources</p>
                         <div class="mt-2 grid gap-2">
                             @forelse ($evidenceSources->whereIn('source_type', ['owner', 'restricted']) as $source)
-                                <label class="flex items-center gap-2 rounded border border-white/10 bg-zinc-950 p-2">
-                                    <input type="checkbox" wire:model="selectedEvidenceSourceIds" value="{{ $source->id }}">
-                                    <span>{{ $source->title ?? $source->url ?? 'Source #'.$source->id }} @if($source->unresolved_reason)<span class="text-amber-200">— {{ $source->unresolved_reason }}</span>@endif</span>
-                                </label>
+                                <flux:checkbox wire:model="selectedEvidenceSourceIds" value="{{ $source->id }}" label="{{ ($source->title ?? $source->url ?? 'Source #'.$source->id).($source->unresolved_reason ? ' — '.$source->unresolved_reason : '') }}" />
                             @empty
-                                <p class="text-zinc-400">No retained owner sources are available for selection.</p>
+                                <p class="text-zinc-600 dark:text-zinc-400">No retained owner sources are available for selection.</p>
                             @endforelse
                         </div>
                     </div>
-                    <label class="text-sm text-zinc-300 sm:col-span-2">Voice sample notes <input wire:model="voiceSample" class="mt-1 w-full rounded bg-zinc-950 px-3 py-2" placeholder="New dispatches require selecting published archive samples above; pasted IDs/excerpts are rejected"></label>
+                    <flux:field class="sm:col-span-2">
+                        <flux:label>Voice sample notes</flux:label>
+                        <flux:input wire:model="voiceSample" placeholder="Select published archive samples above for new dispatches; pasted IDs/excerpts are rejected" />
+                        <flux:error name="voiceSample" />
+                    </flux:field>
                 </div>
             </section>
+            </flux:tab.panel>
 
-            <section class="admin-editor rounded-xl border border-white/10 bg-white/5 p-6" data-admin-editor-shell>
+            <flux:tab.panel name="manuscript">
+            <section class="admin-editor rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5" data-admin-editor-shell>
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-xl font-semibold">Manuscript</h2>
-                        <p class="mt-1 text-sm text-zinc-400">Protected passages are stored in the canonical JSON as block attributes and require proposal review before replacement.</p>
+                        <flux:heading size="lg">Manuscript</flux:heading>
+                        <flux:text class="mt-1">Protected passages are stored in the canonical JSON as block attributes and require proposal review before replacement.</flux:text>
                     </div>
                     @can(PublishingPermission::Write->value)
-                        <button wire:click="protectFirstBlock" class="rounded border border-white/15 px-3 py-2 text-sm">Protect first passage</button>
+                        <flux:button wire:click="protectFirstBlock">Protect first passage</flux:button>
                     @endcan
                 </div>
                 @can(PublishingPermission::Write->value)
                     <div class="mt-4 flex flex-wrap gap-2" aria-label="Semantic manuscript blocks">
-                        <button type="button" data-editor-command="note" class="rounded border border-white/15 px-3 py-1.5 text-xs">Insert note</button>
-                        <button type="button" data-editor-command="callout" class="rounded border border-white/15 px-3 py-1.5 text-xs">Insert callout</button>
-                        <button type="button" data-editor-command="chart" class="rounded border border-white/15 px-3 py-1.5 text-xs">Insert chart</button>
-                        <button type="button" data-editor-command="diagram" class="rounded border border-white/15 px-3 py-1.5 text-xs">Insert diagram</button>
-                        <button type="button" data-editor-command="protect" class="rounded border border-amber-300/30 px-3 py-1.5 text-xs text-amber-100">Protect selection</button>
-                        <button type="button" data-editor-command="unprotect" class="rounded border border-white/15 px-3 py-1.5 text-xs">Unprotect selection</button>
+                        <flux:button type="button" size="xs" data-editor-command="note">Insert note</flux:button>
+                        <flux:button type="button" size="xs" data-editor-command="callout">Insert callout</flux:button>
+                        <flux:button type="button" size="xs" data-editor-command="chart">Insert chart</flux:button>
+                        <flux:button type="button" size="xs" data-editor-command="diagram">Insert diagram</flux:button>
+                        <flux:button type="button" size="xs" color="amber" data-editor-command="protect">Protect selection</flux:button>
+                        <flux:button type="button" size="xs" data-editor-command="unprotect">Unprotect selection</flux:button>
                     </div>
                 @endcan
                 <div wire:ignore class="mt-4">
                     <flux:editor
-                        class="min-h-64 rounded bg-zinc-950"
+                        class="min-h-64 rounded border border-zinc-200 bg-white dark:border-white/10 dark:bg-zinc-950"
                         data-admin-editor
                         data-article-id="{{ $article->id }}"
                         data-user-id="{{ auth()->id() }}"
                         data-current-revision="{{ $currentRevisionId }}"
-                        data-document='@json($document)'
-                        data-metadata='@json($metadata)'
+                        :data-document="json_encode($document)"
+                        :data-metadata="json_encode($metadata)"
                         toolbar="heading | bold italic strike | bullet ordered blockquote | link"
                     />
                 </div>
-                <p class="mt-3 text-xs text-zinc-500">Autosaves canonical JSON with expected revision and tab-scoped recovery. Conflicts keep local text intact.</p>
+                <flux:text class="mt-3 text-xs">Autosaves canonical JSON with expected revision and tab-scoped recovery. Conflicts keep local text intact.</flux:text>
             </section>
+            </flux:tab.panel>
 
-            <section class="rounded-xl border border-white/10 bg-white/5 p-6">
+            <flux:tab.panel name="reviews">
+            <section class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 class="text-xl font-semibold">Reviews and proposals</h2>
-                        <p class="mt-2 text-sm text-zinc-400">Agent findings are anchored to one revision. Human decisions apply proposals; protected prose is never overwritten automatically.</p>
+                        <flux:heading size="lg">Reviews and proposals</flux:heading>
+                        <flux:text class="mt-2">Agent findings are anchored to one revision. Human decisions apply proposals; protected prose is never overwritten automatically.</flux:text>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         @can(PublishingPermission::Develop->value)
-                            <button wire:click="startReviews" class="rounded border border-white/15 px-3 py-2 text-sm">Start three-lens review</button>
+                            <flux:button wire:click="startReviews">Start three-lens review</flux:button>
                         @endcan
                         @can(PublishingPermission::Approve->value)
-                            <button wire:click="finishReview" class="rounded border border-white/15 px-3 py-2 text-sm">Finish review</button>
-                            <button wire:click="restartReview" class="rounded border border-white/15 px-3 py-2 text-sm">Restart cycle</button>
+                            <flux:button wire:click="finishReview">Finish review</flux:button>
+                            <flux:button wire:click="restartReview">Restart cycle</flux:button>
                         @endcan
                     </div>
                 </div>
 
                 <div class="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div class="rounded-lg border border-white/10 p-4">
+                    <div class="rounded-lg border border-zinc-200 p-4 dark:border-white/10">
                         <h3 class="font-medium">Activity log</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-zinc-300">
+                        <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
                             @forelse ($agentActivities as $activity)
-                                <li class="rounded bg-zinc-950 p-3">{{ $activity->kind->value }} · {{ $activity->status->value }} @if($activity->pause_reason)<span class="text-amber-200">— {{ $activity->pause_reason }}</span>@endif</li>
+                                <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">{{ $activity->kind->value }} · {{ $activity->status->value }} @if($activity->pause_reason)<span class="text-amber-700 dark:text-amber-200">— {{ $activity->pause_reason }}</span>@endif</li>
                             @empty
-                                <li class="text-zinc-400">No agent activity has been started for this attempt.</li>
+                                <li class="text-zinc-600 dark:text-zinc-400">No agent activity has been started for this attempt.</li>
                             @endforelse
                         </ul>
                     </div>
-                    <div class="rounded-lg border border-white/10 p-4">
+                    <div class="rounded-lg border border-zinc-200 p-4 dark:border-white/10">
                         <h3 class="font-medium">Evidence sources</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-zinc-300">
+                        <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
                             @forelse ($evidenceSources as $source)
-                                <li class="rounded bg-zinc-950 p-3">{{ $source->title ?? $source->url ?? 'Source' }} @if($source->unresolved_reason)<span class="text-amber-200">— {{ $source->unresolved_reason }}</span>@endif</li>
+                                <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">{{ $source->title ?? $source->url ?? 'Source' }} @if($source->unresolved_reason)<span class="text-amber-700 dark:text-amber-200">— {{ $source->unresolved_reason }}</span>@endif</li>
                             @empty
-                                <li class="text-zinc-400">No evidence sources recorded yet.</li>
+                                <li class="text-zinc-600 dark:text-zinc-400">No evidence sources recorded yet.</li>
                             @endforelse
                         </ul>
                     </div>
                 </div>
 
-                <div class="mt-5 rounded-lg border border-white/10 p-4">
+                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
                     <h3 class="font-medium">Findings and proposals</h3>
-                    <ul class="mt-3 space-y-2 text-sm text-zinc-300">
+                    <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
                         @forelse ($editorialFindings as $finding)
-                            <li class="rounded bg-zinc-950 p-3">
+                            <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div><span class="text-xs uppercase text-zinc-500">{{ $finding->lens }} · {{ $finding->severity }}</span><p class="mt-1">{{ $finding->statement }}</p></div>
                                     @if($finding->proposed_patch && !$finding->disposition)
                                         @can(PublishingPermission::Write->value)
-                                            <button wire:click="applyProposal({{ $finding->id }})" class="rounded border border-white/15 px-3 py-1 text-xs">Accept patch</button>
+                                            <flux:button size="xs" wire:click="applyProposal({{ $finding->id }})">Accept patch</flux:button>
                                         @endcan
                                     @endif
                                     @if(!$finding->disposition)
                                         @can(PublishingPermission::Approve->value)
-                                            <button wire:click="decideFinding({{ $finding->id }}, 'rejected')" class="rounded border border-white/15 px-3 py-1 text-xs">Reject advice</button>
-                                            <button wire:click="decideFinding({{ $finding->id }}, 'false_positive')" class="rounded border border-white/15 px-3 py-1 text-xs">False positive</button>
+                                            <flux:button size="xs" wire:click="decideFinding({{ $finding->id }}, 'rejected')">Reject advice</flux:button>
+                                            <flux:button size="xs" wire:click="decideFinding({{ $finding->id }}, 'false_positive')">False positive</flux:button>
                                         @endcan
                                     @endif
                                 </div>
                                 @if(is_array($finding->supporting_quotations) && count($finding->supporting_quotations) > 0)
-                                    <div class="mt-2 space-y-1 text-xs text-zinc-400">
-                                        <p class="font-medium text-zinc-300">Supporting quotations</p>
+                                    <div class="mt-2 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                        <p class="font-medium text-zinc-700 dark:text-zinc-300">Supporting quotations</p>
                                         @foreach($finding->supporting_quotations as $quotation)
                                             @if(is_array($quotation))
-                                                <blockquote class="border-l border-white/15 pl-2">Source #{{ $quotation['source_id'] ?? 'unknown' }}: “{{ $quotation['quote'] ?? '' }}”</blockquote>
+                                                <blockquote class="border-l border-zinc-300 pl-2 dark:border-white/15">Source #{{ $quotation['source_id'] ?? 'unknown' }}: “{{ $quotation['quote'] ?? '' }}”</blockquote>
                                             @endif
                                         @endforeach
                                     </div>
@@ -1040,42 +1117,42 @@ new #[Layout('layouts.admin')] class extends Component
                                 @if($finding->disposition)<p class="mt-2 text-xs text-zinc-500">Disposition: {{ $finding->disposition }}</p>@endif
                             </li>
                         @empty
-                            <li class="text-zinc-400">No findings have been recorded for this revision.</li>
+                            <li class="text-zinc-600 dark:text-zinc-400">No findings have been recorded for this revision.</li>
                         @endforelse
                     </ul>
                 </div>
 
-                <div class="mt-5 rounded-lg border border-white/10 p-4">
+                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
                     <h3 class="font-medium">Budget top-up</h3>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        <input wire:model="budgetTopUpNanoUsd" type="number" min="1" class="rounded bg-zinc-950 px-3 py-2 text-sm" aria-label="Nano USD top-up amount">
-                        <input wire:model="budgetMutationKey" class="rounded bg-zinc-950 px-3 py-2 text-sm" placeholder="mutation key">
+                    <div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                        <flux:input wire:model="budgetTopUpNanoUsd" type="number" min="1" aria-label="Nano USD top-up amount" />
+                        <flux:input wire:model="budgetMutationKey" aria-label="Budget mutation key" placeholder="mutation key" />
                         @can(PublishingPermission::Budget->value)
-                            <button wire:click="topUpBudget" class="rounded border border-white/15 px-3 py-2 text-sm">Top up budget</button>
+                            <flux:button wire:click="topUpBudget">Top up budget</flux:button>
                         @endcan
                     </div>
                 </div>
 
-                <div class="mt-5 rounded-lg border border-white/10 p-4">
+                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-medium">Protected passage controls</h3>
-                            <p class="mt-1 text-sm text-zinc-400">These controls read and update the canonical document JSON, not rendered HTML.</p>
+                            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">These controls read and update the canonical document JSON, not rendered HTML.</p>
                         </div>
                         @can(PublishingPermission::Write->value)
-                            <button wire:click="protectFirstBlock" class="rounded border border-white/15 px-3 py-2 text-sm">Mark first block protected</button>
+                            <flux:button wire:click="protectFirstBlock">Mark first block protected</flux:button>
                         @endcan
                     </div>
 
                     @if ($protectedBlocks === [])
-                        <p class="mt-4 text-sm text-zinc-400">No protected passages are marked in this revision.</p>
+                        <p class="mt-4 text-sm text-zinc-600 dark:text-zinc-400">No protected passages are marked in this revision.</p>
                     @else
-                        <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+                        <ul class="mt-4 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
                             @foreach ($protectedBlocks as $block)
-                                <li class="flex flex-wrap items-center justify-between gap-3 rounded border border-white/10 p-3">
+                                <li class="flex flex-wrap items-center justify-between gap-3 rounded border border-zinc-200 p-3 dark:border-white/10">
                                     <span>{{ $block['type'] }} <code class="text-xs text-zinc-500">{{ $block['id'] }}</code></span>
                                     @can(PublishingPermission::Write->value)
-                                        <button wire:click="unprotectBlock('{{ $block['id'] }}')" class="rounded border border-white/15 px-3 py-1 text-xs">Remove protection</button>
+                                        <flux:button size="xs" wire:click="unprotectBlock('{{ $block['id'] }}')">Remove protection</flux:button>
                                     @endcan
                                 </li>
                             @endforeach
@@ -1083,15 +1160,16 @@ new #[Layout('layouts.admin')] class extends Component
                     @endif
                 </div>
             </section>
-        </div>
+            </flux:tab.panel>
+        </flux:tab.group>
 
         <aside class="space-y-6">
-            <section id="preview" class="rounded-xl border border-white/10 bg-white/5 p-6">
-                <h2 class="font-semibold">Preview</h2>
+            <section id="preview" class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                <flux:heading size="lg">Preview</flux:heading>
                 @if ($previewUrl)
                     <iframe class="mt-4 h-96 w-full rounded bg-white" src="{{ $previewUrl }}" sandbox="allow-same-origin" title="Article preview"></iframe>
                 @else
-                    <p class="mt-3 text-sm text-zinc-400">Save a revision before previewing.</p>
+                    <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Save a revision before previewing.</p>
                 @endif
             </section>
             <x-admin.publishing.partials.release-checklist :article="$article" :attempt="$attempt" :release="$release" />

@@ -21,12 +21,12 @@ new #[Layout('layouts.admin')] class extends Component
 ?>
 
 <section class="space-y-6">
-    <h1 class="text-3xl font-semibold">Published</h1>
-    <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+    <flux:heading level="1" size="xl">Published</flux:heading>
+    <div class="space-y-3 rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
         @forelse ($articles as $article)
-            <a class="block rounded bg-zinc-950 p-3 hover:bg-zinc-900" href="{{ route('admin.publishing.articles.show', $article) }}">{{ $article->idea }}</a>
+            <flux:button class="w-full min-w-0 justify-start whitespace-normal" href="{{ route('admin.publishing.articles.show', $article) }}">{{ $article->idea }}</flux:button>
         @empty
-            <p class="text-sm text-zinc-400">No published releases yet.</p>
+            <flux:text>No published releases yet.</flux:text>
         @endforelse
     </div>
 </section>

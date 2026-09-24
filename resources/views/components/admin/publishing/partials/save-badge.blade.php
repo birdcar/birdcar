@@ -1,2 +1,11 @@
 @props(['state' => 'saved'])
-<span class="rounded-full border border-white/15 px-3 py-1 text-sm" data-save-state="{{ $state }}">{{ ucfirst($state) }}</span>
+@php
+    $color = match ($state) {
+        'saved' => 'green',
+        'saving' => 'sky',
+        'conflict' => 'amber',
+        'error' => 'red',
+        default => 'zinc',
+    };
+@endphp
+<flux:badge :color="$color" rounded data-save-state="{{ $state }}">{{ ucfirst($state) }}</flux:badge>

@@ -110,13 +110,24 @@ function adminAttemptWithCompletedReviews(User $actor, PublishingAttempt $attemp
 test('article workspace authorizes and renders preview iframe after a revision exists', function (): void {
     $user = editorUser();
     $article = app(WriteArticle::class)->capture($user, 'Workspace idea');
-    app(WriteArticle::class)->save($user, $article, null, simpleDocument(), [], 'mut_first');
+    $revision = app(WriteArticle::class)->save($user, $article, null, simpleDocument(), [], 'mut_first');
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing/articles/'.$article->slug)
         ->assertOk()
         ->assertSee('Workspace idea')
+        ->assertSee('Brief & plan', false)
+        ->assertSee('Manuscript')
+        ->assertSee('Reviews')
+        ->assertSee('aria-label="Budget mutation key"', false)
+        ->assertSee('window.livewireScriptConfig', false)
         ->assertSee('sandbox="allow-same-origin"', false);
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $editor = (new DOMXPath($document))->query('//*[@data-admin-editor]')->item(0);
+
+    expect(json_decode($editor->getAttribute('data-document'), true))->toBe($revision->document)
+        ->and(json_decode($editor->getAttribute('data-metadata'), true))->toBe($revision->metadata);
 });
 
 test('article workspace denies cross author access by slug', function (): void {
@@ -445,14 +456,15 @@ test('changing a selected angle after approval invalidates downstream gates with
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $attempt->forceFill(['interview_context' => [
         'angle_options' => [
-            'a' => ['title' => 'Angle A', 'thesis' => 'Use A.'],
+            "a'quoted" => ['title' => 'Angle A', 'thesis' => 'Use A.'],
             'b' => ['title' => 'Angle B', 'thesis' => 'Use B.'],
         ],
     ]])->save();
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->call('selectAngleOption', 'a')
+        ->assertSee("selectAngleOption('a\\u0027quoted')", false)
+        ->call('selectAngleOption', "a'quoted")
         ->assertSet('saveError', null);
 
     $attempt = $attempt->fresh();

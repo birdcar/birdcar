@@ -2,11 +2,7 @@
 
 return [
     'enabled' => (bool) env('PUBLISHING_AGENTS_ENABLED', false),
-    'openrouter' => [
-        'api_key' => env('OPENROUTER_API_KEY'),
-        'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
-        'timeout' => (int) env('PUBLISHING_AGENTS_HTTP_TIMEOUT', 30),
-    ],
+    'http_timeout' => (int) env('PUBLISHING_AGENTS_HTTP_TIMEOUT', 30),
     'routes' => [
         'default' => [
             'model' => env('PUBLISHING_AGENTS_DEFAULT_MODEL', 'anthropic/claude-3.5-haiku'),

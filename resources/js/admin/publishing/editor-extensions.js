@@ -1,5 +1,5 @@
 import { Extension, Node } from '@tiptap/core';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { createBlockId, documentToEditorJson, editorToDocumentJson, ensureStableBlockIds } from './document-helpers.js';
 
 const registered = new WeakSet();
@@ -21,6 +21,7 @@ const StableBlockAttributes = Extension.create({
     },
     addProseMirrorPlugins() {
         return [new Plugin({
+            key: new PluginKey('publishingStableBlockIds'),
             appendTransaction(transactions, oldState, newState) {
                 if (!transactions.some((transaction) => transaction.docChanged) && oldState.doc.eq(newState.doc)) return null;
 
@@ -127,7 +128,6 @@ document.addEventListener('flux:editor', (event) => {
     registered.add(hooks);
 
     hooks.registerExtensions?.([StableBlockAttributes, Note, Callout, Chart, Diagram]);
-    hooks.enableExtension?.('table');
 
     hooks.init?.(({ editor }) => {
         editor.on('create', ({ editor: readyEditor }) => {

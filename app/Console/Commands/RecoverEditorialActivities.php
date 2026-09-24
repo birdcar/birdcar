@@ -7,7 +7,7 @@ use App\Models\AgentBudgetReservation;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\OpenRouterBilling;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -17,7 +17,7 @@ class RecoverEditorialActivities extends Command
 
     protected $description = 'Re-enqueue durable pending editorial agent activities and pause ambiguous old runs.';
 
-    public function handle(OpenRouterClient $client, AgentBudget $budget): int
+    public function handle(OpenRouterBilling $client, AgentBudget $budget): int
     {
         $limit = max(1, (int) $this->option('limit'));
         $count = 0;
@@ -54,7 +54,7 @@ class RecoverEditorialActivities extends Command
         return self::SUCCESS;
     }
 
-    private function reconcileRecordedGeneration(EditorialActivity $activity, OpenRouterClient $client, AgentBudget $budget): bool
+    private function reconcileRecordedGeneration(EditorialActivity $activity, OpenRouterBilling $client, AgentBudget $budget): bool
     {
         $generationId = is_string($activity->generation_id) && $activity->generation_id !== '' ? $activity->generation_id : null;
         $reservation = $this->recoverableReservation($activity, $generationId);

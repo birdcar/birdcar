@@ -44,6 +44,7 @@ test('the favicon uses the current cyan field and ink mark', function () {
 
 test('structured article data identifies its real author and original publication date', function () {
     config(['marketing.url' => 'https://birdcar.dev']);
+    marketingDiscoveryImportArchive($this);
 
     $response = $this->get('/writing/just-build-it-twice/?ref=reader')->assertOk();
     $document = new DOMDocument;
@@ -116,6 +117,7 @@ test('robots publishes the canonical sitemap only for the public indexable site'
 
 test('the sitemap contains the public pages and original archive with canonical URLs', function () {
     config(['marketing.url' => 'https://birdcar.dev']);
+    marketingDiscoveryImportArchive($this);
 
     $response = $this->get('/sitemap.xml')->assertOk();
     $xml = simplexml_load_string($response->getContent());
@@ -128,6 +130,7 @@ test('the sitemap contains the public pages and original archive with canonical 
 
 test('the development specimen is excluded from public discovery and navigation', function () {
     config(['marketing.indexable' => true]);
+    marketingDiscoveryImportArchive($this);
 
     foreach (['/sitemap.xml', '/rss.xml', '/', '/writing/'] as $path) {
         $this->get($path)->assertOk()->assertDontSee('/__design/figures')->assertDontSee('Development specimen');
@@ -158,6 +161,7 @@ test('cms-mode imported archive preserves canonical sitemap and feed discovery',
 
 test('future dated writing stays out of the public sitemap', function () {
     CarbonImmutable::setTestNow('2026-04-18');
+    marketingDiscoveryImportArchive($this);
 
     $this->get('/sitemap.xml')->assertOk()
         ->assertDontSee('/writing/just-build-it-twice/')
@@ -179,7 +183,7 @@ test('a marketing url without a host fails loudly instead of binding routes to n
 
 function marketingDiscoveryImportArchive($test): void
 {
-    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $test->artisan('authorization:sync')->assertSuccessful();
     $operator = User::factory()->create();

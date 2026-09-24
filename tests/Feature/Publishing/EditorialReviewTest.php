@@ -16,8 +16,8 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialPrompts;
-use App\Services\Publishing\OpenRouterClient;
+use App\Services\Publishing\EditorialModelBudget;
+use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublishingFingerprint;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -30,7 +30,7 @@ beforeEach(function (): void {
 
 test('initial draft writes only into an empty untouched manuscript', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -51,7 +51,7 @@ test('initial draft writes only into an empty untouched manuscript', function ()
     $actor = reviewAuthor();
     $attempt = reviewAttempt($actor, []);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Draft, [], 'draft-test');
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     $article = $attempt->article()->firstOrFail()->fresh();
     expect($article?->workingRevision?->origin)->toBe('agent-initial')
@@ -62,7 +62,7 @@ test('initial draft writes only into an empty untouched manuscript', function ()
 
 test('initial draft does not overwrite nested manuscript text', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -94,7 +94,7 @@ test('initial draft does not overwrite nested manuscript text', function (): voi
     $originalRevisionId = (int) $attempt->article()->firstOrFail()->fresh()->working_revision_id;
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Draft, [], 'draft-nested-text');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect((int) $attempt->article()->firstOrFail()->fresh()->working_revision_id)->toBe($originalRevisionId)
         ->and($activity->fresh()?->proposal['document']['content'][0]['text'])->toBe('AI replacement')
@@ -103,7 +103,7 @@ test('initial draft does not overwrite nested manuscript text', function (): voi
 
 test('review lenses are queued only after draft completion on the drafted revision', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -128,7 +128,7 @@ test('review lenses are queued only after draft completion on the drafted revisi
     expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer'])->count())->toBe(0);
 
     $draft = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Draft, [], 'draft-review-queue');
-    app(RunEditorialActivity::class, ['activityId' => $draft->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $draft->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
     $reviewRevisionId = (int) $attempt->article()->firstOrFail()->fresh()->working_revision_id;
 
     expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer'])->count())->toBe(3)
@@ -245,7 +245,7 @@ test('proposal acceptance rejects nested overlapping patches against one base', 
 
 test('reconciliation deduplicates compatible findings and retains conflicts for human decision', function (): void {
     config()->set('publishing_agents.enabled', true);
-    config()->set('publishing_agents.openrouter.api_key', 'test-key');
+    config()->set('ai.providers.openrouter.key', 'test-key');
     config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
     config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
     config()->set('publishing_agents.routes.default.context_tokens', 100);
@@ -353,7 +353,7 @@ test('reconciliation deduplicates compatible findings and retains conflicts for 
     ]);
 
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Reconciliation, ['expected_revision_id' => $revision->id], 'reconciliation-regression');
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(OpenRouterClient::class), app(AgentBudget::class), app(EditorialPrompts::class), app(WriteArticle::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
 
     expect($duplicateA->fresh()?->reconciliation_state)->toBe('representative')
         ->and($duplicateA->fresh()?->stale_at)->toBeNull()

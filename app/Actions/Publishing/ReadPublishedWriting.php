@@ -2,30 +2,20 @@
 
 namespace App\Actions\Publishing;
 
-use App\Actions\ReadWriting;
 use App\Models\Article;
 use App\Models\ArticleRelease;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
-use RuntimeException;
 
 /**
- * @phpstan-type PublicArticle array{slug: string, title: string, description: string, date: CarbonImmutable, tags: list<string>, html: string, body?: string, readMinutes: int}
+ * @phpstan-type PublicArticle array{slug: string, title: string, description: string, date: CarbonImmutable, tags: list<string>, html: string, readMinutes: int}
  */
 class ReadPublishedWriting
 {
-    public function __construct(private readonly ReadWriting $legacyReader) {}
-
     /** @return Collection<int, PublicArticle> */
     public function all(): Collection
     {
-        if ($this->usesFiles()) {
-            return $this->legacyReader->all()
-                ->map(fn (array $article): array => $this->fromLegacyArticle($article))
-                ->values();
-        }
-
         return Article::query()
             ->whereNotNull('published_release_id')
             ->whereHas('publishedRelease', function ($query): void {
@@ -42,12 +32,6 @@ class ReadPublishedWriting
     /** @return PublicArticle|null */
     public function find(string $slug): ?array
     {
-        if ($this->usesFiles()) {
-            $article = $this->legacyReader->find($slug);
-
-            return $article === null ? null : $this->fromLegacyArticle($article);
-        }
-
         $article = Article::query()
             ->where(function ($query) use ($slug): void {
                 $query->where('slug', $slug)
@@ -63,45 +47,6 @@ class ReadPublishedWriting
             ->first();
 
         return $article instanceof Article ? $this->fromArticle($article) : null;
-    }
-
-    public function usesDatabase(): bool
-    {
-        return $this->mode() === 'database';
-    }
-
-    private function usesFiles(): bool
-    {
-        return $this->mode() === 'files';
-    }
-
-    private function mode(): string
-    {
-        $mode = (string) config('publishing.public_reader', 'files');
-
-        if (! in_array($mode, ['files', 'database'], true)) {
-            throw new RuntimeException('config publishing.public_reader must be either files or database.');
-        }
-
-        return $mode;
-    }
-
-    /**
-     * @param  array{slug: string, title: string, description: string, date: CarbonImmutable, tags: list<string>, body: string, readMinutes: int}  $article
-     * @return PublicArticle
-     */
-    private function fromLegacyArticle(array $article): array
-    {
-        return [
-            'slug' => $article['slug'],
-            'title' => $article['title'],
-            'description' => $article['description'],
-            'date' => $article['date'],
-            'tags' => $article['tags'],
-            'body' => $article['body'],
-            'html' => $this->legacyReader->render($article['body']),
-            'readMinutes' => $article['readMinutes'],
-        ];
     }
 
     /** @return PublicArticle|null */

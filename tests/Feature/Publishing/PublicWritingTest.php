@@ -14,7 +14,7 @@ use Carbon\CarbonImmutable;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
-    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $this->artisan('authorization:sync')->assertSuccessful();
 });
@@ -47,31 +47,37 @@ test('database reader does not fall back to legacy files for missing records', f
     $this->get('/writing/just-build-it-twice/')->assertNotFound();
 });
 
-test('files mode still maps the legacy archive through the same projection', function (): void {
-    config(['publishing.public_reader' => 'files']);
+test('database reader requires the article published pointer and published release status', function (): void {
+    $article = publicWritingArticle('unpointed-release', 'Unpointed Release', 'Hidden public body.', '2024-02-01');
+    $release = $article->publishedRelease;
 
-    $article = app(ReadPublishedWriting::class)->find('just-build-it-twice');
+    $article->forceFill(['published_release_id' => null])->save();
+    expect(app(ReadPublishedWriting::class)->find('unpointed-release'))->toBeNull();
 
-    expect($article)->not->toBeNull()
-        ->and($article['title'])->toBe('Just build it twice')
-        ->and($article['html'])->toContain('build it twice');
+    $article->forceFill(['published_release_id' => $release->id])->save();
+    $release->forceFill(['status' => 'prepared'])->save();
+    expect(app(ReadPublishedWriting::class)->find('unpointed-release'))->toBeNull();
 });
 
-test('delivery is blocked while the public reader is still in files mode', function (): void {
-    config(['publishing.public_reader' => 'files']);
+test('delivery publishes import releases without a reader mode flag', function (): void {
     $actor = publicWritingAuthor();
-    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => 'guarded-delivery']);
+    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => 'unguarded-delivery']);
     $revision = ArticleRevision::factory()->create([
         'article_id' => $article->id,
         'created_by' => $actor->id,
-        'document' => publicWritingDocument('Guarded body.'),
-        'metadata' => publicWritingMetadata('Guarded Delivery', '2024-03-01'),
+        'document' => publicWritingDocument('Delivered body.'),
+        'metadata' => publicWritingMetadata('Unguarded Delivery', '2024-03-01'),
     ]);
     $article->forceFill(['working_revision_id' => $revision->id])->save();
-    $release = publicWritingRelease($article, $revision, 'guarded-delivery', '2024-03-01');
+    $release = publicWritingRelease($article, $revision, 'unguarded-delivery', '2024-03-01');
+    $article->forceFill(['published_release_id' => null])->save();
+    $release->forceFill(['published_at' => null, 'status' => 'approved'])->save();
 
-    expect(fn () => app(ManageArticleRelease::class)->deliver($actor, $release, null))
-        ->toThrow(RuntimeException::class, 'public_reader is database');
+    $delivered = app(ManageArticleRelease::class)->deliver($actor, $release, null);
+
+    expect($delivered->status)->toBe('published')
+        ->and($article->fresh()->published_release_id)->toBe($release->id)
+        ->and(app(ReadPublishedWriting::class)->find('unguarded-delivery')['html'])->toContain('Delivered body.');
 });
 
 function publicWritingAuthor(): User

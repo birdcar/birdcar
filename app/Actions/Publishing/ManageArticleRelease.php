@@ -267,10 +267,6 @@ class ManageArticleRelease
     {
         $this->authorize($actor, PublishingPermission::Publish->value);
 
-        if ((string) config('publishing.public_reader', 'files') !== 'database') {
-            throw new RuntimeException('CMS release delivery is disabled until publishing.public_reader is database.');
-        }
-
         /** @var ArticleRelease $delivered */
         $delivered = DB::transaction(function () use ($actor, $release, $expectedPreviousLiveReleaseId): ArticleRelease {
             $releaseId = $this->releaseId($release);

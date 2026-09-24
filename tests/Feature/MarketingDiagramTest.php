@@ -187,7 +187,7 @@ test('the specimen is not reachable on application or arbitrary hosts', function
 
 function marketingDiagramImportArchive($test): void
 {
-    config(['publishing.public_reader' => 'database', 'marketing.url' => 'https://birdcar.dev']);
+    config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $test->artisan('authorization:sync')->assertSuccessful();
     $operator = User::factory()->create();
