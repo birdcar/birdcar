@@ -6,6 +6,7 @@ use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\FinishEditorialReview;
 use App\Actions\Publishing\ManageArticleRelease;
 use App\Actions\Publishing\ResumeEditorialActivity;
+use App\Actions\Publishing\RetryEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Permission as PublishingPermission;
@@ -437,6 +438,21 @@ new #[Layout('layouts.admin')] class extends Component
             $this->saveError = null;
             $this->refreshAgentWork();
             session()->flash('status', $reject ? 'Agent request declined.' : 'Your answers were queued for the agent.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function retryAgent(int $activityId): void
+    {
+        Gate::authorize('develop', $this->article);
+        $activity = EditorialActivity::query()->where('article_id', $this->article->id)->findOrFail($activityId);
+
+        try {
+            app(RetryEditorialActivity::class)->handle(auth()->user(), $activity);
+            $this->saveError = null;
+            $this->refreshAgentWork();
+            session()->flash('status', 'Agent work queued to run again.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }

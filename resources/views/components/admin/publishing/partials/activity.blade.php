@@ -8,6 +8,9 @@
                     <li wire:key="activity-{{ $activity->id }}" class="text-sm">
                         <div class="flex flex-wrap items-center justify-between gap-2"><span class="font-medium">{{ str($activity->kind->value)->replace('_', ' ')->ucfirst() }}</span><span class="text-zinc-600 dark:text-zinc-300">{{ str($activity->status->value)->replace('_', ' ')->ucfirst() }}</span></div>
                         @if ($activity->pause_reason || $activity->error_reason)<p class="mt-2 text-amber-800 dark:text-amber-200">{{ $activity->pause_reason ?? $activity->error_reason }}</p>@endif
+                        @if ($activity->status === \App\Models\Publishing\EditorialActivityStatus::Failed)
+                            <flux:button class="mt-2" size="sm" variant="ghost" icon="arrow-path" wire:click="retryAgent({{ $activity->id }})" wire:loading.attr="disabled" data-retry-agent="{{ $activity->id }}">Try again</flux:button>
+                        @endif
                     </li>
                 @empty<flux:text>No agent work has started for this article.</flux:text>@endforelse
             </ol>

@@ -2,9 +2,11 @@
 
 use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApprovePublishingStage;
+use App\Actions\Publishing\RetryEditorialActivity;
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
+use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\EditorialActivity;
@@ -13,9 +15,12 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -289,6 +294,54 @@ test('agent jobs run on their own queue with a timeout above the request chain a
         && $job->tries === 1
         && $job->timeout > (int) config('publishing_agents.http_timeout') + $researchFetches
         && $job->timeout < (int) config('queue.connections.database.retry_after'));
+});
+
+test('failed agent work runs again only when its owner retries it', function (): void {
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::sequence()
+        ->push(agentInterviewCompletion(['choices' => [['finish_reason' => 'stop', 'message' => ['role' => 'assistant', 'content' => json_encode(['questions' => 'not a list'])]]]]))
+        ->push(agentInterviewCompletion()),
+    ]);
+    $actor = agentBudgetAuthor();
+    $activity = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview, [], 'retry-failed');
+    runAgentJob($activity);
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Failed);
+
+    $this->artisan('publishing:recover-activities')->assertSuccessful();
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Failed);
+
+    $other = agentBudgetAuthor();
+    expect(fn () => app(RetryEditorialActivity::class)->handle($other, $activity->fresh()))->toThrow(AuthorizationException::class);
+
+    Bus::fake([RunEditorialActivity::class]);
+    app(RetryEditorialActivity::class)->handle($actor, $activity->fresh());
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($activity->fresh()->error_reason)->toBeNull()
+        ->and(fn () => app(RetryEditorialActivity::class)->handle($actor, $activity->fresh()))->toThrow(RuntimeException::class, 'Only failed agent work');
+    Bus::assertDispatched(RunEditorialActivity::class, fn (RunEditorialActivity $job): bool => $job->activityId === $activity->id);
+
+    runAgentJob($activity);
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed)
+        ->and($activity->fresh()->run_count)->toBe(2);
+});
+
+test('the workspace offers a retry for failed work and rejects another article\'s activity', function (): void {
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response(agentInterviewCompletion(['choices' => [['finish_reason' => 'stop', 'message' => ['role' => 'assistant', 'content' => json_encode(['questions' => 'not a list'])]]]]))]);
+    $actor = agentBudgetAuthor();
+    $actor->assignRole(AdminRole::Access->value);
+    $attempt = agentBudgetAttempt($actor);
+    $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'workspace-retry');
+    runAgentJob($activity);
+    $elsewhere = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview, [], 'workspace-retry-elsewhere');
+    runAgentJob($elsewhere);
+
+    $workspace = Livewire::actingAs($actor)->test('admin.publishing.article-workspace', ['article' => $attempt->article()->firstOrFail()])
+        ->assertSeeHtml('data-retry-agent="'.$activity->id.'"');
+
+    expect(fn () => $workspace->call('retryAgent', $elsewhere->id))->toThrow(ModelNotFoundException::class);
+
+    $workspace->call('retryAgent', $activity->id)->assertSet('saveError', null);
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($elsewhere->fresh()->status)->toBe(EditorialActivityStatus::Failed);
 });
 
 test('missing credentials pause before any provider request', function (): void {

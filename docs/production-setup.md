@@ -181,7 +181,7 @@ Provider failures are recorded on the activity with fixed messages that never ec
 - Missing key: the activity pauses before any request with “OpenRouter credentials are not configured.” Set the secret, rebuild the configuration cache, and restart workers; the next recovery pass resumes the paused work.
 - HTTP 401/403: OpenRouter rejected the key or its permissions. HTTP 402: the key or workspace has no remaining credit or limit. Both pause the activity.
 - Other HTTP 4xx: the selected model is unavailable or does not support the required parameters. Choose another model or reset the task on the settings page.
-- HTTP 429: the activity is marked failed before generating output. The application does not retry it automatically; start the work again after the limit clears.
+- HTTP 429, or a reply the app rejects: the activity is marked failed and is never retried automatically. The owner chooses **Try again** in the workspace once the cause clears; after the retry limit, a further failure pauses the activity for review.
 - A saved override that is no longer on the curated list pauses the activity before any request and is marked **Reset required** on the settings page. Resetting it lets the next recovery pass resume the work.
 - Timeouts, disconnects, and interrupted runs pause the activity as uncertain. Check OpenRouter's activity log before deliberately rerunning.
 

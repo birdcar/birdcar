@@ -46,7 +46,13 @@
                 </div>
             </div>
         @elseif (in_array($currentActivity?->status?->value, ['failed', 'paused'], true))
-            <flux:callout variant="warning" heading="Agent work needs attention" :text="$currentActivity->pause_reason ?? $currentActivity->error_reason ?? 'Open activity below for details. Your saved work is safe.'" />
+            <flux:callout variant="warning" heading="Agent work needs attention" :text="$currentActivity->pause_reason ?? $currentActivity->error_reason ?? 'Open activity below for details. Your saved work is safe.'">
+                @if ($currentActivity->status === \App\Models\Publishing\EditorialActivityStatus::Failed)
+                    <x-slot:actions>
+                        <flux:button size="sm" icon="arrow-path" wire:click="retryAgent({{ $currentActivity->id }})" wire:loading.attr="disabled" data-retry-agent="{{ $currentActivity->id }}">Try again</flux:button>
+                    </x-slot:actions>
+                @endif
+            </flux:callout>
         @endif
     </div>
 
