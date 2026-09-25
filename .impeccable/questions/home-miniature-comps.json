@@ -1,0 +1,40 @@
+{
+  "title": "Approve the homepage composition",
+  "question": "Three compositions of Your business, in miniature. Each tests a different hook. Pick the one to build; use the steer box to combine (e.g. comp 3's layout with comp 2's headline) or to name anything that feels false. Other hook candidates: “You shouldn’t have to be the system.” · “Room to grow. No new coordinator required.” Invented signage and slogans inside the renders will not ship.",
+  "options": [
+    {
+      "id": "comp-1",
+      "label": "Split: pitch beside the business",
+      "kicker": "OPTION 1",
+      "thesis": "Better work, faster. Without another hire. — the outcome leads, the miniature proves the problem beside it.",
+      "palette": ["#eef3f1", "#122127", "#f5c542", "#5fb8bf", "#ffffff"],
+      "materials": ["isometric studio render", "live packet paths", "caged canary"],
+      "viewport": "Headline and booking left; the cutaway business right with every packet converging on the owner's desk.",
+      "risk": "The most familiar hero arrangement; the miniature reads as a picture beside the pitch until motion starts.",
+      "comp": ".impeccable/mocks/home-miniature-1.png"
+    },
+    {
+      "id": "comp-2",
+      "label": "Panorama: the whole business as a stage",
+      "kicker": "OPTION 2",
+      "thesis": "Your business runs on you. It shouldn't have to. — centered hook over a full-width cross-section with the owner at center.",
+      "palette": ["#eef3f1", "#122127", "#f5c542", "#5fb8bf", "#ffffff"],
+      "materials": ["wide dollhouse cutaway", "live packet paths", "caged canary"],
+      "viewport": "Centered hook and button up top; the business spans edge to edge beneath, owner's office dead center.",
+      "risk": "On a 1366×768 laptop most of the building sits below the fold, so the story lands on the first scroll.",
+      "comp": ".impeccable/mocks/home-miniature-2.png"
+    },
+    {
+      "id": "comp-3",
+      "label": "Before / after: drag the fix across",
+      "kicker": "OPTION 3",
+      "thesis": "Why does everything come back to you? — the visitor drags from Today to After the fix and watches the tangle straighten.",
+      "palette": ["#eef3f1", "#122127", "#f5c542", "#5fb8bf", "#ffffff"],
+      "materials": ["split-state diorama", "drag handle toy", "canary out of the cage"],
+      "viewport": "Diorama left split by a yellow drag handle, Today vs After the fix; hook and booking right.",
+      "risk": "Shows the whole transformation up front, spending the scroll reveal; the drag has to be obvious on touch.",
+      "comp": ".impeccable/mocks/home-miniature-3.png"
+    }
+  ],
+  "steer": true
+}

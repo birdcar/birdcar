@@ -59,6 +59,11 @@ technical decisions to the experience of employees and customers. Custom tools
 and workflows should fit the client's business and customers. AI is one possible
 implementation tool; it is not the proposition.
 
+The owner's outcome chain (2026-09-25): tools built for the client's work are
+the how; better work, faster is the key outcome and leads marketing; growing
+without hiring is the key benefit that outcome enables; healthier margins are
+the eventual result. Birdcar is not an AI agency.
+
 ## Operating Context
 
 The buying moment often occurs when a previously manageable process stops being
@@ -245,24 +250,34 @@ and permissions remain to be designed.
   Do not use corporate we, us, our, or imply an agency team. Describe collaboration
   as working with the client and their team; attribute actual collaborators by name.
 - Retain the licensed Alkaline header wordmark, once per page and with native
-  tracking. It is the only mandatory visual anchor. The owner selected a new
-  visual world, The clear argument, on 2026-09-18: cyan editorial fields,
-  blue-green ink, yellow emphasis, white, and upright sans-serif hierarchy.
-  On 2026-09-19, the owner approved the Phase 1 opening, Barlow typography,
-  Walkthrough figure, mobile behavior, and static/print sketch. The integrated
-  implementation extends that foundation to all five public page types and both
-  authored figures; final owner launch acceptance is recorded separately in the
-  redesign's acceptance.md. Purple, the horizon, Karla, and script headings are
-  retired, not alternative current directions.
+  tracking. It is the only mandatory visual anchor. On 2026-09-25 the owner
+  reopened every other visual decision for the marketing site because The clear
+  argument (cyan fields, Barlow, flat line diagrams) lacked a "wow" factor and
+  did not demonstrate capability. The owner chose a replacement world, Your
+  business, in miniature, and approved its homepage comp the same day; DESIGN.md
+  records the built system at finish. The clear argument, purple, the horizon,
+  Karla, and script headings are retired for marketing. Admin and the customer
+  project surface keep their current Flux/Inter design.
 - The brand brings the future of Silicon Valley technology into the client's
-  business. Technical sophistication and glitz are welcome; the owner's helpful
-  voice and direct involvement carry the personal relationship. Regional buyer
-  relevance must not make the brand look solely like a local consultancy.
-- Prefer clean, classic design led by typography and purposeful explanation.
-  Author nontechnical diagrams, SVGs, and infographics for the site, Writing,
-  and print. Every essential relationship must remain understandable in a
-  complete static version. Optional Motion guides attention rather than
-  revealing missing meaning. Commit Mono is for code, not a label costume.
+  business. The marketing site should itself demonstrate capability, at the
+  craft level of Ramp, Stripe, Linear, WorkOS, and Laravel Cloud: performant,
+  modern motion, atmosphere and light, and a chaos-to-order story. Surprise and
+  delight, done well, earn trust that the owner can build whatever a client
+  needs. The owner's helpful voice and direct involvement carry the personal
+  relationship. Regional buyer relevance must not make the brand look solely
+  like a local consultancy.
+- Personality comes from a canary (Birdcar sounds like "canary auto"; the canary
+  is also the early warning that notices trouble first), dry wit in the details,
+  and small toys that reward curiosity. It must never read cute, kitschy, or
+  small-time.
+- Avoid generic AI-startup gloss (purple gradients, glowing orbs, "agentic"
+  buzzwords) and anything that feels too technical for an owner.
+- The design must work without a portrait of the owner for now; a professional
+  shoot will follow, so leave room for photography later.
+- Author nontechnical diagrams and figures for the site, Writing, and print.
+  Every essential relationship must remain understandable in a complete static
+  version. Motion guides attention and delights; it never reveals missing
+  meaning. Commit Mono is for code, not a label costume.
 - Include answer-engine discovery foundations from launch. Public content must
   remain useful, server-rendered, crawlable and accurately described in metadata,
   even when JavaScript or animation is unavailable. Preserve private-surface
@@ -345,8 +360,12 @@ avoid inventing savings, revenue, testimonials, or guaranteed results.
 
 ## Approved Launch Copy and Proof
 
-- The homepage introduction says “I help businesses”; do not narrow that sentence
-  to service businesses. Target the ideal customer through content.
+- The approved 2026-09-25 homepage hero reads “Better work, faster. Without
+  another hire.” with “I find where work keeps landing on your desk, then build
+  the tools that let your team handle it without you.” Do not narrow the hero
+  to service businesses; target the ideal customer through content. Marketing
+  copy should be shorter and clearer than the previous site: the offer easy to
+  understand and the capabilities obvious.
 - Public experience copy may say “fifteen years” or “more than 12 years”, never
   “more than fifteen years”.
 - Use “Craft & Communicate” as the public work-story title. Do not title it
@@ -362,8 +381,12 @@ avoid inventing savings, revenue, testimonials, or guaranteed results.
   bring it up, not me.” Honour it on every call.
 - Fit disqualifier: the Walkthrough works when the owner can talk to the people
   doing the work; otherwise “I’m not the right fit.”
-- Past employers GitHub, Heroku, and Zapier may be named as background. WorkOS
-  stays off the public site while the owner is employed there.
+- Past employers GitHub, Heroku, Zapier, Twilio, and Salesforce may be named as
+  background (Twilio and Salesforce approved 2026-09-25; Apple is not approved).
+  They may appear as a labeled strip of each company's official mark in one
+  monochrome ink beside its typeset name, framed as work history (“Where I’ve
+  built systems”), never as clients or endorsements. WorkOS stays
+  off the public site while the owner is employed there.
 - The paid discovery week may be mentioned in one sentence with no price, as the
   deeper form of the same process.
 - The report includes a “Where I’d start” section: the first change and why it
