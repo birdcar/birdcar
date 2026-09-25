@@ -1,145 +1,146 @@
 ---
-name: Birdcar — The clear argument
-description: "Integrated locally built and reviewed marketing system: cyan editorial fields, blue-green ink, yellow emphasis, white explanation space, Barlow hierarchy, Commit Mono code, static figures, Cal booking shells, print review, and one Alkaline wordmark."
+name: Birdcar — Your business, in miniature
+description: "Homepage-built marketing world: pale daylight ground, ink, canary yellow for actions and packets, a teal fixed-state accent, Mona Sans grotesk, one Alkaline wordmark, and a canvas-drawn packet-flow diorama. The clear argument (cyan fields, Barlow, flat diagrams) is retired as direction but still literally renders on every page this build hasn't reached yet; Admin keeps its Flux Pro/Inter system unchanged."
 colors:
+  studio-ground: "#edf3f0"
+  studio-ink: "#0b141a"
+  studio-ink-soft: "#323945"
+  studio-muted: "#5c646d"
+  studio-rule: "#d5dbd8"
+  studio-yellow: "#f7c848"
+  studio-yellow-deep: "#efb925"
+  studio-teal: "#5fb8bf"
+  studio-red: "#e2483d"
   ink: "#102a33"
   paper: "#ffffff"
   cyan: "#b7edf1"
   emphasis: "#f7cb58"
   deep-teal: "#214b57"
   cyan-wash: "#b7edf130"
-  ink-rule-soft: "#102a3330"
-  ink-rule-mid: "#102a3360"
-  ink-code-wash: "#102a3309"
 typography:
+  wordmark:
+    fontFamily: "Alkaline, cursive"
+    fontSize: "clamp(2.6rem, 4vw, 4rem)"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "normal"
+  studio-display:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(3rem, 5.35vw, 6rem)"
+    fontWeight: 700
+    lineHeight: 1.075
+    letterSpacing: "-.04em"
+  studio-headline:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.25rem, 4vw, 4rem)"
+    fontWeight: 700
+    lineHeight: 1.02
+    letterSpacing: "-.04em"
+  studio-story-heading:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2rem, 3.1vw, 3.25rem)"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-.035em"
+  studio-lead:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.125rem, 1.3vw, 1.3125rem)"
+    fontWeight: 450
+    lineHeight: 1.42
+    letterSpacing: "-.035em"
+  studio-body:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "-.01em"
+  studio-label:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(.75rem, .9vw, .9375rem)"
+    fontWeight: 500
+    lineHeight: 1.25
+    letterSpacing: "-.005em"
+  studio-button:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.0625rem, 1.43vw, 1.4rem)"
+    fontWeight: 600
+    letterSpacing: "-.01em"
+  studio-fine:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(.9375rem, 1vw, 1.0625rem)"
+    fontWeight: 400
+    lineHeight: 1.45
+    letterSpacing: "-.035em"
+  studio-employer-mark:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.25rem, 2.3vw, 2.25rem)"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-.035em"
   admin-operational:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.5
-  wordmark:
-    fontFamily: "Alkaline, cursive"
-    fontSize: "3.4rem"
-    fontWeight: 500
-    lineHeight: 1.15
   display:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(3rem, 6.65vw, 6rem)"
     fontWeight: 600
     lineHeight: 1.02
     letterSpacing: "-.025em"
-  page-display:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(4rem, 7.5vw, 7.2rem)"
-    fontWeight: 600
-    lineHeight: 1.08
-  section-display:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2.8rem, 4.7vw, 4.5rem)"
-    fontWeight: 600
-    lineHeight: 1.08
-  headline:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2.3rem, 3.6vw, 3.5rem)"
-    fontWeight: 600
-    lineHeight: 1.08
-  title:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 2.5vw, 2.25rem)"
-    fontWeight: 600
-    lineHeight: 1.15
-  subhead:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.5rem"
-    fontWeight: 600
-    lineHeight: 1.2
-  lead:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.35rem, 1.7vw, 1.6rem)"
-    fontWeight: 400
-    lineHeight: 1.4
   body:
     fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 400
     lineHeight: 1.55
-  body-article:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.1875rem"
-    fontWeight: 400
-    lineHeight: 1.8
-  body-compact:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1rem"
-    fontWeight: 400
-    lineHeight: 1.5
-  caption:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: ".95rem"
-    fontWeight: 400
-    lineHeight: 1.45
-  fine:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: ".875rem"
-    fontWeight: 400
-    lineHeight: 1.45
-  button:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.075rem"
-    fontWeight: 600
-    lineHeight: 1.55
-  chart-label:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "13px"
-    fontWeight: 400
 rounded:
+  studio-tag: "7px"
+  studio-control: "8px"
+  studio-button: "10px"
+  studio-pill: "999px"
   nav: "3px"
   control: "5px"
   circle: "50%"
   square: "0"
 spacing:
+  studio-gutter: "4.95vw"
+  studio-gutter-mobile: "6%"
+  studio-section-y: "7vw"
+  studio-section-y-mobile: "4.5rem"
   gutter: "7%"
   gutter-compact: "6%"
-  button-y: "1rem"
-  button-x: "1.6rem"
-  section-y: "clamp(4.5rem, 7vw, 7rem)"
-  section-y-mobile: "3.5rem"
-  rule-gap: "2.5rem"
 components:
+  studio-button-primary:
+    backgroundColor: "{colors.studio-yellow}"
+    textColor: "{colors.studio-ink}"
+    typography: "{typography.studio-button}"
+    rounded: "{rounded.studio-button}"
+    padding: "0 1.85vw"
+    height: "clamp(56px, 4.35vw, 72px)"
+  studio-button-primary-hover:
+    backgroundColor: "{colors.studio-yellow-deep}"
+  studio-nav-booking:
+    backgroundColor: "{colors.studio-yellow}"
+    textColor: "{colors.studio-ink}"
+    rounded: "{rounded.studio-control}"
+    padding: "0 1.25rem"
+    height: "48px"
+  studio-tag-pill:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.studio-ink}"
+    typography: "{typography.studio-label}"
+    rounded: "{rounded.studio-tag}"
+    padding: ".3em .72em .34em"
   button-yellow:
     backgroundColor: "{colors.emphasis}"
     textColor: "{colors.ink}"
-    typography: "{typography.button}"
     rounded: "{rounded.control}"
     padding: "1rem 1.6rem"
-  button-ink:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
-    typography: "{typography.button}"
-    rounded: "{rounded.control}"
-    padding: "1rem 1.6rem"
-  button-hover-paper:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-  navigation:
-    backgroundColor: "{colors.cyan}"
-    textColor: "{colors.ink}"
-    padding: "1rem 7%"
-  nav-booking:
+  nav-booking-legacy:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
     rounded: "{rounded.nav}"
     padding: ".7rem 1rem"
-  report-document:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.square}"
-    padding: "2rem 1.5rem 1.5rem"
-  recommendation-callout:
-    backgroundColor: "{colors.emphasis}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.square}"
-    padding: "1rem"
   calendar-shell:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -151,169 +152,135 @@ components:
 
 ## Overview
 
-**Creative North Star: "The clear argument"**
+**Creative North Star: "Your business, in miniature"**
 
-Phase 4 records the integrated locally built marketing system after full rendered review. The homepage, Walkthrough, Work, Writing index, individual articles, authored figures, booking shells, no-JavaScript states, reduced-motion states, and local print specimen now share one direct explanatory world: cyan editorial fields introduce invitations and archives, blue-green ink carries prose and linework, white creates sustained reading space, yellow marks useful recommendations and booking actions, Barlow keeps the argument upright, and Commit Mono appears only for code.
+On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states — Today, Walkthrough, After the fix — while white pill tags name the actual work sitting on each desk, drawn from the shared "where work gets stuck" pattern vocabulary. The world is pale daylight (`#eef3f1`-family ground), heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.
 
-The integrated system is built and independently reviewed at bounded local scope; it is not deployed. This record does not expand the existing owner approval beyond the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. Phase 4 finish review returned ship with no material fixes, but owner launch acceptance remains pending and no production booking or remote PostHog write is claimed.
-
-Phase 4 evidence includes 390/768/1440 captures for home, Walkthrough, Work, Writing, representative articles, and specimen under `.impeccable/review/phase-4-*`, plus saved Chromium PDF rasters under `.impeccable/review/print/phase-4-*`. Full-page calendar blanks are offscreen capture artifacts; separate calendar and modal captures loaded. The 720×450 captures are 200% equivalent reflow evidence only; native browser-toolbar 200% zoom remains unverified. Print artifacts are local review evidence, not a PDF product or deployed handout system.
+**Rollout status.** Only the homepage (`resources/views/pages/index.blade.php`) is built in this world. The Walkthrough page, Work page, `/tools/where-work-gets-stuck`, the Writing index and individual articles, the favicon (`public/favicon.svg`, still the retired cyan/ink "B" mark), and the browser theme-color meta (`app/Services/MarketingSite.php`, still `#b7edf1`) all still run The clear argument. The header and footer (`resources/views/components/marketing/layout.blade.php`) are one shared partial across every page: on the homepage, `resources/css/home.css` repaints it (transparent, absolutely positioned over the hero, Alkaline at Demi/600 instead of Medium/500, a solid canary pill instead of an outlined ink button) rather than replacing its markup. Treat every retired-system detail recorded below as legacy identification, not as guidance for new work; do not extend cyan fields, Barlow display type, or the flat report/diagram vocabulary to any new page.
 
 **Key Characteristics:**
 
-- Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.
-- Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.
-- Authored static figures: the Walkthrough report diagram, the shared reporting component, the pattern hub on `/tools/where-work-gets-stuck`, and the article diagram wrapper for only the first two approved subjects, all reviewed in integrated page, no-JavaScript, reduced-motion, repeated-instance, and print contexts.
-- 65ch article prose, article headings capped at `4.5rem`, visible chart data tables in print, scrollable small-screen plots with explicit hints, and 16mm paper margins without forced page size.
-- Flat surfaces, thin ink rules, square report/platform geometry, sparse rounded controls, and two-column numbered Walkthrough stages in print.
-- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough” and adds “Where work gets stuck.” Native mobile details/summary remains; Cal booking preserves real href fallbacks; print hides navigation and booking chrome.
+- Pale daylight ground, near-black ink, canary yellow reserved for actions and traveling packets, a cool teal reserved for the "fixed" state.
+- One Alkaline wordmark per page; the homepage renders it at Demi (600), the weight the rollout is standardizing on, with native (unmodified) tracking.
+- The diorama is the signature figure: a static isometric plate carries all of the meaning, a canvas layer draws animated dotted routes and glowing packet cubes on top, and white pill tags carry the actual desk labels as real HTML.
+- Bespoke isometric renders on transparent grounds stand in for icons everywhere a capability needs illustrating (the model shelf, the person portrait stand-in).
+- A monochrome logo strip (GitHub, Heroku, Zapier, Twilio, Salesforce) is framed as work history, not clients or endorsements.
+- Admin and the Publishing workspace are untouched by this redesign and keep Flux Pro, Inter, and deep-teal/cyan accents.
 
 ## Colors
 
-The palette is small and semantic. Cyan is the public invitation field, ink is both text and drawing material, white is the explanatory workspace, yellow is a constrained action/recommendation marker, and deep teal supports states and calendar theming.
+The homepage palette is a daylight-and-ink base with one warm accent (canary yellow) and one cool accent (teal) reserved for state, plus a warning red used only for the diorama's alert light.
 
 ### Primary
 
-- **Cyan field:** header, homepage opening, offer sections, Work opening, steps fields, and closing invitations. It creates the editorial field where the offer is made.
-- **Yellow emphasis:** primary Walkthrough buttons and the “Where I’d start” recommendation. It marks the next useful action, not a whole-page mood.
+- **Canary yellow** (`#f7c848`, deepening to `#efb925` on hover/active): the Walkthrough button, the header booking pill, and every traveling packet drawn on the canvas. It is the one color that means "act on this" or "this is moving."
 
 ### Secondary
 
-- **Deep teal state:** selection, active/focus support, article/chart emphasis, scrollbar, and Cal brand-emphasis fallback. It is a state/support color, not a second marketing voice.
+- **Studio teal** (`#5fb8bf`): the "after the fix" state — the floor lanes work travels through once it's rerouted, and the pill-tag background once the diorama is set to "After the fix." It marks resolution, never a whole-page mood.
+
+### Tertiary
+
+- **Warning red** (`#e2483d`): the pulsing glow on the owner's-office warning light in the "Today" and "Walkthrough" diorama states only. It disappears once the scene reaches "After the fix."
 
 ### Neutral
 
-- **Blue-green ink:** body text, large headings, borders, rules, arrows, SVG connectors, selected calendar day, and the dark personal-note field.
-- **White paper:** page background, report/platform cards, mobile menu, calendar shell, and implementation approach sections.
-- **Cyan wash:** article notes, blockquotes, and article diagram fields in the completed Reading extension. Chart plots remain on white with ink rules.
-- **Soft ink rules:** translucent ink rules separate footer, article rows, FAQ rows, and archive lines.
+- **Studio ground** (`#edf3f0`): the homepage's body background, standing in for the direction contract's pale daylight `#eef3f1`.
+- **Studio ink** (`#0b141a`): headings, body text default, and the button/pill text color. Deeper than the retired system's `#102a33`.
+- **Studio ink-soft** (`#323945`) and **studio muted** (`#5c646d`): secondary copy (lead paragraphs, section intros, card body text) and the smallest muted labels (proof heading, offer-terms pill text), respectively.
+- **Studio rule** (`#d5dbd8`): hairline dividers between employer marks and under model-shelf cards.
+- **Paper** (`#ffffff`): section backgrounds for the proof strip, story track, offer track, and person section; also the white pill tags on the diorama. Shared, unchanged, with the retired system and with Admin.
 
-**The Argument Contrast Rule.** Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.
+### Legacy palette (retired direction; still rendering until migrated)
 
-**The Proof Boundary Color Rule.** Use yellow for a recommendation or booking action only when the copy already states the boundary. Color may emphasize “where I’d start”; it must not imply free implementation, measured results, or proof that was not supplied.
+- **Ink** (`#102a33`), **cyan** (`#b7edf1`), **emphasis yellow** (`#f7cb58`), **deep teal** (`#214b57`), and **cyan-wash** (`#b7edf130`) are The clear argument's palette. They still render literally on the Walkthrough, Work, tool, and Writing pages, in the favicon, and in the theme-color meta tag. Deep teal, ink, cyan, and paper are also the tokens the Admin operational extension uses for its light/dark accent — do not remove them even after the remaining marketing pages migrate.
+
+**The Canary Action Rule.** Canary yellow marks the one thing to do or the one thing in motion — a booking button or a packet — never a background wash for a whole section. This carries the retired system's Argument Contrast Rule forward under a new palette.
 
 ## Typography
 
-**Display Font:** Barlow via `--font-marketing`, with UI sans-serif/system fallbacks.
-**Wordmark Font:** licensed Alkaline, with cursive fallback.
-**Operational Font:** Inter remains for Admin/customer surfaces only.
-**Mono Font:** Commit Mono OFL is used for inline code and code blocks in articles, not marketing labels.
+**Studio Font:** self-hosted Mona Sans (via `bunny()` in `vite.config.js`, weights 400–800), `--font-studio` in `resources/css/app.css`. Used for every homepage heading, body line, and button label.
+**Wordmark Font:** licensed Alkaline; the homepage renders it at Demi (600) — the weight PRODUCT.md commits to for the eventual site-wide rollout — while pages still on the retired system render the same wordmark at Medium (500) via `resources/css/marketing.css`, unchanged until each page migrates.
+**Legacy Marketing Font:** Barlow remains the retired system's display/body voice on every unmigrated page.
+**Admin Font:** Inter, unchanged (see Admin operational extension).
+**Mono Font:** Commit Mono, unchanged, used only in the retired system's article code blocks.
 
-Barlow supplies the marketing and Reading voice: plainspoken, technical enough to be precise, and flexible across very large page titles, compact diagrams, archive rows, long-form prose, captions, and print. The integrated system intentionally keeps the additional CSS type steps; the detector's type-step advisories are documentation advisories, not defects to flatten.
+**Character:** Mona Sans is heavier and tighter than Barlow — negative tracking runs to `-.04em` at display size versus the retired system's `-.025em` — giving the new world a denser, more confident grotesk voice against the same sentence-case, direct copy style.
 
 ### Hierarchy
 
-- **Wordmark:** Alkaline header mark, once per page, desktop `3.4rem`, mobile `2.7rem`.
-- **Display:** homepage problem statement, large sentence-case, tight line-height, slight negative tracking.
-- **Page display:** Work and generic page titles; oversized but still Barlow semibold.
-- **Section display:** major section questions and closing invitations, generally `2.8rem–4.8rem` fluid steps.
-- **Headline:** two-column editorial section headings and offer/story headings.
-- **Title/Subhead:** cards, report/platform headings, diagram stage labels, FAQ/step headings.
-- **Lead:** first-person opening explanation and larger page-summary copy.
-- **Body:** marketing explanation, report body, diagram copy, FAQ answers, and invitation copy.
-- **Compact, caption, and fine:** navigation, figure labels, terms, footer, metadata, chart labels, and small fallback text.
-- **Article prose:** 65ch sustained reading column with `1.1875rem` screen text, looser line-height, `1.125rem` mobile step, and 11pt print step.
-- **Article heading:** individual article titles cap at `4.5rem`, wrap at 24ch, and reduce on small screens so long original titles remain readable.
+- **Wordmark** (`typography.wordmark`): Alkaline, Demi on the homepage, `clamp(2.6rem, 4vw, 4rem)`.
+- **Studio display** (700, `clamp(3rem, 5.35vw, 6rem)`, line-height 1.075, `-.04em`): the hero headline only.
+- **Studio headline** (700, `clamp(2.25rem, 4vw, 4rem)`, line-height 1.02, `-.04em`): the build/offer/work/close section headings.
+- **Studio story heading** (700, `clamp(2rem, 3.1vw, 3.25rem)`, line-height 1.08, `-.035em`): the scroll-story's own heading above the pinned diorama.
+- **Studio lead** (450, `clamp(1.125rem, 1.3vw, 1.3125rem)`, line-height 1.42, `-.035em`): the hero subline and section-intro paragraphs.
+- **Studio body** (400, `1.0625rem`, line-height 1.5, `-.01em`): model-shelf, offer-track, and story-step copy.
+- **Studio label** (500, `clamp(.75rem, .9vw, .9375rem)`, line-height 1.25): the white pill tags on the diorama.
+- **Studio button** (600, `clamp(1.0625rem, 1.43vw, 1.4rem)`): button and pill labels.
+- **Studio fine** (400, `clamp(.9375rem, 1vw, 1.0625rem)`): the booking terms line under every CTA.
+- **Studio employer mark** (700, `clamp(1.25rem, 2.3vw, 2.25rem)`, `-.035em`): the past-employer names in the proof strip, set beside each monochrome mark.
 
-**The One Script Rule.** Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, footer logos, or decorative script emphasis.
-
-**The Upright Argument Rule.** Marketing headings are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.
-
-**The Documented Step Rule.** Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, print, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.
+**The One Wordmark Rule.** Alkaline appears once per page as the header wordmark and nowhere else. Its weight is Demi (600) on the homepage and the intended weight for the full rollout; Medium (500) elsewhere is the retired system, not a second valid option.
 
 ## Layout
 
-The base page uses a `7%` gutter, reduced to `6%` below `1100px`, with section padding around `clamp(4.5rem, 7vw, 7rem)` and mobile sections around `3.5rem`. Desktop layouts favor two-column editorial grids: a large claim or heading on the left, explanatory copy or an authored figure on the right. Mobile follows document order and keeps labels readable instead of shrinking diagrams into thumbnails.
+The homepage uses viewport-scaled gutters and section padding rather than the retired system's fixed `7%`/`6%` percentages: a `4.95vw` side gutter (`4.3–4.75vw` around the header), collapsing to `6%` below `1100px`, and `7–8vw` of vertical section padding, collapsing to `4.5rem` on mobile.
 
-The homepage sequence is complete: approved opening, Walkthrough figure, cyan/white offer strip, shared reporting component, white implementation approach, ink personal note, and cyan closing invitation. The Walkthrough page uses a cyan offer opening with a square folded report, white outcome explanation, cyan three-step process, white FAQ, and cyan calendar close. The Work page uses a cyan client title, white story/proof section, shared reporting figure, and cyan closing invitation. The first `/tools/*` page, Where work gets stuck, uses a cyan opening with the claim and yellow booking action in five columns beside the pattern hub in six, white two-column pattern spreads, one cyan interlude with a yellow booking action after the fourth pattern, and the cyan closing invitation. Above `1100px` each spread's number, name, and definition stay sticky beside the detail column; at `1100px` and below the opening stacks with the hub centred at up to `640px`.
+The hero is a two-column split: copy fixed-width at `40vw` on the left, the diorama absolutely positioned at `60vw` on the right, overlapping the header. Below the fold, a proof strip (paper, monochrome logo row) sits above a scroll-driven story: a sticky diorama figure on the right tracks the reading position of three text steps on the left (`resources/js/miniature.js` pins the active step by measuring scroll against the viewport midline, or 78% down on narrow viewports). A visible segmented control (Today / Walkthrough / After the fix) lets a visitor drive the same diorama by hand instead of scrolling. Below the story: a three-column model shelf (six isometric capability renders), a four-column offer track (a connecting line with lit/unlit milestone dots), a two-column "selected work" strip, a two-column person section, and a closing invitation — all collapsing to one column under `1100px`.
 
-The current header and footer share the same navigation destinations. Desktop shows inline navigation and an outlined Walkthrough booking control. Mobile uses native `details`/`summary`; JavaScript may close it, but the native fallback remains. Footer navigation keeps the same public destinations and active underline state.
-
-Writing is a reading surface, not a conversion page. The index uses a compact cyan title beside the original introduction, then a chronological white ledger with years in the left column and whole-row essay links. Article pages use a quiet return link, original title/description/date/byline, and a centered 65ch prose column. On small screens, plots remain horizontally scrollable with a visible hint; on print, source tables are visible and chart disclosures do not hide essential data.
-
-Print uses browser output with `@page` margins of 16mm and no forced paper size, so Letter and A4 are both valid review formats. Site navigation, booking chrome, analytics/Cal behaviors, and local development scaffolding do not enter article handouts. The local `/__design/figures` specimen is CSS-only, three pages in both Letter and A4 review captures, and is not a public PDF or reusable handout product.
-
-**The Static Meaning Rule.** Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Article diagrams are static by default; homepage marketing may opt into motion explicitly, but motion cannot supply missing meaning.
+**The Static Diorama Rule.** The isometric plate and its HTML `<li>` tag labels carry the full meaning of "what's stuck where" without JavaScript; the canvas packet-flow layer only adds motion on top and is never the sole carrier of a relationship. This is why `initMiniature()` still calls `drawScene()` once at load even when `prefers-reduced-motion` or missing `ResizeObserver`/`IntersectionObserver` skip the animation loop.
 
 ## Elevation & Depth
 
-The system is flat. Depth comes from field changes, white paper/platform surfaces on cyan, thin ink outlines, folded-corner geometry, separators, and focus rings. Shadows are not used for marketing cards at rest. The Cal embed brings its own native light UI inside the white calendar shell; Birdcar only supplies the surrounding cyan/paper/ink palette and fallback link. The legacy `booking_embed_opened` event name is readiness from Cal `linkReady`, not a visitor-open metric.
+The homepage is mostly flat, like the retired system, but adds one new device: colored glow as a signal of motion. Buttons and pills use an ordinary soft, offset ambient shadow at rest (see below). Canvas-drawn elements add a `shadowBlur` glow in the packet's own hue (amber for packets in transit, teal for "fixed"-state lane markers, red for the pulsing warning light) — glow is reserved for things that are moving or urgent, never applied to static UI as decoration.
 
 ### Shadow Vocabulary
 
-- **Keyboard focus outer:** `0 0 0 6px var(--color-ink)` paired with a paper outline. Use for interactive focus visibility only.
+- **Button ambient** (`0 1px 2px rgb(11 20 26 / .14), 0 10px 26px -12px rgb(160 110 0 / .55)`, deepening on hover): the primary button and header booking pill.
+- **Tag pill** (`0 1px 1px rgb(11 20 26 / .08), 0 4px 12px -2px rgb(11 20 26 / .22)`): every white pill tag on the diorama.
+- **Model lift** (`drop-shadow(0 18px 18px rgb(11 20 26 / .08))`, deepening on hover with a small translate/scale): the six model-shelf renders.
+- **Segmented-control shell** (`0 1px 2px rgb(11 20 26 / .1), 0 8px 24px -10px rgb(11 20 26 / .3)` with `backdrop-filter: blur(8px)`): the Today/Walkthrough/After-the-fix control.
+- **Canvas glow** (`shadowBlur` in `resources/js/miniature.js`, amber/teal/red per element): packets in flight, fixed-state lane markers, and the pulsing warning light.
 
-**The Flat Report Rule.** Reports and platforms are geometric explanations, not mock screenshots. Keep them level, stroked, static, and labeled.
+**The Glow-as-Motion Rule.** Reserve colored glow for something in motion or urgent (a packet, a lane marker, the warning light); static surfaces at rest keep the ordinary blurred, offset ambient shadow.
 
 ## Shapes
 
-Controls use small radii: `3px` for the outlined nav booking control and `5px` for primary buttons and the calendar shell. Reports and the shared reporting platform are square ink-outlined surfaces. Stage numbers are true circles. SVG arrows and connectors use thin ink strokes with square/miter geometry and non-scaling strokes.
+Controls use soft, generous radii: `7px` for pill tags, `8px` for the header booking pill, `10px` for the primary button, `999px` for the segmented control and the offer-terms/pill labels. This is rounder than the retired system's `3–5px` control radii and its true-circle stage numbers.
 
-The recurring signature shape is a square white document/platform on a cyan or white field: folded report for the Walkthrough, outlined platform for Craft & Communicate, and native white calendar shell for booking. These shapes say “authored explanation,” not software chrome.
+The signature shape is the isometric packet cube drawn on canvas (`drawCube()` in `resources/js/miniature.js`): three visible faces (top/left/right) in a light/mid/deep tint of the packet's hue, giving every route endpoint and traveling packet the same small 3D block silhouette that echoes the diorama's own isometric rendering style.
 
 ## Components
 
-### Header and navigation
+### Header and booking pill (homepage-scoped)
 
-The header is cyan with ink text. It contains the single Alkaline wordmark, desktop Barlow links, an outlined Walkthrough booking control, and native mobile `details`/`summary`. Current-page links use an underline; hover/focus underlines are animated when motion is allowed.
+The header partial is unchanged markup, but `.home-page .site-header` repaints it transparent and absolutely positioned over the hero; `.home-page .wordmark` sets Alkaline to Demi/600; `.home-page .desktop-nav .nav-booking` replaces the retired outlined-ink button with a solid canary pill (`studio-nav-booking`). Off the homepage the same partial renders with the retired outlined treatment.
 
-### Footer
+### Primary button
 
-The footer is white with a short two-line statement, the current public navigation plus the Where work gets stuck tool, active underline state, and copyright. There is no footer wordmark; this preserves the one-script rule.
+Solid canary yellow, ink text, `10px` radius, an arrow icon that slides right on hover, ambient shadow deepening on hover/press. Used for every "Book a free Walkthrough" placement (`hero`, `homepage-strip`, `closing-invitation`).
 
-### Buttons and links
+### Diorama figure (signature component)
 
-Yellow buttons are the primary booking action, including on every cyan field. Ink buttons appear inside white offer strips. Text links use underline plus the shared line arrow. Hover/focus/active states move yellow toward white and ink buttons toward deep teal; focus keeps the two-part visible ring.
+`<figure data-miniature>` wraps a responsive `<picture>` plate (`x-marketing.miniature-plate`), a `<canvas class="miniature-flow">` for animated routes and packets, and a `<ul class="miniature-tags">` of white pill tags positioned by percentage coordinates. The hero instance is static (`today` only); the story instance adds the segmented control and two crossfading "patch" images (`owner-office-conversation.webp`, `owner-office-after.webp`) that fade in over the same camera framing via a feathered CSS mask, so the owner's glass office visibly changes between states without a second full render.
 
-### Walkthrough report figure
+### Model shelf card
 
-The Walkthrough figure is semantic HTML with decorative SVG connectors. Three numbered stages sit on one line: the conversation about real work leads to a folded report, and the report branches to optional choices. “Where I’d start” is yellow. The figure has no fixed caption; articles supply their own. The same meaning remains in vertical, print, no-JavaScript, and reduced-motion states.
+An isometric capability render (transparent ground) above a name and one sentence, separated from its neighbor by a hairline rule; the whole card lifts and its drop-shadow deepens on hover. Six recur in a three-column grid (two on narrow viewports).
 
-### Pattern hub figure
+### Offer track step
 
-The hub on `/tools/where-work-gets-stuck` is an in-page `nav` of eight real anchor links over a decorative, non-scaling ink SVG. A square white “Your desk” box sits at the centre; four numbered routes arrive from each side as single ink curves ending in open chevrons on the box edge. True-circle numbers sit on cyan, labels are Barlow `.95rem` (`.875rem` from `1101px` to `1320px`) with balanced wrapping. Hover or focus on a route link fills its number and strokes its route in deep teal at `2.5` via `:has()`; the static figure carries the full meaning. At `640px` and below the SVG is hidden: the desk becomes a full-width box, and the numbered links hang from a vertical ink spine with an arrowhead into it. Print lists the links in two columns under the desk.
+A numbered milestone on a horizontal (vertical on mobile) connecting line, lit dots for the two free steps and unlit for the two paid/optional ones; each step's terms render as a small pill (tinted yellow for the free steps, outlined for the rest).
 
-### Pattern entry spreads
+### Employer marks (proof strip)
 
-Each pattern is an `article` at a permanent slug anchor (reports deep-link to them): an ink-ruled two-column spread with a white true-circle number, a section-display name, and a lead-size definition on the left; the scene, “You’ll notice” list with short ink dash markers and soft ink row rules, “What usually helps,” and text links on the right. An entry that is the URL target or holds focus fills its number in deep teal. The names are the shared pattern vocabulary used verbatim in Walkthrough reports; renaming one is a URL change.
-
-### Shared reporting component
-
-The authored static reporting component appears on the homepage and Work page. It contrasts “Finding the numbers by hand” with a white outlined “client-facing reporting platform,” then connects performance data and client management to “Part of the agency’s service.” Its caption explicitly says it is an illustration, not a screenshot or measured result.
-
-### Walkthrough page report card
-
-The offer opening uses a square folded report card with observed problems, recommendations, and the yellow first recommendation. It explains the free deliverable without making implementation look included.
-
-### FAQ disclosures
-
-FAQ rows are native `details` elements with ink rules, a small rotating arrow, deep-teal open/focus state, and no dependency on JavaScript.
-
-### Calendar and booking modal
-
-The inline calendar sits in a white rounded shell on cyan with a plain Cal.com fallback link. The Cal UI uses Birdcar palette inputs: ink brand, deep-teal brand emphasis, paper background, and cyan/dark fallbacks. Modal booking uses the same Cal theme over the page with a native close affordance and the real anchor fallback when the embed cannot take over.
-
-### Writing index
-
-The Writing index is a chronological ledger. A cyan title band introduces the section without turning the archive into a sales page. The archive itself is white, rule-led, grouped by year, and uses whole-row links with deep-teal hover/focus emphasis and RSS kept visible.
-
-### Article and Writing surfaces
-
-Articles use the original title, description, date, byline, links, notes, chart data, and source text. The reading column is centered at 65ch with Barlow prose, Commit Mono code, cyan-wash notes/blockquotes, deep-teal links and chart marks, and source-data disclosures. Print hides chrome and reveals chart tables so the evidence is visible without interaction.
-
-### Article charts and notes
-
-Article notes are cyan-wash callouts with preserved titles. Charts keep their source values and labels; line charts sit in a scrollable region on small screens with a visible hint, and every chart carries a data disclosure that is visible in print.
-
-### Article diagrams and local specimen
-
-`article-diagram` only renders the Walkthrough and reporting components. Article diagrams are static by default, flow as labeled stages for reading, and switch to print-specific layouts: the Walkthrough becomes two-column numbered stages and reporting keeps the relationship/caption adjacent. The standalone figure specimen is local/testing only, uses the real renderer and CSS, has no analytics or Cal, and exists only as review evidence.
+A monochrome inline SVG mark beside its company's name, in `studio-employer-mark` typography, separated by a hairline vertical rule; wraps to a left-aligned stack on mobile. Framed under "Where I've built systems," never as a client or endorsement list.
 
 ## Admin operational extension
 
-Admin uses Flux Pro and Inter rather than the marketing typography and page composition. Native Brand components pair the existing `public/favicon.svg` B mark with “Admin”; Alkaline remains exclusive to the marketing wordmark. The shell has one collapsible module sidebar, a contextual header, and module workspaces. Only Home and authorized Publishing are present.
+Admin uses Flux Pro and Inter rather than the marketing typography and page composition. Native Brand components pair the existing `public/favicon.svg` B mark with "Admin"; Alkaline remains exclusive to the marketing wordmark. The shell has one collapsible module sidebar, a contextual header, and module workspaces. Only Home and authorized Publishing are present.
 
-The approved Attention ledger Home answers “What needs me?” before “Where was I?” Blocked work and human decisions occupy the wide column; Continue working is narrower and follows the ledger on mobile. Links lead to authoritative workspaces, not Home-level approval or publishing actions. Empty, unauthorized, unavailable, and loaded states remain distinct.
+The approved Attention ledger Home answers "What needs me?" before "Where was I?" Blocked work and human decisions occupy the wide column; Continue working is narrower and follows the ledger on mobile. Links lead to authoritative workspaces, not Home-level approval or publishing actions. Empty, unauthorized, unavailable, and loaded states remain distinct.
 
 Native Flux appearance respects saved preferences and defaults to the system theme. Light accent/content uses deep teal `#214b57` with white foreground; dark accent/content uses cyan `#b7edf1` with ink `#102a33` foreground. Current navigation, keyboard focus, and text selection carry restrained accent treatment. Public article previews remain independently styled.
 
@@ -323,26 +290,21 @@ Develop shows interview, angle, plan, sources, and living brief as readable edit
 
 Publishing motion is useful and bounded. `resources/js/admin/publishing/motion.js` uses Motion springs for mode changes, confirmed-capture header arrival, small confirmed milestones, and a disposable published-only flourish; reduced motion suppresses decoration. Save guards block unsafe actions during saving/conflict, stale server updates preserve local edits, and older-revision recovery enters conflict before enqueue.
 
-The bounded local finish review returned ship for shell/Home/theme/branding after 390px and 1440px light/dark fixture checks, collapse persistence, and mobile drawer checks. Publishing workspace evidence adds 20 current captures under `.impeccable/review/publishing-session` across workspace modes and populated library, 1440/390, light/dark, using synthetic in-memory DB fixtures with actual built assets and all POST blocked. Browser checks found no overflow/errors, editor booted, keyboard tab moved, and reduced motion suppressed celebrations. This is local fixture UI and automated guard evidence only: no browser-authenticated save/release, paid agents, production publication, owner editorial acceptance, deployment, or privileged account change is claimed. No shipping raster assets were added. Backend Home findings and editor/authentication follow-ups remain recorded in `docs/production-setup.md`.
-
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** use cyan for offers/invitations, white for implementation explanation and proof reading, ink for personal-note contrast, and yellow for actions or first recommendations.
-- **Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.
-- **Do** keep Alkaline to the one header wordmark and Barlow for marketing text.
-- **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, no-JavaScript readability, and the distinction between Cal readiness and actual booking/open behavior.
-- **Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.
-- **Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending.
+- **Do** use canary yellow only for actions and things in motion (buttons, packets); use studio teal only for the resolved/"fixed" state.
+- **Do** keep the diorama's meaning readable from the static plate and its real HTML tag labels alone; treat the canvas layer as a motion enhancement, never the only carrier of a relationship.
+- **Do** keep Alkaline to the one header wordmark, at Demi (600) for any newly migrated page, matching the homepage.
+- **Do** self-host Mona Sans and Barlow via `bunny()` rather than a system sans fallback becoming the de facto display face.
+- **Do** describe the past-employer row as work history in monochrome marks, never as clients or endorsements.
 - **Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.
 
 ### Don't:
 
-- **Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, authenticated Publishing save/release, actual paid agent runs, production publication, or native browser-toolbar 200% zoom verification.
-- **Don't** describe local print artifacts as a PDF product, public handout system, deployed asset, or shipping raster.
-- **Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.
-- **Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.
-- **Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.
-- **Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes.
-- **Don't** describe the Publishing workspace motion as more spectacular than implemented; it is spring continuity, arrival/milestone feedback, and a published-only disposable flourish.
+- **Don't** describe the Walkthrough page, Work page, `/tools/where-work-gets-stuck`, Writing index/articles, the shared header/footer's default (non-home) skin, the favicon, or the theme-color meta as migrated to the new world; they are the retired system until this build reaches them.
+- **Don't** carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.
+- **Don't** literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the "Waikthrough" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.
+- **Don't** treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because "grid of same-size cards" is a reusable page scaffold.
+- **Don't** remove the legacy `ink`/`paper`/`cyan`/`deep-teal` tokens even after the remaining marketing pages migrate; Admin depends on them independently of the marketing redesign.

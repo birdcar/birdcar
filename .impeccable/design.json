@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-19T12:38:17-05:00",
+  "generatedAt": "2026-09-25T10:12:54-05:00",
   "title": "Design System: Birdcar",
   "extensions": {
     "colorMeta": {
       "ink": {
         "role": "neutral",
-        "displayName": "Blue-green ink",
+        "displayName": "Blue-green ink (legacy; Admin light accent foreground)",
         "canonical": "#102a33",
         "tonalRamp": [
           "oklch(0.15 0.035 220)",
@@ -21,7 +21,7 @@
       },
       "paper": {
         "role": "neutral",
-        "displayName": "White paper",
+        "displayName": "White paper (shared: legacy, homepage, Admin)",
         "canonical": "#ffffff",
         "tonalRamp": [
           "oklch(0.15 0 0)",
@@ -36,7 +36,7 @@
       },
       "cyan": {
         "role": "primary",
-        "displayName": "Cyan field",
+        "displayName": "Cyan field (legacy; Admin dark accent)",
         "canonical": "#b7edf1",
         "tonalRamp": [
           "oklch(0.15 0.045 210)",
@@ -51,7 +51,7 @@
       },
       "emphasis": {
         "role": "primary",
-        "displayName": "Yellow emphasis",
+        "displayName": "Yellow emphasis (legacy marketing accent)",
         "canonical": "#f7cb58",
         "tonalRamp": [
           "oklch(0.15 0.105 85)",
@@ -66,7 +66,7 @@
       },
       "deep-teal": {
         "role": "secondary",
-        "displayName": "Deep teal state",
+        "displayName": "Deep teal state (legacy marketing; Admin light accent)",
         "canonical": "#214b57",
         "tonalRamp": [
           "oklch(0.15 0.04 220)",
@@ -81,7 +81,7 @@
       },
       "cyan-wash": {
         "role": "neutral",
-        "displayName": "Cyan wash",
+        "displayName": "Cyan wash (legacy marketing only)",
         "canonical": "#b7edf130",
         "tonalRamp": [
           "oklch(0.15 0.045 210 / 0.19)",
@@ -93,12 +93,147 @@
           "oklch(0.836 0.045 210 / 0.19)",
           "oklch(0.95 0.045 210 / 0.19)"
         ]
+      },
+      "studio-ground": {
+        "role": "neutral",
+        "displayName": "Pale daylight ground",
+        "canonical": "#edf3f0",
+        "tonalRamp": [
+          "oklch(0.150 0.007 165)",
+          "oklch(0.264 0.007 165)",
+          "oklch(0.379 0.007 165)",
+          "oklch(0.493 0.007 165)",
+          "oklch(0.607 0.007 165)",
+          "oklch(0.721 0.007 165)",
+          "oklch(0.836 0.007 165)",
+          "oklch(0.950 0.007 165)"
+        ]
+      },
+      "studio-ink": {
+        "role": "neutral",
+        "displayName": "Studio ink",
+        "canonical": "#0b141a",
+        "tonalRamp": [
+          "oklch(0.150 0.018 238)",
+          "oklch(0.264 0.018 238)",
+          "oklch(0.379 0.018 238)",
+          "oklch(0.493 0.018 238)",
+          "oklch(0.607 0.018 238)",
+          "oklch(0.721 0.018 238)",
+          "oklch(0.836 0.018 238)",
+          "oklch(0.950 0.018 238)"
+        ]
+      },
+      "studio-ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft studio ink",
+        "canonical": "#323945",
+        "tonalRamp": [
+          "oklch(0.150 0.023 261)",
+          "oklch(0.264 0.023 261)",
+          "oklch(0.379 0.023 261)",
+          "oklch(0.493 0.023 261)",
+          "oklch(0.607 0.023 261)",
+          "oklch(0.721 0.023 261)",
+          "oklch(0.836 0.023 261)",
+          "oklch(0.950 0.023 261)"
+        ]
+      },
+      "studio-muted": {
+        "role": "neutral",
+        "displayName": "Studio muted",
+        "canonical": "#5c646d",
+        "tonalRamp": [
+          "oklch(0.150 0.017 251)",
+          "oklch(0.264 0.017 251)",
+          "oklch(0.379 0.017 251)",
+          "oklch(0.493 0.017 251)",
+          "oklch(0.607 0.017 251)",
+          "oklch(0.721 0.017 251)",
+          "oklch(0.836 0.017 251)",
+          "oklch(0.950 0.017 251)"
+        ]
+      },
+      "studio-rule": {
+        "role": "neutral",
+        "displayName": "Studio rule",
+        "canonical": "#d5dbd8",
+        "tonalRamp": [
+          "oklch(0.150 0.008 165)",
+          "oklch(0.264 0.008 165)",
+          "oklch(0.379 0.008 165)",
+          "oklch(0.493 0.008 165)",
+          "oklch(0.607 0.008 165)",
+          "oklch(0.721 0.008 165)",
+          "oklch(0.836 0.008 165)",
+          "oklch(0.950 0.008 165)"
+        ]
+      },
+      "studio-yellow": {
+        "role": "primary",
+        "displayName": "Canary yellow",
+        "canonical": "#f7c848",
+        "tonalRamp": [
+          "oklch(0.150 0.150 88)",
+          "oklch(0.264 0.150 88)",
+          "oklch(0.379 0.150 88)",
+          "oklch(0.493 0.150 88)",
+          "oklch(0.607 0.150 88)",
+          "oklch(0.721 0.150 88)",
+          "oklch(0.836 0.150 88)",
+          "oklch(0.950 0.150 88)"
+        ]
+      },
+      "studio-yellow-deep": {
+        "role": "primary",
+        "displayName": "Canary yellow, deep",
+        "canonical": "#efb925",
+        "tonalRamp": [
+          "oklch(0.150 0.158 86)",
+          "oklch(0.264 0.158 86)",
+          "oklch(0.379 0.158 86)",
+          "oklch(0.493 0.158 86)",
+          "oklch(0.607 0.158 86)",
+          "oklch(0.721 0.158 86)",
+          "oklch(0.836 0.158 86)",
+          "oklch(0.950 0.158 86)"
+        ]
+      },
+      "studio-teal": {
+        "role": "secondary",
+        "displayName": "Studio teal (fixed state)",
+        "canonical": "#5fb8bf",
+        "tonalRamp": [
+          "oklch(0.150 0.086 202)",
+          "oklch(0.264 0.086 202)",
+          "oklch(0.379 0.086 202)",
+          "oklch(0.493 0.086 202)",
+          "oklch(0.607 0.086 202)",
+          "oklch(0.721 0.086 202)",
+          "oklch(0.836 0.086 202)",
+          "oklch(0.950 0.086 202)"
+        ]
+      },
+      "studio-red": {
+        "role": "tertiary",
+        "displayName": "Warning red",
+        "canonical": "#e2483d",
+        "tonalRamp": [
+          "oklch(0.150 0.192 28)",
+          "oklch(0.264 0.192 28)",
+          "oklch(0.379 0.192 28)",
+          "oklch(0.493 0.192 28)",
+          "oklch(0.607 0.192 28)",
+          "oklch(0.721 0.192 28)",
+          "oklch(0.836 0.192 28)",
+          "oklch(0.950 0.192 28)"
+        ]
       }
     },
     "typographyMeta": {
       "wordmark": {
         "displayName": "Header wordmark",
-        "purpose": "The only Alkaline use in the marketing system."
+        "purpose": "The only Alkaline use anywhere. Demi (600) on the homepage; Medium (500) still renders on pages pending migration."
       },
       "display": {
         "displayName": "Opening question",
@@ -155,6 +290,46 @@
       "chart-label": {
         "displayName": "Chart label",
         "purpose": "Inherited chart label step."
+      },
+      "studio-display": {
+        "displayName": "Hero display",
+        "purpose": "The homepage hero headline only."
+      },
+      "studio-headline": {
+        "displayName": "Section headline",
+        "purpose": "Build/offer/work/close major section headings."
+      },
+      "studio-story-heading": {
+        "displayName": "Story heading",
+        "purpose": "The scroll-story's own heading above the pinned diorama."
+      },
+      "studio-lead": {
+        "displayName": "Lead paragraph",
+        "purpose": "Hero subline and section-intro paragraphs."
+      },
+      "studio-body": {
+        "displayName": "Body copy",
+        "purpose": "Model-shelf, offer-track, and story-step paragraph text."
+      },
+      "studio-label": {
+        "displayName": "Pill label",
+        "purpose": "White pill tags on the diorama."
+      },
+      "studio-button": {
+        "displayName": "Button label",
+        "purpose": "Primary button and pill button text."
+      },
+      "studio-fine": {
+        "displayName": "Fine print",
+        "purpose": "The booking terms line under every CTA."
+      },
+      "studio-employer-mark": {
+        "displayName": "Employer mark name",
+        "purpose": "Past-employer names in the proof strip."
+      },
+      "admin-operational": {
+        "displayName": "Admin operational text",
+        "purpose": "Inter, unchanged; Admin and the customer project surface only."
       }
     },
     "shadows": [
@@ -162,6 +337,31 @@
         "name": "keyboard-focus-outer",
         "value": "0 0 0 6px var(--color-ink, #102a33)",
         "purpose": "Interactive focus only, paired with a 2px paper outline at 2px offset."
+      },
+      {
+        "name": "studio-button-ambient",
+        "value": "0 1px 2px rgb(11 20 26 / .14), 0 10px 26px -12px rgb(160 110 0 / .55)",
+        "purpose": "Primary button and header booking pill at rest, deepening on hover."
+      },
+      {
+        "name": "studio-tag-pill",
+        "value": "0 1px 1px rgb(11 20 26 / .08), 0 4px 12px -2px rgb(11 20 26 / .22)",
+        "purpose": "White pill tags positioned on the diorama."
+      },
+      {
+        "name": "studio-model-lift",
+        "value": "drop-shadow(0 18px 18px rgb(11 20 26 / .08))",
+        "purpose": "Model-shelf renders at rest; deepens to 0 30px 24px on hover with a translate/scale lift."
+      },
+      {
+        "name": "studio-control-shell",
+        "value": "0 1px 2px rgb(11 20 26 / .1), 0 8px 24px -10px rgb(11 20 26 / .3)",
+        "purpose": "The Today/Walkthrough/After-the-fix segmented control shell, paired with backdrop-filter: blur(8px)."
+      },
+      {
+        "name": "studio-canvas-glow",
+        "value": "canvas shadowBlur, amber/teal/red per element",
+        "purpose": "Packets in flight (amber), fixed-state lane markers (teal), and the pulsing warning light (red) drawn in resources/js/miniature.js."
       }
     ],
     "motion": [
@@ -184,6 +384,26 @@
         "name": "reduced-motion",
         "value": "prefers-reduced-motion: reduce",
         "purpose": "Disable transitions and animations while preserving complete static meaning."
+      },
+      {
+        "name": "studio-ease",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Default easing for homepage button/link/model hover transitions."
+      },
+      {
+        "name": "studio-crossfade",
+        "value": "650ms",
+        "purpose": "Diorama scene crossfade duration (CROSSFADE constant in resources/js/miniature.js)."
+      },
+      {
+        "name": "studio-tilt-spring",
+        "value": "{ type: 'spring', stiffness: 80, damping: 18 }",
+        "purpose": "Motion.js spring used for the pointer-driven hero diorama tilt."
+      },
+      {
+        "name": "studio-packet-period",
+        "value": "3200ms (routes), 2600ms (fixed-state lanes)",
+        "purpose": "Loop period for canvas packet travel along a route or lane."
       }
     ],
     "breakpoints": [
@@ -198,131 +418,122 @@
       {
         "name": "mobile",
         "value": "760px"
+      },
+      {
+        "name": "studio-narrow",
+        "value": "1099px"
+      },
+      {
+        "name": "studio-compact",
+        "value": "560px"
       }
-    ],
-    "phaseStatus": {
-      "phase1OwnerApproval": "Approved 2026-09-19: Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch. This remains correctly scoped to Phase 1 only.",
-      "phase2Reviewed": "Homepage, Walkthrough, and Work are locally built and independently reviewed at bounded scope. Finish review disposition: ship, no material fixes. Independent proof-boundary review: no findings.",
-      "phase3Reviewed": "Writing index, article pages, article notes/charts/diagrams, static print treatments, and the local-only specimen are locally built and independently reviewed at bounded Reading/print scope. Finish review disposition: ship, no material fixes.",
-      "notClaimed": "No owner launch acceptance, deployment, production booking, remote PostHog write, or native browser-toolbar 200% zoom verification is claimed. Phase 1 owner approval remains scoped to Phase 1.",
-      "artifacts": "Phase 4 source evidence exists under .impeccable/review/phase-4-* and .impeccable/review/print/phase-4-*. Full-page calendar blanks are offscreen capture artifacts; separate calendar/mobile/modal captures loaded. Print artifacts are local review evidence, not a PDF product or deployed handout system.",
-      "detector": "One Phase 4 detector run returned 30 advisories, zero non-advisory findings. Advisories are accepted documentation advisories; UI was not changed to silence them.",
-      "phase4IntegratedReview": "Integrated public marketing system reviewed across all five page types, representative articles, booking shells, no-JavaScript, reduced-motion, repeated-figure, cold-load, 720x450 reflow, and saved Letter/A4 PDF evidence. Fresh independent finish reviewer disposition: ship, no material fixes; persistence pass; faithful; craft ceiling reached.",
-      "adminPublishingWorkspace": "Owner-only Publishing workspace is built in the existing Flux Pro/Inter neutral Admin with teal/cyan accent, creation-first composer, paper-airplane Develop affordance, passive bookmark save, separated Ideas/Active/Published libraries, three-mode article session, explicit approvals, frozen release preview, save/conflict guards, and bounded Motion spring feedback. Evidence is local fixture UI and automated guard checks only: 20 captures under .impeccable/review/publishing-session across 1440/390 light/dark, actual built assets, synthetic in-memory DB fixtures, all POST blocked; no authenticated save/release, paid agents, production publication, deployment, or owner editorial acceptance is claimed."
-    },
-    "calendar": {
-      "palette": "Cal embed receives ink brand, deep-teal brand emphasis, paper background, paper brand text, cyan/dark fallback values, and month_view layout.",
-      "fallbacks": "Inline calendar keeps the plain Cal.com fallback link. Modal triggers keep their real href and only prevent navigation once the embed can take over.",
-      "events": "booking_embed_opened is the legacy event name emitted on Cal linkReady readiness. Treat it as embed readiness, not visitor-open behavior; no once-per-page-load guarantee is recorded.",
-      "notClaimed": "No slot selection, production booking, production analytics receipt, or remote account/dashboard change is claimed."
-    }
+    ]
   },
   "components": [
     {
-      "name": "Cyan marketing header",
-      "kind": "nav",
-      "refersTo": "navigation",
-      "description": "Static visual preview: cyan field, single Alkaline wordmark, Barlow navigation, outlined Walkthrough control, and native mobile menu. Fragment destinations are schematic; production booking must use booking-link.blade.php with its real route/Cal attributes, or #choose-a-time in inline context.",
-      "html": "<header class=\"ds-site-header\"><a class=\"ds-wordmark\" href=\"#home\" aria-label=\"Birdcar home\">Birdcar</a><nav class=\"ds-desktop-nav\" aria-label=\"Main navigation\"><a href=\"#how-i-work\">How I work</a><a href=\"#work\" aria-current=\"page\">Selected work</a><a href=\"#writing\">Writing</a><a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough</a></nav><details class=\"ds-mobile-menu\"><summary>Menu <span class=\"ds-menu-icon\" aria-hidden=\"true\"></span></summary><nav><a href=\"#how-i-work\">How I work</a><a href=\"#work\">Selected work</a><a href=\"#writing\">Writing</a><a href=\"#walkthrough\">Book a free Walkthrough</a></nav></details></header>",
-      "css": ".ds-site-header{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 7%;}.ds-wordmark{font-family:var(--font-alkaline,'Alkaline',cursive);font-size:3.4rem;font-weight:500;line-height:1.15;text-decoration:none;color:inherit;padding-right:.13em}.ds-desktop-nav{display:flex;align-items:center;gap:clamp(1.2rem,2.1vw,2rem);font-size:1rem;font-weight:500}.ds-desktop-nav a{color:inherit;text-decoration:none;padding-block:.75rem}.ds-desktop-nav a[aria-current]{text-decoration:underline;text-underline-offset:.22em}.ds-nav-booking{display:inline-flex;align-items:center;min-height:44px;padding:.7rem 1rem;border:1px solid currentColor;border-radius:3px;line-height:1.2}.ds-nav-booking:hover,.ds-nav-booking:focus-visible{background:var(--color-paper,#fff);outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-mobile-menu{display:none}@media(max-width:760px){.ds-site-header{min-height:80px;padding:.8rem 6%;position:relative}.ds-wordmark{font-size:2.7rem}.ds-desktop-nav{display:none}.ds-mobile-menu{display:block}.ds-mobile-menu summary{display:flex;gap:.8rem;align-items:center;list-style:none}.ds-menu-icon{width:19px;height:12px;border-top:1px solid currentColor;border-bottom:1px solid currentColor}.ds-mobile-menu nav{position:absolute;inset:100% 0 auto;display:flex;flex-direction:column;background:var(--color-paper,#fff);padding:1rem 6% 1.8rem;border-bottom:1px solid var(--color-ink,#102a33)}}"
-    },
-    {
-      "name": "Yellow Walkthrough button",
+      "name": "Studio primary button",
       "kind": "button",
-      "refersTo": "button-yellow",
-      "description": "Primary booking action: yellow emphasis, ink text, small radius, arrow motion, paper hover/focus state.",
-      "html": "<a class=\"ds-button ds-button-yellow\" href=\"/walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 12h15m-6-6 6 6-6 6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg></a>",
-      "css": ".ds-button{min-height:62px;display:inline-flex;align-items:center;justify-content:space-between;gap:2rem;padding:1rem 1.6rem;font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);font-size:1.075rem;font-weight:600;line-height:1.55;text-decoration:none;border:1px solid transparent;border-radius:5px;transition:background-color 160ms ease,color 160ms ease,transform 400ms linear(0,.2175,.5207,.7361,.9317,1)}.ds-button-yellow{background:var(--color-emphasis,#f7cb58);color:var(--color-ink,#102a33)}.ds-button-yellow:hover,.ds-button-yellow:focus-visible,.ds-button-yellow:active{background:var(--color-paper,#fff)}.ds-button:focus-visible{outline:2px solid var(--color-paper,#fff);outline-offset:2px;box-shadow:0 0 0 6px var(--color-ink,#102a33)}.ds-arrow{width:24px;height:24px}.ds-button:hover .ds-arrow,.ds-button:focus-visible .ds-arrow{transform:translateX(4px)}@media(max-width:760px){.ds-button{font-size:1rem;padding-inline:1.25rem;min-height:58px;width:100%}}"
+      "refersTo": "studio-button-primary",
+      "description": "Solid canary button with sliding arrow icon and ambient shadow; used for every Book a free Walkthrough placement.",
+      "html": "<a class=\"ds-studio-button\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a>",
+      "css": ".ds-studio-button{display:inline-flex;align-items:center;gap:.7rem;min-height:64px;padding:0 1.5rem;border-radius:10px;background:#f7c848;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.25rem;font-weight:600;letter-spacing:-.01em;text-decoration:none;box-shadow:0 1px 2px rgba(11,20,26,.14),0 10px 26px -12px rgba(160,110,0,.55);transition:background-color 160ms ease,transform 280ms cubic-bezier(.16,1,.3,1),box-shadow 280ms cubic-bezier(.16,1,.3,1);}.ds-studio-button .ds-arrow{width:1.1em;height:1.1em;transition:transform 280ms cubic-bezier(.16,1,.3,1);}.ds-studio-button:hover{background:#efb925;transform:translateY(-2px);box-shadow:0 2px 4px rgba(11,20,26,.14),0 16px 30px -14px rgba(160,110,0,.6);}.ds-studio-button:hover .ds-arrow{transform:translateX(3px);}.ds-studio-button:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px #0b141a;}"
     },
     {
-      "name": "Shared reporting component",
-      "kind": "custom",
-      "description": "Authored static component shared by homepage and Work page: manual number gathering to client-facing reporting platform and agency offering.",
-      "html": "<figure class=\"ds-reporting\"><div class=\"ds-reporting-grid\"><div class=\"ds-before\"><h3>Finding the numbers by hand</h3><p>Performance numbers had to be gathered for reporting.</p><svg viewBox=\"0 0 280 110\" aria-hidden=\"true\"><path d=\"M12 8h60v54H12z M25 24h34 M25 35h24 M110 8h60v54h-60z M123 24h34 M123 35h24 M208 8h60v54h-60z M221 24h34 M221 35h24\"/><path d=\"M42 70v18h98 M238 70v18h-98 M140 70v34m-6-6 6 6 6-6\"/></svg><p class=\"ds-relation\">The work I brought together →</p></div><div class=\"ds-platform\"><h3>A client-facing reporting platform</h3><dl><div><dt>Performance data</dt><dd>Live-updating data for reporting.</dd></div><div><dt>Client management</dt><dd>The agency’s clients managed alongside their reporting.</dd></div></dl><p class=\"ds-result\"><strong>↓ Part of the agency’s service</strong><span>An offering Craft & Communicate can sell to its customers.</span></p></div></div><figcaption>Craft & Communicate’s reporting, illustrated. This shows how the work fits together, not a product screenshot or measured results.</figcaption></figure>",
-      "css": ".ds-reporting{font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);color:var(--color-ink,#102a33)}.ds-reporting-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:4rem;align-items:center}.ds-before h3{font-size:1.5rem;line-height:1.2;margin:0 0 1rem;font-weight:600}.ds-before p{font-size:1rem;line-height:1.5}.ds-before svg{width:100%;max-width:280px;margin-block:1.5rem;fill:none;stroke:currentColor;stroke-width:1.25}.ds-before path{vector-effect:non-scaling-stroke}.ds-platform{background:var(--color-paper,#fff);border:1px solid var(--color-ink,#102a33);padding:2rem}.ds-platform h3{font-size:clamp(1.75rem,2.5vw,2.25rem);line-height:1.15;margin:0;font-weight:600}.ds-platform dl{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0 0}.ds-platform dl>div{border-top:1px solid currentColor;padding-top:1rem}.ds-platform dt{font-weight:600}.ds-platform dd{margin:.5rem 0 0;font-size:1rem;line-height:1.5}.ds-result{border-top:1px solid currentColor;margin-top:2rem;padding-top:1.5rem}.ds-result strong,.ds-result span{display:block}.ds-result strong{font-size:1.25rem}.ds-result span{font-size:1rem;margin-top:.5rem}.ds-reporting figcaption{border-top:1px solid currentColor;padding-top:1.25rem;margin-top:2rem;font-size:1rem;max-width:75ch}@media(max-width:760px){.ds-reporting-grid{grid-template-columns:1fr;gap:1.5rem}.ds-platform{padding:1.25rem}.ds-platform dl{grid-template-columns:1fr}}"
+      "name": "Header booking pill (homepage)",
+      "kind": "button",
+      "refersTo": "studio-nav-booking",
+      "description": "The shared header's booking control, restyled to a solid canary pill only under .home-page; off the homepage it renders as the retired outlined-ink button instead.",
+      "html": "<a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a>",
+      "css": ".ds-nav-booking{display:inline-flex;align-items:center;gap:.55rem;min-height:48px;padding:0 1.25rem;border:0;border-radius:8px;background:#f7c848;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-weight:600;box-shadow:0 1px 2px rgba(11,20,26,.12),0 6px 18px -8px rgba(160,110,0,.45);transition:background-color 160ms ease,transform 240ms cubic-bezier(.16,1,.3,1);}.ds-nav-booking:hover{background:#efb925;transform:translateY(-1px);}.ds-nav-booking:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0b141a;}"
     },
     {
-      "name": "Walkthrough report card",
+      "name": "White pill tag",
+      "kind": "chip",
+      "refersTo": "studio-tag-pill",
+      "description": "A desk label positioned on the diorama by percentage coordinates; recolors to yellow (Walkthrough) or pale teal (After the fix) depending on the active scene.",
+      "html": "<li class=\"ds-tag\">Friday report</li>",
+      "css": ".ds-tag{position:absolute;padding:.3em .72em .34em;border-radius:7px;background:#fff;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:.9375rem;font-weight:500;line-height:1.25;letter-spacing:-.005em;white-space:nowrap;box-shadow:0 1px 1px rgba(11,20,26,.08),0 4px 12px -2px rgba(11,20,26,.22);transition:background-color 400ms cubic-bezier(.16,1,.3,1),color 400ms cubic-bezier(.16,1,.3,1);}.ds-tag.is-walkthrough{background:#f7c848;}.ds-tag.is-fixed{background:#e2f5f6;color:#19585e;}"
+    },
+    {
+      "name": "Model shelf card",
       "kind": "card",
-      "refersTo": "report-document",
-      "description": "Folded report card used in the Walkthrough opening to show the free written deliverable and yellow first recommendation.",
-      "html": "<aside class=\"ds-offer-report\"><svg class=\"ds-outline\" viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M1 1H83L99 13V99H1Z M83 1V13H99\"/></svg><div class=\"ds-report-content\"><h2>Your Walkthrough report</h2><p>In writing, within three business days.</p><dl><div><dt>What’s happening</dt><dd>The problems in your work as I’ve understood them.</dd></div><div><dt>What I recommend</dt><dd>What I’d change, and what each change fixes for you.</dd></div><div class=\"ds-first\"><dt>Where I’d start</dt><dd>The first change I’d make for you, and why it comes first.</dd></div></dl><p><strong>Yours to keep. No purchase required.</strong></p></div></aside>",
-      "css": ".ds-offer-report{position:relative;color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif)}.ds-outline{position:absolute;inset:0;width:100%;height:100%;fill:var(--color-paper,#fff);stroke:currentColor;stroke-width:1.25}.ds-outline path{vector-effect:non-scaling-stroke}.ds-report-content{position:relative;padding:3rem 2rem 2rem}.ds-report-content h2{font-size:2rem;line-height:1.08;margin:0;max-width:14ch}.ds-report-content p,.ds-report-content dd{font-size:1rem;line-height:1.5}.ds-report-content dl{margin:1rem 0}.ds-report-content dl>div{padding-block:1rem}.ds-report-content dl>div+div{border-top:1px solid currentColor}.ds-report-content dt{font-weight:600}.ds-report-content dd{margin:.35rem 0 0}.ds-first{background:var(--color-emphasis,#f7cb58);padding:1rem!important;border:0!important}@media(max-width:760px){.ds-report-content{padding:2.5rem 1.5rem 1.5rem}.ds-report-content h2{font-size:1.75rem}}"
+      "refersTo": null,
+      "description": "An isometric capability render above a name and one sentence; lifts and deepens its drop-shadow on hover. Six recur in a three-column grid.",
+      "html": "<li class=\"ds-model\"><img src=\"model.webp\" alt=\"\" width=\"560\" height=\"560\"><h3>Connected tools</h3><p>Your CRM, calendar, and accounting share what they know, so nobody copies it between them.</p></li>",
+      "css": ".ds-model{position:relative;padding-bottom:1.5rem;border-bottom:1px solid #d5dbd8;}.ds-model img{width:100%;max-width:26rem;margin:0 auto;filter:drop-shadow(0 18px 18px rgba(11,20,26,.08));transition:transform 600ms cubic-bezier(.16,1,.3,1),filter 600ms cubic-bezier(.16,1,.3,1);}.ds-model:hover img{transform:translateY(-10px) scale(1.02);filter:drop-shadow(0 30px 24px rgba(11,20,26,.14));}.ds-model h3{margin-top:.5rem;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.375rem;font-weight:700;letter-spacing:-.03em;}.ds-model p{max-width:34ch;margin-top:.5rem;color:#323945;font-size:1.0625rem;line-height:1.5;letter-spacing:-.01em;}"
     },
     {
-      "name": "Calendar shell and fallback",
+      "name": "Offer track step",
       "kind": "custom",
-      "refersTo": "calendar-shell",
-      "description": "Inline Cal area: white rounded shell on cyan with plain Cal.com fallback and Birdcar palette supplied to the native embed.",
-      "html": "<section class=\"ds-offer-close\"><h2>Make a little room<br>to figure it out.</h2><p>Pick an hour that suits you. The report follows within three business days, and it’s yours whatever you decide.</p><div class=\"ds-calendar\"></div><p class=\"ds-fallback\">If the calendar doesn’t load, <a href=\"https://cal.com/birdcar/walkthrough\">book on Cal.com</a>.</p></section>",
-      "css": ".ds-offer-close{background:var(--color-cyan,#b7edf1);color:var(--color-ink,#102a33);font-family:var(--font-marketing,'Barlow',ui-sans-serif,system-ui,sans-serif);text-align:center;padding:5rem 7%}.ds-offer-close h2{font-size:clamp(3.5rem,5.8vw,5.8rem);line-height:1.08;margin:0}.ds-offer-close>p{max-width:58ch;margin:1.5rem auto;font-size:1rem;line-height:1.5}.ds-calendar{margin:3rem auto 0;max-width:1080px;min-height:620px;padding:.5rem;background:var(--color-paper,#fff);border-radius:5px;text-align:left}.ds-fallback{font-size:.9rem}.ds-fallback a{color:inherit;text-decoration:underline}@media(max-width:760px){.ds-offer-close{padding:3.5rem 6%}.ds-offer-close h2{font-size:3.4rem}.ds-calendar{min-height:560px;padding:.25rem}}"
+      "refersTo": null,
+      "description": "A numbered milestone on a connecting line; lit dots mark the two free steps, unlit dots the paid/optional ones, with a small terms pill under each heading.",
+      "html": "<li class=\"ds-offer-step is-free\"><h3>The Walkthrough</h3><span class=\"ds-offer-terms\">Free &middot; about an hour</span><p>You and your team show me the work, on a video call or in person.</p></li>",
+      "css": ".ds-offer-step{position:relative;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;}.ds-offer-step::before{content:'';position:absolute;top:-2.7rem;left:0;width:1.1rem;height:1.1rem;border:2px solid #0b141a;border-radius:50%;background:#fff;}.ds-offer-step.is-free::before{background:#f7c848;}.ds-offer-step h3{font-size:1.75rem;font-weight:700;letter-spacing:-.035em;}.ds-offer-terms{display:inline-block;margin-top:.75rem;padding:.25rem .65rem;border:1px solid #d5dbd8;border-radius:999px;color:#323945;font-size:.875rem;font-weight:550;}.ds-offer-step.is-free .ds-offer-terms{border-color:transparent;background:#fdf0c7;color:#5a4300;}.ds-offer-step p{margin-top:.9rem;color:#323945;font-size:1.0625rem;line-height:1.55;}"
+    },
+    {
+      "name": "Employer mark",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A monochrome inline SVG company mark beside its name, separated from its neighbor by a hairline rule; framed as work history, never as a client or endorsement.",
+      "html": "<li class=\"ds-employer-mark\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7\"/></svg>GitHub</li>",
+      "css": ".ds-employer-mark{display:inline-flex;align-items:center;gap:.4em;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.75rem;font-weight:700;letter-spacing:-.035em;}.ds-employer-mark svg{width:.95em;height:.95em;fill:currentColor;}.ds-employer-mark+.ds-employer-mark{padding-left:3rem;border-left:1px solid #d5dbd8;}"
+    },
+    {
+      "name": "Story mode segmented control",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A floating pill radiogroup (Today / Walkthrough / After the fix) that drives the diorama's crossfade state by hand, independent of scroll.",
+      "html": "<fieldset class=\"ds-miniature-control\"><legend>Show the business</legend><label><input type=\"radio\" name=\"state\" checked> Today</label><label><input type=\"radio\" name=\"state\"> Walkthrough</label><label><input type=\"radio\" name=\"state\"> After the fix</label></fieldset>",
+      "css": ".ds-miniature-control{display:flex;gap:.25rem;padding:.3rem;border-radius:999px;background:rgba(255,255,255,.86);box-shadow:0 1px 2px rgba(11,20,26,.1),0 8px 24px -10px rgba(11,20,26,.3);backdrop-filter:blur(8px);}.ds-miniature-control label{position:relative;padding:.5rem .95rem;border-radius:999px;color:#323945;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:.9375rem;font-weight:550;letter-spacing:-.01em;cursor:pointer;transition:background-color 300ms cubic-bezier(.16,1,.3,1),color 300ms cubic-bezier(.16,1,.3,1);}.ds-miniature-control label:has(input:checked){background:#0b141a;color:#fff;}.ds-miniature-control input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer;}"
     }
   ],
   "narrative": {
-    "northStar": "The clear argument",
-    "overview": "Phase 4 records the integrated locally built marketing system after full rendered review. The homepage, Walkthrough, Work, Writing index, individual articles, authored figures, booking shells, no-JavaScript states, reduced-motion states, and local print specimen now share one direct explanatory world: cyan editorial fields introduce invitations and archives, blue-green ink carries prose and linework, white creates sustained reading space, yellow marks useful recommendations and booking actions, Barlow keeps the argument upright, and Commit Mono appears only for code.\n\nThe integrated system is built and independently reviewed at bounded local scope; it is not deployed. This record does not expand the existing owner approval beyond the Phase 1 opening, Barlow typography, Walkthrough figure, mobile behavior, and static/print sketch approved on 2026-09-19. Phase 4 finish review returned ship with no material fixes, but owner launch acceptance remains pending and no production booking or remote PostHog write is claimed.\n\nPhase 4 evidence includes 390/768/1440 captures for home, Walkthrough, Work, Writing, representative articles, and specimen under `.impeccable/review/phase-4-*`, plus saved Chromium PDF rasters under `.impeccable/review/print/phase-4-*`. Full-page calendar blanks are offscreen capture artifacts; separate calendar and modal captures loaded. The 720×450 captures are 200% equivalent reflow evidence only; native browser-toolbar 200% zoom remains unverified. Print artifacts are local review evidence, not a PDF product or deployed handout system.",
+    "northStar": "Your business, in miniature",
+    "overview": "On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states -- Today, Walkthrough, After the fix -- while white pill tags name the actual work sitting on each desk, drawn from the shared \"where work gets stuck\" pattern vocabulary. The world is pale daylight ground, heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.\n\nOnly the homepage is built in this world. The Walkthrough page, Work page, /tools/where-work-gets-stuck, the Writing index and articles, the favicon, and the theme-color meta tag all still run The clear argument. The shared header/footer partial is not migrated either -- home.css only repaints it (transparent, Alkaline at Demi/600, a solid canary pill) for the homepage.",
     "keyCharacteristics": [
-      "Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.",
-      "Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.",
-      "Authored static figures: the Walkthrough report diagram, the shared reporting component, and the article diagram wrapper for only those two approved subjects, all reviewed in integrated page, no-JavaScript, reduced-motion, repeated-instance, and print contexts.",
-      "65ch article prose, article headings capped at `4.5rem`, visible chart data tables in print, scrollable small-screen plots with explicit hints, and 16mm paper margins without forced page size.",
-      "Flat surfaces, thin ink rules, square report/platform geometry, sparse rounded controls, and two-column numbered Walkthrough stages in print.",
-      "Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use Book a free Walkthrough; footer uses The Walkthrough. Native mobile details/summary remains; Cal booking preserves real href fallbacks; print hides navigation and booking chrome."
+      "Pale daylight ground, near-black ink, canary yellow reserved for actions and traveling packets, a cool teal reserved for the \"fixed\" state.",
+      "One Alkaline wordmark per page; the homepage renders it at Demi (600), the weight the rollout is standardizing on, with native tracking.",
+      "The diorama is the signature figure: a static isometric plate carries all of the meaning, a canvas layer draws animated dotted routes and glowing packet cubes on top, and white pill tags carry the actual desk labels as real HTML.",
+      "Bespoke isometric renders on transparent grounds stand in for icons everywhere a capability needs illustrating.",
+      "A monochrome logo strip (GitHub, Heroku, Zapier, Twilio, Salesforce) is framed as work history, not clients or endorsements.",
+      "Admin and the Publishing workspace are untouched by this redesign and keep Flux Pro, Inter, and deep-teal/cyan accents."
     ],
     "rules": [
       {
-        "name": "The Argument Contrast Rule",
-        "body": "Text and diagram strokes stay ink on cyan or white. Yellow is emphasis, not a background system for whole sections.",
+        "name": "The Canary Action Rule",
+        "body": "Canary yellow marks the one thing to do or the one thing in motion -- a booking button or a packet -- never a background wash for a whole section.",
         "section": "colors"
       },
       {
-        "name": "The Proof Boundary Color Rule",
-        "body": "Use yellow for a recommendation or booking action only when the copy already states the boundary. Color may emphasize “where I’d start”; it must not imply free implementation, measured results, or proof that was not supplied.",
-        "section": "colors"
-      },
-      {
-        "name": "The One Script Rule",
-        "body": "Use Alkaline only for the Birdcar wordmark. Do not revive script headings, signatures, footer logos, or decorative script emphasis.",
+        "name": "The One Wordmark Rule",
+        "body": "Alkaline appears once per page as the header wordmark and nowhere else. Its weight is Demi (600) on the homepage and the intended weight for the full rollout; Medium (500) elsewhere is the retired system, not a second valid option.",
         "section": "typography"
       },
       {
-        "name": "The Upright Argument Rule",
-        "body": "Marketing headings are Barlow, sentence-case, and direct. Do not bring back Karla or purple/script display hierarchy for new marketing work.",
-        "section": "typography"
-      },
-      {
-        "name": "The Documented Step Rule",
-        "body": "Literal font-size steps in `resources/css/marketing.css` are part of the authored responsive hierarchy when they serve nav, diagrams, cards, captions, article prose, print, or chart labels. Do not flatten them to appease a detector; document the step and keep the role clear.",
-        "section": "typography"
-      },
-      {
-        "name": "The Static Meaning Rule",
-        "body": "Every essential relationship must read as HTML/SVG without animation, JavaScript, screenshots, or raster art. Article diagrams are static by default; homepage marketing may opt into motion explicitly, but motion cannot supply missing meaning.",
+        "name": "The Static Diorama Rule",
+        "body": "The isometric plate and its HTML tag labels carry the full meaning of \"what's stuck where\" without JavaScript; the canvas packet-flow layer only adds motion on top and is never the sole carrier of a relationship.",
         "section": "layout"
       },
       {
-        "name": "The Flat Report Rule",
-        "body": "Reports and platforms are geometric explanations, not mock screenshots. Keep them level, stroked, static, and labeled.",
+        "name": "The Glow-as-Motion Rule",
+        "body": "Reserve colored glow for something in motion or urgent (a packet, a lane marker, the warning light); static surfaces at rest keep the ordinary blurred, offset ambient shadow.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** use cyan for offers/invitations, white for implementation explanation and proof reading, ink for personal-note contrast, and yellow for actions or first recommendations.",
-      "**Do** keep the report/branch and reporting-platform relationships visible in static HTML/SVG.",
-      "**Do** keep Alkaline to the one header wordmark and Barlow for marketing text.",
-      "**Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, no-JavaScript readability, and the distinction between Cal readiness and actual booking/open behavior.",
-      "**Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.",
-      "**Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending.",
-      "**Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards."
+      "Do use canary yellow only for actions and things in motion (buttons, packets); use studio teal only for the resolved/\"fixed\" state.",
+      "Do keep the diorama's meaning readable from the static plate and its real HTML tag labels alone; treat the canvas layer as a motion enhancement, never the only carrier of a relationship.",
+      "Do keep Alkaline to the one header wordmark, at Demi (600) for any newly migrated page, matching the homepage.",
+      "Do self-host Mona Sans and Barlow via bunny() rather than a system sans fallback becoming the de facto display face.",
+      "Do describe the past-employer row as work history in monochrome marks, never as clients or endorsements.",
+      "Do keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards."
     ],
     "donts": [
-      "**Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, authenticated Publishing save/release, actual paid agent runs, production publication, or native browser-toolbar 200% zoom verification.",
-      "**Don't** describe local print artifacts as a PDF product, public handout system, deployed asset, or shipping raster.",
-      "**Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.",
-      "**Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.",
-      "**Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.",
-      "**Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes.",
-      "**Don't** describe the Publishing workspace motion as more spectacular than implemented; it is spring continuity, arrival/milestone feedback, and a published-only disposable flourish."
+      "Don't describe the Walkthrough page, Work page, /tools/where-work-gets-stuck, Writing index/articles, the shared header/footer's default (non-home) skin, the favicon, or the theme-color meta as migrated to the new world; they are the retired system until this build reaches them.",
+      "Don't carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.",
+      "Don't literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the \"Waikthrough\" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.",
+      "Don't treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because \"grid of same-size cards\" is a reusable page scaffold.",
+      "Don't remove the legacy ink/paper/cyan/deep-teal tokens even after the remaining marketing pages migrate; Admin depends on them independently of the marketing redesign."
     ]
   }
 }
