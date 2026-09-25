@@ -270,7 +270,7 @@ test('missing credentials pause before any provider request', function (): void 
     runAgentJob($activity);
 
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused)
-        ->and($activity->fresh()->pause_reason)->toBe('OpenRouter credentials are not configured.');
+        ->and($activity->fresh()->pause_reason)->toBe(EditorialActivity::MISSING_CREDENTIALS_PAUSE_REASON);
     Http::assertNothingSent();
 });
 

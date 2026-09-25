@@ -25,9 +25,9 @@ class PublishingAgentSettings extends Settings
 
     public function modelOverrideFor(EditorialActivityKind $kind): ?string
     {
-        $override = $this->model_overrides[$kind->value] ?? '';
+        $override = $this->model_overrides[$kind->value] ?? null;
 
-        return $override !== '' ? $override : null;
+        return is_string($override) && $override !== '' ? $override : null;
     }
 
     public function overrideModel(EditorialActivityKind $kind, string $model): self
@@ -57,11 +57,17 @@ class PublishingAgentSettings extends Settings
     {
         $overrides = [];
         foreach ($this->model_overrides as $role => $model) {
-            if (EditorialActivityKind::tryFrom($role) instanceof EditorialActivityKind && EditorialAgent::allowsModel($model)) {
+            if (EditorialActivityKind::tryFrom($role) instanceof EditorialActivityKind && self::isSupportedModel($model)) {
                 $overrides[$role] = $model;
             }
         }
 
         return $overrides;
+    }
+
+    /** Stored payloads are not type-checked on load, so a malformed value must be rejected rather than trusted. */
+    private static function isSupportedModel(mixed $model): bool
+    {
+        return is_string($model) && EditorialAgent::allowsModel($model);
     }
 }

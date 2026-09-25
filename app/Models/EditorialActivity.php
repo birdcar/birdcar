@@ -29,8 +29,17 @@ class EditorialActivity extends Model
 
     public const LEGACY_PRE_CALL_PAUSE_REASON = 'Paused before any provider request by the removed agent budget checks. Resume the publishing attempt to run it again.';
 
+    public const MISSING_CREDENTIALS_PAUSE_REASON = 'OpenRouter credentials are not configured. The work resumes automatically once the key is configured.';
+
+    public const INVALID_OVERRIDE_PAUSE_REASON = 'The saved model override for this agent role is not supported. Reset it in the publishing agent settings; the work resumes automatically afterwards.';
+
+    public const UNSUPPORTED_RECOMMENDATION_PAUSE_REASON = 'The recommended model for this agent role is not in the supported model list. The work resumes automatically once the configuration is corrected.';
+
+    /** Pre-request pauses that recovery releases once the configuration they depend on is valid again. */
+    public const CONFIGURATION_PAUSE_REASONS = [self::MISSING_CREDENTIALS_PAUSE_REASON, self::INVALID_OVERRIDE_PAUSE_REASON, self::UNSUPPORTED_RECOMMENDATION_PAUSE_REASON];
+
     /** Pause reasons an explicit attempt resume may return to pending work. */
-    public const RESUMABLE_PAUSE_REASONS = [self::ATTEMPT_PAUSE_REASON, self::LEGACY_PRE_CALL_PAUSE_REASON];
+    public const RESUMABLE_PAUSE_REASONS = [self::ATTEMPT_PAUSE_REASON, self::LEGACY_PRE_CALL_PAUSE_REASON, ...self::CONFIGURATION_PAUSE_REASONS];
 
     /**
      * @return array<string, string>

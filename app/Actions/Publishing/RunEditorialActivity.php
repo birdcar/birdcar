@@ -59,14 +59,21 @@ class RunEditorialActivity implements ShouldQueue
             $kind = $this->kind($activity);
             $decisions = $this->decisionsFor($activity);
             $continuation = $decisions !== null;
+            $configurationProblem = self::configurationProblem($activity);
+            if ($configurationProblem !== null) {
+                throw new RuntimeException($configurationProblem);
+            }
             $agent = $continuation
                 ? EditorialAgent::pinnedForActivity($activity, $this->pinnedExecution($activity))
-                : $this->configuredAgent($activity, $kind);
+                : EditorialAgent::forActivity($activity, app(PublishingAgentSettings::class)->modelOverrideFor($kind));
             $execution = $continuation ? $this->storedExecution($activity) : $agent->executionSnapshot();
-            $this->ensureCredentials();
             $conversationId = $this->conversationFor($activity, $actor);
             $agent->continue($conversationId, as: $actor);
+            if (! $this->confirmBeforeInvocation($actor, $activity, $execution)) {
+                return;
+            }
             if ($decisions !== null && collect($activity->tool_decisions)->every(fn (array $decision): bool => $decision['action'] === 'reject')) {
+                // The SDK records bare rejections in the conversation without another provider request.
                 $agent->prompt($decisions);
                 $activity->forceFill([
                     'status' => EditorialActivityStatus::Declined,
@@ -75,9 +82,6 @@ class RunEditorialActivity implements ShouldQueue
                     'completed_at' => now(),
                 ])->save();
 
-                return;
-            }
-            if (! $this->confirmBeforeInvocation($actor, $activity, $execution)) {
                 return;
             }
             $invoked = true;
@@ -239,19 +243,30 @@ class RunEditorialActivity implements ShouldQueue
         return true;
     }
 
-    private function configuredAgent(EditorialActivity $activity, EditorialActivityKind $kind): EditorialAgent
+    /**
+     * The stable pause reason when current configuration prevents this activity from running, or null when it can run.
+     * Approval continuations keep their pinned model, so only credentials apply to them.
+     */
+    public static function configurationProblem(EditorialActivity $activity): ?string
     {
-        $override = app(PublishingAgentSettings::class)->modelOverrideFor($kind);
+        if ((string) config('ai.providers.openrouter.key', '') === '') {
+            return EditorialActivity::MISSING_CREDENTIALS_PAUSE_REASON;
+        }
+
+        if (is_array($activity->tool_decisions) && $activity->tool_decisions !== []) {
+            return null;
+        }
+
+        $override = app(PublishingAgentSettings::class)->modelOverrideFor($activity->kind);
         if ($override !== null && ! EditorialAgent::allowsModel($override)) {
-            throw new RuntimeException('The saved model override for this agent role is not supported. Reset it in the publishing agent settings.');
+            return EditorialActivity::INVALID_OVERRIDE_PAUSE_REASON;
         }
 
-        $agent = EditorialAgent::forActivity($activity, $override);
-        if (! EditorialAgent::allowsModel($agent->model())) {
-            throw new RuntimeException('The recommended model for this agent role is not in the supported model list.');
+        if (! EditorialAgent::allowsModel(EditorialAgent::forActivity($activity, $override)->model())) {
+            return EditorialActivity::UNSUPPORTED_RECOMMENDATION_PAUSE_REASON;
         }
 
-        return $agent;
+        return null;
     }
 
     /**
@@ -296,13 +311,6 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         return $execution;
-    }
-
-    private function ensureCredentials(): void
-    {
-        if ((string) config('ai.providers.openrouter.key', '') === '') {
-            throw new RuntimeException('OpenRouter credentials are not configured.');
-        }
     }
 
     /**

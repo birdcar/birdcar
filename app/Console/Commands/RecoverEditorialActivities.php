@@ -12,15 +12,41 @@ class RecoverEditorialActivities extends Command
 {
     protected $signature = 'publishing:recover-activities {--limit=50}';
 
-    protected $description = 'Re-enqueue durable pending editorial agent activities and pause ambiguous old runs.';
+    protected $description = 'Release corrected configuration pauses, re-enqueue durable pending editorial agent activities and pause ambiguous old runs.';
 
     public function handle(PublishingAgentSettings $settings): int
     {
         $limit = max(1, (int) $this->option('limit'));
         $count = 0;
         $paused = 0;
+        $released = 0;
 
         if (! $settings->paused) {
+            EditorialActivity::query()
+                ->where('status', EditorialActivityStatus::Paused->value)
+                ->whereIn('pause_reason', EditorialActivity::CONFIGURATION_PAUSE_REASONS)
+                ->whereHas('attempt', function ($query): void {
+                    $query->whereNull('paused_at')->whereNull('parked_at')->whereNull('abandoned_at');
+                })
+                ->orderBy('id')
+                ->limit($limit)
+                ->each(function (EditorialActivity $activity) use (&$released): void {
+                    if (RunEditorialActivity::configurationProblem($activity) !== null) {
+                        return;
+                    }
+
+                    $released += EditorialActivity::query()
+                        ->whereKey($activity->id)
+                        ->where('status', EditorialActivityStatus::Paused->value)
+                        ->where('pause_reason', $activity->pause_reason)
+                        ->update([
+                            'status' => EditorialActivityStatus::Pending->value,
+                            'paused_at' => null,
+                            'pause_reason' => null,
+                            'available_at' => now(),
+                        ]);
+                });
+
             EditorialActivity::query()
                 ->where('status', EditorialActivityStatus::Pending->value)
                 ->where(function ($query): void {
@@ -52,7 +78,7 @@ class RecoverEditorialActivities extends Command
 
         $this->info($settings->paused
             ? 'Publishing agents are paused; no pending work was dispatched. Paused '.$paused.' ambiguous runs.'
-            : 'Recovered '.$count.' pending editorial activities; paused '.$paused.' ambiguous runs.');
+            : 'Released '.$released.' configuration pauses; recovered '.$count.' pending editorial activities; paused '.$paused.' ambiguous runs.');
 
         return self::SUCCESS;
     }

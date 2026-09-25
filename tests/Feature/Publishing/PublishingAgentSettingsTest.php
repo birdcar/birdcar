@@ -112,8 +112,62 @@ test('a stored override outside the allowlist pauses the activity with an action
     app()->call([new RunEditorialActivity($activity->id), 'handle']);
 
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused)
-        ->and($activity->fresh()->pause_reason)->toContain('Reset it in the publishing agent settings');
+        ->and($activity->fresh()->pause_reason)->toBe(EditorialActivity::INVALID_OVERRIDE_PAUSE_REASON);
     Http::assertNothingSent();
+});
+
+test('recovery releases an override pause only after the override is reset', function (): void {
+    setPublishingAgentsPaused(false);
+    DB::table('settings')->where('group', 'publishing_agents')->where('name', 'model_overrides')->update(['payload' => json_encode(['interview' => 'openai/gpt-unlisted'])]);
+    app()->forgetScopedInstances();
+    Bus::fake([RunEditorialActivity::class]);
+    [$author, $attempt] = settingsAttempt();
+    $activity = app(StartEditorialActivity::class)->start($author, $attempt, EditorialActivityKind::Interview);
+    app()->call([new RunEditorialActivity($activity->id), 'handle']);
+    Bus::fake([RunEditorialActivity::class]);
+
+    $this->artisan('publishing:recover-activities')->assertSuccessful();
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused);
+    Bus::assertNotDispatched(RunEditorialActivity::class);
+
+    app(PublishingAgentSettings::class)->refresh()->resetModel(EditorialActivityKind::Interview)->save();
+    app()->forgetScopedInstances();
+    $this->artisan('publishing:recover-activities')->expectsOutputToContain('Released 1 configuration pauses')->assertSuccessful();
+
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($activity->fresh()->pause_reason)->toBeNull();
+    Bus::assertDispatched(RunEditorialActivity::class, fn (RunEditorialActivity $job): bool => $job->activityId === $activity->id);
+    Http::assertNothingSent();
+});
+
+test('resuming the attempt returns a configuration pause to pending work', function (): void {
+    setPublishingAgentsPaused(false);
+    config()->set('ai.providers.openrouter.key', '');
+    Bus::fake([RunEditorialActivity::class]);
+    [$author, $attempt] = settingsAttempt();
+    $activity = app(StartEditorialActivity::class)->start($author, $attempt, EditorialActivityKind::Interview);
+    app()->call([new RunEditorialActivity($activity->id), 'handle']);
+    expect($activity->fresh()->pause_reason)->toBe(EditorialActivity::MISSING_CREDENTIALS_PAUSE_REASON);
+
+    $advance = app(AdvancePublishingAttempt::class);
+    $advance->pause($author, $attempt, 'Owner check');
+    $advance->resume($author, $attempt);
+
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending);
+    Http::assertNothingSent();
+});
+
+test('a malformed stored override falls back to the recommendation instead of crashing', function (): void {
+    DB::table('settings')->where('group', 'publishing_agents')->where('name', 'model_overrides')
+        ->update(['payload' => json_encode(['interview' => ['openai/gpt-unlisted'], 'draft' => null, 'plan' => 'deepseek/deepseek-v4.1-flash'])]);
+    app()->forgetScopedInstances();
+    $settings = app(PublishingAgentSettings::class);
+
+    expect($settings->modelOverrideFor(EditorialActivityKind::Interview))->toBeNull()
+        ->and($settings->modelOverrideFor(EditorialActivityKind::Draft))->toBeNull();
+
+    $settings->resetModel(EditorialActivityKind::Draft)->save();
+    expect(app(PublishingAgentSettings::class)->refresh()->model_overrides)->toBe(['plan' => 'deepseek/deepseek-v4.1-flash']);
 });
 
 test('each job resolves settings fresh so a warm worker sees a save made in another scope', function (): void {

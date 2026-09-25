@@ -152,7 +152,7 @@ php artisan schedule:list --no-interaction
 The schedule contains:
 
 - `publishing:publish-due` every minute: delivers due, still-authorized and current approved release snapshots. This can publish content; it is not a harmless health-check command.
-- `publishing:recover-activities` every five minutes: while agent requests are on, re-enqueues durable pending work, which can cause queued inference. It also pauses running activities older than 30 minutes as uncertain for review. It makes no billing lookups and does not blindly regenerate an ambiguous paid result.
+- `publishing:recover-activities` every five minutes: while agent requests are on, re-enqueues durable pending work, which can cause queued inference, and first returns pre-request configuration pauses (missing key, unsupported override or recommendation) to pending once that configuration is valid. It also pauses running activities older than 30 minutes as uncertain for review. It makes no billing lookups and does not blindly regenerate an ambiguous paid result.
 
 After code/configuration updates, gracefully restart workers through the platform, or use `php artisan queue:restart --no-interaction` with the supervised process. Reload any long-running web runtime as well. All web and worker processes must receive the same configuration and shared data stores. Saving the publishing agent settings page is not a configuration update: each job reads the saved settings, so no config rebuild or restart is needed.
 
@@ -172,11 +172,11 @@ When authorized to run the editorial pilot, turn off **Pause agent requests** on
 
 Provider failures are recorded on the activity with fixed messages that never echo the key or response body:
 
-- Missing key: the activity pauses before any request with “OpenRouter credentials are not configured.” Set the secret, rebuild the configuration cache, and restart workers.
+- Missing key: the activity pauses before any request with “OpenRouter credentials are not configured.” Set the secret, rebuild the configuration cache, and restart workers; the next recovery pass resumes the paused work.
 - HTTP 401/403: OpenRouter rejected the key or its permissions. HTTP 402: the key or workspace has no remaining credit or limit. Both pause the activity.
 - Other HTTP 4xx: the selected model is unavailable or does not support the required parameters. Choose another model or reset the task on the settings page.
 - HTTP 429: the activity is marked failed before generating output. The application does not retry it automatically; start the work again after the limit clears.
-- A saved override that is no longer on the curated list pauses the activity before any request and is marked **Reset required** on the settings page.
+- A saved override that is no longer on the curated list pauses the activity before any request and is marked **Reset required** on the settings page. Resetting it lets the next recovery pass resume the work.
 - Timeouts, disconnects, and interrupted runs pause the activity as uncertain. Check OpenRouter's activity log before deliberately rerunning.
 
 Native `AskAuthor` tool requests wait in the workspace until the initiating author supplies answers or declines. Answers resume the same stored conversation via a queued, re-authorized SDK call. Declining does not make another model completion. Neither action approves the angle, plan, or exact release: those remain separate human publishing gates.
