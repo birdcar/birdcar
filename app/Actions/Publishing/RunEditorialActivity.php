@@ -31,6 +31,7 @@ use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\ConversationStore;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\FinishReason;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use RuntimeException;
 use Throwable;
@@ -38,6 +39,8 @@ use Throwable;
 class RunEditorialActivity implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public const OUTPUT_LIMIT_ERROR = 'The agent reached its output limit before finishing its answer, so nothing was applied. This role needs a larger output allowance before the work is rerun.';
 
     public const MODEL_CONTINUITY_ERROR = 'The model that started this agent conversation cannot be identified, so the approval cannot continue without re-routing. Review the activity and start new work instead.';
 
@@ -87,6 +90,12 @@ class RunEditorialActivity implements ShouldQueue
             $invoked = true;
             $agentResponse = $agent->prompt($decisions ?? $agent->promptText());
             $responseReceived = true;
+            // The SDK decodes a truncated structured answer as an empty array, and retrying would repeat the truncation.
+            if ($agentResponse->steps->last()?->finishReason === FinishReason::Length) {
+                $this->pauseActivity($activity, self::OUTPUT_LIMIT_ERROR);
+
+                return;
+            }
             $response = $agentResponse->raw?->json() ?? [];
             if (! is_array($response)) {
                 throw new RuntimeException('OpenRouter returned a malformed response.');
@@ -113,8 +122,13 @@ class RunEditorialActivity implements ShouldQueue
                 $responseLocalEvidence = $this->responseLocalEvidenceTextByRef($payload, $preparedEvidenceSources);
                 $knownEvidenceIds = [...$knownEvidenceIds, ...array_keys($responseLocalEvidence)];
                 $evidenceTexts = $evidenceTexts + $responseLocalEvidence;
+                // Retrieved page text now lives in the prepared sources; keeping it would push the model's own field past its size limit.
+                $payload = $this->withoutRetrievedContent($payload);
             }
             $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts);
+            if ($kind === EditorialActivityKind::Recheck) {
+                $this->ensureRecheckAssessedEveryFinding($activity, $validated);
+            }
             $this->applyResult($activity, $actor, $validated, $writer, $generationId, $execution, $preparedEvidenceSources);
         } catch (Throwable $throwable) {
             $this->handleFailure($activity, $throwable, $continuation, $invoked, $responseReceived);
@@ -642,6 +656,49 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         return array_values(array_unique($keys));
+    }
+
+    /**
+     * An empty or partial recheck would read as "nothing unresolved", so every frozen finding must be classified,
+     * by its ID or by the block it concerns.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function ensureRecheckAssessedEveryFinding(EditorialActivity $activity, array $payload): void
+    {
+        $input = is_array($activity->input) ? $activity->input : [];
+        $findings = is_array($input['review_findings'] ?? null) ? $input['review_findings'] : [];
+        $assessed = collect([...($payload['resolved'] ?? []), ...($payload['unresolved'] ?? [])])->filter(fn (mixed $item): bool => is_array($item));
+        $assessedIds = $assessed->pluck('finding_id')->filter(fn (mixed $id): bool => is_int($id))->all();
+        $assessedBlocks = $assessed->pluck('block_id')->filter(fn (mixed $id): bool => is_string($id) && $id !== '')->all();
+
+        foreach ($findings as $finding) {
+            if (! is_array($finding)) {
+                continue;
+            }
+            $covered = in_array($finding['id'] ?? null, $assessedIds, true)
+                || (is_string($finding['block_id'] ?? null) && in_array($finding['block_id'], $assessedBlocks, true));
+            if (! $covered) {
+                throw new RuntimeException('The recheck did not assess every review finding, so its result was not applied.');
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function withoutRetrievedContent(array $payload): array
+    {
+        $references = is_array($payload['sourceReferences'] ?? null) ? $payload['sourceReferences'] : [];
+        foreach ($references as $index => $reference) {
+            if (is_array($reference)) {
+                unset($references[$index]['retrieved_content']);
+            }
+        }
+        $payload['sourceReferences'] = $references;
+
+        return $payload;
     }
 
     /**

@@ -54,7 +54,8 @@ test('it prompts the native SDK with frozen context and returns structured outpu
         ->and($response['argument'])->toBe('The editorial argument.')
         ->and($agent->promptText())->toContain('Owner supplied brief')
         ->and((string) $agent->instructions())->toContain('untrusted evidence')
-        ->and((string) $agent->instructions())->toContain('AskAuthor');
+        ->and((string) $agent->instructions())->toContain('AskAuthor')
+        ->and((string) $agent->instructions())->toContain('never join separate passages with ellipses');
     Planner::assertPrompted(fn ($prompt): bool => $prompt->contains('Owner supplied brief'));
 });
 
@@ -70,8 +71,35 @@ test('it exposes meaningful native structured schemas without empty arbitrary ob
         ->and($claims['items']['properties']['supporting_quotations']['items']['properties'])->toHaveKey('quote')
         ->and($sourceReferences['items']['properties'])->toHaveKeys(['url', 'title', 'content'])
         ->and($sourceReferences['maxItems'])->toBe(10)
+        ->and($claims['items']['properties']['supporting_source_ids']['description'])->toContain('retained evidence listed in input.evidence_sources only')
+        ->and($claims['items']['properties']['supporting_quotations']['items']['properties']['source_id']['description'])->toContain('null for a source first cited in this response')
+        ->and($sourceReferences['items']['properties']['local_id']['description'])->toContain('source_ref')
         ->and($reconciliationSchema['groups']->toArray()['items']['properties'])->toHaveKey('canonical_finding_id')
         ->and($draftSchema['document']->toArray()['type'])->toBe('string');
+});
+
+test('schemas state the output rules the application enforces', function () {
+    $research = (new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge)))->schema(new JsonSchemaTypeFactory);
+    $plan = (new Planner(editorialActivity(EditorialActivityKind::Plan)))->schema(new JsonSchemaTypeFactory);
+    $review = (new FactReviewer(editorialActivity(EditorialActivityKind::ReviewFacts)))->schema(new JsonSchemaTypeFactory);
+    $recheck = (new RevisionRechecker(editorialActivity(EditorialActivityKind::Recheck)))->schema(new JsonSchemaTypeFactory);
+    $contradiction = $research['contradictions']->toArray()['items']['properties'];
+
+    expect($contradiction['severity']['description'])->toContain('Must be "blocking" whenever any supporting quotation contradicts')
+        ->and($contradiction['supporting_quotations']['description'])->toContain('otherwise set unresolved to true')
+        ->and($contradiction['supporting_quotations']['items']['properties']['quote']['description'])->toContain('at most 4,000 characters')
+        ->and($research['sourceReferences']->toArray()['items']['properties']['content']['description'])->toContain('at most 2,000 characters')
+        ->and($plan['outline']->toArray()['description'])->toContain('cannot approve an empty outline')
+        ->and($plan['visualPlan']->toArray()['description'])->toContain('cannot approve an empty visual plan')
+        ->and($review['findings']->toArray()['description'])->toBe('At most 25 findings.')
+        ->and($review['findings']->toArray()['items']['properties']['severity']['description'])->toContain('blocking')
+        ->and($review['findings']->toArray()['items']['properties']['supporting_quotations']['items']['properties'])->not->toHaveKey('source_ref')
+        ->and($review['findings']->toArray()['items']['properties']['supporting_quotations']['description'])->toContain('Never quote the manuscript')
+        ->and($review['findings']->toArray()['items']['properties']['block_id']['description'])->toContain('Point at manuscript text')
+        ->and($recheck['resolved']->toArray()['items']['required'])->toEqualCanonicalizing(['finding_id', 'status', 'reason'])
+        ->and($recheck['unresolved']->toArray()['items']['properties']['status']['enum'])->toBe(['resolved', 'unresolved'])
+        ->and($recheck['newBlockingFindings']->toArray()['description'])->toContain('severity to "blocking"')
+        ->and((string) (new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge)))->instructions())->toContain('contradicting quotation must be severity "blocking"');
 });
 
 /** @return array<string, mixed> */
@@ -97,22 +125,26 @@ test('each role sends its explicit native recommendation without price or provid
     expect(EditorialAgent::recommendedModelFor($kind))->toBe($model)
         ->and(EditorialAgent::allowsModel($model))->toBeTrue()
         ->and($agent->maxSteps())->toBe(1)
-        ->and($agent->timeout())->toBeLessThan(60)
+        ->and($agent->timeout())->toBe(540)
         ->and($body['model'])->toBe($model)
         ->and($body['max_tokens'])->toBe($maxTokens)
         ->and($body['reasoning'])->toBe(['effort' => $effort])
-        ->and($body['provider'])->toBe(['require_parameters' => true])
+        ->and($body['provider'])->toBe([
+            'require_parameters' => true,
+            'sort' => 'throughput',
+            'quantizations' => ['fp8', 'mxfp8', 'fp16', 'bf16', 'fp32', 'unknown'],
+        ])
         ->and($body)->not->toHaveKeys(['max_price', 'max_completion_tokens']);
 })->with([
-    'interviewer' => [EditorialActivityKind::Interview, 'google/gemini-3.8-flash', 'low', 4000],
-    'researcher' => [EditorialActivityKind::ResearchChallenge, 'google/gemini-3.8-flash', 'medium', 8000],
-    'planner' => [EditorialActivityKind::Plan, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
-    'drafter' => [EditorialActivityKind::Draft, 'google/gemini-3.8-flash', 'medium', 16000],
-    'fact reviewer' => [EditorialActivityKind::ReviewFacts, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
-    'voice reviewer' => [EditorialActivityKind::ReviewVoice, 'google/gemini-3.8-flash', 'medium', 8000],
-    'buyer reviewer' => [EditorialActivityKind::ReviewBuyer, 'deepseek/deepseek-v4.1-flash', 'low', 6000],
-    'reconciler' => [EditorialActivityKind::Reconciliation, 'deepseek/deepseek-v4.1-flash', 'low', 6000],
-    'rechecker' => [EditorialActivityKind::Recheck, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
+    'interviewer' => [EditorialActivityKind::Interview, 'google/gemini-3.8-flash', 'low', 8000],
+    'researcher' => [EditorialActivityKind::ResearchChallenge, 'google/gemini-3.8-flash', 'medium', 16000],
+    'planner' => [EditorialActivityKind::Plan, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
+    'drafter' => [EditorialActivityKind::Draft, 'google/gemini-3.8-flash', 'medium', 32000],
+    'fact reviewer' => [EditorialActivityKind::ReviewFacts, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
+    'voice reviewer' => [EditorialActivityKind::ReviewVoice, 'google/gemini-3.8-flash', 'medium', 16000],
+    'buyer reviewer' => [EditorialActivityKind::ReviewBuyer, 'deepseek/deepseek-v4-pro-0813', 'medium', 24000],
+    'reconciler' => [EditorialActivityKind::Reconciliation, 'deepseek/deepseek-v4.1-flash', 'low', 16000],
+    'rechecker' => [EditorialActivityKind::Recheck, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
 ]);
 
 test('allowlisted overrides replace only the model and keep role reasoning where supported', function (string $override) {
@@ -120,7 +152,7 @@ test('allowlisted overrides replace only the model and keep role reasoning where
 
     expect($body['model'])->toBe($override)
         ->and($body['reasoning'])->toBe(['effort' => 'high'])
-        ->and($body['provider'])->toBe(['require_parameters' => true]);
+        ->and($body['provider'])->toBe(EditorialAgent::PROVIDER_ROUTING);
 })->with(['google/gemini-3.8-flash', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash']);
 
 test('auto router requests omit forced reasoning while research keeps Exa search', function () {
@@ -128,7 +160,7 @@ test('auto router requests omit forced reasoning while research keeps Exa search
 
     expect($research['model'])->toBe('openrouter/auto')
         ->and($research)->not->toHaveKey('reasoning')
-        ->and($research['provider'])->toBe(['require_parameters' => true])
+        ->and($research['provider'])->toBe(EditorialAgent::PROVIDER_ROUTING)
         ->and($research['plugins'])->toBe([['id' => 'web', 'engine' => 'exa', 'mode' => 'auto', 'max_results' => 5]]);
 });
 

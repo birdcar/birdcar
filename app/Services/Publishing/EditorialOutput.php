@@ -81,12 +81,29 @@ class EditorialOutput
 
             foreach ($payload[$collection] as $index => $finding) {
                 if (is_array($finding) && array_key_exists('proposed_patch', $finding)) {
-                    $payload[$collection][$index]['proposed_patch'] = $this->decodeJsonField($finding['proposed_patch'], 'proposed_patch');
+                    $payload[$collection][$index]['proposed_patch'] = $this->optionalPatch($finding['proposed_patch']);
                 }
             }
         }
 
         return $payload;
+    }
+
+    /**
+     * A patch is an optional suggestion the owner must still accept, so an unparseable one is dropped rather than
+     * discarding the whole review.
+     *
+     * @return array<mixed>|null
+     */
+    private function optionalPatch(mixed $value): ?array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $decoded = is_string($value) ? json_decode($value, true) : null;
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     private function decodeJsonField(mixed $value, string $field): mixed
@@ -602,10 +619,32 @@ class EditorialOutput
                 throw new InvalidArgumentException('Supporting quotation source text is missing.');
             }
 
-            if (! str_contains($sourceText, $quote)) {
+            if (! $this->containsQuotation($sourceText, $quote)) {
                 throw new InvalidArgumentException('Supporting quotation was not found in the retained source text.');
             }
         }
+    }
+
+    /**
+     * Quotations must reproduce the source's words in order. Line breaks, repeated spaces and list markers are
+     * formatting, so a quote spanning bulleted lines still matches while changed or elided words do not.
+     */
+    private function containsQuotation(string $sourceText, string $quote): bool
+    {
+        if (str_contains($sourceText, $quote)) {
+            return true;
+        }
+
+        $normalizedQuote = $this->withoutFormatting($quote);
+
+        return $normalizedQuote !== '' && str_contains($this->withoutFormatting($sourceText), $normalizedQuote);
+    }
+
+    private function withoutFormatting(string $text): string
+    {
+        $withoutListMarkers = preg_replace('/^[ \t]*(?:[-*•]|\d+[.)])[ \t]+/mu', '', $text) ?? $text;
+
+        return trim(preg_replace('/\s+/u', ' ', $withoutListMarkers) ?? $withoutListMarkers);
     }
 
     /** @param array<string, mixed> $finding */

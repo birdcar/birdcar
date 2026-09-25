@@ -4,7 +4,7 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(8000)]
+#[MaxTokens(16000)]
 class VoiceReviewer extends EditorialAgent
 {
     public function model(): string

@@ -4,12 +4,12 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(6000)]
+#[MaxTokens(24000)]
 class BuyerReviewer extends EditorialAgent
 {
     public function model(): string
     {
-        return $this->modelOverride ?? 'deepseek/deepseek-v4.1-flash';
+        return $this->modelOverride ?? 'deepseek/deepseek-v4-pro-0813';
     }
 
     protected function roleInstructions(): string
@@ -19,6 +19,6 @@ class BuyerReviewer extends EditorialAgent
 
     protected function roleReasoningEffort(): string
     {
-        return 'low';
+        return 'medium';
     }
 }

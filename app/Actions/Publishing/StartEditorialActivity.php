@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
+use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
@@ -77,7 +78,7 @@ class StartEditorialActivity
                 'completed_research' => $this->completedResearchSnapshots($lockedAttempt),
                 'evidence_sources' => $this->eligibleEvidenceSources($lockedAttempt),
                 'voice_context' => $this->voiceContext($lockedAttempt, $input),
-            ]);
+            ], $this->reviewContext($lockedAttempt, $article, $kind, $revision, $input));
             $promptHash = $this->fingerprint->hash([
                 'version' => EditorialOutput::VERSION,
                 'kind' => $kind->value,
@@ -205,6 +206,70 @@ class StartEditorialActivity
                 throw new RuntimeException('Recheck requires a complete reviewed base batch.');
             }
         }
+    }
+
+    /**
+     * Reconciliation and recheck judge earlier findings, so freeze the findings (and the reviewed text) they need.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function reviewContext(PublishingAttempt $attempt, Article $article, EditorialActivityKind $kind, ?ArticleRevision $revision, array $input): array
+    {
+        if ($kind === EditorialActivityKind::Reconciliation) {
+            return ['review_findings' => $this->reviewFindings($attempt, (int) ($revision->id ?? 0), includeResolved: false)];
+        }
+
+        if ($kind !== EditorialActivityKind::Recheck) {
+            return [];
+        }
+
+        $reviewedRevisionId = (int) ($input['reviewed_revision_id'] ?? 0);
+        $reviewed = ArticleRevision::query()->where('article_id', $article->id)->whereKey($reviewedRevisionId)->first();
+
+        return [
+            'review_findings' => $this->reviewFindings($attempt, $reviewedRevisionId, includeResolved: true),
+            'reviewed_manuscript' => $reviewed instanceof ArticleRevision ? [
+                'revision_id' => $reviewed->id,
+                'content_hash' => $reviewed->content_hash,
+                'document' => $reviewed->document ?? [],
+            ] : null,
+        ];
+    }
+
+    /**
+     * Current-cycle lens findings for one revision. Reconciliation sees open findings; recheck also sees superseded
+     * ones, but not reconciled duplicates or findings the owner dismissed.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function reviewFindings(PublishingAttempt $attempt, int $revisionId, bool $includeResolved): array
+    {
+        return array_values(EditorialFinding::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('revision_id', $revisionId)
+            ->when(! $includeResolved, fn ($query) => $query->whereNull('stale_at'))
+            ->when($includeResolved, fn ($query) => $query
+                ->whereNull('reconciled_into_finding_id')
+                ->where(fn ($query) => $query->whereNull('disposition')->orWhereNotIn('disposition', ['rejected', 'false_positive'])))
+            ->orderBy('id')
+            ->get()
+            ->map(fn (EditorialFinding $finding): array => array_filter([
+                'id' => (int) $finding->id,
+                'lens' => $finding->lens,
+                'kind' => $finding->kind,
+                'severity' => $finding->severity,
+                'block_id' => $finding->block_id,
+                'statement' => $finding->statement,
+                'rationale' => $finding->rationale,
+                'supporting_source_ids' => $finding->supporting_source_ids,
+                'supporting_quotations' => $finding->supporting_quotations,
+                'reconciliation_state' => $includeResolved ? $finding->reconciliation_state : null,
+                'disposition' => $includeResolved ? $finding->disposition : null,
+                'disposition_reason' => $includeResolved ? $finding->disposition_reason : null,
+            ], fn (mixed $value): bool => $value !== null))
+            ->all());
     }
 
     /**

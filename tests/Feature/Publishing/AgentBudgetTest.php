@@ -262,6 +262,24 @@ test('a timeout pauses as an uncertain outcome and is not blindly retried', func
         ->and($attempts)->toBe(1);
 });
 
+test('a truncated answer pauses with the output limit reason instead of retrying', function (): void {
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response([
+        'id' => 'gen-truncated',
+        'model' => 'google/gemini-3.8-flash',
+        'choices' => [['finish_reason' => 'length', 'message' => ['role' => 'assistant', 'content' => '{"questions": ["What chan']]],
+    ])]);
+    $actor = agentBudgetAuthor();
+    $activity = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview, [], 'truncated');
+
+    runAgentJob($activity);
+    runAgentJob($activity);
+
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused)
+        ->and($activity->fresh()->pause_reason)->toBe(RunEditorialActivity::OUTPUT_LIMIT_ERROR)
+        ->and($activity->fresh()->response)->toBeNull();
+    Http::assertSentCount(1);
+});
+
 test('missing credentials pause before any provider request', function (): void {
     config()->set('ai.providers.openrouter.key', '');
     $actor = agentBudgetAuthor();

@@ -65,6 +65,37 @@ test('research stores retrieved citation text and fetches pointers without conte
         ->and(str_contains((string) $fetchedText, 'Fetched public passage'))->toBeTrue();
 });
 
+test('long retrieved pages are kept as evidence without tripping the output size limit', function (): void {
+    setPublishingAgentsPaused(false);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    $pages = collect(range(1, 5))->mapWithKeys(fn (int $page): array => ["https://example.com/{$page}" => "Page {$page} passage. ".str_repeat('Long public guidance text. ', 340)]);
+
+    Http::preventStrayRequests();
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response([
+        'id' => 'gen-long-research',
+        'choices' => [['message' => ['content' => json_encode([
+            'claims' => [[
+                'statement' => 'The first page supports the claim.',
+                'supporting_source_ids' => [],
+                'supporting_source_refs' => ['p1'],
+                'supporting_quotations' => [['source_ref' => 'p1', 'quote' => 'Page 1 passage.']],
+            ]],
+            'sourceReferences' => $pages->keys()->map(fn (string $url, int $index): array => ['url' => $url, 'title' => 'Page', 'local_id' => 'p'.($index + 1)])->all(),
+            'contradictions' => [],
+            'gaps' => [],
+        ]), 'annotations' => $pages->map(fn (string $content, string $url): array => ['type' => 'url_citation', 'url_citation' => ['url' => $url, 'content' => $content]])->values()->all()]]],
+    ])]);
+
+    $actor = evidenceAuthor();
+    $activity = app(StartEditorialActivity::class)->start($actor, evidenceAttempt($actor), EditorialActivityKind::ResearchChallenge, [], 'long-research');
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
+
+    expect($pages->sum(fn (string $content): int => strlen($content)))->toBeGreaterThan(32768)
+        ->and($activity->fresh()->status->value)->toBe('completed')
+        ->and(EvidenceSource::query()->where('activity_id', $activity->id)->count())->toBe(5)
+        ->and(collect($activity->fresh()->response['sourceReferences'])->every(fn (array $reference): bool => ! array_key_exists('retrieved_content', $reference)))->toBeTrue();
+});
+
 test('research records unresolved source when public fetch is denied', function (): void {
     setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
@@ -144,6 +175,36 @@ test('supporting quotations must be grounded in eligible retained source text', 
             'supporting_source_ids' => [10],
             'supporting_quotations' => [['source_id' => 10, 'quote' => 'this quotation is not in the source']],
         ]]], [10], [10 => $eligibleText]))->toThrow(InvalidArgumentException::class, 'not found')
+        ->and($prompts->validate(EditorialActivityKind::ResearchChallenge, [
+            'claims' => [[
+                'statement' => 'A quote across bulleted lines keeps every word in order.',
+                'supporting_source_ids' => [12],
+                'supporting_quotations' => [['source_id' => 12, 'quote' => 'A CRM is worth the cost. Multiple salespeople. Once two people call leads, ownership matters.']],
+            ]],
+            'sourceReferences' => [],
+            'contradictions' => [],
+            'gaps' => [],
+        ], [12], [12 => "When to switch:\n- A CRM is worth the cost.\n- Multiple salespeople.  Once two people\ncall leads, ownership matters."]))->toBeArray()
+        ->and(fn () => $prompts->validate(EditorialActivityKind::ResearchChallenge, [
+            'claims' => [[
+                'statement' => 'Formatting tolerance does not accept changed words.',
+                'supporting_source_ids' => [12],
+                'supporting_quotations' => [['source_id' => 12, 'quote' => 'A CRM is worth the price. Multiple salespeople.']],
+            ]],
+            'sourceReferences' => [],
+            'contradictions' => [],
+            'gaps' => [],
+        ], [12], [12 => "- A CRM is worth the cost.\n- Multiple salespeople."]))->toThrow(InvalidArgumentException::class, 'not found')
+        ->and(fn () => $prompts->validate(EditorialActivityKind::ResearchChallenge, [
+            'claims' => [[
+                'statement' => 'Elided passages observed in the live trial stay ungrounded.',
+                'supporting_source_ids' => [10],
+                'supporting_quotations' => [['source_id' => 10, 'quote' => 'The retained passage says ... by 42 percent.']],
+            ]],
+            'sourceReferences' => [],
+            'contradictions' => [],
+            'gaps' => [],
+        ], [10], [10 => $eligibleText]))->toThrow(InvalidArgumentException::class, 'not found')
         ->and(fn () => $prompts->validate(EditorialActivityKind::ReviewFacts, ['findings' => [[
             'statement' => 'Missing source text.',
             'supporting_source_ids' => [10],

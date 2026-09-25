@@ -4,7 +4,7 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(12000)]
+#[MaxTokens(32000)]
 class FactReviewer extends EditorialAgent
 {
     public function model(): string

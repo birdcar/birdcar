@@ -11,7 +11,7 @@ return [
         'deepseek/deepseek-v4.1-flash' => ['label' => 'DeepSeek V4.1 Flash', 'reasoning' => true],
         'openrouter/auto' => ['label' => 'OpenRouter Auto Router', 'reasoning' => false],
     ],
-    'http_timeout' => 50,
+    'http_timeout' => 540,
     'limits' => [
         'max_retries' => 2,
         'fetch_timeout_seconds' => 10,

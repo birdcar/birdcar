@@ -4,7 +4,7 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(4000)]
+#[MaxTokens(8000)]
 class Interviewer extends EditorialAgent
 {
     public function model(): string

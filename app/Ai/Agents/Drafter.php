@@ -4,7 +4,7 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(16000)]
+#[MaxTokens(32000)]
 class Drafter extends EditorialAgent
 {
     public function model(): string

@@ -4,7 +4,7 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 
-#[MaxTokens(6000)]
+#[MaxTokens(16000)]
 class ReviewReconciler extends EditorialAgent
 {
     public function model(): string
@@ -14,7 +14,7 @@ class ReviewReconciler extends EditorialAgent
 
     protected function roleInstructions(): string
     {
-        return 'Review reconciliation: group related findings, choose canonical_finding_id from each group as its representative, surface conflicts, and recommend resolution order without discarding blocking concerns.';
+        return 'Review reconciliation: group related findings from input.review_findings using only their id values, choose canonical_finding_id from each group as its representative, surface conflicts, and recommend resolution order without discarding blocking concerns.';
     }
 
     protected function roleReasoningEffort(): string

@@ -119,6 +119,27 @@ test('review lenses are queued only after draft completion on the drafted revisi
         ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer'])->pluck('revision_id')->unique()->all())->toBe([$reviewRevisionId]);
 });
 
+test('an unparseable proposed patch is dropped while the review finding is kept', function (): void {
+    $patch = ['block_id' => 'blk_0000000000000001', 'expected_hash' => 'hash', 'replacement' => ['type' => 'paragraph']];
+    $finding = fn (mixed $proposedPatch): array => [
+        'statement' => 'The revenue claim contradicts the notes.',
+        'severity' => 'blocking',
+        'supporting_source_ids' => [],
+        'supporting_quotations' => [],
+        'proposed_patch' => $proposedPatch,
+    ];
+
+    $validated = app(EditorialOutput::class)->validate(EditorialActivityKind::ReviewFacts, ['findings' => [
+        $finding("Replace the sentence with: 'Brightline cut late follow-ups from 31 to 7.'"),
+        $finding(json_encode($patch)),
+    ]]);
+
+    expect($validated['findings'])->toHaveCount(2)
+        ->and($validated['findings'][0]['statement'])->toBe('The revenue claim contradicts the notes.')
+        ->and($validated['findings'][0]['proposed_patch'])->toBeNull()
+        ->and($validated['findings'][1]['proposed_patch'])->toBe($patch);
+});
+
 test('proposal acceptance rejects protected prose and stale hashes', function (): void {
     $actor = reviewAuthor();
     $attempt = reviewAttempt($actor, [['type' => 'paragraph', 'attrs' => ['id' => 'blk_1111111111111111', 'protected' => true], 'content' => [['type' => 'text', 'text' => 'Protected']]]]);
@@ -334,6 +355,10 @@ test('reconciliation deduplicates compatible findings and retains conflicts for 
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Reconciliation, ['expected_revision_id' => $revision->id], 'reconciliation-regression');
     app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
 
+    expect(array_column($activity->input['review_findings'], 'id'))->toBe([$duplicateA->id, $duplicateB->id, $conflictA->id, $conflictB->id])
+        ->and($activity->input['review_findings'][2])->toMatchArray(['lens' => 'review_facts', 'statement' => 'Lead with price.']);
+    Http::assertSent(fn ($request): bool => str_contains((string) data_get($request->data(), 'messages.1.content'), 'Duplicate clarity issue B.'));
+
     expect($duplicateA->fresh()?->reconciliation_state)->toBe('representative')
         ->and($duplicateA->fresh()?->stale_at)->toBeNull()
         ->and($duplicateB->fresh()?->reconciliation_state)->toBe('duplicate')
@@ -418,17 +443,50 @@ test('finish review requires three same revision lenses and only rechecks affect
         'proposed_patch' => ['path' => [0], 'replacement' => ['type' => 'paragraph', 'text' => 'Tighter']],
     ]);
 
+    $dismissed = EditorialFinding::create([
+        'article_id' => $attempt->article_id,
+        'attempt_id' => $attempt->id,
+        'activity_id' => $reviewActivityId,
+        'review_cycle' => 1,
+        'revision_id' => $revisionId,
+        'input_hash' => $revisionHash,
+        'lens' => 'review_voice',
+        'kind' => 'voice',
+        'severity' => 'advisory',
+        'statement' => 'The owner rejected this suggestion.',
+    ]);
+
     $recheck = app(FinishEditorialReview::class)->finish($actor, $attempt->fresh(), $revisionId, [
         $finding->id => ['disposition' => 'accepted'],
+        $dismissed->id => ['disposition' => 'rejected', 'reason' => 'Not needed.'],
     ], true);
     $duplicate = app(FinishEditorialReview::class)->finish($actor, $attempt->fresh(), $revisionId, [
         $finding->id => ['disposition' => 'accepted'],
     ], true);
 
     expect($recheck?->kind)->toBe(EditorialActivityKind::Recheck)
+        ->and(array_column($recheck->input['review_findings'], 'id'))->toBe([$finding->id])
+        ->and($recheck->input['review_findings'][0])->toMatchArray(['statement' => 'Tighten this passage.', 'disposition' => 'accepted'])
+        ->and($recheck->input['reviewed_manuscript']['revision_id'])->toBe($revisionId)
         ->and($duplicate)->toBeNull()
         ->and($attempt->fresh()?->recheck_used)->toBeTrue()
         ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', EditorialActivityKind::Recheck->value)->count())->toBe(1);
+
+    setPublishingAgentsPaused(false);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    $recheckResponse = fn (array $payload): array => ['id' => 'gen-recheck', 'choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($payload)]]]];
+    Http::preventStrayRequests();
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::sequence()
+        ->push($recheckResponse(['resolved' => [], 'unresolved' => [], 'newBlockingFindings' => []]))
+        ->push($recheckResponse(['resolved' => [['finding_id' => $finding->id, 'status' => 'resolved']], 'unresolved' => [], 'newBlockingFindings' => []])),
+    ]);
+
+    app()->call([new RunEditorialActivity((int) $recheck->id), 'handle']);
+    expect($recheck->fresh()->status)->not->toBe(EditorialActivityStatus::Completed)
+        ->and($recheck->fresh()->error_reason)->toBe('The recheck did not assess every review finding, so its result was not applied.');
+
+    app()->call([new RunEditorialActivity((int) $recheck->id), 'handle']);
+    expect($recheck->fresh()->status)->toBe(EditorialActivityStatus::Completed);
 });
 
 function reviewAttemptWithReviewedPlan(User $actor, PublishingAttempt $attempt): PublishingAttempt

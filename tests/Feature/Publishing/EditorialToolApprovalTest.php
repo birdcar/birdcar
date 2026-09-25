@@ -5,6 +5,7 @@ use App\Actions\Publishing\ResumeEditorialActivity;
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
+use App\Ai\Agents\EditorialAgent;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\EditorialActivity;
@@ -202,7 +203,7 @@ test('legacy budget-era snapshots continue on their recorded model without price
     $second = Http::recorded()[1][0];
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed)
         ->and($second['model'])->toBe('deepseek/deepseek-v4-pro-0813')
-        ->and($second['provider'])->toBe(['require_parameters' => true])
+        ->and($second['provider'])->toBe(EditorialAgent::PROVIDER_ROUTING)
         ->and($activity->fresh()->model_snapshot)->not->toHaveKeys(['pricing', 'max_price', 'provider', 'context_tokens']);
 });
 
