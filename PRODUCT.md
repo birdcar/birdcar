@@ -90,9 +90,14 @@ implementation purchase.
 
 Booking uses the owner's Cal.com event `https://cal.com/birdcar/walkthrough`
 (namespace `walkthrough`). The marketing page explains the offer and sends
-visitors to that event to select and confirm a time. A custom integration is
-not required for launch. The booking page draws offer structure from
-`https://www.acquisition.com/workshop`: recognizable problem, concrete take-away,
+visitors to that event to select and confirm a time. Every booking action on
+the site leads to the Walkthrough page, where visitors answer three fit checks
+before the calendar appears (owner decision, 2026-09-25): customers and people
+doing the work; one process that takes too much chasing, copying, or
+remembering; and whether I can talk to the people who do it. Only a "Not yet"
+on that last check stops booking. More qualification may be added later. A
+custom integration is not required for launch. The booking page draws offer
+structure from `https://www.acquisition.com/workshop`: recognizable problem, concrete take-away,
 process, objections, and clear invitations, written in the owner's voice.
 A VSL may be added later; there is no video placeholder at launch.
 

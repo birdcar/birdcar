@@ -1,6 +1,6 @@
 ---
 name: Birdcar — Your business, in miniature
-description: "Homepage-built marketing world: pale daylight ground, ink, canary yellow for actions and packets, a teal fixed-state accent, Mona Sans grotesk, one Alkaline wordmark, and a canvas-drawn packet-flow diorama. The clear argument (cyan fields, Barlow, flat diagrams) is retired as direction but still literally renders on every page this build hasn't reached yet; Admin keeps its Flux Pro/Inter system unchanged."
+description: "Marketing world built first on the homepage and now shipped site-wide as shared chrome: pale daylight ground, ink, canary yellow for actions and packets, a teal fixed-state accent, Mona Sans grotesk headings and body, one Alkaline wordmark, and (on the homepage) a canvas-drawn packet-flow diorama. The Walkthrough page has also migrated, with its own desk-plate composition and a fit-check card gating the calendar. The clear argument (cyan fields, Barlow, flat diagrams) is retired as direction and still renders inside the Work, tools, and Writing page bodies until each migrates; Admin keeps its Flux Pro/Inter system unchanged."
 colors:
   studio-ground: "#edf3f0"
   studio-ink: "#0b141a"
@@ -77,6 +77,24 @@ typography:
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-.035em"
+  studio-card-title:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.5rem, 2.1vw, 2.5rem)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-.035em"
+  studio-fit-line:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(.9375rem, 1.19vw, 1.4375rem)"
+    fontWeight: 400
+    lineHeight: 1.37
+    letterSpacing: "-.02em"
+  studio-step-title:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.375rem, 1.95vw, 2.35rem)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-.035em"
   admin-operational:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
@@ -97,6 +115,7 @@ rounded:
   studio-tag: "7px"
   studio-control: "8px"
   studio-button: "10px"
+  studio-card: "14px"
   studio-pill: "999px"
   nav: "3px"
   control: "5px"
@@ -131,6 +150,10 @@ components:
     typography: "{typography.studio-label}"
     rounded: "{rounded.studio-tag}"
     padding: ".3em .72em .34em"
+  studio-card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.studio-ink}"
+    rounded: "{rounded.studio-card}"
   button-yellow:
     backgroundColor: "{colors.emphasis}"
     textColor: "{colors.ink}"
@@ -156,15 +179,18 @@ components:
 
 On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states — Today, Walkthrough, After the fix — while white pill tags name the actual work sitting on each desk, drawn from the shared "where work gets stuck" pattern vocabulary. The world is pale daylight (`#eef3f1`-family ground), heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.
 
-**Rollout status.** Only the homepage (`resources/views/pages/index.blade.php`) is built in this world. The Walkthrough page, Work page, `/tools/where-work-gets-stuck`, the Writing index and individual articles, the favicon (`public/favicon.svg`, still the retired cyan/ink "B" mark), and the browser theme-color meta (`app/Services/MarketingSite.php`, still `#b7edf1`) all still run The clear argument. The header and footer (`resources/views/components/marketing/layout.blade.php`) are one shared partial across every page: on the homepage, `resources/css/home.css` repaints it (transparent, absolutely positioned over the hero, Alkaline at Demi/600 instead of Medium/500, a solid canary pill instead of an outlined ink button) rather than replacing its markup. Treat every retired-system detail recorded below as legacy identification, not as guidance for new work; do not extend cyan fields, Barlow display type, or the flat report/diagram vocabulary to any new page.
+**Rollout status.** The shared foundation shipped site-wide on 2026-09-25, the first rollout step beyond the homepage: the `@layer base` reset (no Barlow, no default body font or background), the `.marketing-page` studio tokens, Mona Sans, the header (Alkaline wordmark, desktop nav, canary booking pill, mobile menu), the footer, the skip link, and the shared `.studio-button`/`.studio-link`/`.studio-terms`/`.studio-section-intro`/`.studio-close` components all now live unlayered in `resources/css/marketing.css` and render on every marketing page and the admin article preview (`public/marketing-icon.svg`/`.ico`, `public/marketing-touch-icon.png`, and the theme-color meta in `app/Services/MarketingSite.php`, now `#edf3f0`, shipped with it). `public/favicon.svg` — the retired cyan/ink "B" — is intentionally unchanged; Admin's Flux brand components still point at `/favicon.svg` for their own identity. Because `.marketing-page :is(h1, h2, h3)` sits outside any `@layer` while every retired per-page heading override still lives inside `@layer components`, the unlayered rule wins regardless of selector specificity — every heading on every marketing page, including pages not yet migrated, now renders Mona Sans 700 at `-.035em`. Only the Work page, `/tools/where-work-gets-stuck`, and the Writing index/articles still render The clear argument's page-body sections: cyan fields, Barlow non-heading text, square report shapes, and flat line diagrams, still defined in `@layer components` in `resources/css/marketing.css` and deleted page by page as each migrates. The header/footer partial itself (`resources/views/components/marketing/layout.blade.php`) is unchanged markup; only the homepage additionally repositions it via `.home-page .site-header` in `resources/css/home.css` (absolute, over the hero). Treat every retired-system detail recorded below as legacy identification for those page bodies only, not as guidance for new work; do not extend cyan fields, Barlow, or the flat report/diagram vocabulary to any new page.
+
+**The Walkthrough migrates.** On 2026-09-25 the Walkthrough page (`/walkthrough`) also moved into this world, the first inner page (beyond the shared foundation) to do so: its own desk-plate composition in `resources/css/walkthrough.css`, `resources/views/pages/walkthrough.blade.php`, and `resources/views/components/marketing/fit-card.blade.php`. Its legacy assessment-layout rules were deleted from `resources/css/marketing.css`; the `.walkthrough-diagram`/`.walkthrough-stages`/`.walkthrough-choices` rules that remain there belong to the Writing article-diagram vocabulary (`.article-diagram .walkthrough-stages`), not the page. Details are recorded throughout the sections below and in Components.
 
 **Key Characteristics:**
 
 - Pale daylight ground, near-black ink, canary yellow reserved for actions and traveling packets, a cool teal reserved for the "fixed" state.
-- One Alkaline wordmark per page; the homepage renders it at Demi (600), the weight the rollout is standardizing on, with native (unmodified) tracking.
+- One Alkaline wordmark per page; the shared header renders it at Demi (600) site-wide, with native (unmodified) tracking.
 - The diorama is the signature figure: a static isometric plate carries all of the meaning, a canvas layer draws animated dotted routes and glowing packet cubes on top, and white pill tags carry the actual desk labels as real HTML.
 - Bespoke isometric renders on transparent grounds stand in for icons everywhere a capability needs illustrating (the model shelf, the person portrait stand-in).
 - A monochrome logo strip (GitHub, Heroku, Zapier, Twilio, Salesforce) is framed as work history, not clients or endorsements.
+- The Walkthrough page composes the same materials into a booking moment: a fit-check card stands on the desk plate and gates the inline calendar behind three honest Yes/Not-yet checks; no booking link on the site opens a calendar until a visitor clears that gate.
 - Admin and the Publishing workspace are untouched by this redesign and keep Flux Pro, Inter, and deep-teal/cyan accents.
 
 ## Colors
@@ -191,17 +217,17 @@ The homepage palette is a daylight-and-ink base with one warm accent (canary yel
 - **Studio rule** (`#d5dbd8`): hairline dividers between employer marks and under model-shelf cards.
 - **Paper** (`#ffffff`): section backgrounds for the proof strip, story track, offer track, and person section; also the white pill tags on the diorama. Shared, unchanged, with the retired system and with Admin.
 
-### Legacy palette (retired direction; still rendering until migrated)
+### Legacy palette (retired direction; still rendering in unmigrated page bodies)
 
-- **Ink** (`#102a33`), **cyan** (`#b7edf1`), **emphasis yellow** (`#f7cb58`), **deep teal** (`#214b57`), and **cyan-wash** (`#b7edf130`) are The clear argument's palette. They still render literally on the Walkthrough, Work, tool, and Writing pages, in the favicon, and in the theme-color meta tag. Deep teal, ink, cyan, and paper are also the tokens the Admin operational extension uses for its light/dark accent — do not remove them even after the remaining marketing pages migrate.
+- **Ink** (`#102a33`), **cyan** (`#b7edf1`), **emphasis yellow** (`#f7cb58`), **deep teal** (`#214b57`), and **cyan-wash** (`#b7edf130`) are The clear argument's palette. They still render inside the Work, tool, and Writing page bodies (`@layer components` in `resources/css/marketing.css`) until each page migrates. The favicon and the theme-color meta tag have already migrated to the studio palette (`#edf3f0`) as part of the shared foundation and are no longer part of this legacy set. Deep teal, ink, cyan, and paper are also the tokens the Admin operational extension uses for its light/dark accent — do not remove them even after the remaining marketing pages migrate.
 
 **The Canary Action Rule.** Canary yellow marks the one thing to do or the one thing in motion — a booking button or a packet — never a background wash for a whole section. This carries the retired system's Argument Contrast Rule forward under a new palette.
 
 ## Typography
 
-**Studio Font:** self-hosted Mona Sans (via `bunny()` in `vite.config.js`, weights 400–800), `--font-studio` in `resources/css/app.css`. Used for every homepage heading, body line, and button label.
-**Wordmark Font:** licensed Alkaline; the homepage renders it at Demi (600) — the weight PRODUCT.md commits to for the eventual site-wide rollout — while pages still on the retired system render the same wordmark at Medium (500) via `resources/css/marketing.css`, unchanged until each page migrates.
-**Legacy Marketing Font:** Barlow remains the retired system's display/body voice on every unmigrated page.
+**Studio Font:** self-hosted Mona Sans (via `bunny()` in `vite.config.js`, weights 400–800), `--font-studio` in `resources/css/app.css`. Used for the `.marketing-page` body font site-wide and, via the unlayered `.marketing-page :is(h1, h2, h3)` rule, for every heading on every marketing page — including pages whose bodies still run the retired system.
+**Wordmark Font:** licensed Alkaline; the shared header now renders it at 600 with native (unmodified) tracking on every marketing page — the weight PRODUCT.md commits to for the site-wide rollout. The homepage-only Medium (500) override is gone; there is no more `.home-page`-scoped wordmark rule.
+**Legacy Marketing Font:** Barlow is still self-hosted via `bunny()` and still named by the retired page-body rules (`@layer components` in `resources/css/marketing.css`) — non-heading text, captions, essay meta — on the Work, tools, and Writing pages. Because those rules sit inside a CSS layer and the site-wide heading rule does not, Barlow no longer reaches any h1/h2/h3, even on unmigrated pages.
 **Admin Font:** Inter, unchanged (see Admin operational extension).
 **Mono Font:** Commit Mono, unchanged, used only in the retired system's article code blocks.
 
@@ -209,7 +235,7 @@ The homepage palette is a daylight-and-ink base with one warm accent (canary yel
 
 ### Hierarchy
 
-- **Wordmark** (`typography.wordmark`): Alkaline, Demi on the homepage, `clamp(2.6rem, 4vw, 4rem)`.
+- **Wordmark** (`typography.wordmark`): Alkaline, Demi (600) site-wide, `clamp(2.6rem, 4vw, 4rem)`.
 - **Studio display** (700, `clamp(3rem, 5.35vw, 6rem)`, line-height 1.075, `-.04em`): the hero headline only.
 - **Studio headline** (700, `clamp(2.25rem, 4vw, 4rem)`, line-height 1.02, `-.04em`): the build/offer/work/close section headings.
 - **Studio story heading** (700, `clamp(2rem, 3.1vw, 3.25rem)`, line-height 1.08, `-.035em`): the scroll-story's own heading above the pinned diorama.
@@ -219,16 +245,25 @@ The homepage palette is a daylight-and-ink base with one warm accent (canary yel
 - **Studio button** (600, `clamp(1.0625rem, 1.43vw, 1.4rem)`): button and pill labels.
 - **Studio fine** (400, `clamp(.9375rem, 1vw, 1.0625rem)`): the booking terms line under every CTA.
 - **Studio employer mark** (700, `clamp(1.25rem, 2.3vw, 2.25rem)`, `-.035em`): the past-employer names in the proof strip, set beside each monochrome mark.
+- **Studio card title** (700, `clamp(1.5rem, 2.1vw, 2.5rem)`, line-height 1.1, `-.035em`): the Walkthrough page's `<h2>`s inside a standing card — the fit card and the Pick a time calendar face.
+- **Studio fit line** (400, `clamp(.9375rem, 1.19vw, 1.4375rem)`, line-height 1.37, `-.02em`): each fit-check row's question text on the Walkthrough page.
+- **Studio step title** (700, `clamp(1.375rem, 1.95vw, 2.35rem)`, line-height 1.1, `-.035em`): the Walkthrough page's four-step band headings (Check the fit, Choose a time, Walk me through it, Keep the report).
 
-**The One Wordmark Rule.** Alkaline appears once per page as the header wordmark and nowhere else. Its weight is Demi (600) on the homepage and the intended weight for the full rollout; Medium (500) elsewhere is the retired system, not a second valid option.
+**The One Wordmark Rule.** Alkaline appears once per page as the header wordmark and nowhere else, at Demi (600) with native tracking on every marketing page now that the shared header has rolled out site-wide.
+
+**The Unlayered Foundation Rule.** The shared header, footer, and the `.marketing-page :is(h1, h2, h3)` heading rule live outside any `@layer`, so they beat every retired page's `@layer components` override regardless of selector specificity. This is why every heading on every marketing page already renders Mona Sans even before that page's own body layout has migrated off The clear argument.
 
 ## Layout
+
+The `--studio-gutter` token (`4.95vw`, collapsing to `6%` below `1100px`) is now defined foundation-wide on `.marketing-page` in `resources/css/marketing.css` and used by the shared footer and shared `.studio-close`/`.studio-section-intro` components on every marketing page. The composition described below (hero split, scroll story, model shelf, offer track, work strip, person section) remains specific to the homepage's own `resources/css/home.css` and `index.blade.php`.
 
 The homepage uses viewport-scaled gutters and section padding rather than the retired system's fixed `7%`/`6%` percentages: a `4.95vw` side gutter (`4.3–4.75vw` around the header), collapsing to `6%` below `1100px`, and `7–8vw` of vertical section padding, collapsing to `4.5rem` on mobile.
 
 The hero is a two-column split: copy fixed-width at `40vw` on the left, the diorama absolutely positioned at `60vw` on the right, overlapping the header. Below the fold, a proof strip (paper, monochrome logo row) sits above a scroll-driven story: a sticky diorama figure on the right tracks the reading position of three text steps on the left (`resources/js/miniature.js` pins the active step by measuring scroll against the viewport midline, or 78% down on narrow viewports). A visible segmented control (Today / Walkthrough / After the fix) lets a visitor drive the same diorama by hand instead of scrolling. Below the story: a three-column model shelf (six isometric capability renders), a four-column offer track (a connecting line with lit/unlit milestone dots), a two-column "selected work" strip, a two-column person section, and a closing invitation — all collapsing to one column under `1100px`.
 
 **The Static Diorama Rule.** The isometric plate and its HTML `<li>` tag labels carry the full meaning of "what's stuck where" without JavaScript; the canvas packet-flow layer only adds motion on top and is never the sole carrier of a relationship. This is why `initMiniature()` still calls `drawScene()` once at load even when `prefers-reduced-motion` or missing `ResizeObserver`/`IntersectionObserver` skip the animation loop.
+
+The Walkthrough page's own hero is a second, simpler two-column composition: a `49vw` copy column (headline, lead, promise, and the white report card) on the left, and a raster desk-plate column filling the rest on the right, with the fit card and canary absolutely positioned over the plate. Desktop values are vw-derived from the approved comp and clamped (the headline is `clamp(3rem, 4.62vw, 5.5rem)`; see Typography). Below `1100px` everything stacks to one column: the desk plate moves under the fit card at full bleed width, and the two peeking `.wt-card-stack` cards disappear (there is no room for them to read as depth at that width). Below the hero, a four-column step band (`.wt-steps`, white background) collapses to two columns under `1100px` and one column under `560px`. The remaining sections (Bring the problem, The next step is your choice, A few fair questions) reuse the shared `.studio-section-intro`/`.studio-close` two-column grids and collapse to one column under `1100px` like every other marketing page.
 
 ## Elevation & Depth
 
@@ -241,24 +276,38 @@ The homepage is mostly flat, like the retired system, but adds one new device: c
 - **Model lift** (`drop-shadow(0 18px 18px rgb(11 20 26 / .08))`, deepening on hover with a small translate/scale): the six model-shelf renders.
 - **Segmented-control shell** (`0 1px 2px rgb(11 20 26 / .1), 0 8px 24px -10px rgb(11 20 26 / .3)` with `backdrop-filter: blur(8px)`): the Today/Walkthrough/After-the-fix control.
 - **Canvas glow** (`shadowBlur` in `resources/js/miniature.js`, amber/teal/red per element): packets in flight, fixed-state lane markers, and the pulsing warning light.
+- **Card ambient, soft** (`0 1px 2px rgb(11 20 26 / .06), 0 14px 32px -18px rgb(11 20 26 / .28)`, and a slightly lighter variant `0 1px 2px rgb(11 20 26 / .06), 0 10px 24px -14px rgb(11 20 26 / .22)`): the Walkthrough hero report card and the two white cards peeking behind the fit card (`.wt-card-stack`).
+- **Card ambient, deep** (`0 1px 2px rgb(11 20 26 / .08), 0 24px 48px -22px rgb(11 20 26 / .4)`): the standing fit card itself, the deepest of the desk's three stacked cards.
 
 **The Glow-as-Motion Rule.** Reserve colored glow for something in motion or urgent (a packet, a lane marker, the warning light); static surfaces at rest keep the ordinary blurred, offset ambient shadow.
 
 ## Shapes
 
-Controls use soft, generous radii: `7px` for pill tags, `8px` for the header booking pill, `10px` for the primary button, `999px` for the segmented control and the offer-terms/pill labels. This is rounder than the retired system's `3–5px` control radii and its true-circle stage numbers.
+Controls use soft, generous radii: `7px` for pill tags, `8px` for the header booking pill and the report card's canary highlight bar, `10px` for the primary button and reused by every other pill-shaped control (the fit card's Yes/Not-yet pills, its Show me times action, and the not-the-right-fit panel), `14px` for standing/floating cards (the fit card, its stacked card peeks, the mobile menu panel), `999px` for the segmented control and the offer-terms/pill labels. This is rounder than the retired system's `3–5px` control radii and its true-circle stage numbers.
 
 The signature shape is the isometric packet cube drawn on canvas (`drawCube()` in `resources/js/miniature.js`): three visible faces (top/left/right) in a light/mid/deep tint of the packet's hue, giving every route endpoint and traveling packet the same small 3D block silhouette that echoes the diorama's own isometric rendering style.
 
 ## Components
 
-### Header and booking pill (homepage-scoped)
+### Header, navigation, footer, and mobile menu (shared foundation)
 
-The header partial is unchanged markup, but `.home-page .site-header` repaints it transparent and absolutely positioned over the hero; `.home-page .wordmark` sets Alkaline to Demi/600; `.home-page .desktop-nav .nav-booking` replaces the retired outlined-ink button with a solid canary pill (`studio-nav-booking`). Off the homepage the same partial renders with the retired outlined treatment.
+The header, Alkaline wordmark, desktop nav (1.5px ink underline for current/hover/focus), the canary booking pill (`studio-nav-booking`, 48px, 8px radius), the footer, the skip link, and the mobile menu are all unlayered in `resources/css/marketing.css` and render identically on every marketing page and the admin article preview — none of it is homepage-scoped. The header itself sets no background, so it reads as transparent over the `.marketing-page` daylight ground on every inner page. Only `.home-page .site-header` in `resources/css/home.css` still repaints anything homepage-specific: `position: absolute; inset: 0 0 auto` floats the same header transparently over the hero. Below 760px the mobile menu is a white pill "Menu" chip (shadowed); its open panel is a floating white card (14px radius) with 52px rows split by hairlines and a canary booking row — this is shared foundation too, not a homepage treatment.
 
 ### Primary button
 
-Solid canary yellow, ink text, `10px` radius, an arrow icon that slides right on hover, ambient shadow deepening on hover/press. Used for every "Book a free Walkthrough" placement (`hero`, `homepage-strip`, `closing-invitation`).
+Solid canary yellow, ink text, `10px` radius, an arrow icon that slides right on hover, ambient shadow deepening on hover/press. Its CSS (`.studio-button`, alongside `.studio-link`, `.studio-terms`, `.studio-section-intro`, `.studio-close`) now lives in the shared foundation in `resources/css/marketing.css`, available to any marketing page. The homepage composes it for every "Book a free Walkthrough" placement (`hero`, `homepage-strip`, `closing-invitation`); the Walkthrough page composes it once more for its own closing invitation ("Check the fit and pick a time", placement `walkthrough-close`), which links to `#choose-a-time` rather than opening a calendar directly.
+
+### Walkthrough desk composition (signature component)
+
+The Walkthrough hero stands three white surfaces on one isometric desk-plate raster (`public/images/walkthrough/desk.webp`/`.png`, provenance embedded, sourced from `.impeccable/assets/plates/desk.png`): a report card (`10px` radius) listing What's happening, What I recommend, and Where I'd start on a canary bar (`8px` radius); two plain white cards peeking behind the fit card (`.wt-card-stack`, `14px` radius, no content — pure depth cue); and the fit card itself standing in front, with a raster canary (`canary.webp`/`.png`, 320×334) perched on its top-left corner. The desk plate is anchored to the hero's bottom edge and bleeds off the right side of the viewport; below `1100px` it moves under the stacked fit card and the two peeking cards are hidden, since they can't read as depth at that width.
+
+### Fit card (signature component)
+
+The Walkthrough's booking gate: three Yes/Not-yet pill rows (native radio inputs, one radiogroup per row) stand between a visitor and the inline calendar. A selected pill inverts to solid ink with white text; an unselected pill is white with a `1px` studio-rule border and `10px` radius. Only the row marked `data-fit-stops` ("I can talk to the people who do it") answered Not yet hides Show me times and reveals a not-the-right-fit panel (ground-colored, `10px` radius, with the eight-patterns link); Not yet on either other row shows a short honest note beneath that row and the card still continues. Show me times swaps the card to its calendar face (the Cal inline embed plus the plain Cal.com fallback link and a Change my answers control) through a View Transition (`resources/js/fit-check.js`): the old face slides back into the stack (`fit-card-out`), the new face rises (`fit-card-in`), the desk plate glides under its own `view-transition-name: wt-desk`, and the canary hops (`canary-hop`/`canary-hop-back` keyframes). `prefers-reduced-motion: reduce` disables every view-transition animation and the card swaps instantly. Without JavaScript the card shows the checks and the plain Cal.com link, with no Show me times action at all — the progressive-enhancement default.
+
+No booking link on the site opens a calendar in place any more: `x-marketing.booking-link` renders a plain `<a>` to `/walkthrough` everywhere except the Walkthrough page itself, where it points to `#choose-a-time` (the fit card). Cal loads only once the fit card dispatches `booking:open` (`data-cal-defer` in `resources/js/booking.js`), so a visitor who never clears the fit check never loads Cal at all. Cal's own UI colors are read from the page's live CSS custom properties (`--studio-yellow` for `cal-brand`, `--studio-yellow-deep` for `cal-brand-emphasis`, `--studio-ink` for `cal-brand-text`, `--studio-paper` for `cal-bg`) rather than hardcoded, and `hideEventTypeDetails` is `true`.
+
+**The Honest Gate Rule.** Only the check that determines fit — "I can talk to the people who do it" — stops the card from reaching the calendar. The other two checks never block; they show a short honest note and let the visitor continue regardless.
 
 ### Diorama figure (signature component)
 
@@ -300,10 +349,13 @@ Publishing motion is useful and bounded. `resources/js/admin/publishing/motion.j
 - **Do** self-host Mona Sans and Barlow via `bunny()` rather than a system sans fallback becoming the de facto display face.
 - **Do** describe the past-employer row as work history in monochrome marks, never as clients or endorsements.
 - **Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.
+- **Do** treat the header, footer, desktop nav, canary booking pill, mobile menu, skip link, and shared studio components (`.studio-button`, `.studio-link`, `.studio-terms`, `.studio-section-intro`, `.studio-close`) as shared foundation available to every marketing page and the admin article preview, not homepage-scoped.
+- **Do** gate the inline Cal embed behind an explicit visitor action (the fit card's Show me times, dispatching `booking:open`); never auto-load Cal on page view, and never point a booking link anywhere but `/walkthrough` or `#choose-a-time`.
 
 ### Don't:
 
-- **Don't** describe the Walkthrough page, Work page, `/tools/where-work-gets-stuck`, Writing index/articles, the shared header/footer's default (non-home) skin, the favicon, or the theme-color meta as migrated to the new world; they are the retired system until this build reaches them.
+- **Don't** describe the Work, `/tools/where-work-gets-stuck`, or Writing page bodies as migrated to the new world; their page sections still render The clear argument (cyan fields, Barlow non-heading text, legacy layouts) in `@layer components` in `resources/css/marketing.css` until each migrates one by one.
+- **Don't** describe the shared header/footer, the favicon, or the theme-color meta as homepage-only or still retired — they migrated site-wide as the shared foundation.
 - **Don't** carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.
 - **Don't** literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the "Waikthrough" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.
 - **Don't** treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because "grid of same-size cards" is a reusable page scaffold.

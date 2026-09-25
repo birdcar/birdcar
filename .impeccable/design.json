@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-25T10:12:54-05:00",
+  "generatedAt": "2026-09-25T14:30:00-05:00",
   "title": "Design System: Birdcar",
   "extensions": {
     "colorMeta": {
@@ -330,6 +330,18 @@
       "admin-operational": {
         "displayName": "Admin operational text",
         "purpose": "Inter, unchanged; Admin and the customer project surface only."
+      },
+      "studio-card-title": {
+        "displayName": "Card title",
+        "purpose": "Headings inside a standing card on the Walkthrough page (the fit card, the calendar face)."
+      },
+      "studio-fit-line": {
+        "displayName": "Fit check line",
+        "purpose": "Each fit-check row's question text on the Walkthrough page."
+      },
+      "studio-step-title": {
+        "displayName": "Step title",
+        "purpose": "The Walkthrough page's four-step band headings."
       }
     },
     "shadows": [
@@ -362,6 +374,16 @@
         "name": "studio-canvas-glow",
         "value": "canvas shadowBlur, amber/teal/red per element",
         "purpose": "Packets in flight (amber), fixed-state lane markers (teal), and the pulsing warning light (red) drawn in resources/js/miniature.js."
+      },
+      {
+        "name": "studio-card-ambient-soft",
+        "value": "0 1px 2px rgb(11 20 26 / .06), 0 14px 32px -18px rgb(11 20 26 / .28)",
+        "purpose": "The Walkthrough hero report card; a slightly lighter sibling (0 10px 24px -14px) shades the two peeking .wt-card-stack cards."
+      },
+      {
+        "name": "studio-card-ambient-deep",
+        "value": "0 1px 2px rgb(11 20 26 / .08), 0 24px 48px -22px rgb(11 20 26 / .4)",
+        "purpose": "The standing fit card, the deepest of the desk's three stacked cards."
       }
     ],
     "motion": [
@@ -404,6 +426,11 @@
         "name": "studio-packet-period",
         "value": "3200ms (routes), 2600ms (fixed-state lanes)",
         "purpose": "Loop period for canvas packet travel along a route or lane."
+      },
+      {
+        "name": "studio-fit-card-swap",
+        "value": "document.startViewTransition; 300ms out, 520ms 80ms-delay in, studio-ease",
+        "purpose": "The fit card's check-to-calendar face swap in resources/js/fit-check.js: the old face slides back (fit-card-out), the new face rises (fit-card-in), the desk plate glides under view-transition-name wt-desk, and the canary hops (canary-hop/canary-hop-back, 720ms, 120ms delay). Disabled entirely under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
@@ -439,10 +466,10 @@
       "css": ".ds-studio-button{display:inline-flex;align-items:center;gap:.7rem;min-height:64px;padding:0 1.5rem;border-radius:10px;background:#f7c848;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.25rem;font-weight:600;letter-spacing:-.01em;text-decoration:none;box-shadow:0 1px 2px rgba(11,20,26,.14),0 10px 26px -12px rgba(160,110,0,.55);transition:background-color 160ms ease,transform 280ms cubic-bezier(.16,1,.3,1),box-shadow 280ms cubic-bezier(.16,1,.3,1);}.ds-studio-button .ds-arrow{width:1.1em;height:1.1em;transition:transform 280ms cubic-bezier(.16,1,.3,1);}.ds-studio-button:hover{background:#efb925;transform:translateY(-2px);box-shadow:0 2px 4px rgba(11,20,26,.14),0 16px 30px -14px rgba(160,110,0,.6);}.ds-studio-button:hover .ds-arrow{transform:translateX(3px);}.ds-studio-button:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px #0b141a;}"
     },
     {
-      "name": "Header booking pill (homepage)",
+      "name": "Header booking pill (shared foundation)",
       "kind": "button",
       "refersTo": "studio-nav-booking",
-      "description": "The shared header's booking control, restyled to a solid canary pill only under .home-page; off the homepage it renders as the retired outlined-ink button instead.",
+      "description": "The shared header's booking control: a solid canary pill, unlayered in resources/css/marketing.css, rendering on every marketing page and the admin article preview, not homepage-scoped.",
       "html": "<a class=\"ds-nav-booking\" href=\"#walkthrough\">Book a free Walkthrough <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a>",
       "css": ".ds-nav-booking{display:inline-flex;align-items:center;gap:.55rem;min-height:48px;padding:0 1.25rem;border:0;border-radius:8px;background:#f7c848;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-weight:600;box-shadow:0 1px 2px rgba(11,20,26,.12),0 6px 18px -8px rgba(160,110,0,.45);transition:background-color 160ms ease,transform 240ms cubic-bezier(.16,1,.3,1);}.ds-nav-booking:hover{background:#efb925;transform:translateY(-1px);}.ds-nav-booking:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0b141a;}"
     },
@@ -479,6 +506,14 @@
       "css": ".ds-employer-mark{display:inline-flex;align-items:center;gap:.4em;color:#0b141a;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.75rem;font-weight:700;letter-spacing:-.035em;}.ds-employer-mark svg{width:.95em;height:.95em;fill:currentColor;}.ds-employer-mark+.ds-employer-mark{padding-left:3rem;border-left:1px solid #d5dbd8;}"
     },
     {
+      "name": "Fit card",
+      "kind": "custom",
+      "refersTo": "studio-card",
+      "description": "The Walkthrough page's booking gate: Yes/Not-yet radio pill rows stand between a visitor and the inline calendar. Only a Not yet on the fit-determining row stops the card from ever reaching Cal; the other rows always continue.",
+      "html": "<div class=\"ds-fit-card\"><h2>Before you pick a time</h2><p class=\"ds-fit-sub\">Three quick checks. It takes ten seconds.</p><div class=\"ds-fit-row\"><p class=\"ds-fit-line\">I can talk to the people who do it.</p><div class=\"ds-fit-pills\"><label class=\"is-selected\"><input type=\"radio\" name=\"fit\" checked>Yes</label><label><input type=\"radio\" name=\"fit\">Not yet</label></div></div><a class=\"ds-fit-action\" href=\"#\">Show me times <svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></a></div>",
+      "css": ".ds-fit-card{position:relative;width:100%;max-width:34rem;padding:1.55rem 1.82rem 1.6rem;border-radius:14px;background:#fff;box-shadow:0 1px 2px rgba(11,20,26,.08),0 24px 48px -22px rgba(11,20,26,.4);font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;}.ds-fit-card h2{font-size:1.75rem;font-weight:700;letter-spacing:-.035em;color:#0b141a;}.ds-fit-sub{margin-top:.45rem;color:#5c646d;font-size:1.0625rem;letter-spacing:-.02em;}.ds-fit-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.5rem 1.5rem;padding-block:1rem;margin-top:.75rem;border-bottom:1px solid #d5dbd8;}.ds-fit-line{max-width:20rem;color:#323945;font-size:1.0625rem;line-height:1.37;letter-spacing:-.02em;}.ds-fit-pills{display:flex;gap:.85rem;}.ds-fit-pills label{position:relative;display:grid;place-items:center;min-width:4.5rem;min-height:2.5rem;padding:0 1rem;border:1px solid #d5dbd8;border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;box-shadow:0 1px 2px rgba(11,20,26,.05);transition:background-color 160ms ease,color 160ms ease,border-color 160ms ease;}.ds-fit-pills input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer;}.ds-fit-pills label.is-selected{border-color:#0b141a;background:#0b141a;color:#fff;}.ds-fit-action{display:flex;align-items:center;justify-content:center;gap:.6rem;min-height:3rem;margin-top:1rem;border-radius:10px;background:#f7c848;color:#0b141a;font-size:1.25rem;font-weight:600;letter-spacing:-.015em;text-decoration:none;box-shadow:0 1px 2px rgba(11,20,26,.14),0 10px 26px -12px rgba(160,110,0,.55);transition:background-color 160ms ease;}.ds-fit-action:hover{background:#efb925;}.ds-fit-action .ds-arrow{width:1em;height:1em;}"
+    },
+    {
       "name": "Story mode segmented control",
       "kind": "custom",
       "refersTo": null,
@@ -489,10 +524,10 @@
   ],
   "narrative": {
     "northStar": "Your business, in miniature",
-    "overview": "On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states -- Today, Walkthrough, After the fix -- while white pill tags name the actual work sitting on each desk, drawn from the shared \"where work gets stuck\" pattern vocabulary. The world is pale daylight ground, heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.\n\nOnly the homepage is built in this world. The Walkthrough page, Work page, /tools/where-work-gets-stuck, the Writing index and articles, the favicon, and the theme-color meta tag all still run The clear argument. The shared header/footer partial is not migrated either -- home.css only repaints it (transparent, Alkaline at Demi/600, a solid canary pill) for the homepage.",
+    "overview": "On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states -- Today, Walkthrough, After the fix -- while white pill tags name the actual work sitting on each desk, drawn from the shared \"where work gets stuck\" pattern vocabulary. The world is pale daylight ground, heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.\n\nThe shared foundation shipped site-wide on 2026-09-25, the first rollout step beyond the homepage: the base reset, studio tokens, Mona Sans, the header (wordmark, nav, booking pill, mobile menu), the footer, the skip link, the shared studio-button/link/terms/section-intro/close components, the favicon, and the theme-color meta now render on every marketing page and the admin article preview. Because the heading font-family rule sits outside any CSS layer while every retired per-page heading override still lives inside one, the unlayered rule wins regardless of specificity -- every heading on every marketing page now renders Mona Sans, even on pages whose bodies still run The clear argument. The Walkthrough page itself also migrated the same day: a desk-plate hero stands a report card and a fit-check card (three Yes/Not-yet checks gating the inline Cal embed) on an isometric desk raster, with a canary perched on the fit card. Only the Work page, /tools/where-work-gets-stuck, and the Writing index/articles still render that retired system's page-body sections (cyan fields, Barlow non-heading text, flat diagrams) until each migrates.",
     "keyCharacteristics": [
       "Pale daylight ground, near-black ink, canary yellow reserved for actions and traveling packets, a cool teal reserved for the \"fixed\" state.",
-      "One Alkaline wordmark per page; the homepage renders it at Demi (600), the weight the rollout is standardizing on, with native tracking.",
+      "One Alkaline wordmark per page; the shared header renders it at Demi (600) site-wide, with native tracking.",
       "The diorama is the signature figure: a static isometric plate carries all of the meaning, a canvas layer draws animated dotted routes and glowing packet cubes on top, and white pill tags carry the actual desk labels as real HTML.",
       "Bespoke isometric renders on transparent grounds stand in for icons everywhere a capability needs illustrating.",
       "A monochrome logo strip (GitHub, Heroku, Zapier, Twilio, Salesforce) is framed as work history, not clients or endorsements.",
@@ -506,7 +541,12 @@
       },
       {
         "name": "The One Wordmark Rule",
-        "body": "Alkaline appears once per page as the header wordmark and nowhere else. Its weight is Demi (600) on the homepage and the intended weight for the full rollout; Medium (500) elsewhere is the retired system, not a second valid option.",
+        "body": "Alkaline appears once per page as the header wordmark and nowhere else, at Demi (600) with native tracking on every marketing page now that the shared header has rolled out site-wide.",
+        "section": "typography"
+      },
+      {
+        "name": "The Unlayered Foundation Rule",
+        "body": "The shared header, footer, and the .marketing-page heading rule live outside any @layer, so they beat every retired page's @layer components override regardless of selector specificity. This is why every heading on every marketing page already renders Mona Sans even before that page's own body layout has migrated off The clear argument.",
         "section": "typography"
       },
       {
@@ -518,6 +558,11 @@
         "name": "The Glow-as-Motion Rule",
         "body": "Reserve colored glow for something in motion or urgent (a packet, a lane marker, the warning light); static surfaces at rest keep the ordinary blurred, offset ambient shadow.",
         "section": "elevation"
+      },
+      {
+        "name": "The Honest Gate Rule",
+        "body": "Only the check that determines fit -- \"I can talk to the people who do it\" -- stops the fit card from reaching the calendar. The other two checks never block; they show a short honest note and let the visitor continue regardless.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -526,10 +571,13 @@
       "Do keep Alkaline to the one header wordmark, at Demi (600) for any newly migrated page, matching the homepage.",
       "Do self-host Mona Sans and Barlow via bunny() rather than a system sans fallback becoming the de facto display face.",
       "Do describe the past-employer row as work history in monochrome marks, never as clients or endorsements.",
-      "Do keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards."
+      "Do keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.",
+      "Do treat the header, footer, desktop nav, canary booking pill, mobile menu, skip link, and shared studio components (.studio-button, .studio-link, .studio-terms, .studio-section-intro, .studio-close) as shared foundation available to every marketing page and the admin article preview, not homepage-scoped.",
+      "Do gate the inline Cal embed behind an explicit visitor action (the fit card's Show me times, dispatching booking:open); never auto-load Cal on page view, and never point a booking link anywhere but /walkthrough or #choose-a-time."
     ],
     "donts": [
-      "Don't describe the Walkthrough page, Work page, /tools/where-work-gets-stuck, Writing index/articles, the shared header/footer's default (non-home) skin, the favicon, or the theme-color meta as migrated to the new world; they are the retired system until this build reaches them.",
+      "Don't describe the Work, /tools/where-work-gets-stuck, or Writing page bodies as migrated to the new world; their page sections still render The clear argument (cyan fields, Barlow non-heading text, legacy layouts) in @layer components until each migrates one by one.",
+      "Don't describe the shared header/footer, the favicon, or the theme-color meta as homepage-only or still retired -- they migrated site-wide as the shared foundation.",
       "Don't carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.",
       "Don't literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the \"Waikthrough\" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.",
       "Don't treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because \"grid of same-size cards\" is a reusable page scaffold.",
