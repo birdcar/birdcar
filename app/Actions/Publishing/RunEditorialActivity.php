@@ -44,7 +44,22 @@ class RunEditorialActivity implements ShouldQueue
 
     public const MODEL_CONTINUITY_ERROR = 'The model that started this agent conversation cannot be identified, so the approval cannot continue without re-routing. Review the activity and start new work instead.';
 
-    public function __construct(public int $activityId) {}
+    /** Agent work runs on its own queue so it can have a dedicated, long-running worker pool. */
+    public const QUEUE = 'publishing-agents';
+
+    /**
+     * Above the provider request timeout plus research source fetches. Laravel Cloud Managed Queues honour a job's
+     * own timeout, and a database queue's retry window must stay above it.
+     */
+    public int $timeout = 900;
+
+    /** Activities own their retry policy; a redelivered paid request must never run again silently. */
+    public int $tries = 1;
+
+    public function __construct(public int $activityId)
+    {
+        $this->onQueue(self::QUEUE);
+    }
 
     public function handle(EditorialOutput $prompts, WriteArticle $writer, ?PublicSourceFetcher $fetcher = null): void
     {

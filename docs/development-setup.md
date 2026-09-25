@@ -54,7 +54,6 @@ SESSION_DOMAIN=null
 SESSION_SECURE_COOKIE=true
 CACHE_STORE=database
 QUEUE_CONNECTION=database
-DB_QUEUE_RETRY_AFTER=660
 ```
 
 Do not leave `.env.example`'s production `ADMIN_URL` or localhost `APP_URL` in place: authentication, invitations, routing, and previews depend on the configured origins. If your registered local sites use different schemes/ports, use those exact origins; a secure-only session cookie will not work over plain HTTP. Keep the Admin and public hosts distinct.
@@ -92,7 +91,7 @@ Preserve an existing key and database. Do not use `composer setup` as a routine 
 
 - **PostgreSQL:** create a dedicated local database through your database manager, then set `DB_CONNECTION=pgsql` and its local `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`. With Lerd, use its database/environment setup tools to wire the service rather than hand-editing managed connection settings. This is the better choice for investigating production-like concurrency; SQLite tests do not establish PostgreSQL locking behavior.
 
-Do not leave `DB_QUEUE_CONNECTION`, `DB_QUEUE_TABLE`, or `DB_QUEUE` pointing at a different environment. Unless deliberately configured otherwise, leave them unset so the database queue uses this application's connection, `jobs` table, and `default` queue.
+Do not leave `DB_QUEUE_CONNECTION`, `DB_QUEUE_TABLE`, or `DB_QUEUE` pointing at a different environment. Unless deliberately configured otherwise, leave them unset so the database queue uses this application's connection, `jobs` table, and `default` queue. Agent jobs always use the separate `publishing-agents` queue, and the database retry window (`DB_QUEUE_RETRY_AFTER`) defaults to 960 seconds, above their 900-second job timeout; if you set it, keep it above that.
 
 Once you have confirmed the target is local:
 
@@ -217,10 +216,10 @@ Keep the existing site manager serving PHP. Use separate terminals for the follo
 **Queue worker — required for AI:**
 
 ```bash
-php artisan queue:work database --queue=default --sleep=3 --tries=1 --timeout=600 --no-interaction
+php artisan queue:work database --queue=publishing-agents,default --sleep=3 --tries=1 --timeout=900 --no-interaction
 ```
 
-Keep `QUEUE_CONNECTION=database` and `DB_QUEUE_RETRY_AFTER=660`, greater than the worker timeout. Use the actual queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow or the stock 60-second worker timeout. The HTTP timeout is only one part of a research job, which may also fetch multiple sources.
+This mirrors production, where Laravel Cloud runs a dedicated `publishing-agents` managed queue beside the default one. The worker must list `publishing-agents`, or agent jobs wait unprocessed. Keep `QUEUE_CONNECTION=database` and leave `DB_QUEUE_RETRY_AFTER` unset (960 seconds) or above 900. Use the actual default queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow, and do not use `composer dev`/`php artisan dev` for agent work: it starts a competing Octane server, Horizon, and a `queue:listen --timeout=0` worker for the default queue only.
 
 Horizon is installed but only processes Redis queues; it is not a replacement for this database worker. Switching to it requires deliberate Redis/supervisor configuration, including timeouts and retry windows. Do not launch it alongside this guide's worker expecting it to process database jobs.
 

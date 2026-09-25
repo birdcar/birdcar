@@ -280,6 +280,17 @@ test('a truncated answer pauses with the output limit reason instead of retrying
     Http::assertSentCount(1);
 });
 
+test('agent jobs run on their own queue with a timeout above the request chain and a single try', function (): void {
+    $actor = agentBudgetAuthor();
+    app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview, [], 'queue-settings');
+    $researchFetches = 5 * (int) config('publishing_agents.limits.fetch_timeout_seconds');
+
+    Bus::assertDispatched(RunEditorialActivity::class, fn (RunEditorialActivity $job): bool => $job->queue === 'publishing-agents'
+        && $job->tries === 1
+        && $job->timeout > (int) config('publishing_agents.http_timeout') + $researchFetches
+        && $job->timeout < (int) config('queue.connections.database.retry_after'));
+});
+
 test('missing credentials pause before any provider request', function (): void {
     config()->set('ai.providers.openrouter.key', '');
     $actor = agentBudgetAuthor();

@@ -46,9 +46,10 @@ SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_DOMAIN=null
 CACHE_STORE=database
-QUEUE_CONNECTION=database
-DB_QUEUE_RETRY_AFTER=660
+QUEUE_CONNECTION=cloud
 ```
+
+`QUEUE_CONNECTION=cloud` uses Laravel Cloud Managed Queues; Cloud supplies the queue configuration itself, so there are no queue driver credentials or retry windows to set (see section 6).
 
 - Configure both public and Admin domains with HTTPS, pointing at this same Laravel application. Marketing routes and Admin routes use different hosts. Change the example origins if the actual production domains differ.
 - Preserve an existing `APP_KEY`. For a brand-new application, provision one securely before use; never regenerate a live key as a routine deployment step.
@@ -123,17 +124,22 @@ A first successful import reports `created: 10`. Matching repeat imports report 
 
 The import creates editable revisions and already-published historical release snapshots. It does not retroactively invent editorial approvals, invoke AI, or import the local application's database. Do not put the write command in every deployment hook.
 
-## 6. Start the worker and scheduler
+## 6. Run the queues and scheduler
 
-The simplest configuration for this release is the database queue in section 2. Run this as a supervised, automatically restarted background process, not an unattended terminal session:
+Production uses Laravel Cloud Managed Queues. Cloud runs the workers, so there are no worker flags; each managed queue handles one queue name. Publishing agent jobs (`RunEditorialActivity`) are routed to their own `publishing-agents` queue so long model requests never hold up other jobs:
+
+- **`publishing-agents`**: a Standard managed queue on **Pro** compute (Flex caps a job at 90 seconds, and agent requests can run for several minutes), 256 MiB, autoscaling from 1 to 5 workers. Do not make it the environment's default queue.
+- **Default queue**: keep a default managed queue for every other job.
+
+The job declares its own limits, which Managed Queues honour: a 900-second `timeout` (above the 540-second provider request plus research source fetches) and one `try`, because the activity owns its retry policy and a redelivered paid request must not run again silently. Cloud extends a running job's visibility while it works, and a stopping Pro worker has one hour to finish its current job, so a deploy does not cut off an agent request. Revalidate this chain (request timeout, research fetches, job timeout) if any of those bounds change.
+
+Self-hosted alternative: with `QUEUE_CONNECTION=database`, run a supervised worker for both queues and keep the database retry window (`DB_QUEUE_RETRY_AFTER`, default 960 seconds) above the job timeout, or a long job is handed out twice:
 
 ```bash
-php artisan queue:work database --queue=default --sleep=3 --tries=1 --timeout=600 --max-time=3600 --no-interaction
+php artisan queue:work database --queue=publishing-agents,default --sleep=3 --tries=1 --timeout=900 --max-time=3600 --no-interaction
 ```
 
-This assumes `DB_QUEUE` is unset or `default`; use the configured queue name if changed. Keep `DB_QUEUE_RETRY_AFTER=660` (or a larger verified value), greater than the worker timeout. Ensure the worker memory limit and deployment shutdown grace period suit the actual workload. The SDK HTTP timeout is only part of a job: research may also retrieve multiple sources. Revalidate the timeout chain if those bounds change.
-
-Horizon is installed but is **not** a database-queue worker. Do not start it instead of the process above while `QUEUE_CONNECTION=database`. If deliberately choosing Redis/Horizon, configure that connection and a supervisor in `config/horizon.php`: the checked-in supervisor's 60-second timeout is not this 600-second setup, and its retry window must exceed its configured timeout. Do not assume setting `DB_QUEUE_RETRY_AFTER` changes Redis or Horizon behavior.
+Horizon is installed but is not used for either setup. If deliberately choosing Redis/Horizon, configure a supervisor for both queues in `config/horizon.php`: the checked-in supervisor's 60-second timeout cannot run agent jobs, and its retry window must exceed the job timeout.
 
 Enable the platform's Laravel scheduler, or configure one cron invocation every minute:
 
@@ -160,7 +166,7 @@ After code/configuration updates, gracefully restart workers through the platfor
 
 Publishing uses Laravel AI SDK agents with an explicitly selected native OpenRouter provider. It does not use the SDK's default OpenAI provider, so an `OPENAI_API_KEY` is not required for this flow. Installing `laravel/mcp` does not add a publishing MCP endpoint or require another service.
 
-Set `OPENROUTER_API_KEY` through the secret manager. The normal endpoint is `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`. These credentials are the only publishing environment configuration: there is no model, provider, price, token-limit, or timeout matrix to supply. The provider HTTP timeout is code-owned (540 seconds). Agent work is queued, so it is only a guard against a hung request, not a latency target: high-effort roles have exceeded 80 seconds in the live model trial. It must stay below the worker timeout above, with room for research source fetches, and a timeout pauses the activity as uncertain after the provider may already have billed it. A Redis/Horizon supervisor would need a timeout above it; the checked-in 60-second supervisor is not suitable. Agent requests also ask OpenRouter to prefer higher-throughput upstream providers and to exclude 4-bit, 6-bit and integer quantizations, so a request can cost more per token than OpenRouter's price-first default; the key's OpenRouter limit still bounds spend.
+Set `OPENROUTER_API_KEY` through the secret manager. The normal endpoint is `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`. These credentials are the only publishing environment configuration: there is no model, provider, price, token-limit, or timeout matrix to supply. The provider HTTP timeout is code-owned (540 seconds). Agent work is queued, so it is only a guard against a hung request, not a latency target: high-effort roles have exceeded 80 seconds in the live model trial. It must stay below the job's 900-second timeout (section 6), with room for research source fetches, and a timeout pauses the activity as uncertain after the provider may already have billed it. A Redis/Horizon supervisor would need a timeout above it; the checked-in 60-second supervisor is not suitable. Agent requests also ask OpenRouter to prefer higher-throughput upstream providers and to exclude 4-bit, 6-bit and integer quantizations, so a request can cost more per token than OpenRouter's price-first default; the key's OpenRouter limit still bounds spend.
 
 Spending is controlled in OpenRouter, not by the application. Set the key's credit limit and any workspace limits there before enabling requests. The application keeps no allowance, makes no reservation before a call, and does not reconcile generation costs; missing usage metadata never blocks otherwise valid output.
 
