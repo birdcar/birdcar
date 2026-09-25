@@ -17,11 +17,14 @@ use App\Models\EvidenceSource;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Services\Publishing\AgentBudget;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 new #[Layout('layouts.admin')] class extends Component
@@ -60,6 +63,12 @@ new #[Layout('layouts.admin')] class extends Component
     /** @var array<int, array{disposition: string, reason?: string}> */
     public array $findingDispositions = [];
 
+    /** @var array<int, string> */
+    public array $findingReasons = [];
+
+    /** @var array{title: string, description: string, date: string} */
+    public array $details = ['title' => '', 'description' => '', 'date' => ''];
+
     /** @var array<string, mixed> */
     public array $document = ['version' => 1, 'type' => 'doc', 'content' => []];
 
@@ -78,8 +87,57 @@ new #[Layout('layouts.admin')] class extends Component
             $this->document = $revision->document ?? $this->document;
             $this->metadata = $revision->metadata ?? [];
         }
+        $this->details = ['title' => (string) ($this->metadata['title'] ?? ''), 'description' => (string) ($this->metadata['description'] ?? ''), 'date' => (string) ($this->metadata['date'] ?? $article->first_published_at?->toDateString() ?? now()->toDateString())];
+        $this->budgetMutationKey = (string) Str::uuid();
         $this->hydrateAgentSelectionsFromAttempt();
         $this->refreshApprovalInputs();
+    }
+
+    public function startDevelopment(): void
+    {
+        Gate::authorize('develop', $this->article);
+
+        try {
+            DB::transaction(function (): void {
+                $attempt = app(AdvancePublishingAttempt::class)->develop(auth()->user(), $this->article, $this->currentRevisionId, ['idea' => $this->article->idea]);
+                app(StartEditorialActivity::class)->start(auth()->user(), $attempt, EditorialActivityKind::Interview, $this->voiceActivityInput(), 'interview-'.$attempt->review_cycle);
+            });
+            $this->saveError = null;
+            $this->refreshAgentWork();
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function saveDetails(): void
+    {
+        Gate::authorize('update', $this->article);
+        $validated = $this->validate([
+            'details.title' => ['required', 'string', 'max:240'],
+            'details.description' => ['nullable', 'string', 'max:1000'],
+            'details.date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+        ]);
+        $baseRevisionId = $this->currentRevisionId;
+        $result = $this->saveDocument($baseRevisionId, 'details-'.Str::uuid(), $this->document, array_replace($this->metadata, $validated['details']));
+
+        if ($result['ok']) {
+            $this->notifyEditor($baseRevisionId);
+        }
+    }
+
+    #[On('publishing-editor-conflict')]
+    public function reportEditorConflict(int $articleId): void
+    {
+        Gate::authorize('view', $this->article);
+        abort_unless($articleId === (int) $this->article->id, 404);
+        $this->saveState = 'conflict';
+        $this->conflictMessage = 'The saved manuscript changed while this tab had local edits. Your local text is intact. Copy it before loading the saved version.';
+        $this->conflictLatestRevision = $this->latestSavedRevisionPayload();
+    }
+
+    private function notifyEditor(?int $baseRevisionId): void
+    {
+        $this->dispatch('publishing-document-updated', articleId: (int) $this->article->id, baseRevisionId: $baseRevisionId, revisionId: $this->currentRevisionId, document: $this->document, metadata: $this->metadata);
     }
 
     private function hydrateAgentSelectionsFromAttempt(): void
@@ -172,7 +230,8 @@ new #[Layout('layouts.admin')] class extends Component
             $approver->approve(auth()->user(), $attempt, ApprovalKind::Angle, $expectedInputHash !== '' ? $expectedInputHash : (string) $this->angleInputHash);
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
             $this->refreshApprovalInputs();
-            session()->flash('status', 'Angle approved.');
+            $this->dispatch('publishing-milestone', kind: 'angle', articleId: (int) $this->article->id);
+            session()->flash('status', 'Angle approved. Research and planning can begin.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -193,7 +252,8 @@ new #[Layout('layouts.admin')] class extends Component
             $approver->approve(auth()->user(), $attempt, ApprovalKind::Plan, $expectedInputHash !== '' ? $expectedInputHash : (string) $this->planInputHash);
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
             $this->refreshApprovalInputs();
-            session()->flash('status', 'Plan approved.');
+            $this->dispatch('publishing-milestone', kind: 'plan', articleId: (int) $this->article->id);
+            session()->flash('status', 'Plan approved. Your draft is next.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -239,7 +299,9 @@ new #[Layout('layouts.admin')] class extends Component
             $releases->approve(auth()->user(), $release, $expectedReleaseHash !== '' ? $expectedReleaseHash : (string) $this->releaseInputHash);
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
             $this->refreshApprovalInputs();
-            session()->flash('status', 'Exact release package approved.');
+            $scheduled = $release->fresh()->status === 'scheduled';
+            $this->dispatch('publishing-milestone', kind: $scheduled ? 'scheduled' : 'release', articleId: (int) $this->article->id);
+            session()->flash('status', $scheduled ? 'This exact release is scheduled.' : 'This exact release is approved. Publish when you are ready.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -261,7 +323,10 @@ new #[Layout('layouts.admin')] class extends Component
             $releases->deliver(auth()->user(), $release, $this->article->published_release_id);
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
             $this->refreshApprovalInputs();
-            session()->flash('status', 'Release delivered to the public reader.');
+            if ($this->article->published_release_id === $release->id && $release->fresh()->published_at !== null) {
+                $this->dispatch('publishing-milestone', kind: 'published', articleId: (int) $this->article->id);
+            }
+            session()->flash('status', 'Your article is published.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -346,7 +411,21 @@ new #[Layout('layouts.admin')] class extends Component
     public function refreshAgentWork(): void
     {
         Gate::authorize('view', $this->article);
+        $baseRevisionId = $this->currentRevisionId;
         $this->article->refresh()->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+        if ($this->article->working_revision_id !== $baseRevisionId) {
+            $previousMetadata = $this->metadata;
+            $this->currentRevisionId = $this->article->working_revision_id;
+            $this->document = $this->article->workingRevision?->document ?? $this->document;
+            $this->metadata = $this->article->workingRevision?->metadata ?? $this->metadata;
+            foreach (['title', 'description', 'date'] as $field) {
+                $fallback = $field === 'date' ? ($this->article->first_published_at?->toDateString() ?? now()->toDateString()) : '';
+                if ($this->details[$field] === (string) ($previousMetadata[$field] ?? $fallback)) {
+                    $this->details[$field] = (string) ($this->metadata[$field] ?? $fallback);
+                }
+            }
+            $this->notifyEditor($baseRevisionId);
+        }
         $this->refreshApprovalInputs();
     }
 
@@ -474,6 +553,13 @@ new #[Layout('layouts.admin')] class extends Component
             return;
         }
 
+        EditorialFinding::query()->where('article_id', $this->article->id)->where('attempt_id', $this->article->current_attempt_id)->findOrFail($findingId);
+        $reason = trim($reason !== '' ? $reason : ($this->findingReasons[$findingId] ?? ''));
+        if ($disposition === 'false_positive' && $reason === '') {
+            $this->addError('findingReasons.'.$findingId, 'Explain why this finding does not apply.');
+            return;
+        }
+        $this->resetErrorBag('findingReasons.'.$findingId);
         $this->findingDispositions[$findingId] = [
             'disposition' => $disposition,
             'reason' => $reason,
@@ -491,13 +577,16 @@ new #[Layout('layouts.admin')] class extends Component
         }
 
         try {
-            $revision = $proposals->apply(auth()->user(), $attempt, [$findingId], $this->currentRevisionId);
+            $baseRevisionId = $this->currentRevisionId;
+            $revision = $proposals->apply(auth()->user(), $attempt, [$findingId], $baseRevisionId);
             $this->currentRevisionId = (int) $revision->id;
             $this->document = $revision->document ?? $this->document;
             $this->metadata = $revision->metadata ?? $this->metadata;
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
             $this->refreshApprovalInputs();
-            session()->flash('status', 'Editorial proposal accepted.');
+            $this->notifyEditor($baseRevisionId);
+            $this->dispatch('publishing-milestone', kind: 'proposal', articleId: (int) $this->article->id);
+            session()->flash('status', 'Suggested change applied to your manuscript.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -567,7 +656,8 @@ new #[Layout('layouts.admin')] class extends Component
         try {
             $budget->increaseAllowance(auth()->user(), $attempt, $this->budgetTopUpNanoUsd, $this->budgetMutationKey !== '' ? $this->budgetMutationKey : 'ui-topup-'.uniqid());
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
-            session()->flash('status', 'Agent budget increased.');
+            $this->budgetMutationKey = (string) Str::uuid();
+            session()->flash('status', 'Agent allowance increased.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
         }
@@ -661,6 +751,7 @@ new #[Layout('layouts.admin')] class extends Component
         }
 
         try {
+            $baseRevisionId = $this->currentRevisionId;
             $revision = app(WriteArticle::class)->save(
                 auth()->user(),
                 $this->article,
@@ -677,6 +768,7 @@ new #[Layout('layouts.admin')] class extends Component
             $this->refreshApprovalInputs();
             $this->saveState = 'saved';
             $this->saveError = null;
+            $this->notifyEditor($baseRevisionId);
         } catch (Throwable $exception) {
             $this->document = $document;
             $this->saveState = 'error';
@@ -734,7 +826,7 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     /** @param array<string, mixed> $document */
-    private function documentExcerpt(array $document): string
+    private function documentExcerpt(array $document, ?int $limit = 220): string
     {
         $text = [];
         $walk = function (array $nodes) use (&$walk, &$text): void {
@@ -754,7 +846,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $excerpt = trim(implode(' ', $text));
 
-        return $excerpt === '' ? 'Latest saved revision has no text content.' : str($excerpt)->limit(220)->toString();
+        return $excerpt === '' ? 'No text in this passage.' : ($limit === null ? $excerpt : str($excerpt)->limit($limit)->toString());
     }
 
     private function refreshApprovalInputs(): void
@@ -788,20 +880,19 @@ new #[Layout('layouts.admin')] class extends Component
         $previewUrl = $this->currentRevisionId === null ? null : route('admin.publishing.articles.preview', ['article' => $this->article, 'revision' => $this->currentRevisionId]);
         $attempt = $this->article->currentAttempt;
         $release = $this->currentReleasePackage();
-        $release ??= $attempt === null ? $this->article->publishedRelease : null;
+        $release ??= $attempt === null || $attempt->stage === EditorialStage::Published ? $this->article->publishedRelease : null;
 
         $budget = $attempt === null ? null : app(AgentBudget::class)->available($attempt);
-        $activities = $attempt === null ? collect() : $attempt->editorialActivities()->latest()->limit(12)->get();
+        $activities = $attempt === null ? collect() : $attempt->editorialActivities()->where('review_cycle', $attempt->review_cycle)->latest()->get();
         $findings = $attempt === null ? collect() : EditorialFinding::query()
             ->where('attempt_id', $attempt->id)
             ->whereNull('stale_at')
+            ->where('review_cycle', $attempt->review_cycle)
             ->latest()
-            ->limit(20)
             ->get();
         $sources = $attempt === null ? collect() : EvidenceSource::query()
             ->where('attempt_id', $attempt->id)
             ->latest()
-            ->limit(10)
             ->get();
         $voiceSampleOptions = Article::query()
             ->where('author_id', auth()->id())
@@ -812,8 +903,32 @@ new #[Layout('layouts.admin')] class extends Component
             ->limit(20)
             ->get();
         $interviewContext = is_array($attempt?->interview_context) ? $attempt->interview_context : [];
+        $stage = $attempt?->stage;
+        $currentActivity = $activities->first(fn ($activity) => $activity->stage === $stage?->value && $activity->status !== EditorialActivityStatus::Stale);
+        $working = $activities->contains(fn ($activity) => in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true));
+        $angleApproved = $attempt?->approvals->contains(fn ($approval) => $approval->kind === ApprovalKind::Angle && $approval->invalidated_at === null) ?? false;
+        $planApproved = $attempt?->approvals->contains(fn ($approval) => $approval->kind === ApprovalKind::Plan && $approval->invalidated_at === null) ?? false;
+        $sessionMode = match ($stage) {
+            EditorialStage::InReview => 'write',
+            EditorialStage::Approved, EditorialStage::Scheduled, EditorialStage::Published => 'release',
+            default => $attempt === null && $this->article->published_release_id !== null ? 'release' : 'develop',
+        };
 
         return [
+            'sessionMode' => $sessionMode,
+            'articleTitle' => trim((string) ($this->metadata['title'] ?? '')) ?: str($this->article->idea)->limit(100)->toString(),
+            'stage' => $stage,
+            'working' => $working,
+            'currentActivity' => $currentActivity,
+            'angleApproved' => $angleApproved,
+            'planApproved' => $planApproved,
+            'displayBrief' => is_array($attempt?->brief) ? $attempt->brief : [],
+            'displayAngle' => is_array($attempt?->angle) ? $attempt->angle : [],
+            'displayPlan' => is_array($attempt?->plan) ? $attempt->plan : [],
+            'angleOptions' => is_array($interviewContext['angle_options'] ?? null) ? $interviewContext['angle_options'] : [],
+            'interviewQuestions' => is_array($interviewContext['questions'] ?? null) ? $interviewContext['questions'] : [],
+            'releasePreviewUrl' => $release === null ? null : route('admin.publishing.articles.preview', ['article' => $this->article, 'release' => $release->id]),
+            'proposalTexts' => $findings->mapWithKeys(fn ($finding) => [$finding->id => $this->documentExcerpt(['content' => [$finding->proposed_patch['replacement'] ?? []]], null)])->all(),
             'attempt' => $attempt,
             'previewUrl' => $previewUrl,
             'release' => $release,
@@ -836,343 +951,4 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<section class="space-y-8" data-article-id="{{ $article->id }}" data-current-revision="{{ $currentRevisionId }}" data-user-id="{{ auth()->id() }}">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div class="min-w-0">
-            <flux:text>Article workspace</flux:text>
-            <flux:heading level="1" size="xl" class="mt-1 break-words">{{ $article->idea }}</flux:heading>
-        </div>
-        <x-admin.publishing.partials.save-badge :state="$saveState" />
-    </div>
-
-    @if ($conflictMessage)
-        <x-admin.publishing.partials.conflict-banner :message="$conflictMessage" :latest="$conflictLatestRevision" />
-    @endif
-    @if ($saveError)
-        <flux:callout variant="danger" heading="Workspace error" text="{{ $saveError }}" />
-    @endif
-
-    <div class="space-y-4" @if ($agentActivities->contains(fn ($activity) => in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true))) wire:poll.5s.visible="refreshAgentWork" @endif>
-        @foreach ($pendingAgentRequests as $request)
-            <flux:callout wire:key="agent-request-{{ $request->id }}" heading="The agent needs your input" data-agent-approval="{{ $request->id }}">
-                <flux:callout.text>The interview is paused. Answer these questions to resume the same conversation, or decline to stop it. This does not approve an angle, plan, or release.</flux:callout.text>
-                <ol class="my-4 list-decimal space-y-2 pl-5">
-                    @foreach ($request->pending_tool_approvals ?? [] as $approval)
-                        @foreach ($approval['arguments']['questions'] ?? [] as $question)
-                            <li>{{ $question }}</li>
-                        @endforeach
-                    @endforeach
-                </ol>
-                @can('develop', $article)
-                    <flux:textarea wire:model="agentAnswers.{{ $request->id }}" label="Your answers" maxlength="4000" rows="3" />
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <flux:button variant="primary" wire:click="answerAgent({{ $request->id }}, '{{ $request->pendingApprovalHash() }}')">Send answers and continue</flux:button>
-                        <flux:button wire:click="answerAgent({{ $request->id }}, '{{ $request->pendingApprovalHash() }}', true)">Decline request</flux:button>
-                    </div>
-                @endcan
-            </flux:callout>
-        @endforeach
-        <flux:button size="sm" icon="arrow-path" wire:click="refreshAgentWork">Refresh agent work</flux:button>
-    </div>
-
-    <div class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <flux:tab.group class="min-w-0">
-            <flux:tabs scrollable>
-                <flux:tab name="brief" selected>Brief & plan</flux:tab>
-                <flux:tab name="manuscript">Manuscript</flux:tab>
-                <flux:tab name="reviews">Reviews</flux:tab>
-            </flux:tabs>
-
-            <flux:tab.panel name="brief" selected>
-            <section class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
-                <flux:heading size="lg">Brief, angle, and plan</flux:heading>
-                <dl class="mt-4 grid gap-3 text-sm text-zinc-700 dark:text-zinc-300">
-                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Stage</dt><dd>{{ $attempt?->stage?->value ?? 'Idea saved for later' }}</dd></div>
-                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Agent budget</dt><dd>{{ $agentBudget ? number_format($agentBudget['available'] / 1_000_000_000, 3) : '0.000' }} USD available</dd></div>
-                    <div><dt class="font-medium text-zinc-900 dark:text-zinc-100">Latest activity</dt><dd>{{ $agentActivities->first()?->kind?->value ?? 'Ready for an agent activity' }} {{ $agentActivities->first()?->status?->value ? '· '.$agentActivities->first()?->status?->value : '' }}</dd></div>
-                </dl>
-                @php($displayBrief = is_array($attempt?->brief) ? $attempt->brief : [])
-                @php($displayAngle = is_array($attempt?->angle) ? $attempt->angle : [])
-                @php($interviewQuestions = is_array($interviewContext['questions'] ?? null) ? $interviewContext['questions'] : [])
-                @php($angleOptions = is_array($interviewContext['angle_options'] ?? null) ? $interviewContext['angle_options'] : [])
-                @if ($interviewQuestions !== [] || $displayBrief !== [] || $displayAngle !== [])
-                    <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200" data-interview-and-angle>
-                        <h3 class="font-medium text-zinc-900 dark:text-zinc-100">Interview and angle for approval</h3>
-                        @if ($interviewQuestions !== [])
-                            <div class="mt-3">
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Latest interview questions</p>
-                                <ol class="mt-2 list-decimal space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
-                                    @foreach ($interviewQuestions as $question)
-                                        <li>{{ is_array($question) ? ($question['question'] ?? $question['text'] ?? json_encode($question)) : $question }}</li>
-                                    @endforeach
-                                </ol>
-                            </div>
-                        @endif
-                        @if ($displayBrief !== [])
-                            <div class="mt-3">
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Brief to approve</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayBrief, JSON_PRETTY_PRINT) }}</pre>
-                            </div>
-                        @endif
-                        @if ($angleOptions !== [])
-                            <div class="mt-3 space-y-2">
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Angle options</p>
-                                @foreach ($angleOptions as $key => $option)
-                                    <flux:button type="button" wire:click="selectAngleOption(@js((string) $key))" class="h-auto w-full justify-start whitespace-normal py-3 {{ (string) ($interviewContext['selected_angle_option'] ?? '') === (string) $key ? 'ring-2 ring-sky-500' : '' }}">
-                                        {{ is_array($option) ? ($option['title'] ?? $option['thesis'] ?? json_encode($option)) : $option }}
-                                    </flux:button>
-                                @endforeach
-                            </div>
-                        @endif
-                        @if ($displayAngle !== [])
-                            <div class="mt-3">
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Selected angle</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayAngle, JSON_PRETTY_PRINT) }}</pre>
-                            </div>
-                        @endif
-                    </div>
-                @endif
-                @php($displayPlan = is_array($attempt?->plan) ? $attempt->plan : [])
-                @if ($displayPlan !== [])
-                    <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 dark:border-white/10 dark:bg-zinc-950/60 dark:text-zinc-200" data-generated-plan-digest>
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-medium text-zinc-900 dark:text-zinc-100">Plan digest for approval</h3>
-                            @if (($displayPlan['source'] ?? null) === 'agent')
-                                <span class="rounded bg-sky-50 px-2 py-1 text-xs text-sky-700 dark:bg-sky-400/10 dark:text-sky-100">Generated by agent</span>
-                            @endif
-                        </div>
-                        @if (isset($displayPlan['argument']))
-                            <p class="mt-3 text-zinc-700 dark:text-zinc-300">{{ is_string($displayPlan['argument']) ? $displayPlan['argument'] : json_encode($displayPlan['argument']) }}</p>
-                        @endif
-                        <div class="mt-3 grid gap-3 md:grid-cols-2">
-                            <div>
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Outline</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayPlan['outline'] ?? [], JSON_PRETTY_PRINT) }}</pre>
-                            </div>
-                            <div>
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">Visual plan</p>
-                                <pre class="mt-1 whitespace-pre-wrap text-xs text-zinc-700 dark:text-zinc-300">{{ json_encode($displayPlan['visualPlan'] ?? [], JSON_PRETTY_PRINT) }}</pre>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-                <div class="mt-4 flex flex-wrap gap-3">
-                    @can(PublishingPermission::Develop->value)
-                        <flux:button wire:click="startInterview">Start interview</flux:button>
-                        <flux:button wire:click="submitInterviewAnswers">Save interview answers</flux:button>
-                        <flux:button wire:click="startResearch">Research sources</flux:button>
-                    @endcan
-                    @can(PublishingPermission::Approve->value)
-                        <flux:button wire:click="approveAngle('{{ $angleInputHash }}')">Approve angle</flux:button>
-                        <flux:button wire:click="approvePlan('{{ $planInputHash }}')">Approve plan</flux:button>
-                    @endcan
-                </div>
-                <div class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
-                    <flux:field>
-                        <flux:label>Source URL</flux:label>
-                        <flux:input wire:model="sourceUrl" placeholder="https://example.com/source" />
-                        <flux:error name="sourceUrl" />
-                    </flux:field>
-                    <flux:field>
-                        <flux:label>Interview answers</flux:label>
-                        <flux:textarea wire:model="interviewAnswers" rows="3" placeholder="Answer the latest interview questions before angle approval" />
-                        <flux:error name="interviewAnswers" />
-                    </flux:field>
-                    <div class="text-sm text-zinc-700 dark:text-zinc-300 sm:col-span-2">
-                        <p class="font-medium text-zinc-900 dark:text-zinc-100">Voice samples from published archive</p>
-                        <div class="mt-2 grid gap-2">
-                            @forelse ($voiceSampleOptions as $sampleArticle)
-                                <flux:checkbox wire:model="selectedVoiceSampleArticleIds" value="{{ $sampleArticle->id }}" label="{{ $sampleArticle->publishedRelease?->payload['metadata']['title'] ?? $sampleArticle->idea ?? 'Published article #'.$sampleArticle->id }}" />
-                            @empty
-                                <p class="text-zinc-600 dark:text-zinc-400">Publish or import an archive article before selecting voice samples.</p>
-                            @endforelse
-                        </div>
-                    </div>
-                    <div class="text-sm text-zinc-700 dark:text-zinc-300 sm:col-span-2">
-                        <p class="font-medium text-zinc-900 dark:text-zinc-100">Retained owner sources</p>
-                        <div class="mt-2 grid gap-2">
-                            @forelse ($evidenceSources->whereIn('source_type', ['owner', 'restricted']) as $source)
-                                <flux:checkbox wire:model="selectedEvidenceSourceIds" value="{{ $source->id }}" label="{{ ($source->title ?? $source->url ?? 'Source #'.$source->id).($source->unresolved_reason ? ' — '.$source->unresolved_reason : '') }}" />
-                            @empty
-                                <p class="text-zinc-600 dark:text-zinc-400">No retained owner sources are available for selection.</p>
-                            @endforelse
-                        </div>
-                    </div>
-                    <flux:field class="sm:col-span-2">
-                        <flux:label>Voice sample notes</flux:label>
-                        <flux:input wire:model="voiceSample" placeholder="Select published archive samples above for new dispatches; pasted IDs/excerpts are rejected" />
-                        <flux:error name="voiceSample" />
-                    </flux:field>
-                </div>
-            </section>
-            </flux:tab.panel>
-
-            <flux:tab.panel name="manuscript">
-            <section class="admin-editor rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5" data-admin-editor-shell>
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <flux:heading size="lg">Manuscript</flux:heading>
-                        <flux:text class="mt-1">Protected passages are stored in the canonical JSON as block attributes and require proposal review before replacement.</flux:text>
-                    </div>
-                    @can(PublishingPermission::Write->value)
-                        <flux:button wire:click="protectFirstBlock">Protect first passage</flux:button>
-                    @endcan
-                </div>
-                @can(PublishingPermission::Write->value)
-                    <div class="mt-4 flex flex-wrap gap-2" aria-label="Semantic manuscript blocks">
-                        <flux:button type="button" size="xs" data-editor-command="note">Insert note</flux:button>
-                        <flux:button type="button" size="xs" data-editor-command="callout">Insert callout</flux:button>
-                        <flux:button type="button" size="xs" data-editor-command="chart">Insert chart</flux:button>
-                        <flux:button type="button" size="xs" data-editor-command="diagram">Insert diagram</flux:button>
-                        <flux:button type="button" size="xs" color="amber" data-editor-command="protect">Protect selection</flux:button>
-                        <flux:button type="button" size="xs" data-editor-command="unprotect">Unprotect selection</flux:button>
-                    </div>
-                @endcan
-                <div wire:ignore class="mt-4">
-                    <flux:editor
-                        class="min-h-64 rounded border border-zinc-200 bg-white dark:border-white/10 dark:bg-zinc-950"
-                        data-admin-editor
-                        data-article-id="{{ $article->id }}"
-                        data-user-id="{{ auth()->id() }}"
-                        data-current-revision="{{ $currentRevisionId }}"
-                        :data-document="json_encode($document)"
-                        :data-metadata="json_encode($metadata)"
-                        toolbar="heading | bold italic strike | bullet ordered blockquote | link"
-                    />
-                </div>
-                <flux:text class="mt-3 text-xs">Autosaves canonical JSON with expected revision and tab-scoped recovery. Conflicts keep local text intact.</flux:text>
-            </section>
-            </flux:tab.panel>
-
-            <flux:tab.panel name="reviews">
-            <section class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <flux:heading size="lg">Reviews and proposals</flux:heading>
-                        <flux:text class="mt-2">Agent findings are anchored to one revision. Human decisions apply proposals; protected prose is never overwritten automatically.</flux:text>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        @can(PublishingPermission::Develop->value)
-                            <flux:button wire:click="startReviews">Start three-lens review</flux:button>
-                        @endcan
-                        @can(PublishingPermission::Approve->value)
-                            <flux:button wire:click="finishReview">Finish review</flux:button>
-                            <flux:button wire:click="restartReview">Restart cycle</flux:button>
-                        @endcan
-                    </div>
-                </div>
-
-                <div class="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div class="rounded-lg border border-zinc-200 p-4 dark:border-white/10">
-                        <h3 class="font-medium">Activity log</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-                            @forelse ($agentActivities as $activity)
-                                <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">{{ $activity->kind->value }} · {{ $activity->status->value }} @if($activity->pause_reason)<span class="text-amber-700 dark:text-amber-200">— {{ $activity->pause_reason }}</span>@endif</li>
-                            @empty
-                                <li class="text-zinc-600 dark:text-zinc-400">No agent activity has been started for this attempt.</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                    <div class="rounded-lg border border-zinc-200 p-4 dark:border-white/10">
-                        <h3 class="font-medium">Evidence sources</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-                            @forelse ($evidenceSources as $source)
-                                <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">{{ $source->title ?? $source->url ?? 'Source' }} @if($source->unresolved_reason)<span class="text-amber-700 dark:text-amber-200">— {{ $source->unresolved_reason }}</span>@endif</li>
-                            @empty
-                                <li class="text-zinc-600 dark:text-zinc-400">No evidence sources recorded yet.</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
-                    <h3 class="font-medium">Findings and proposals</h3>
-                    <ul class="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-                        @forelse ($editorialFindings as $finding)
-                            <li class="rounded bg-zinc-50 p-3 dark:bg-zinc-950">
-                                <div class="flex flex-wrap items-start justify-between gap-3">
-                                    <div><span class="text-xs uppercase text-zinc-500">{{ $finding->lens }} · {{ $finding->severity }}</span><p class="mt-1">{{ $finding->statement }}</p></div>
-                                    @if($finding->proposed_patch && !$finding->disposition)
-                                        @can(PublishingPermission::Write->value)
-                                            <flux:button size="xs" wire:click="applyProposal({{ $finding->id }})">Accept patch</flux:button>
-                                        @endcan
-                                    @endif
-                                    @if(!$finding->disposition)
-                                        @can(PublishingPermission::Approve->value)
-                                            <flux:button size="xs" wire:click="decideFinding({{ $finding->id }}, 'rejected')">Reject advice</flux:button>
-                                            <flux:button size="xs" wire:click="decideFinding({{ $finding->id }}, 'false_positive')">False positive</flux:button>
-                                        @endcan
-                                    @endif
-                                </div>
-                                @if(is_array($finding->supporting_quotations) && count($finding->supporting_quotations) > 0)
-                                    <div class="mt-2 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                                        <p class="font-medium text-zinc-700 dark:text-zinc-300">Supporting quotations</p>
-                                        @foreach($finding->supporting_quotations as $quotation)
-                                            @if(is_array($quotation))
-                                                <blockquote class="border-l border-zinc-300 pl-2 dark:border-white/15">Source #{{ $quotation['source_id'] ?? 'unknown' }}: “{{ $quotation['quote'] ?? '' }}”</blockquote>
-                                            @endif
-                                        @endforeach
-                                    </div>
-                                @endif
-                                @if($finding->disposition)<p class="mt-2 text-xs text-zinc-500">Disposition: {{ $finding->disposition }}</p>@endif
-                            </li>
-                        @empty
-                            <li class="text-zinc-600 dark:text-zinc-400">No findings have been recorded for this revision.</li>
-                        @endforelse
-                    </ul>
-                </div>
-
-                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
-                    <h3 class="font-medium">Budget top-up</h3>
-                    <div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-                        <flux:input wire:model="budgetTopUpNanoUsd" type="number" min="1" aria-label="Nano USD top-up amount" />
-                        <flux:input wire:model="budgetMutationKey" aria-label="Budget mutation key" placeholder="mutation key" />
-                        @can(PublishingPermission::Budget->value)
-                            <flux:button wire:click="topUpBudget">Top up budget</flux:button>
-                        @endcan
-                    </div>
-                </div>
-
-                <div class="mt-5 rounded-lg border border-zinc-200 p-4 dark:border-white/10">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h3 class="font-medium">Protected passage controls</h3>
-                            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">These controls read and update the canonical document JSON, not rendered HTML.</p>
-                        </div>
-                        @can(PublishingPermission::Write->value)
-                            <flux:button wire:click="protectFirstBlock">Mark first block protected</flux:button>
-                        @endcan
-                    </div>
-
-                    @if ($protectedBlocks === [])
-                        <p class="mt-4 text-sm text-zinc-600 dark:text-zinc-400">No protected passages are marked in this revision.</p>
-                    @else
-                        <ul class="mt-4 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-                            @foreach ($protectedBlocks as $block)
-                                <li class="flex flex-wrap items-center justify-between gap-3 rounded border border-zinc-200 p-3 dark:border-white/10">
-                                    <span>{{ $block['type'] }} <code class="text-xs text-zinc-500">{{ $block['id'] }}</code></span>
-                                    @can(PublishingPermission::Write->value)
-                                        <flux:button size="xs" wire:click="unprotectBlock('{{ $block['id'] }}')">Remove protection</flux:button>
-                                    @endcan
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </div>
-            </section>
-            </flux:tab.panel>
-        </flux:tab.group>
-
-        <aside class="space-y-6">
-            <section id="preview" class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
-                <flux:heading size="lg">Preview</flux:heading>
-                @if ($previewUrl)
-                    <iframe class="mt-4 h-96 w-full rounded bg-white" src="{{ $previewUrl }}" sandbox="allow-same-origin" title="Article preview"></iframe>
-                @else
-                    <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Save a revision before previewing.</p>
-                @endif
-            </section>
-            <x-admin.publishing.partials.release-checklist :article="$article" :attempt="$attempt" :release="$release" />
-        </aside>
-    </div>
-</section>
+@include('components.admin.publishing.partials.session')

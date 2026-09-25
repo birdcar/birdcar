@@ -139,7 +139,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 
     Livewire\Livewire::actingAs($actor)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->assertSee('Plan digest for approval')
+        ->assertSee('A plan for the piece')
         ->assertSee('grounded research')
         ->call('approvePlan')
         ->assertSet('saveError', null);

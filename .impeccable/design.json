@@ -207,7 +207,8 @@
       "notClaimed": "No owner launch acceptance, deployment, production booking, remote PostHog write, or native browser-toolbar 200% zoom verification is claimed. Phase 1 owner approval remains scoped to Phase 1.",
       "artifacts": "Phase 4 source evidence exists under .impeccable/review/phase-4-* and .impeccable/review/print/phase-4-*. Full-page calendar blanks are offscreen capture artifacts; separate calendar/mobile/modal captures loaded. Print artifacts are local review evidence, not a PDF product or deployed handout system.",
       "detector": "One Phase 4 detector run returned 30 advisories, zero non-advisory findings. Advisories are accepted documentation advisories; UI was not changed to silence them.",
-      "phase4IntegratedReview": "Integrated public marketing system reviewed across all five page types, representative articles, booking shells, no-JavaScript, reduced-motion, repeated-figure, cold-load, 720x450 reflow, and saved Letter/A4 PDF evidence. Fresh independent finish reviewer disposition: ship, no material fixes; persistence pass; faithful; craft ceiling reached."
+      "phase4IntegratedReview": "Integrated public marketing system reviewed across all five page types, representative articles, booking shells, no-JavaScript, reduced-motion, repeated-figure, cold-load, 720x450 reflow, and saved Letter/A4 PDF evidence. Fresh independent finish reviewer disposition: ship, no material fixes; persistence pass; faithful; craft ceiling reached.",
+      "adminPublishingWorkspace": "Owner-only Publishing workspace is built in the existing Flux Pro/Inter neutral Admin with teal/cyan accent, creation-first composer, paper-airplane Develop affordance, passive bookmark save, separated Ideas/Active/Published libraries, three-mode article session, explicit approvals, frozen release preview, save/conflict guards, and bounded Motion spring feedback. Evidence is local fixture UI and automated guard checks only: 20 captures under .impeccable/review/publishing-session across 1440/390 light/dark, actual built assets, synthetic in-memory DB fixtures, all POST blocked; no authenticated save/release, paid agents, production publication, deployment, or owner editorial acceptance is claimed."
     },
     "calendar": {
       "palette": "Cal embed receives ink brand, deep-teal brand emphasis, paper background, paper brand text, cyan/dark fallback values, and month_view layout.",
@@ -311,15 +312,17 @@
       "**Do** keep Alkaline to the one header wordmark and Barlow for marketing text.",
       "**Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, no-JavaScript readability, and the distinction between Cal readiness and actual booking/open behavior.",
       "**Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.",
-      "**Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending."
+      "**Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending.",
+      "**Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards."
     ],
     "donts": [
-      "**Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, or native browser-toolbar 200% zoom verification.",
+      "**Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, authenticated Publishing save/release, actual paid agent runs, production publication, or native browser-toolbar 200% zoom verification.",
       "**Don't** describe local print artifacts as a PDF product, public handout system, deployed asset, or shipping raster.",
       "**Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.",
       "**Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.",
       "**Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.",
-      "**Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes."
+      "**Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes.",
+      "**Don't** describe the Publishing workspace motion as more spectacular than implemented; it is spring continuity, arrival/milestone feedback, and a published-only disposable flourish."
     ]
   }
 }

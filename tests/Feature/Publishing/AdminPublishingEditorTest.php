@@ -116,10 +116,11 @@ test('article workspace authorizes and renders preview iframe after a revision e
         ->get('http://admin.birdcar.test/publishing/articles/'.$article->slug)
         ->assertOk()
         ->assertSee('Workspace idea')
-        ->assertSee('Brief & plan', false)
+        ->assertSee('Develop')
+        ->assertSee('Write &amp; review', false)
         ->assertSee('Manuscript')
-        ->assertSee('Reviews')
-        ->assertSee('aria-label="Budget mutation key"', false)
+        ->assertSee('Feedback')
+        ->assertDontSee('Budget mutation key')
         ->assertSee('window.livewireScriptConfig', false)
         ->assertSee('sandbox="allow-same-origin"', false);
     $document = new DOMDocument;
@@ -328,9 +329,10 @@ test('imported published articles show historical published release readiness wi
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing/articles/'.$article->slug)
         ->assertOk()
-        ->assertSee('historical published #'.$release->id)
-        ->assertSee('historical published revision')
-        ->assertSee('already published from the historical release package');
+        ->assertSee('Original archive release #'.$release->id)
+        ->assertSee('Out in the world')
+        ->assertSee('This release is published.')
+        ->assertSee('release='.$release->id, false);
 });
 
 test('workspace wires agent activity budget source voice and interview answer actions', function (): void {
@@ -463,7 +465,7 @@ test('changing a selected angle after approval invalidates downstream gates with
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->assertSee("selectAngleOption('a\\u0027quoted')", false)
+        ->assertSee("selectAngleOption('a\\u0027quoted')")
         ->call('selectAngleOption', "a'quoted")
         ->assertSet('saveError', null);
 

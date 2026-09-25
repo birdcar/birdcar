@@ -128,7 +128,7 @@ test('workspace displays escaped pending questions and queues human answers', fu
     [$author, $activity] = pendingAuthorInterview('<script>alert(1)</script> Who is the reader?');
     $this->actingAs($author);
     $workspace = Livewire::test('admin.publishing.article-workspace', ['article' => $activity->article]);
-    $workspace->assertSee('The agent needs your input')
+    $workspace->assertSee('A few questions for you')
         ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', escape: false)
         ->assertDontSee('<script>alert(1)</script>', escape: false)
         ->set('agentAnswers.'.$activity->id, 'Support leaders')

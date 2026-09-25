@@ -11,7 +11,7 @@ import {
     serializeRecoveryPayload,
     shouldKeepLocalEdits,
 } from './document-helpers.js';
-import { createAutosaveQueue, shouldWarnBeforeUnload } from './autosave.js';
+import { createAutosaveQueue, restoreRecovery, saveRecovery, shouldWarnBeforeUnload } from './autosave.js';
 
 const document = { version: 1, type: 'doc', content: [{ type: 'paragraph', attrs: { id: 'blk_0000000000000001' }, content: [{ type: 'text', text: 'Hello' }] }] };
 
@@ -96,27 +96,48 @@ describe('document helpers', () => {
 
     test('admin logout submit control clears only the current user recovery namespace', async () => {
         const listeners = new Map();
+        const dispatched = [];
         class FakeLogoutForm {}
         const storage = new Map();
         const sessionStorageShim = {
             get length() { return storage.size; },
             key(index) { return Array.from(storage.keys())[index] ?? null; },
+            getItem(key) { return storage.get(key) ?? null; },
+            setItem(key, value) { storage.set(key, value); },
             removeItem(key) { storage.delete(key); },
+        };
+        const root = { dataset: { articleId: '2' } };
+        const editorElement = {
+            dataset: { userId: '1', articleId: '2', currentRevision: '', metadata: '{}' },
+            closest: (selector) => {
+                if (selector === '[data-article-id]' || selector === '[data-publishing-studio]') return root;
+                return null;
+            },
         };
 
         globalThis.HTMLFormElement = FakeLogoutForm;
         globalThis.sessionStorage = sessionStorageShim;
         globalThis.navigator = { userAgent: 'bun', platform: 'MacIntel', maxTouchPoints: 0 };
-        globalThis.window = { addEventListener: (name, listener) => listeners.set(`window:${name}`, listener) };
+        globalThis.window = {
+            Alpine: { data: (name) => listeners.set(`alpine:${name}`, true) },
+            addEventListener: (name, listener) => listeners.set(`window:${name}`, listener),
+            dispatchEvent: (event) => { dispatched.push(event); return true; },
+        };
         globalThis.document = {
             documentElement: { style: {} },
-            addEventListener: (name, listener) => listeners.set(name, listener),
+            addEventListener: (name, listener, options) => listeners.set(options?.capture ? `capture:${name}` : name, listener),
             dispatchEvent: () => true,
-            querySelectorAll: () => [],
+            querySelector: () => null,
+            querySelectorAll: (selector) => (selector === '[data-admin-editor]' ? [editorElement] : []),
         };
 
         let started = false;
+        mock.module('motion', () => ({
+            animate: () => ({ finished: Promise.resolve(), stop: () => {} }),
+        }));
+
         mock.module('../../../../vendor/livewire/livewire/dist/livewire.esm', () => ({
+            Alpine: { data: (name) => listeners.set(`alpine:${name}`, true) },
             Livewire: {
                 start: () => {
                     expect(listeners.has('flux:editor')).toBe(true);
@@ -129,6 +150,7 @@ describe('document helpers', () => {
 
         await import('../../admin.js');
         expect(started).toBe(true);
+        expect(listeners.has('alpine:publishingSession')).toBe(true);
         const extensions = [];
         const enabled = [];
         listeners.get('flux:editor')({ detail: {
@@ -139,6 +161,54 @@ describe('document helpers', () => {
         expect(extensions.map((extension) => extension.name)).toEqual(['stableBlockAttributes', 'note', 'callout', 'chart', 'diagram']);
         expect(enabled).toEqual([]);
         expect(extensions[0].config.addProseMirrorPlugins()[0].key).toStartWith('publishingStableBlockIds$');
+
+        let updateListener;
+        const setContentCalls = [];
+        const editor = {
+            on: (name, listener) => { if (name === 'update') updateListener = listener; },
+            getJSON: () => ({ type: 'doc', content: [{ type: 'paragraph', attrs: { id: 'blk_0000000000000001' }, content: [{ type: 'text', text: 'Local' }] }] }),
+            commands: { setContent: (content, emitUpdate) => setContentCalls.push({ content, emitUpdate }) },
+        };
+        listeners.get('admin:editor:ready')({ detail: { editor, element: editorElement } });
+        listeners.get('window:publishing-document-updated')({ detail: {
+            articleId: 2,
+            baseRevisionId: null,
+            revisionId: 21,
+            document: { version: 1, type: 'doc', content: [{ type: 'paragraph', attrs: { id: 'blk_0000000000000001' }, content: [{ type: 'text', text: 'Server' }] }] },
+            metadata: { title: 'Server title' },
+        } });
+        expect(setContentCalls).toEqual([{ content: { type: 'doc', content: [{ type: 'paragraph', attrs: { id: 'blk_0000000000000001' }, content: [{ type: 'text', text: 'Server' }] }] }, emitUpdate: false }]);
+        expect(editorElement.dataset.currentRevision).toBe('21');
+
+        updateListener({ editor });
+        listeners.get('window:publishing-document-updated')({ detail: {
+            articleId: 2,
+            baseRevisionId: 21,
+            revisionId: 22,
+            document: { version: 1, type: 'doc', content: [{ type: 'paragraph', attrs: { id: 'blk_0000000000000001' }, content: [{ type: 'text', text: 'Refused' }] }] },
+            metadata: {},
+        } });
+        expect(setContentCalls).toHaveLength(1);
+        expect(dispatched.some((event) => event.type === 'publishing-editor-conflict' && event.detail.articleId === 2)).toBe(true);
+        globalThis.document.querySelector = () => editorElement;
+        let blocked = 0;
+        let stopped = 0;
+        const event = { type: 'click', target: { closest: () => ({}) }, preventDefault: () => blocked++, stopImmediatePropagation: () => stopped++ };
+        await listeners.get('capture:click')(event);
+        await listeners.get('capture:submit')({ ...event, type: 'submit', target: { matches: () => true } });
+        await listeners.get('capture:click')({ ...event, target: { closest: () => null } });
+        expect(blocked).toBe(2);
+        expect(stopped).toBe(2);
+        expect(storage.size).toBeGreaterThan(0);
+
+        const recoveryElement = { ...editorElement, dataset: { userId: '1', articleId: '4', currentRevision: '50', metadata: '{}' } };
+        saveRecovery(sessionStorageShim, { userId: 1, articleId: 4, baseRevisionId: 49, document });
+        window.confirm = () => true;
+        listeners.get('admin:editor:ready')({ detail: { editor, element: recoveryElement } });
+        await Promise.resolve();
+        expect(recoveryElement.dataset.autosaveStatus).toBe('conflict');
+        expect(setContentCalls.at(-1).content.content).toEqual(document.content);
+        expect(dispatched.some(event => event.type === 'publishing-editor-conflict' && event.detail.articleId === 4 && event.detail.reason === 'recovered-older-revision')).toBe(true);
 
         storage.set('admin:publishing:recovery:v1:u5:a1:r1', 'mine');
         storage.set('admin:publishing:recovery:v1:u6:a1:r1', 'theirs');
@@ -153,6 +223,22 @@ describe('document helpers', () => {
         expect(storage.has('admin:publishing:recovery:v1:u5:a1:r1')).toBe(false);
         expect(storage.has('admin:publishing:recovery:v1:u6:a1:r1')).toBe(true);
         expect(storage.has('unrelated')).toBe(true);
+    });
+
+    test('recovery survives a server revision advance without crossing users or articles', async () => {
+        const entries = new Map();
+        const storage = { get length() { return entries.size; }, key: index => [...entries.keys()][index], getItem: key => entries.get(key), setItem: (key, value) => entries.set(key, value), removeItem: key => entries.delete(key) };
+        saveRecovery(storage, { userId: 1, articleId: 2, baseRevisionId: 10, document });
+        saveRecovery(storage, { userId: 2, articleId: 2, baseRevisionId: 11, document });
+        saveRecovery(storage, { userId: 1, articleId: 3, baseRevisionId: 11, document });
+        entries.set('admin:publishing:recovery:v1:u1:a2:r9', 'invalid payload');
+        const recovered = await restoreRecovery(storage, { dataset: { userId: '1', articleId: '2', currentRevision: '11' } });
+        expect(recovered.baseRevisionId).toBe(10);
+        expect(recovered.document).toEqual(document);
+        saveRecovery(storage, { userId: 1, articleId: 2, baseRevisionId: 11, document });
+        expect(entries.has('admin:publishing:recovery:v1:u1:a2:r10')).toBe(false);
+        expect(entries.has('admin:publishing:recovery:v1:u2:a2:r11')).toBe(true);
+        expect(entries.has('admin:publishing:recovery:v1:u1:a3:r11')).toBe(true);
     });
 
     test('protected client metadata is explicit', () => {
@@ -183,7 +269,21 @@ describe('document helpers', () => {
         resolver({ ok: true, revisionId: 11 });
         await firstFlush;
 
-        expect(persisted).toEqual(['Hello', 'Queued while saving']);
+        expect(persisted).toEqual(['Hello', 'Queued while saving', 'Queued while saving']);
+    });
+
+    test('an in-flight acknowledgement cannot clear an intervening remote conflict', async () => {
+        let resolve;
+        const statuses = [];
+        const queue = createAutosaveQueue({ delay: 0, onChange: state => statuses.push(state.status), save: () => new Promise(done => { resolve = done; }) });
+        queue.enqueue({ userId: 1, articleId: 2, baseRevisionId: null, document });
+        const saving = queue.flush();
+        queue.markConflict('Remote revision changed');
+        resolve({ ok: true, revisionId: 1 });
+        await saving;
+        expect(statuses).toContain('saving');
+        expect(queue.state.status).toBe('conflict');
+        expect(queue.isClean()).toBe(false);
     });
 
     test('autosave rebases pending edits onto the acknowledged revision', async () => {

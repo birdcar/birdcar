@@ -1,10 +1,20 @@
 <?php
 
 use App\Authorization\Admin\Role as AdminRole;
+use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
 use App\Models\ArticleRelease;
+use App\Models\ArticleRevision;
+use App\Models\EditorialActivity;
+use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\Publishing\EditorialStage;
+use App\Models\PublishingAttempt;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -19,6 +29,70 @@ function publishingUser(): User
     $user->assignRole(PublishingRole::Author->value);
 
     return $user;
+}
+
+function publishingWriteOnlyUser(): User
+{
+    $user = User::factory()->create();
+    $user->assignRole(AdminRole::Access->value);
+    $user->givePermissionTo(PublishingPermission::View->value, PublishingPermission::Write->value);
+
+    return $user;
+}
+
+function articleRevisionWithTitle(Article $article, User $user, string $title): ArticleRevision
+{
+    $revision = ArticleRevision::factory()->create([
+        'article_id' => $article->id,
+        'created_by' => $user->id,
+        'metadata' => ['title' => $title, 'description' => 'Description', 'tags' => []],
+    ]);
+    $article->forceFill(['working_revision_id' => $revision->id])->save();
+
+    return $revision;
+}
+
+function activeArticleFor(User $user, string $idea, EditorialStage $stage = EditorialStage::Developing, ?string $title = null): Article
+{
+    $article = Article::factory()->create(['author_id' => $user->id, 'idea' => $idea]);
+    if ($title !== null) {
+        articleRevisionWithTitle($article, $user, $title);
+    }
+    $attempt = PublishingAttempt::factory()->create([
+        'article_id' => $article->id,
+        'user_id' => $user->id,
+        'stage' => $stage,
+    ]);
+    $article->forceFill(['current_attempt_id' => $attempt->id])->save();
+
+    return $article->fresh();
+}
+
+function publishedArticleFor(User $user, string $idea, string $title = 'Live title', ?EditorialStage $activeStage = null): Article
+{
+    $article = Article::factory()->create(['author_id' => $user->id, 'idea' => $idea, 'slug' => Str::slug($idea)]);
+    $revision = articleRevisionWithTitle($article, $user, $title);
+    $release = ArticleRelease::factory()->create([
+        'article_id' => $article->id,
+        'revision_id' => $revision->id,
+        'status' => 'published',
+        'published_at' => now()->subDay(),
+    ]);
+    $article->forceFill([
+        'published_release_id' => $release->id,
+        'first_published_at' => CarbonImmutable::parse('2020-05-04 00:00:00'),
+    ])->save();
+
+    if ($activeStage instanceof EditorialStage) {
+        $attempt = PublishingAttempt::factory()->create([
+            'article_id' => $article->id,
+            'user_id' => $user->id,
+            'stage' => $activeStage,
+        ]);
+        $article->forceFill(['current_attempt_id' => $attempt->id])->save();
+    }
+
+    return $article->fresh();
 }
 
 test('admission only users see shell but no editorial data', function (): void {
@@ -51,6 +125,9 @@ test('admin navigation separates modules from publishing sections', function ():
         ->assertDontSee('collapsible="mobile"', false)
         ->assertSee('data-admin-logout', false)
         ->assertSee('data-flux-composer', false)
+        ->assertSee('wire:submit="developIdea"', false)
+        ->assertSee('aria-label="Develop idea"', false)
+        ->assertSee('aria-label="Save for later"', false)
         ->assertSee('data-flux-button', false)
         ->assertSee('window.Flux.applyAppearance', false)
         ->assertSee("window.localStorage.getItem('flux.appearance') || 'system'", false);
@@ -111,7 +188,7 @@ test('revoked admin admission fails closed during livewire updates', function ()
     expect(Article::query()->where('idea', 'Should not save after admin revoke')->exists())->toBeFalse();
 });
 
-test('publishing authors can reach dashboard and create passive ideas', function (): void {
+test('publishing authors can reach dashboard and create passive ideas without starting an interview', function (): void {
     $user = publishingUser();
 
     $this->actingAs($user)
@@ -123,37 +200,154 @@ test('publishing authors can reach dashboard and create passive ideas', function
         ->test('admin.publishing.dashboard')
         ->set('idea', 'A passive idea')
         ->call('saveForLater')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ->assertSee('Idea saved for later.');
 
-    expect(Article::query()->where('idea', 'A passive idea')->whereNull('current_attempt_id')->exists())->toBeTrue();
+    $article = Article::query()->where('idea', 'A passive idea')->firstOrFail();
+    expect($article->current_attempt_id)->toBeNull()
+        ->and(EditorialActivity::query()->where('article_id', $article->id)->exists())->toBeFalse();
 });
 
-test('develop idea starts one active attempt', function (): void {
+test('develop idea starts one pending interview and redirects to the workspace', function (): void {
     $user = publishingUser();
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.dashboard')
         ->set('idea', 'An active idea')
         ->call('developIdea')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ->assertRedirect();
 
     $article = Article::query()->where('idea', 'An active idea')->firstOrFail();
     expect($article->current_attempt_id)->not->toBeNull();
+
+    $activities = EditorialActivity::query()
+        ->where('article_id', $article->id)
+        ->where('attempt_id', $article->current_attempt_id)
+        ->get();
+
+    expect($activities)->toHaveCount(1)
+        ->and($activities->first()->kind)->toBe(EditorialActivityKind::Interview)
+        ->and($activities->first()->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($activities->first()->status)->not->toBe(EditorialActivityStatus::Running);
 });
 
-test('published work is listed separately from active writing', function (): void {
+test('develop idea is forbidden without develop permission', function (): void {
+    $user = publishingWriteOnlyUser();
+
+    Livewire\Livewire::actingAs($user)
+        ->test('admin.publishing.dashboard')
+        ->set('idea', 'No develop permission')
+        ->call('developIdea')
+        ->assertForbidden();
+
+    expect(Article::query()->where('idea', 'No develop permission')->exists())->toBeFalse();
+});
+
+test('dashboard lists owner-scoped ideas and active writing with titles and full idea access', function (): void {
     $user = publishingUser();
-    $published = Article::factory()->create(['author_id' => $user->id, 'idea' => 'Published piece']);
-    $release = ArticleRelease::factory()->create(['article_id' => $published->id]);
-    $published->forceFill(['published_release_id' => $release->id, 'first_published_at' => now()])->save();
+    $other = publishingUser();
+    $longIdea = str_repeat('Long idea sentence. ', 80).'Final accessible sentence.';
+    Article::factory()->create(['author_id' => $user->id, 'idea' => $longIdea]);
+    activeArticleFor($user, 'Active idea body', EditorialStage::InReview, 'Working active title');
+    Article::factory()->create(['author_id' => $other->id, 'idea' => 'Other author idea']);
+    activeArticleFor($other, 'Other active idea', EditorialStage::Developing, 'Other active title');
 
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing')
         ->assertOk()
-        ->assertDontSee('Published piece');
+        ->assertSee('Ideas')
+        ->assertSee('Active writing')
+        ->assertSee(Str::limit($longIdea, 100))
+        ->assertSee('Final accessible sentence.')
+        ->assertSee('Working active title')
+        ->assertSee('In review')
+        ->assertDontSee('Other author idea')
+        ->assertDontSee('Other active title');
+});
+
+test('dashboard paginates ideas and active writing independently', function (): void {
+    $user = publishingUser();
+    foreach (range(1, 13) as $index) {
+        Article::factory()->create([
+            'author_id' => $user->id,
+            'idea' => sprintf('Backlog idea %02d', $index),
+            'created_at' => now()->subMinutes($index),
+        ]);
+        activeArticleFor($user, sprintf('Active writing %02d', $index));
+    }
+
+    $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing')
+        ->assertOk()
+        ->assertSee('Backlog idea 01')
+        ->assertDontSee('Backlog idea 13')
+        ->assertSee('Active writing 01')
+        ->assertDontSee('Active writing 13')
+        ->assertSee('paginator-ideasPage-page2', false)
+        ->assertSee('paginator-activePage-page2', false);
+});
+
+test('published work is listed separately from active writing', function (): void {
+    $user = publishingUser();
+    $published = publishedArticleFor($user, 'Published piece', 'Published live title');
+
+    $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing')
+        ->assertOk()
+        ->assertDontSee('Published piece')
+        ->assertDontSee('Published live title');
+
+    $response = $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing/published')
+        ->assertOk()
+        ->assertSee('Published live title')
+        ->assertSee('Original date May 4, 2020')
+        ->assertSee(route('admin.publishing.articles.show', $published), false);
+
+    if (Route::has('public.article')) {
+        $response->assertSee('Public link');
+    } else {
+        $response->assertDontSee('Public link');
+    }
+});
+
+test('published library is owner-scoped and shows draft-in-progress status without hiding active revisions', function (): void {
+    $user = publishingUser();
+    $other = publishingUser();
+    publishedArticleFor($user, 'Published active idea', 'Published active live title', EditorialStage::Drafting);
+    publishedArticleFor($user, 'Terminal published idea', 'Terminal live title', EditorialStage::Published);
+    publishedArticleFor($other, 'Other published idea', 'Other live title');
+
+    $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing')
+        ->assertOk()
+        ->assertSee('Published active live title')
+        ->assertSee('Draft in progress on published work')
+        ->assertDontSee('Terminal live title')
+        ->assertDontSee('Other live title');
 
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing/published')
         ->assertOk()
-        ->assertSee('Published piece');
+        ->assertSee('Published active live title')
+        ->assertSee('Draft in progress')
+        ->assertSee('Terminal live title')
+        ->assertSee('Live')
+        ->assertDontSee('Other live title');
+});
+
+test('published library paginates releases', function (): void {
+    $user = publishingUser();
+    foreach (range(1, 13) as $index) {
+        $article = publishedArticleFor($user, sprintf('Published idea %02d', $index), sprintf('Live title %02d', $index));
+        $article->forceFill(['first_published_at' => now()->subMinutes($index)])->save();
+    }
+
+    $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing/published')
+        ->assertOk()
+        ->assertSee('Live title 01')
+        ->assertDontSee('Live title 13')
+        ->assertSee('paginator-publishedPage-page2', false);
 });

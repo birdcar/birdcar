@@ -1,11 +1,2 @@
 @props(['state' => 'saved'])
-@php
-    $color = match ($state) {
-        'saved' => 'green',
-        'saving' => 'sky',
-        'conflict' => 'amber',
-        'error' => 'red',
-        default => 'zinc',
-    };
-@endphp
-<flux:badge :color="$color" rounded data-save-state="{{ $state }}">{{ ucfirst($state) }}</flux:badge>
+<span class="publishing-save-state" role="status" data-save-state="{{ $state }}" :data-save-state="editorState" x-text="editorState.charAt(0).toUpperCase() + editorState.slice(1)">{{ ucfirst($state) }}</span>

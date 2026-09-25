@@ -317,7 +317,13 @@ The approved Attention ledger Home answers “What needs me?” before “Where 
 
 Native Flux appearance respects saved preferences and defaults to the system theme. Light accent/content uses deep teal `#214b57` with white foreground; dark accent/content uses cyan `#b7edf1` with ink `#102a33` foreground. Current navigation, keyboard focus, and text selection carry restrained accent treatment. Public article previews remain independently styled.
 
-The bounded local finish review returned ship for shell/Home/theme/branding after 390px and 1440px light/dark fixture checks, collapse persistence, and mobile drawer checks. The fixture harness used actual bundles but blocked non-GET requests; this is not authenticated save/publication proof, owner acceptance, or deployment. No shipping raster assets were added. Backend Home findings and editor/authentication follow-ups remain recorded in `docs/production-setup.md`.
+The owner-only Publishing workspace is a local Admin extension, not a marketing identity change. It uses the existing Flux Pro/Inter neutral system with restrained teal/cyan accent, large rounded creation composer, paper-airplane Develop affordance, passive bookmark save, and separate Ideas, Active writing, and Published libraries with owner-scoped pagination. Session work stays organized around a persistent title/save state and three modes: Develop, Write & review, and Release.
+
+Develop shows interview, angle, plan, allowance, sources, and living brief as readable editorial material; angle, plan, and release approvals remain explicit text approvals. Write & review gives the manuscript the broad surface with contextual feedback, sources, and brief; on mobile, the context replaces the manuscript visually without destroying the editor. Release separates metadata/date/checklist, frozen scoped release preview, timezone-aware scheduling, approval, and publication. Published shows the live title/date and marks draft-in-progress separately from the live article.
+
+Publishing motion is useful and bounded. `resources/js/admin/publishing/motion.js` uses Motion springs for mode changes, confirmed-capture header arrival, small confirmed milestones, and a disposable published-only flourish; reduced motion suppresses decoration. Save guards block unsafe actions during saving/conflict, stale server updates preserve local edits, and older-revision recovery enters conflict before enqueue.
+
+The bounded local finish review returned ship for shell/Home/theme/branding after 390px and 1440px light/dark fixture checks, collapse persistence, and mobile drawer checks. Publishing workspace evidence adds 20 current captures under `.impeccable/review/publishing-session` across workspace modes and populated library, 1440/390, light/dark, using synthetic in-memory DB fixtures with actual built assets and all POST blocked. Browser checks found no overflow/errors, editor booted, keyboard tab moved, and reduced motion suppressed celebrations. This is local fixture UI and automated guard evidence only: no browser-authenticated save/release, paid agents, production publication, owner editorial acceptance, deployment, or privileged account change is claimed. No shipping raster assets were added. Backend Home findings and editor/authentication follow-ups remain recorded in `docs/production-setup.md`.
 
 ## Do's and Don'ts
 
@@ -329,12 +335,14 @@ The bounded local finish review returned ship for shell/Home/theme/branding afte
 - **Do** preserve current header/footer navigation, native mobile menu, native FAQ disclosures, Cal.com fallback links, reduced-motion behavior, no-JavaScript readability, and the distinction between Cal readiness and actual booking/open behavior.
 - **Do** keep article prose near 65ch, article headings capped at `4.5rem`, source tables visible in print, small-screen chart scroll hints visible, and paper margins at 16mm without forced page size.
 - **Do** describe the integrated Phase 4 system as locally built and independently reviewed at bounded scope; keep the existing owner approval scoped to Phase 1 and owner launch acceptance pending.
+- **Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.
 
 ### Don't:
 
-- **Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, or native browser-toolbar 200% zoom verification.
+- **Don't** claim owner launch approval, deployment, production booking, remote PostHog writes, authenticated Publishing save/release, actual paid agent runs, production publication, or native browser-toolbar 200% zoom verification.
 - **Don't** describe local print artifacts as a PDF product, public handout system, deployed asset, or shipping raster.
 - **Don't** use the retired purple horizon, Karla/script-heading identity, or any horizon raster as current marketing system.
 - **Don't** turn the shared reporting figure into a product screenshot, metric claim, testimonial, or automated-dashboard promise.
 - **Don't** embed Alkaline in print artifacts; print hides the header and the specimen has no wordmark. Barlow and Commit Mono are OFL and safe for the documented Reading/print output.
 - **Don't** change CSS merely to silence detector advisories; the Phase 4 detector advisories are accepted documentation advisories, not UI changes.
+- **Don't** describe the Publishing workspace motion as more spectacular than implemented; it is spring continuity, arrival/milestone feedback, and a published-only disposable flourish.
