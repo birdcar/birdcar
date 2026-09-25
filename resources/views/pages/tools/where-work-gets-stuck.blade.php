@@ -97,76 +97,105 @@ name('public.where-work-gets-stuck');
         ], $patterns),
     ];
 
-    $rows = [72, 224, 376, 528];
-    $routes = collect($patterns)->map(function (array $pattern, int $index) use ($rows): array {
-        $right = $index >= 4;
-        $row = $index % 4;
-        $y = $rows[$row];
-        $entry = 252 + $row * 32;
-        $desk = $right ? 360 : 240;
-        $edge = $right ? 418 : 182;
-        $pull = $right ? 40 : -40;
-        $tip = $right ? 1 : -1;
+    $cards = [
+        ['x' => 47.267, 'y' => 23.224, 'matrix' => '0.971, 0.102, -0.269, 1.019'],
+        ['x' => 59.162, 'y' => 24.525, 'matrix' => '0.946, 0.132, -0.28, 1.032'],
+        ['x' => 70.877, 'y' => 26.746, 'matrix' => '1.022, 0.121, -0.257, 1.033'],
+        ['x' => 84.235, 'y' => 29.302, 'matrix' => '1.018, 0.238, -0.274, 1.071'],
+        ['x' => 41.934, 'y' => 33.016, 'matrix' => '0.952, 0.091, -0.299, 1.009'],
+        ['x' => 53.545, 'y' => 34.113, 'matrix' => '1.002, 0.18, -0.273, 1.06'],
+        ['x' => 66.489, 'y' => 34.668, 'matrix' => '1.113, 0.197, -0.339, 1.232'],
+        ['x' => 80.848, 'y' => 39.618, 'matrix' => '1.09, 0.163, -0.296, 1.062'],
+    ];
 
-        return [
-            ...$pattern,
-            'number' => $index + 1,
-            'side' => $right ? 'right' : 'left',
-            'y' => round($y / 6, 3),
-            'path' => sprintf('M%d %dC%d %d %d %d %d %d', $edge, $y, $edge - $pull, $y, $desk + $pull, $entry, $desk + $tip, $entry),
-            'arrow' => sprintf('M%d %dL%d %dL%d %d', $desk + 9 * $tip, $entry - 5, $desk + $tip, $entry, $desk + 9 * $tip, $entry + 5),
-        ];
-    });
+    $signals = collect(range(0, 1))->flatMap(fn (int $index): array => array_map(fn (array $pattern): array => ['pattern' => $pattern['slug'], 'text' => $pattern['signals'][$index]], $patterns))->all();
+
+    $patterns = array_map(fn (array $pattern, int $index): array => [...$pattern, 'number' => $index + 1], $patterns, array_keys($patterns));
 @endphp
 <x-marketing.layout title="Eight ways work gets stuck" active="tools" :schema="$schema" description="The work that keeps landing on your desk usually gets stuck in a handful of familiar ways. These are the eight patterns I look for, and use in my Walkthrough reports.">
-    <section class="stuck-opening" aria-labelledby="stuck-heading">
-        <div class="stuck-copy">
-            <h1 id="stuck-heading">Eight ways work gets stuck.<br>Most businesses have a few.</h1>
-            <p class="stuck-lead">Most of the work that ends up on your desk isn’t hard because it’s complicated. It’s hard in a handful of familiar ways.</p>
-            <p>After watching a lot of people walk me through their week, I’ve started using the same eight names for them. They’re the names I use in my Walkthrough reports, and they’re here so you can recognize them before we ever talk.</p>
-            <x-marketing.booking-link class="button button-yellow" placement="stuck-hero">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
-            <p class="action-note">A pitch-free hour. A written report within three business days. Yours to keep.</p>
+    <section class="st-hero" aria-labelledby="stuck-heading">
+        <div class="st-hero-copy">
+            <h1 id="stuck-heading">Eight ways work<br> gets stuck. Most<br> businesses have a few.</h1>
+            <p class="st-lead">Most of the work that ends up on your desk isn’t hard because it’s complicated. It’s hard in a handful of familiar ways.</p>
+            <x-marketing.booking-link class="studio-button" placement="stuck-hero">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
         </div>
-        <nav class="stuck-map" id="map" aria-label="The eight patterns">
-            <svg class="stuck-routes-drawing" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
-                @foreach ($routes as $route)
-                    <g class="stuck-route" data-route="{{ $route['number'] }}"><path d="{{ $route['path'] }}" /><path d="{{ $route['arrow'] }}" /></g>
-                @endforeach
-            </svg>
-            <p class="stuck-desk"><span>Your desk</span></p>
-            <ol class="stuck-routes" role="list">
-                @foreach ($routes as $route)
-                    <li class="stuck-route-link is-{{ $route['side'] }}" data-route="{{ $route['number'] }}" style="--route-y: {{ $route['y'] }}%">
-                        <a href="#{{ $route['slug'] }}"><span class="route-number">{{ $route['number'] }}</span><span class="route-name">{{ $route['name'] }}</span></a>
+        <picture>
+            <source type="image/webp" srcset="{{ asset('images/stuck/stuck-desk-1000.webp') }} 1000w, {{ asset('images/stuck/stuck-desk.webp') }} 2000w" sizes="(min-width: 1100px) 81vw, 140vw">
+            <img class="st-desk" src="{{ asset('images/stuck/stuck-desk.png') }}" width="2000" height="1541" alt="" fetchpriority="high">
+        </picture>
+        <nav class="st-map" id="map" aria-label="The eight patterns">
+            <ol role="list">
+                @foreach ($patterns as $pattern)
+                    <li @class(['st-card', 'is-lifted' => $pattern['number'] === 7]) style="--x: {{ $cards[$loop->index]['x'] }}vw; --y: {{ $cards[$loop->index]['y'] }}vw; --m: {{ $cards[$loop->index]['matrix'] }}">
+                        <a href="#{{ $pattern['slug'] }}"><span class="st-number">{{ $pattern['number'] }}</span><span class="st-card-name">{{ $pattern['name'] }}</span></a>
                     </li>
                 @endforeach
             </ol>
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/stuck/stuck-canary.webp') }}">
+                <img class="st-canary" src="{{ asset('images/stuck/stuck-canary.png') }}" width="300" height="306" alt="">
+            </picture>
         </nav>
     </section>
-    <section class="stuck-patterns" aria-label="The patterns, one to four">
-        <p class="stuck-overlap">A process usually has more than one, and that’s normal. None of these are about someone doing their job badly. They describe how the work is set up, not the people keeping it going. The scenes are composites, and the names are made up.</p>
-        @foreach ($routes->take(4) as $route)
-            <x-marketing.stuck-pattern :pattern="$route" />
+
+    <section class="st-intro studio-section-intro" aria-labelledby="stuck-intro-heading">
+        <h2 id="stuck-intro-heading">The names I use in every report.</h2>
+        <div>
+            <p>After watching a lot of people walk me through their week, I’ve started using the same eight names for them. They’re the names I use in my Walkthrough reports, and they’re here so you can recognize them before we ever talk.</p>
+            <p>A process usually has more than one, and that’s normal. None of these are about someone doing their job badly. They describe how the work is set up, not the people keeping it going. The scenes are composites, and the names are made up.</p>
+        </div>
+    </section>
+
+    <section class="st-patterns" aria-label="The patterns, one to four">
+        @foreach (array_slice($patterns, 0, 4) as $pattern)
+            <x-marketing.stuck-pattern :pattern="$pattern" />
         @endforeach
     </section>
-    <section class="stuck-interlude" aria-labelledby="interlude-heading">
+
+    <section class="st-interlude" aria-labelledby="interlude-heading">
         <h2 id="interlude-heading">Already seeing your week in here?</h2>
         <div>
             <p>You don’t need to read all eight first. Bring one example of the work to a free Walkthrough, and you and I will work out which of these it is.</p>
-            <x-marketing.booking-link class="button button-yellow" placement="stuck-interlude">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+            <x-marketing.booking-link class="studio-button" placement="stuck-interlude">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
         </div>
     </section>
-    <section class="stuck-patterns" aria-label="The patterns, five to eight">
-        @foreach ($routes->slice(4) as $route)
-            <x-marketing.stuck-pattern :pattern="$route" />
+
+    <section class="st-patterns" aria-label="The patterns, five to eight">
+        @foreach (array_slice($patterns, 4) as $pattern)
+            <x-marketing.stuck-pattern :pattern="$pattern" />
         @endforeach
     </section>
-    <section class="closing-invitation" aria-labelledby="invitation-heading">
-        <h2 id="invitation-heading">Recognize a few?</h2>
-        <div>
+
+    <section class="st-close" aria-labelledby="invitation-heading">
+        <div class="st-close-copy">
+            <h2 id="invitation-heading">Recognize a few?</h2>
             <p>Most processes that keep coming back to you have two or three of these at once. Knowing which to fix first is the hard part, and that’s what the Walkthrough is for.</p>
             <p>You spend about an hour walking me through the work. Within three business days you get a written report: what’s happening, what I’d recommend, and where I’d start. It’s free, and it’s yours to keep.</p>
-            <x-marketing.booking-link class="button button-yellow" placement="stuck-close">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
         </div>
+        <form class="st-check" data-self-check aria-labelledby="check-heading" onsubmit="return false">
+            <div class="st-check-signs">
+                <h3 id="check-heading">Tick what sounds like your week.</h3>
+                <ul role="list">
+                    @foreach ($signals as $signal)
+                        <li><label><input type="checkbox" data-pattern="{{ $signal['pattern'] }}"> {{ $signal['text'] }}</label></li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="st-check-results">
+                <h3>The patterns behind them</h3>
+                <ol role="list" data-self-check-results>
+                    @foreach ($patterns as $pattern)
+                        <li data-pattern="{{ $pattern['slug'] }}" data-name="{{ $pattern['name'] }}" style="view-transition-name: sc-{{ $pattern['slug'] }}">
+                            <span class="st-number" aria-hidden="true">{{ $pattern['number'] }}</span>
+                            <a href="#{{ $pattern['slug'] }}">{{ $pattern['name'] }}</a>
+                            <span class="st-dots" aria-hidden="true">@foreach (array_slice($pattern['signals'], 0, 2) as $signal)<span data-dot></span>@endforeach</span>
+                        </li>
+                    @endforeach
+                </ol>
+                <p class="st-check-summary" role="status" data-self-check-summary></p>
+                <x-marketing.booking-link class="studio-button" placement="stuck-close">Bring these to a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                <p class="studio-terms">A pitch-free hour. A written report within three business days. Yours to keep.</p>
+            </div>
+        </form>
     </section>
 </x-marketing.layout>
