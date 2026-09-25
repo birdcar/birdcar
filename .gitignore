@@ -37,3 +37,10 @@ frankenphp-worker.php
 
 # Playwright MCP screenshots and snapshots from browser review sessions.
 /.playwright-mcp/
+
+# macOS Finder metadata
+.DS_Store
+
+# Archived impeccable build state from earlier surfaces.
+/.impeccable/build-*/
+/.impeccable/review-*/
