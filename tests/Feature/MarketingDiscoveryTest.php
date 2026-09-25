@@ -123,8 +123,8 @@ test('the sitemap contains the public pages and original archive with canonical 
     $xml = simplexml_load_string($response->getContent());
     $urls = array_map(fn ($url): string => (string) $url->loc, iterator_to_array($xml->url, false));
 
-    expect($xml->url)->toHaveCount(14);
-    expect($urls)->toContain('https://birdcar.dev/', 'https://birdcar.dev/work', 'https://birdcar.dev/walkthrough', 'https://birdcar.dev/writing/', 'https://birdcar.dev/writing/just-build-it-twice/');
+    expect($xml->url)->toHaveCount(15);
+    expect($urls)->toContain('https://birdcar.dev/', 'https://birdcar.dev/work', 'https://birdcar.dev/walkthrough', 'https://birdcar.dev/tools/where-work-gets-stuck', 'https://birdcar.dev/writing/', 'https://birdcar.dev/writing/just-build-it-twice/');
     $response->assertDontSee('admin.')->assertDontSee('customer.')->assertDontSee('<lastmod>');
 });
 
@@ -148,7 +148,7 @@ test('cms-mode imported archive preserves canonical sitemap and feed discovery',
 
     $sitemap = $this->get('/sitemap.xml')->assertOk();
     $xml = simplexml_load_string($sitemap->getContent());
-    expect($xml->url)->toHaveCount(14);
+    expect($xml->url)->toHaveCount(15);
     $sitemap->assertSee('https://birdcar.dev/writing/just-build-it-twice/')
         ->assertDontSee('admin.')
         ->assertDontSee('customer.');

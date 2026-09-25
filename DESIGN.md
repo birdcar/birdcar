@@ -163,10 +163,10 @@ Phase 4 evidence includes 390/768/1440 captures for home, Walkthrough, Work, Wri
 
 - Cyan offer/invitation fields, white implementation approach and story sections, and an ink personal note section.
 - Upright Barlow hierarchy with many purposeful intermediate steps; Alkaline appears once as the native-tracked wordmark.
-- Authored static figures: the Walkthrough report diagram, the shared reporting component, and the article diagram wrapper for only those two approved subjects, all reviewed in integrated page, no-JavaScript, reduced-motion, repeated-instance, and print contexts.
+- Authored static figures: the Walkthrough report diagram, the shared reporting component, the pattern hub on `/tools/where-work-gets-stuck`, and the article diagram wrapper for only the first two approved subjects, all reviewed in integrated page, no-JavaScript, reduced-motion, repeated-instance, and print contexts.
 - 65ch article prose, article headings capped at `4.5rem`, visible chart data tables in print, scrollable small-screen plots with explicit hints, and 16mm paper margins without forced page size.
 - Flat surfaces, thin ink rules, square report/platform geometry, sparse rounded controls, and two-column numbered Walkthrough stages in print.
-- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough.” Native mobile details/summary remains; Cal booking preserves real href fallbacks; print hides navigation and booking chrome.
+- Shared navigation destinations: How I work, Selected work, Writing, and the Walkthrough. Header/mobile use “Book a free Walkthrough”; the footer uses “The Walkthrough” and adds “Where work gets stuck.” Native mobile details/summary remains; Cal booking preserves real href fallbacks; print hides navigation and booking chrome.
 
 ## Colors
 
@@ -225,7 +225,7 @@ Barlow supplies the marketing and Reading voice: plainspoken, technical enough t
 
 The base page uses a `7%` gutter, reduced to `6%` below `1100px`, with section padding around `clamp(4.5rem, 7vw, 7rem)` and mobile sections around `3.5rem`. Desktop layouts favor two-column editorial grids: a large claim or heading on the left, explanatory copy or an authored figure on the right. Mobile follows document order and keeps labels readable instead of shrinking diagrams into thumbnails.
 
-The homepage sequence is complete: approved opening, Walkthrough figure, cyan/white offer strip, shared reporting component, white implementation approach, ink personal note, and cyan closing invitation. The Walkthrough page uses a cyan offer opening with a square folded report, white outcome explanation, cyan three-step process, white FAQ, and cyan calendar close. The Work page uses a cyan client title, white story/proof section, shared reporting figure, and cyan closing invitation.
+The homepage sequence is complete: approved opening, Walkthrough figure, cyan/white offer strip, shared reporting component, white implementation approach, ink personal note, and cyan closing invitation. The Walkthrough page uses a cyan offer opening with a square folded report, white outcome explanation, cyan three-step process, white FAQ, and cyan calendar close. The Work page uses a cyan client title, white story/proof section, shared reporting figure, and cyan closing invitation. The first `/tools/*` page, Where work gets stuck, uses a cyan opening with the claim and yellow booking action in five columns beside the pattern hub in six, white two-column pattern spreads, one cyan interlude with a yellow booking action after the fourth pattern, and the cyan closing invitation. Above `1100px` each spread's number, name, and definition stay sticky beside the detail column; at `1100px` and below the opening stacks with the hub centred at up to `640px`.
 
 The current header and footer share the same navigation destinations. Desktop shows inline navigation and an outlined Walkthrough booking control. Mobile uses native `details`/`summary`; JavaScript may close it, but the native fallback remains. Footer navigation keeps the same public destinations and active underline state.
 
@@ -259,15 +259,23 @@ The header is cyan with ink text. It contains the single Alkaline wordmark, desk
 
 ### Footer
 
-The footer is white with a short two-line statement, the current public navigation, active underline state, and copyright. There is no footer wordmark; this preserves the one-script rule.
+The footer is white with a short two-line statement, the current public navigation plus the Where work gets stuck tool, active underline state, and copyright. There is no footer wordmark; this preserves the one-script rule.
 
 ### Buttons and links
 
-Yellow buttons are the primary booking action. Ink buttons appear inside white offer strips. Text links use underline plus the shared line arrow. Hover/focus/active states move yellow toward white and ink buttons toward deep teal; focus keeps the two-part visible ring.
+Yellow buttons are the primary booking action, including on every cyan field. Ink buttons appear inside white offer strips. Text links use underline plus the shared line arrow. Hover/focus/active states move yellow toward white and ink buttons toward deep teal; focus keeps the two-part visible ring.
 
 ### Walkthrough report figure
 
 The Walkthrough figure is semantic HTML with decorative SVG connectors. Three numbered stages sit on one line: the conversation about real work leads to a folded report, and the report branches to optional choices. “Where I’d start” is yellow. The figure has no fixed caption; articles supply their own. The same meaning remains in vertical, print, no-JavaScript, and reduced-motion states.
+
+### Pattern hub figure
+
+The hub on `/tools/where-work-gets-stuck` is an in-page `nav` of eight real anchor links over a decorative, non-scaling ink SVG. A square white “Your desk” box sits at the centre; four numbered routes arrive from each side as single ink curves ending in open chevrons on the box edge. True-circle numbers sit on cyan, labels are Barlow `.95rem` (`.875rem` from `1101px` to `1320px`) with balanced wrapping. Hover or focus on a route link fills its number and strokes its route in deep teal at `2.5` via `:has()`; the static figure carries the full meaning. At `640px` and below the SVG is hidden: the desk becomes a full-width box, and the numbered links hang from a vertical ink spine with an arrowhead into it. Print lists the links in two columns under the desk.
+
+### Pattern entry spreads
+
+Each pattern is an `article` at a permanent slug anchor (reports deep-link to them): an ink-ruled two-column spread with a white true-circle number, a section-display name, and a lead-size definition on the left; the scene, “You’ll notice” list with short ink dash markers and soft ink row rules, “What usually helps,” and text links on the right. An entry that is the URL target or holds focus fills its number in deep teal. The names are the shared pattern vocabulary used verbatim in Walkthrough reports; renaming one is a URL change.
 
 ### Shared reporting component
 

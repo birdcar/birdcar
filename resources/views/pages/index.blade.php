@@ -52,6 +52,7 @@ name('public.index');
             <div>
                 <p>A process can look perfectly reasonable until you ask someone to walk you through their Tuesday. Then you find the spreadsheet they keep open, the information they copy between tools, and the things they check because nobody quite trusts the system.</p>
                 <p>That’s where the Walkthrough starts. Before suggesting an improvement, I need to understand what your people are already doing to keep things working.</p>
+                <a class="text-link offer-detail-link" href="{{ route('public.where-work-gets-stuck') }}">Eight ways I see work get stuck <x-marketing.arrow /></a>
             </div>
         </div>
         <div class="approach-steps">

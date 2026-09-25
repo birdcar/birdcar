@@ -273,6 +273,58 @@
     .offer-close > .action-note a { color: inherit; text-decoration: underline; }
     .booking-calendar { margin: 3rem auto 0; max-width: 1080px; min-height: 620px; padding: .5rem; background: var(--color-paper); color: var(--color-ink); border-radius: 5px; text-align: left; }
     .booking-calendar iframe { display: block; border-radius: 5px; }
+    .stuck-opening { background: var(--color-cyan); color: var(--color-ink); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 7%; align-items: center; padding: 3rem 7% 4.5rem; }
+    .stuck-copy h1 { font-size: clamp(3rem, 4.6vw, 4.5rem); margin-bottom: 1.75rem; }
+    .stuck-copy > p { max-width: 50ch; }
+    .stuck-copy .stuck-lead { font-size: clamp(1.35rem, 1.7vw, 1.6rem); line-height: 1.4; }
+    .stuck-copy .button { margin-top: 1.75rem; }
+    .stuck-copy .action-note { font-size: 1rem; }
+    .stuck-map { position: relative; aspect-ratio: 1; width: 100%; max-width: 680px; justify-self: end; }
+    .stuck-routes-drawing { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--color-ink); stroke-width: 1.25; overflow: visible; }
+    .stuck-routes-drawing path { vector-effect: non-scaling-stroke; }
+    .stuck-route { transition: stroke var(--transition-feedback); }
+    .stuck-desk { position: absolute; left: 40%; top: 39%; width: 20%; height: 22%; display: grid; place-items: center; background: var(--color-paper); border: 1px solid var(--color-ink); font-size: 1rem; font-weight: 600; line-height: 1.15; text-align: center; }
+    .stuck-routes { margin: 0; padding: 0; list-style: none; }
+    .stuck-route-link { position: absolute; top: var(--route-y); width: 30%; transform: translateY(-50%); font-size: .95rem; line-height: 1.25; }
+    .stuck-route-link.is-left { right: 73%; margin-right: -3.333%; }
+    .stuck-route-link.is-right { left: 73%; margin-left: -3.333%; }
+    .stuck-route-link a { display: flex; align-items: center; gap: .75rem; min-height: 44px; font-weight: 500; text-decoration: none; }
+    .stuck-route-link.is-left a { flex-direction: row-reverse; text-align: right; }
+    .stuck-route-link a:focus-visible { outline-offset: 3px; }
+    .route-number { flex: none; width: 2.5rem; height: 2.5rem; display: grid; place-items: center; background: var(--color-cyan); border: 1px solid var(--color-ink); border-radius: 50%; font-weight: 600; font-variant-numeric: tabular-nums; transition: background-color var(--transition-feedback), color var(--transition-feedback); }
+    .stuck-route-link a:is(:focus-visible, :active) .route-number { background: var(--color-deep-teal); border-color: var(--color-deep-teal); color: var(--color-paper); }
+    .stuck-route-link a:is(:focus-visible, :active) .route-name { text-decoration: underline; }
+    .route-name { text-wrap: balance; }
+    .stuck-map:has([data-route="1"] a:is(:hover, :focus-visible)) .stuck-route[data-route="1"],
+    .stuck-map:has([data-route="2"] a:is(:hover, :focus-visible)) .stuck-route[data-route="2"],
+    .stuck-map:has([data-route="3"] a:is(:hover, :focus-visible)) .stuck-route[data-route="3"],
+    .stuck-map:has([data-route="4"] a:is(:hover, :focus-visible)) .stuck-route[data-route="4"],
+    .stuck-map:has([data-route="5"] a:is(:hover, :focus-visible)) .stuck-route[data-route="5"],
+    .stuck-map:has([data-route="6"] a:is(:hover, :focus-visible)) .stuck-route[data-route="6"],
+    .stuck-map:has([data-route="7"] a:is(:hover, :focus-visible)) .stuck-route[data-route="7"],
+    .stuck-map:has([data-route="8"] a:is(:hover, :focus-visible)) .stuck-route[data-route="8"] { stroke: var(--color-deep-teal); stroke-width: 2.5; }
+    .stuck-patterns { padding: clamp(4.5rem, 7vw, 7rem) 7%; }
+    .stuck-overlap { max-width: 58ch; font-size: clamp(1.35rem, 1.7vw, 1.6rem); line-height: 1.4; margin-bottom: 4rem; }
+    .stuck-pattern { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.5rem 7%; padding-block: 3rem; border-top: 1px solid var(--color-ink); scroll-margin-top: 1rem; }
+    .stuck-pattern:last-child { padding-bottom: 0; }
+    .stuck-pattern header .route-number { margin-bottom: 1.5rem; background: var(--color-paper); }
+    .stuck-pattern:is(:target, :focus-within) header .route-number { background: var(--color-deep-teal); border-color: var(--color-deep-teal); color: var(--color-paper); }
+    .stuck-pattern header { position: sticky; top: 1.5rem; align-self: start; }
+    .stuck-pattern h2 { font-size: clamp(2.3rem, 3.6vw, 3.5rem); max-width: 16ch; }
+    .stuck-definition { font-size: clamp(1.35rem, 1.7vw, 1.6rem); line-height: 1.4; font-weight: 500; margin-top: 1.25rem; max-width: 30ch; }
+    .stuck-detail { padding-top: .4rem; }
+    .stuck-detail > p { max-width: 60ch; }
+    .stuck-detail h3 { font-size: 1.125rem; font-weight: 600; margin: 2rem 0 .75rem; }
+    .stuck-detail ul { margin: 0; padding: 0; list-style: none; max-width: 56ch; }
+    .stuck-detail li { position: relative; padding: .55rem 0 .55rem 1.75rem; border-top: 1px solid #102a3330; }
+    .stuck-detail li:last-child { border-bottom: 1px solid #102a3330; }
+    .stuck-detail li::before { content: ''; position: absolute; left: 0; top: 1.3rem; width: .85rem; height: 1px; background: var(--color-ink); }
+    .stuck-links { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-top: 1.5rem; }
+    .stuck-back .arrow { transform: rotate(-90deg); width: 20px; }
+    .stuck-interlude { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.5rem 7%; align-items: start; background: var(--color-cyan); color: var(--color-ink); padding: 4rem 7%; }
+    .stuck-interlude h2 { font-size: clamp(2.3rem, 3.6vw, 3.5rem); max-width: 14ch; }
+    .stuck-interlude p { max-width: 50ch; }
+    .stuck-interlude .button { margin-top: 1.5rem; }
 }
 @media (max-width: 1100px) {
     :root { --page-gutter: 6%; }
@@ -295,6 +347,27 @@
     .reporting-comparison { gap: 2rem; }
     .reporting-platform { padding: 1.5rem; }
     .reporting-platform dl { gap: 1.25rem; }
+}
+@media (min-width: 1101px) and (max-width: 1320px) {
+    .stuck-route-link { width: 34%; font-size: .875rem; }
+}
+@media (max-width: 1100px) {
+    .stuck-opening { grid-template-columns: 1fr; gap: 3.5rem; padding-inline: 6%; }
+    .stuck-map { justify-self: center; max-width: 640px; }
+    .stuck-pattern header { position: static; }
+    .stuck-patterns { padding-inline: 6%; }
+    .stuck-interlude { padding-inline: 6%; }
+}
+@media (max-width: 640px) {
+    .stuck-map { aspect-ratio: auto; max-width: none; }
+    .stuck-routes-drawing { display: none; }
+    .stuck-desk { position: static; width: auto; height: auto; padding: 1rem; }
+    .stuck-routes { position: relative; padding-top: 1.5rem; }
+    .stuck-routes::before { content: ''; position: absolute; left: calc(1.25rem - .5px); top: 0; bottom: 2rem; width: 1px; background: var(--color-ink); }
+    .stuck-routes::after { content: ''; position: absolute; left: calc(1.25rem - 5px); top: 0; width: 8px; height: 8px; border-left: 1px solid var(--color-ink); border-top: 1px solid var(--color-ink); transform: rotate(45deg); transform-origin: center; }
+    .stuck-route-link, .stuck-route-link.is-left, .stuck-route-link.is-right { position: relative; inset: auto; width: auto; margin: 0; transform: none; font-size: 1rem; }
+    .stuck-route-link.is-left a { flex-direction: row; text-align: left; }
+    .stuck-route-link a { padding-block: .3rem; }
 }
 @media (max-width: 1050px) {
     .desktop-nav { gap: 1.2rem; font-size: .95rem; }
@@ -416,6 +489,17 @@
     .offer-close h2 { font-size: 3.4rem; }
     .offer-close > p { font-size: 1rem; }
     .booking-calendar { margin-top: 2rem; min-height: 560px; padding: .25rem; }
+    .stuck-opening { padding: 3rem 6%; gap: 2.5rem; }
+    .stuck-copy h1 { font-size: clamp(2.6rem, 10.4vw, 4.5rem); }
+    .stuck-copy .stuck-lead { font-size: 1.25rem; }
+    .stuck-copy .button { width: 100%; }
+    .stuck-patterns { padding-block: 3.5rem; }
+    .stuck-overlap { font-size: 1.2rem; margin-bottom: 2.5rem; }
+    .stuck-pattern { grid-template-columns: 1fr; padding-block: 2.25rem; gap: 1.25rem; }
+    .stuck-pattern h2 { font-size: 2.3rem; }
+    .stuck-definition { font-size: 1.2rem; }
+    .stuck-interlude { grid-template-columns: 1fr; padding-block: 3rem; }
+    .stuck-interlude h2 { font-size: 2.4rem; }
 }
 @media (hover: hover) and (pointer: fine) {
     .desktop-nav > a:not(.nav-booking):hover::after, .site-footer nav a:hover::after { transform: scaleX(1); }
@@ -425,6 +509,8 @@
     .back-link:hover { text-decoration: underline; }
     .essay-row:hover h3 { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: .15em; }
     .assessment-faq summary:hover, .mobile-menu nav a:hover { color: var(--color-deep-teal); }
+    .stuck-route-link a:hover .route-number { background: var(--color-deep-teal); border-color: var(--color-deep-teal); color: var(--color-paper); }
+    .stuck-route-link a:hover .route-name { text-decoration: underline; }
 }
 @media (prefers-reduced-motion: no-preference) {
     .desktop-nav > a:not(.nav-booking)::after, .site-footer nav a::after,
@@ -546,5 +632,20 @@
     .specimen-figure { break-before: page; }
     .figure-specimen .essay-heading { padding-bottom: 1rem; margin-bottom: 1.25rem; }
     .specimen-figure > h2 { margin-top: 0; }
+    .stuck-opening, .stuck-interlude { display: block; background: white; color: black; padding: 0 0 1.5rem; }
+    .stuck-copy h1 { font-size: 28pt; }
+    .stuck-map { aspect-ratio: auto; max-width: none; margin-top: 1rem; }
+    .stuck-routes-drawing { display: none; }
+    .stuck-desk { position: static; width: auto; height: auto; padding: .5rem; font-size: 11pt; }
+    .stuck-routes { columns: 2; margin-top: .75rem; }
+    .stuck-route-link, .stuck-route-link.is-left, .stuck-route-link.is-right { position: static; width: auto; margin: 0; transform: none; font-size: 11pt; break-inside: avoid; }
+    .stuck-route-link.is-left a { flex-direction: row; text-align: left; }
+    .route-number { width: 1.75rem; height: 1.75rem; background: white !important; color: black !important; border-color: black !important; font-size: 10pt; }
+    .stuck-patterns { padding: 0; }
+    .stuck-overlap, .stuck-definition { font-size: 13pt; margin-bottom: 1rem; }
+    .stuck-pattern { grid-template-columns: 1fr 1.4fr; gap: 1.5rem; padding-block: 1.25rem; break-inside: avoid; }
+    .stuck-pattern h2, .stuck-interlude h2 { font-size: 18pt; }
+    .stuck-detail, .stuck-detail h3 { font-size: 11pt; }
+    .stuck-links { display: none; }
     [data-diagram-emphasis], [data-diagram-recommendation] { transform: none !important; animation: none !important; transition: none !important; background: white !important; }
 }

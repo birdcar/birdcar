@@ -69,7 +69,7 @@ Route::domain(app(MarketingSite::class)->host())->name('public.')->group(functio
     Route::get('/sitemap.xml', function (ReadPublishedWriting $writing, MarketingSite $marketing): Sitemap {
         $sitemap = Sitemap::create();
 
-        foreach (['public.index', 'public.work', 'public.walkthrough', 'public.writing'] as $route) {
+        foreach (['public.index', 'public.work', 'public.walkthrough', 'public.where-work-gets-stuck', 'public.writing'] as $route) {
             $sitemap->add($marketing->url(route($route, absolute: false)));
         }
 

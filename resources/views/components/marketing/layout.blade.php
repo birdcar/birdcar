@@ -1,10 +1,10 @@
-@props(['title' => 'Make room for better work.', 'description' => 'I help businesses untangle work that’s become harder to keep up with. Start with a free Walkthrough and a written report you keep.', 'active' => '', 'article' => false, 'canonical' => null, 'home' => false, 'publishedAt' => null])
+@props(['title' => 'Make room for better work.', 'description' => 'I help businesses untangle work that’s become harder to keep up with. Start with a free Walkthrough and a written report you keep.', 'active' => '', 'article' => false, 'canonical' => null, 'home' => false, 'publishedAt' => null, 'schema' => []])
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough'))
+        @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough', $schema))
         @head
         <link rel="icon" href="{{ asset('favicon.ico?v=2') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
         <link rel="icon" href="{{ asset('favicon.svg?v=2') }}" sizes="any" type="image/svg+xml">
@@ -43,6 +43,7 @@
                 <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
                 <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
                 <a href="{{ $active === 'walkthrough' ? '#choose-a-time' : route('public.walkthrough') }}" @if ($active === 'walkthrough') aria-current="page" @endif>The Walkthrough</a>
+                <a href="{{ route('public.where-work-gets-stuck') }}" @if ($active === 'tools') aria-current="page" @endif>Where work gets stuck</a>
             </nav>
             <span class="copyright">© {{ date('Y') }} Birdcar</span>
         </footer>

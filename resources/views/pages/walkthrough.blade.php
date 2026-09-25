@@ -31,7 +31,7 @@ name('public.walkthrough');
     </section>
     <section class="offer-outcome section-space" aria-labelledby="outcome-heading">
         <h2 id="outcome-heading">Bring the problem.<br>I’ll bring the questions.</h2>
-        <div><p>Maybe onboarding a new client involves a dozen reminders. Maybe reporting eats an afternoon. Maybe the process works perfectly, as long as you’re there to keep it working. Left alone, that kind of work has one fix: another coordinator, another subscription, or another late night. That’s the expensive version of standing still.</p><p>What would change if the reminders sent themselves and the report was ready before you asked for it? You don’t need to diagnose it first. Bring one example, and an hour is enough to see the shape of it.</p></div>
+        <div><p>Maybe onboarding a new client involves a dozen reminders. Maybe reporting eats an afternoon. Maybe the process works perfectly, as long as you’re there to keep it working. Left alone, that kind of work has one fix: another coordinator, another subscription, or another late night. That’s the expensive version of standing still.</p><p>What would change if the reminders sent themselves and the report was ready before you asked for it? You don’t need to diagnose it first. Bring one example, and an hour is enough to see the shape of it.</p><a class="text-link offer-detail-link" href="{{ route('public.where-work-gets-stuck') }}">Not sure how to describe it? Start with these eight <x-marketing.arrow /></a></div>
     </section>
     <section class="offer-steps section-space" aria-labelledby="meeting-heading">
         <h2 id="meeting-heading">Here’s how it works.</h2>

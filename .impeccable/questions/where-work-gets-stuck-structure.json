@@ -1,0 +1,57 @@
+{
+  "title": "Choose the page structure",
+  "question": "Same visual world (cyan, ink, yellow, Barlow). Pick how 'Eight ways work gets stuck' is composed, or re-roll.",
+  "options": [
+    {
+      "id": "hub",
+      "label": "Everything comes back to you",
+      "kicker": "THE ROLL",
+      "thesis": "A figure with you at the centre and eight routes that all return to your desk; each route opens its pattern.",
+      "palette": ["#b7edf1", "#102a33", "#f7cb58", "#ffffff"],
+      "materials": ["authored SVG hub figure", "numbered pattern entries"],
+      "viewport": "Cyan field: headline and booking left; right, a square hub figure, 'You' at centre, eight labelled spokes curving back in.",
+      "risk": "A centre-and-spokes figure can read as a generic org chart unless the returning paths are drawn with intent.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "headline + CTA", "x": 0, "y": 0, "w": 5, "h": 4, "accent": true},
+        {"label": "hub figure: you + 8 routes", "x": 6, "y": 0, "w": 6, "h": 5},
+        {"label": "intro", "x": 0, "y": 4, "w": 5, "h": 1},
+        {"label": "pattern entries 1-8 (two-column)", "x": 0, "y": 5, "w": 12, "h": 4},
+        {"label": "cyan close + booking", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true}
+      ]}
+    },
+    {
+      "id": "annotated-report",
+      "label": "The report, annotated",
+      "thesis": "Open on a synthetic Walkthrough report page whose margin notes name the patterns, proving how the labels get used before explaining them.",
+      "palette": ["#b7edf1", "#102a33", "#f7cb58", "#ffffff"],
+      "materials": ["folded report document", "margin annotations", "glossary entries"],
+      "viewport": "Cyan field: headline left; right, the square folded report with three pattern labels pinned in its margin, labelled as an illustration.",
+      "risk": "Previews the sample report you haven't written yet, and a synthetic report could be mistaken for a real client's.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "headline + CTA", "x": 0, "y": 0, "w": 5, "h": 4, "accent": true},
+        {"label": "annotated report page", "x": 6, "y": 0, "w": 5, "h": 5},
+        {"label": "margin labels", "x": 11, "y": 1, "w": 1, "h": 3, "accent": true},
+        {"label": "glossary of 8 patterns", "x": 0, "y": 5, "w": 12, "h": 4},
+        {"label": "cyan close + booking", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true}
+      ]}
+    },
+    {
+      "id": "ledger",
+      "label": "The field guide ledger",
+      "thesis": "A compact index of all eight up front, then each pattern as a full editorial spread: name and definition left, scene and signals right.",
+      "palette": ["#b7edf1", "#102a33", "#f7cb58", "#ffffff"],
+      "materials": ["ruled index", "two-column editorial rows"],
+      "viewport": "Cyan field: headline and intro left; right, a ruled numbered index of the eight names linking to their anchors.",
+      "risk": "The most familiar arrangement; the figure has less room to be a signature moment.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "headline + intro + CTA", "x": 0, "y": 0, "w": 6, "h": 4, "accent": true},
+        {"label": "numbered index of 8", "x": 7, "y": 0, "w": 5, "h": 4},
+        {"label": "pattern spreads 1-8", "x": 0, "y": 4, "w": 12, "h": 5},
+        {"label": "cyan close + booking", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true}
+      ]}
+    }
+  ],
+  "reroll": true,
+  "buildPath": {"value": "code", "toggle": false},
+  "steer": true
+}

@@ -38,7 +38,10 @@ class MarketingSite
         return (bool) config('marketing.indexable');
     }
 
-    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $walkthrough = false): void
+    /**
+     * @param  array<int, array<string, mixed>>  $entities  Typed schema.org entities describing the page; the first is its main entity.
+     */
+    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $walkthrough = false, array $entities = []): void
     {
         $canonical = $this->url($path);
         $person = ['@type' => 'Person', '@id' => $this->url().'#person', 'name' => 'Birdcar', 'url' => $this->url()];
@@ -74,6 +77,11 @@ class MarketingSite
                 'url' => $canonical,
                 'provider' => ['@id' => $person['@id']],
             ];
+        }
+
+        if ($entities !== []) {
+            $graph[2]['mainEntity'] = ['@id' => $entities[0]['@id']];
+            array_push($graph, ...$entities);
         }
 
         Head::title($title.' — Birdcar', exact: true)
