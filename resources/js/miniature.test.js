@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { SCENES, floorLane, packetProgress, pointOnLane, pointOnRoute, stepAtLine } from './miniature';
+import { SCENES, floorLane, packetsInFlight, pointOnLane, pointOnRoute, stepAtLine } from './miniature';
 
 test('fixed-state lanes turn once, along the floor grid, and end at the next desk', () => {
     const from = { x: 17.9, y: 43.3 };
@@ -26,12 +26,49 @@ test('packets leave their desk and arrive where their route or lane ends', () =>
     expect(pointOnLane(lane, 1).y).toBeCloseTo(lane.at(-1).y);
 });
 
-test('packet progress loops without leaving the route', () => {
-    for (const time of [0, 1600, 3199, 3200, 99999]) {
-        const progress = packetProgress(time, 3, 1);
-        expect(progress).toBeGreaterThanOrEqual(0);
-        expect(progress).toBeLessThan(1);
+test('packets launch one desk at a time, rarely overlapping, and stay on their routes', () => {
+    const counts = [];
+
+    for (let time = 0; time < 60000; time += 50) {
+        const packets = packetsInFlight(time, 5);
+        counts.push(packets.length);
+
+        for (const { path, progress } of packets) {
+            expect(path).toBeGreaterThanOrEqual(0);
+            expect(path).toBeLessThan(5);
+            expect(progress).toBeGreaterThanOrEqual(0);
+            expect(progress).toBeLessThan(1);
+        }
     }
+
+    expect(Math.max(...counts)).toBeLessThanOrEqual(2);
+    expect(counts.filter((count) => count === 2).length / counts.length).toBeLessThan(0.3);
+});
+
+test('consecutive packets come from different desks', () => {
+    const launches = [];
+    let previous = [];
+
+    for (let time = 0; time < 30000; time += 20) {
+        const current = packetsInFlight(time, 5);
+        for (const packet of current) {
+            if (packet.progress < 0.01 && !previous.some((earlier) => earlier.path === packet.path && earlier.progress < 0.02)) launches.push(packet.path);
+        }
+        previous = current;
+    }
+
+    expect(launches.length).toBeGreaterThan(8);
+    for (let index = 1; index < launches.length; index++) expect(launches[index]).not.toBe(launches[index - 1]);
+});
+
+test('scenes with fewer paths than desks still launch on real paths', () => {
+    for (let time = 0; time < 20000; time += 100) {
+        for (const { path } of packetsInFlight(time, 2)) expect(path).toBeLessThan(2);
+    }
+});
+
+test('scenes without paths launch nothing', () => {
+    expect(packetsInFlight(5000, 0)).toEqual([]);
 });
 
 test('the story follows the step under the reading line, or the nearest one between steps', () => {

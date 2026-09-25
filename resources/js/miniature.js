@@ -91,8 +91,34 @@ export function pointOnLane(lane, progress) {
     return lane[lane.length - 1];
 }
 
-export function packetProgress(time, routeIndex, packetIndex, period = 3200) {
-    return (time / period + routeIndex * 0.29 + packetIndex * 0.5) % 1;
+const LAUNCH_ORDER = [2, 0, 4, 1, 3];
+const LAUNCH_GAPS = [1900, 2700, 1500, 2400, 3300];
+const LAUNCH_CYCLE = LAUNCH_GAPS.reduce((sum, gap) => sum + gap, 0);
+
+/**
+ * Packets launch one desk at a time, in a shuffled order and at uneven
+ * intervals, so work reads as landing on the owner's desk piece by piece
+ * rather than streaming from every desk at once. Usually one packet is in
+ * flight, occasionally two.
+ */
+export function packetsInFlight(time, count, flight = 2800) {
+    const packets = [];
+
+    if (count < 1) return packets;
+
+    for (let cycle = Math.floor((time - flight) / LAUNCH_CYCLE) * LAUNCH_CYCLE; cycle <= time; cycle += LAUNCH_CYCLE) {
+        let launch = cycle;
+
+        LAUNCH_GAPS.forEach((gap, index) => {
+            const progress = (time - launch) / flight;
+            const path = LAUNCH_ORDER[index] % count;
+
+            if (progress >= 0 && progress < 1) packets.push({ path, progress });
+            launch += gap;
+        });
+    }
+
+    return packets;
 }
 
 export function stepAtLine(steps, line) {
@@ -162,7 +188,7 @@ export function drawScene(context, size, scene, time, animated, alpha = 1) {
         context.moveTo(px(route.from.x), px(route.from.y));
         context.quadraticCurveTo(px(control.x), px(control.y), px(route.to.x), px(route.to.y));
         context.setLineDash([0.1 * unit, 6.2 * unit]);
-        context.lineDashOffset = animated && scene.flowing ? -time * 0.012 * unit : 0;
+        context.lineDashOffset = animated && scene.flowing ? -time * 0.006 * unit : 0;
         context.lineWidth = 3.4 * unit;
         context.strokeStyle = '#f5c131';
         context.shadowColor = 'rgba(255, 200, 40, .55)';
@@ -190,23 +216,26 @@ export function drawScene(context, size, scene, time, animated, alpha = 1) {
         context.restore();
     }
 
-    scene.routes.forEach((route, routeIndex) => {
-        drawCube(context, px(route.from.x), px(route.from.y), 9.5 * unit, 1);
+    for (const route of scene.routes) drawCube(context, px(route.from.x), px(route.from.y), 9.5 * unit, 1);
 
-        if (!animated || !scene.packets) return;
-
-        for (let packetIndex = 0; packetIndex < 2; packetIndex++) {
-            const progress = packetProgress(time, routeIndex, packetIndex);
-            const point = pointOnRoute(route, 1 - (1 - progress) ** 2);
+    if (animated && scene.packets && scene.routes.length) {
+        for (const { path, progress } of packetsInFlight(time, scene.routes.length)) {
+            const point = pointOnRoute(scene.routes[path], 1 - (1 - progress) ** 2);
             drawCube(context, px(point.x), px(point.y), 5.5 * unit, Math.min(1, progress * 8, (1 - progress) * 6));
         }
-    });
+    }
 
-    scene.lanes.forEach((lane, laneIndex) => {
-        const progress = animated ? packetProgress(time, laneIndex, 0, 2600) : 0.5;
-        const point = pointOnLane(lane, progress < 0.5 ? progress * 2 : 2 - progress * 2);
-        drawCube(context, px(point.x), px(point.y), 6.5 * unit, 1, 'teal');
-    });
+    if (animated && scene.lanes.length) {
+        for (const { path, progress } of packetsInFlight(time + 900, scene.lanes.length, 3200)) {
+            const point = pointOnLane(scene.lanes[path], progress);
+            drawCube(context, px(point.x), px(point.y), 6.5 * unit, Math.min(1, progress * 6, (1 - progress) * 6), 'teal');
+        }
+    } else {
+        for (const lane of scene.lanes) {
+            const point = pointOnLane(lane, 0.5);
+            drawCube(context, px(point.x), px(point.y), 6.5 * unit, 1, 'teal');
+        }
+    }
 
     for (const marker of scene.markers) {
         const pulse = animated ? (time / 1600 + marker.x / 100) % 1 : 0.35;
