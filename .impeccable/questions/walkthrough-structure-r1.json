@@ -1,0 +1,42 @@
+{
+  "title": "The Walkthrough: booking desk + self-qualification",
+  "question": "Your steer, three ways: the desk look stays; what changes is where the fit check sits against the calendar. Lock one, steer again, or re-roll.",
+  "options": [
+    {
+      "id": "questions-lead",
+      "label": "Questions lead to the desk",
+      "kicker": "THE ROLL",
+      "thesis": "Qualification comes first; the calendar waits at the end of the page, on the desk.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["miniature desk holding the report", "large fit-check rows", "calendar on the desk at the close"],
+      "viewport": "Offer at left, the report standing on the miniature desk at right; 'Is this a fit?' with three check rows starts right below; the calendar desk closes the page.",
+      "risk": "Ready-to-book referrals have to scroll to the calendar; the header and hero buttons must jump there cleanly.",
+      "comp": ".impeccable/mocks/decision/w5b3r1-questions-lead.png"
+    },
+    {
+      "id": "fit-card",
+      "label": "A fit card on the desk",
+      "kicker": "DEALT",
+      "thesis": "The card on the desk asks three questions, then turns into the calendar.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["miniature desk", "fit card with Yes / Not yet pills", "calendar waiting underneath"],
+      "viewport": "The booking desk you liked, but the card starts as 'Before you pick a time' with three checks and 'Show me times'; a kind not-a-fit note sits at its foot.",
+      "risk": "Real friction in the first viewport; without JavaScript the page must still show the questions and the plain Cal link.",
+      "comp": ".impeccable/mocks/decision/w5b3r1-fit-card.png"
+    },
+    {
+      "id": "sticky-desk",
+      "label": "The desk stays with you",
+      "kicker": "DEALT",
+      "thesis": "The desk and calendar stay pinned while the fit questions scroll past and tick off.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["pinned miniature desk and calendar", "large check blocks", "'2 of 3 checked' pill"],
+      "viewport": "Past the opening, the left column walks the three fit lines as big check blocks while the desk and calendar hold on the right with a progress pill.",
+      "risk": "Self-qualification by reading is soft friction; tightening it later means adding a gate to a layout that didn't plan one.",
+      "comp": ".impeccable/mocks/decision/w5b3r1-sticky-desk.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}

@@ -1,0 +1,42 @@
+{
+  "title": "The Walkthrough: choose the page structure",
+  "question": "The world is settled; this is composition. Lock one structure for /walkthrough, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "booking-desk",
+      "label": "The booking desk",
+      "kicker": "THE ROLL",
+      "thesis": "The calendar sits in the first viewport, on a corner of the owner's desk in miniature.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["miniature desk plate", "white calendar card", "report card with a canary 'Where I'd start' row"],
+      "viewport": "Offer, pitch-free promise and report contents at left; the live Cal calendar at right on a miniature desk with the canary; steps start below.",
+      "risk": "Asks for the booking before a cold visitor has read why; the Cal iframe owns the look of the dominant object.",
+      "comp": ".impeccable/mocks/decision/w5b3-booking-desk.png"
+    },
+    {
+      "id": "letter",
+      "label": "A letter from me",
+      "kicker": "DEALT",
+      "thesis": "The page reads as one letter from Nick, with the report as its enclosure.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["one white letter sheet", "miniature report booklet with pill-tag tabs", "canary"],
+      "viewport": "A tall white letter carries the offer in my voice, signed and with the booking button; the report booklet sits in the right margin.",
+      "risk": "Long first-person copy can read slower than a scanner wants, and a sheet-on-desk frame drifts toward editorial cliché if the enclosure goes quiet.",
+      "comp": ".impeccable/mocks/decision/w5b3-letter.png"
+    },
+    {
+      "id": "fair-questions",
+      "label": "Fair questions",
+      "kicker": "DEALT",
+      "thesis": "The page is organized by the questions an owner asks before booking, answered in order.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["big question rows on hairlines", "small isometric thumbnails per answer"],
+      "viewport": "Offer and booking button at left; a four-row question index at right (What do I get? Is it a pitch? Is it really free? Is it a fit?).",
+      "risk": "Four thumbnails can turn into an icon grid; the questions must stay the hero, not the pictures.",
+      "comp": ".impeccable/mocks/decision/w5b3-fair-questions.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}
