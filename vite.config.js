@@ -9,10 +9,6 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/admin.css', 'resources/js/admin.js'],
             refresh: true,
             fonts: [
-                bunny('Barlow', {
-                    weights: [400, 500, 600, 700],
-                    display: 'swap',
-                }),
                 bunny('Mona Sans', {
                     weights: [400, 500, 600, 700, 800],
                     display: 'swap',

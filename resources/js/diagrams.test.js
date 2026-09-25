@@ -49,7 +49,7 @@ beforeEach(() => {
     });
     globalThis.window = Object.assign(new EventTarget(), {
         matchMedia: (query) => query === 'print' ? print : reducedMotion,
-        getComputedStyle: () => ({ getPropertyValue: (name) => name === '--color-cyan' ? '#b7edf1' : '#f7cb58' }),
+        getComputedStyle: () => ({ getPropertyValue: (name) => name === '--studio-yellow' ? '#f7c848' : '#efb925' }),
         IntersectionObserver: class {
             constructor(callback) {
                 this.callback = callback;

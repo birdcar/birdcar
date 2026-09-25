@@ -14,12 +14,6 @@
     --font-alkaline: 'Alkaline', cursive;
     --font-alkaline-caps: 'Alkaline Caps', cursive;
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-marketing: 'Barlow', ui-sans-serif, system-ui, sans-serif;
     --font-studio: 'Mona Sans', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'Commit Mono', ui-monospace, monospace;
-    --color-ink: #102a33;
-    --color-paper: #ffffff;
-    --color-cyan: #b7edf1;
-    --color-emphasis: #f7cb58;
-    --color-deep-teal: #214b57;
 }

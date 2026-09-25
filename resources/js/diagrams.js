@@ -52,7 +52,7 @@ export function initDiagrams() {
             for (const [index, stage] of [...stages].entries()) {
                 play(stage, {
                     transform: ['scale(1)', 'scale(1.12)', 'scale(1)'],
-                    backgroundColor: [colors.getPropertyValue('--color-cyan').trim(), colors.getPropertyValue('--color-emphasis').trim(), colors.getPropertyValue('--color-cyan').trim()],
+                    backgroundColor: [colors.getPropertyValue('--studio-yellow').trim(), colors.getPropertyValue('--studio-yellow-deep').trim(), colors.getPropertyValue('--studio-yellow').trim()],
                 }, { duration: 0.55, delay: index * 0.32, ease: [0.16, 1, 0.3, 1] });
             }
 

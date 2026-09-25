@@ -9,7 +9,7 @@ test('the application stylesheet imports the marketing fonts and exposes both fa
         ->toMatch("/--font-alkaline-caps:\\s*'Alkaline Caps',\\s*cursive;/");
 });
 
-test('marketing uses Barlow through the nonblocking font pipeline without changing operational typography', function () {
+test('marketing uses Mona Sans through the nonblocking font pipeline without changing operational typography', function () {
     $root = __DIR__.'/../..';
     $tokens = file_get_contents($root.'/resources/css/app.css');
     $marketing = file_get_contents($root.'/resources/css/marketing.css');
@@ -17,9 +17,10 @@ test('marketing uses Barlow through the nonblocking font pipeline without changi
     $layout = file_get_contents($root.'/resources/views/components/marketing/layout.blade.php');
 
     expect($tokens)
-        ->toContain("--font-marketing: 'Barlow',", "--font-sans: 'Inter',");
-    expect($marketing)->toContain('font-family: var(--font-marketing)')->not->toContain('font-family: var(--font-sans)');
-    expect($vite)->toContain("bunny('Barlow'", "display: 'swap'");
+        ->toContain("--font-studio: 'Mona Sans',", "--font-sans: 'Inter',")
+        ->not->toContain('Barlow');
+    expect($marketing)->toContain('font-family: var(--font-studio)')->not->toContain('font-family: var(--font-sans)');
+    expect($vite)->toContain("bunny('Mona Sans'", "display: 'swap'")->not->toContain('Barlow');
     expect($layout)->toContain('@fonts');
     preg_match('/\\.wordmark\\s*\\{([^}]+)\\}/', $marketing, $wordmark);
     expect($wordmark[1])->toContain('font-family: var(--font-alkaline)')->not->toContain('letter-spacing');
