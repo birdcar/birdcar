@@ -2116,7 +2116,7 @@ body {
 
     </style>
   </head>
-  <body data-contract-status="Draft">
+  <body data-contract-status="Approved">
     <div class="runhead" id="runhead" data-visible="false">
       <div class="wrap runhead-inner">
         <span class="runhead-name">Publishing Agent Simplification</span>
@@ -2129,6 +2129,7 @@ body {
           <a href="#done">Done when</a>
           <a href="#decisions">Decisions</a>
         </nav>
+        <button type="button" class="runhead-run" data-copy-text="/ideation:autopilot docs/ideation/2026-09-24-publishing-agent-simplification/contract.md">copy run command</button>
       </div>
     </div>
 
@@ -2143,9 +2144,12 @@ body {
             <h1>Publishing Agent Simplification</h1>
           </div>
           <div class="masthead-aside">
-            <span class="stamp is-caution">Draft</span>
+            <span class="stamp is-go">Approved</span>
             <div class="masthead-dates">
               <span class="meta">drafted 2026-09-24</span>
+              <span class="meta">approved 2026-09-24 · Owner, focused MVP with express finish; artifacts and commit only; later execution directly on main</span>
+              <span class="meta">express · one confirmation</span>
+              <span class="meta">branch main</span>
             </div>
             <button type="button" class="theme-toggle" id="theme-toggle" data-mode="auto" aria-label="Colour theme: follow system">
       <svg class="i-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M8 3v10" /><path d="M8 3a5 5 0 010 10z" fill="currentColor" stroke="none"/></svg>
@@ -2235,7 +2239,19 @@ body {
         </div>
         <ul class="advice-reasons">
           <li><span class="r-mark m-no" aria-hidden="true">✗</span><span><span class="sr-only">Against: </span>phase &quot;Native agent configuration and budget-free execution&quot; is risk=high — be present for the failure gate</span></li>
+          <li><span class="r-mark m-warn" aria-hidden="true">!</span><span><span class="sr-only">Caveat: </span>express contract — no human reviewed these specs; phases dispatch --strict and fail closed</span></li>
         </ul>
+      </div>
+      <div class="runbar" style="margin-top: var(--s5)">
+        <div>
+          <span class="kicker">start here</span>
+          <h3>Run the whole contract.</h3>
+          <p>Autopilot reads this plan, orders the phases, and dispatches each one through the loop below. It skips phases that already have a commit, so re-running after a fix is safe.</p>
+        </div>
+        <div class="cmd">
+            <span class="cmd-text" id="cmd-top">/ideation:autopilot docs/ideation/2026-09-24-publishing-agent-simplification/contract.md</span>
+            <button type="button" class="copy" data-copy="cmd-top">copy</button>
+          </div>
       </div>
       </div>
     </section>
@@ -2303,7 +2319,7 @@ body {
               <li><strong>Remove the entire obsolete application budgeting path and schema</strong> <span class="why">— The owner explicitly approved removing allowances, top-ups, reservations and their storage. Remove budget-only services/models/factories, price matrices, billing reconciliation and UI; preserve native SDK usage without building new cost telemetry. Existing budget-specific tests may be replaced, not unrelated tests.</span></li>
               <li><strong>Preserve editorial execution safety independently from billing</strong> <span class="why">— Ownership, permissions, stale-input/revision checks, native approval integrity, explicit publication approval, bounded loops, actionable provider failures and non-blind recovery remain functional requirements even without budgets.</span></li>
               <li><strong>Current per-role model research and a bounded synthetic live sample trial</strong> <span class="why">— The owner requested task-suited, cost-effective recommendations and approved paid validation. Research available DeepSeek/open-weight, Gemini Flash-class and other justified candidates; do not assume an example name is an available exact model ID. Validate capability compatibility offline before the live trial and obtain owner judgment on quality.</span></li>
-              <li><strong>Focused regression coverage and operational/design guidance reconciliation</strong> <span class="why">— Changes cross settings, queues, approvals, migrations, authorization and existing UI. Tests and existing runbooks/shared rules must describe the same simplified system; preserve the current uncommitted publishing UI work.</span></li>
+              <li><strong>Focused regression coverage and operational/design guidance reconciliation</strong> <span class="why">— Changes cross settings, queues, approvals, migrations, authorization and existing UI. Tests and existing runbooks/shared rules must describe the same simplified system; preserve the existing publishing UI work, now committed and fast-forwarded into main.</span></li>
             </ul>
           </div>
 
@@ -2341,7 +2357,7 @@ body {
       <div class="sec-head">
         <div>
           <h2 id="plan-h">What gets built, in what order</h2>
-          <p class="sec-sub">Sequential: simplify the execution/storage boundary first, then expose its settings, then run the bounded live trial and owner acceptance. All phases must preserve unrelated uncommitted changes. Phase specPaths name planned artifacts: ideation generates them after contract approval and before any implementation, not before review of this Draft contract.. Columns are dependency waves — nothing in a column waits on anything else in it, but two phases naming the same file are still serialised, so a column is an upper bound on concurrency rather than a promise of it.</p>
+          <p class="sec-sub">Focused MVP, sequential: simplify execution/storage, expose settings, then perform the bounded live trial and owner acceptance. The three standalone specs are ready. Current handoff is artifacts and commit only: wait for the owner to invoke execution; do not start implementation or paid calls during this finish. Later execution commits directly on main per the owner's explicit override, with express/strict review semantics; do not create an isolation branch or merge commit, and do not push. If new unrelated uncommitted changes appear, stop rather than including them. Capture the starting main SHA for the eventual review diff. Dispatch only the three phases with specPath; Owner editorial acceptance is a non-dispatchable human checkpoint, not a builder phase or an automatic pass.. Columns are dependency waves — nothing in a column waits on anything else in it, but two phases naming the same file are still serialised, so a column is an upper bound on concurrency rather than a promise of it.</p>
         </div>
         <span class="sec-count">3 phases + 1 gate</span>
       </div>
@@ -2451,7 +2467,7 @@ body {
             </div>
           </div>
           <div class="lrow-body">
-            The owner confirms .env contains a live OpenRouter key, but workspace configuration may still be needed. Before any paid invocation, confirm the intended workspace/key is ready without reading, logging or displaying secret values; stop and ask the owner if configuration is incomplete, and do not alter workspace or key settings. No paid calls occur during ideation. Use the configured dedicated OpenRouter key and isolated synthetic fixtures for one scripted editorial journey covering the existing roles plus an AskAuthor continuation. Limit the initial exercise to one invocation per role plus that continuation, and one separate Auto Router compatibility probe; request approval before expanding the paid exercise or rerunning the whole journey. No production article mutation/publication, key-cap changes, automatic spend monitoring, committed evaluation service, or new dependency. Paid trial execution is explicit and never part of verify.mjs, composer test or normal CI. Record actual nonsecret evidence at docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json: schema_version=1, recorded_at, recommendations [{agent, model, rationale, sources}], live_trials [{agent, requested_model, returned_model, input, output, status}]. Separate sourced vendor claims from observed results in each rationale. Include the Auto Router probe and human-approval continuation records. Missing credentials/provider capacity or missing required evidence means incomplete validation, never a fake pass. Refine only justified recommendations; run the focused offline regression suite afterward.
+            The owner confirms .env contains a live OpenRouter key, but workspace configuration may still be needed. Before any paid invocation, confirm the intended workspace/key is ready without reading, logging or displaying secret values; stop and ask the owner if configuration is incomplete, and do not alter workspace or key settings. No paid calls occur during ideation. Use the configured dedicated OpenRouter key and isolated synthetic fixtures for one scripted editorial journey covering the existing roles plus an AskAuthor continuation. Limit the initial exercise to one invocation per role plus that continuation, and one separate Auto Router compatibility probe; request approval before expanding the paid exercise or rerunning the whole journey. No production article mutation/publication, key-cap changes, automatic spend monitoring, committed evaluation service, or new dependency. Paid trial execution is explicit and never part of verify.mjs, composer test or normal CI. Record actual nonsecret evidence at docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json: schema_version=1, recorded_at, recommendations [{agent, model, rationale, sources}], live_trials [{scenario, agent, requested_model, returned_model, input, output, status}], with scenario initial, ask_author_continuation or auto_probe. Separate sourced vendor claims from observed results in each rationale. Include the Auto Router probe and human-approval continuation records. Missing credentials/provider capacity or missing required evidence means incomplete validation, never a fake pass. Refine only justified recommendations; run the focused offline regression suite afterward.
             <div style="margin-top: var(--s2)">Waits for <strong>Publishing settings and operational integration</strong>.</div>
             <div style="margin-top: var(--s2)">If this fails, 1 downstream phase is skipped, not attempted: Owner editorial acceptance.</div>
             <span class="spec">docs/ideation/2026-09-24-publishing-agent-simplification/spec-phase-3.md</span>
@@ -2473,10 +2489,6 @@ body {
             <div style="margin-top: var(--s2)">Waits for <strong>Live model trial and recommendation validation</strong>.</div>
           </div>
         </div>
-      </div>
-      <div class="awaiting">
-        <span class="stamp is-caution">awaiting approval</span>
-        <p>Approve this contract in the session. Specs are then written per phase and this document regenerates carrying its run commands.</p>
       </div>
       </div>
     </section>
@@ -2554,8 +2566,8 @@ body {
             <p>Re-running skips any phase whose spec path already appears in a commit body — which is why the commit stage writes it there. 3 build phases are expected to leave one; the 1 human gate commits nothing.</p>
           </div>
           <div class="rule">
-            <h3>Non-strict: it degrades loudly</h3>
-            <p>If the scout holds or the reviewer is unavailable, the phase proceeds and says so in its warnings rather than failing. The result reports <code>validation-only</code>, never a bare pass.</p>
+            <h3>Strict: it fails closed</h3>
+            <p>This is an express contract — no human reviewed the specs — so phases dispatch <code>--strict</code>. A scout HOLD or an unavailable reviewer stops the phase instead of proceeding on an assumption.</p>
           </div>
         </div>
       </div>
@@ -2633,7 +2645,7 @@ body {
           </li>
           <li class="crit">
             <span class="crit-n">14</span>
-            <span class="crit-text">Live validation evidence exists as structured, nonsecret data with source-linked recommendations and actual input/output records for every recommended editorial role. This validates completeness only; owner quality acceptance remains separate.<code class="crit-check">python3 -c 'import json; from pathlib import Path; d=json.loads(Path(&quot;docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json&quot;).read_text()); roles={p.stem for p in Path(&quot;app/Ai/Agents&quot;).glob(&quot;*.php&quot;) if p.stem != &quot;EditorialAgent&quot;}; assert d[&quot;schema_version&quot;] == 1 and d[&quot;recorded_at&quot;]; assert roles == {r[&quot;agent&quot;] for r in d[&quot;recommendations&quot;]}; assert all(r[&quot;model&quot;] and r[&quot;rationale&quot;] and r[&quot;sources&quot;] for r in d[&quot;recommendations&quot;]); assert roles &lt;= {r[&quot;agent&quot;] for r in d[&quot;live_trials&quot;] if r[&quot;status&quot;] == &quot;completed&quot; and r[&quot;requested_model&quot;] and r[&quot;returned_model&quot;] and r[&quot;input&quot;] and r[&quot;output&quot;]}; assert any(r[&quot;requested_model&quot;] == &quot;openrouter/auto&quot; and r[&quot;status&quot;] == &quot;completed&quot; for r in d[&quot;live_trials&quot;])'</code><span class="crit-expect">expect: exits 0 after Phase 3 records real trial evidence; it makes no network request and does not establish prose quality or owner approval</span></span>
+            <span class="crit-text">Live validation evidence exists as structured, nonsecret data with source-linked recommendations and actual input/output records for each selected role/model, a native AskAuthor continuation and a separate Auto Router probe. This validates completeness only; owner quality acceptance remains separate.<code class="crit-check">python3 -c 'import json; from pathlib import Path; d=json.loads(Path(&quot;docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json&quot;).read_text()); roles={p.stem for p in Path(&quot;app/Ai/Agents&quot;).glob(&quot;*.php&quot;) if p.stem != &quot;EditorialAgent&quot;}; assert d[&quot;schema_version&quot;] == 1 and d[&quot;recorded_at&quot;]; recommendations=d[&quot;recommendations&quot;]; assert roles == {r[&quot;agent&quot;] for r in recommendations}; assert all(r[&quot;model&quot;] and r[&quot;rationale&quot;] and r[&quot;sources&quot;] for r in recommendations); completed=[r for r in d[&quot;live_trials&quot;] if r[&quot;status&quot;] == &quot;completed&quot; and all(r.get(k) for k in [&quot;scenario&quot;,&quot;agent&quot;,&quot;requested_model&quot;,&quot;returned_model&quot;,&quot;input&quot;,&quot;output&quot;])]; assert all(any(t[&quot;scenario&quot;] == &quot;initial&quot; and t[&quot;agent&quot;] == r[&quot;agent&quot;] and t[&quot;requested_model&quot;] == r[&quot;model&quot;] for t in completed) for r in recommendations); assert any(r[&quot;scenario&quot;] == &quot;ask_author_continuation&quot; and r[&quot;agent&quot;] == &quot;Interviewer&quot; for r in completed); assert any(r[&quot;scenario&quot;] == &quot;auto_probe&quot; and r[&quot;requested_model&quot;] == &quot;openrouter/auto&quot; and r[&quot;returned_model&quot;] != &quot;openrouter/auto&quot; for r in completed)'</code><span class="crit-expect">expect: exits 0 after Phase 3 records real trial evidence; it makes no network request and does not establish prose quality or owner approval</span></span>
           </li>
         </ul>
       </div>
@@ -2666,7 +2678,7 @@ body {
           <h2 id="decisions-h">What was considered and turned down</h2>
           <p class="sec-sub">A rejected alternative is evidence, not an oversight. Before proposing one of these, read why it lost.</p>
         </div>
-        <span class="sec-count">×13</span>
+        <span class="sec-count">×16</span>
       </div>
       <ul class="decisions">
         <li class="decision">
@@ -2702,11 +2714,15 @@ body {
           <p><span class="rejected">Instead of</span> Retain a read-only legacy budget-history subsystem.. The owner explicitly approved schema removal; articles, revisions, approvals, conversations and native usage are retained.</p>
         </li>
         <li class="decision">
+          <h3>Execute and commit directly on main after fast-forward-only integration of the existing publishing branch.</h3>
+          <p><span class="rejected">Instead of</span> Create an express-finish isolation branch or a merge commit.. After committing the prior work, the owner explicitly requested main-only development and a ff-only merge because there are no users. main was fast-forwarded from 72f7d8a to df1d96e with a clean tree; no push was performed. This overrides the skill's default isolation branch.</p>
+        </li>
+        <li class="decision">
           <h3>Mechanically verify removal of legacy environment configuration and completeness of structured live evidence, while keeping semantic guidance and editorial-quality reviews human.</h3>
           <p><span class="rejected">Instead of</span> Use reviewer judgment alone to establish configuration cleanup and presence of trial evidence.. The success-criteria critic identified two independently checkable artifact requirements. The added checks perform no paid calls and do not pretend that artifact existence proves quality.</p>
         </li>
         <li class="decision">
-          <h3>Generate phase specs after approval of this Draft contract, and before implementation; stop if required rule-recording tooling cannot be reached.</h3>
+          <h3>Generate phase specs after contract approval and before implementation; stop if required rule-recording tooling cannot be reached.</h3>
           <p><span class="rejected">Instead of</span> Treat not-yet-generated specs as a preapproval dependency, or hand-edit shared rules when a child lacks record-rule.. The dependency review exposed a lifecycle ambiguity, not a missing implementation dependency. The ideation lifecycle intentionally generates specs after approval, and project rules forbid a direct-edit fallback.</p>
         </li>
         <li class="decision">
@@ -2718,6 +2734,14 @@ body {
           <p><span class="rejected">Instead of</span> An undated project directory or assuming that a present API key proves the workspace is ready.. The owner requested naming consistency and confirmed a live key exists while noting that workspace configuration may still be necessary.</p>
         </li>
         <li class="decision">
+          <h3>Finish and commit the approved contract and three standalone specs, then wait for the owner to invoke execution.</h3>
+          <p><span class="rejected">Instead of</span> Start the express implementation or paid trial immediately after artifact generation.. At the run-mode question, the owner explicitly chose artifact generation and commit only. This preserves express artifact approval and main-only execution semantics without starting any implementation. No new branch or push is authorized.</p>
+        </li>
+        <li class="decision">
+          <h3>Require evidence for the selected recommended models, the native continuation and an independently recorded Auto probe.</h3>
+          <p><span class="rejected">Instead of</span> Let a different model's old trial, an empty Auto result, or a missing continuation satisfy the completeness check.. Spec self-review identified gaps in the initial evidence predicate. Scenario-tagged records tighten the existing approved validation scope without adding paid invocations or substituting mechanical checks for human quality judgment.</p>
+        </li>
+        <li class="decision">
           <h3>Skip mining the five older implementation-note files during this interview.</h3>
           <p><span class="rejected">Instead of</span> Expand intake into a retrospective of publishing and marketing runs.. The owner selected skip; existing learnings and current-code evidence are sufficient for this focused change.</p>
         </li>
@@ -2726,7 +2750,103 @@ body {
     </section>
 
 
+    <section class="band" id="run" aria-labelledby="run-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="run-h">Run it</h2>
+          <p class="sec-sub">Three ways in, in descending order of how much you can walk away from.</p>
+        </div>
+      </div>
+      <div class="runbar">
+        <div>
+          <span class="kicker">recommended</span>
+          <h3>Autopilot.</h3>
+          <p>Dispatches every phase through the loop above, in dependency order, gating on failure. Already-committed phases are skipped, so re-running after a fix picks up where it stopped.</p>
+        </div>
+        <div class="cmd">
+            <span class="cmd-text" id="cmd-autopilot">/ideation:autopilot docs/ideation/2026-09-24-publishing-agent-simplification/contract.md</span>
+            <button type="button" class="copy" data-copy="cmd-autopilot">copy</button>
+          </div>
+      </div>
 
+      <details class="fold">
+        <summary>Unattended, with a stop condition (/goal)</summary>
+        <div class="fold-body">
+          <p>A durability wrapper around the same autopilot run: Claude re-checks this condition before it is allowed to stop, so a failed phase gets repaired and re-run instead of ending the session. The done-when is deliberately disjunctive — two identical failing VERIFY lines release the run, because a contract whose checks have rotted must not trap it forever.</p>
+          <div class="cmd cmd-block">
+            <span class="cmd-text" id="cmd-goal">/goal Drive the Publishing Agent Simplification contract (2026-09-24-publishing-agent-simplification) to completion with /ideation:autopilot.
+
+1. Run `/ideation:autopilot docs/ideation/2026-09-24-publishing-agent-simplification/contract.md`. All commits belong on branch main — switch to it before any run.
+2. It dispatches a BACKGROUND workflow. Wait for the completion notification — never start a second autopilot run while one is in flight.
+3. Then run the ideation plugin's `scripts/verify.mjs` against `docs/ideation/2026-09-24-publishing-agent-simplification/contract-data.json` and leave its VERIFY line in the conversation. Resolve the plugin's install directory first — `${CLAUDE_PLUGIN_ROOT}/scripts/verify.mjs` is a placeholder, not a shell variable, and bash will not expand it. That line is the only evidence this goal is judged on.
+4. If anything failed, fix the spec or the implementation and go back to step 1. Autopilot skips phases that already have commits.
+
+Done when the most recent VERIFY line reads fail=0 and commits=3/3 — or when two consecutive VERIFY lines are identical and still failing, in which case name the failing checks and stop, because a contract whose checks have rotted must not trap the run.</span>
+            <button type="button" class="copy" data-copy="cmd-goal">copy</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>One phase at a time (4)</summary>
+        <div class="fold-body">
+          <p>No orchestration, no failure gating, no resume — you are the scheduler. Start with <strong>Native agent configuration and budget-free execution</strong>.</p>
+          <div class="phase-cmds">
+            <div class="phase-cmd">
+              <span class="n">01</span>
+              <span class="t">Native agent configuration and budget-free execution</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-1">/ideation:execute-spec docs/ideation/2026-09-24-publishing-agent-simplification/spec-phase-1.md</span>
+            <button type="button" class="copy" data-copy="cmd-1">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">02</span>
+              <span class="t">Publishing settings and operational integration</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-2">/ideation:execute-spec docs/ideation/2026-09-24-publishing-agent-simplification/spec-phase-2.md</span>
+            <button type="button" class="copy" data-copy="cmd-2">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">03</span>
+              <span class="t">Live model trial and recommendation validation</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-3">/ideation:execute-spec docs/ideation/2026-09-24-publishing-agent-simplification/spec-phase-3.md</span>
+            <button type="button" class="copy" data-copy="cmd-3">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">04</span>
+              <span class="t">Owner editorial acceptance</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-4"># Review: Owner editorial acceptance</span>
+            <button type="button" class="copy" data-copy="cmd-4">copy</button>
+          </div>
+            </div>
+          </div>
+        </div>
+      </details>
+      </div>
+    </section>
+
+    <section class="band" id="close" aria-labelledby="close-h">
+      <div class="wrap">
+        <div class="close">
+          <div>
+            <span class="kicker">the commitment</span>
+            <h2 id="close-h">This plan is what was agreed.</h2>
+            <p>4 phases · Focused MVP, sequential: simplify execution/storage, expose settings, then perform the bounded live trial and owner acceptance. The three standalone specs are ready. Current handoff is artifacts and commit only: wait for the owner to invoke execution; do not start implementation or paid calls during this finish. Later execution commits directly on main per the owner's explicit override, with express/strict review semantics; do not create an isolation branch or merge commit, and do not push. If new unrelated uncommitted changes appear, stop rather than including them. Capture the starting main SHA for the eventual review diff. Dispatch only the three phases with specPath; Owner editorial acceptance is a non-dispatchable human checkpoint, not a builder phase or an automatic pass.. Scope changes mean a new revision that supersedes this document — not silent drift. Express run — approved in one confirmation after the interview, so the review lives in the branch diff rather than in a per-artifact sign-off.</p>
+          </div>
+          <div class="close-meta">
+            <span class="stamp is-go">approved</span>
+            <span class="meta">2026-09-24 · Owner, focused MVP with express finish; artifacts and commit only; later execution directly on main</span>
+          </div>
+        </div>
+        <p class="colophon">Generated by <code>ideation:contract-gen</code> from <code>docs/ideation/2026-09-24-publishing-agent-simplification/contract-data.json</code>. That JSON is the source of truth; this page and <code>docs/ideation/2026-09-24-publishing-agent-simplification/contract.md</code> are both rendered from it, so edit the data and re-render rather than editing either output.</p>
+      </div>
+    </section>
     </main>
     <script>
 (function () {

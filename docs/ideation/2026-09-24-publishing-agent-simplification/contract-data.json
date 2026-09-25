@@ -2,7 +2,11 @@
   "projectName": "Publishing Agent Simplification",
   "slug": "2026-09-24-publishing-agent-simplification",
   "date": "2026-09-24",
-  "status": "Draft",
+  "status": "Approved",
+  "approvalMode": "express",
+  "branch": "main",
+  "approvedOn": "2026-09-24",
+  "approvedBy": "Owner, focused MVP with express finish; artifacts and commit only; later execution directly on main",
   "supersedes": null,
   "gates": {
     "dimensions": [
@@ -141,9 +145,9 @@
       }
     },
     {
-      "criterion": "Live validation evidence exists as structured, nonsecret data with source-linked recommendations and actual input/output records for every recommended editorial role. This validates completeness only; owner quality acceptance remains separate.",
+      "criterion": "Live validation evidence exists as structured, nonsecret data with source-linked recommendations and actual input/output records for each selected role/model, a native AskAuthor continuation and a separate Auto Router probe. This validates completeness only; owner quality acceptance remains separate.",
       "check": {
-        "cmd": "python3 -c 'import json; from pathlib import Path; d=json.loads(Path(\"docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json\").read_text()); roles={p.stem for p in Path(\"app/Ai/Agents\").glob(\"*.php\") if p.stem != \"EditorialAgent\"}; assert d[\"schema_version\"] == 1 and d[\"recorded_at\"]; assert roles == {r[\"agent\"] for r in d[\"recommendations\"]}; assert all(r[\"model\"] and r[\"rationale\"] and r[\"sources\"] for r in d[\"recommendations\"]); assert roles <= {r[\"agent\"] for r in d[\"live_trials\"] if r[\"status\"] == \"completed\" and r[\"requested_model\"] and r[\"returned_model\"] and r[\"input\"] and r[\"output\"]}; assert any(r[\"requested_model\"] == \"openrouter/auto\" and r[\"status\"] == \"completed\" for r in d[\"live_trials\"])'",
+        "cmd": "python3 -c 'import json; from pathlib import Path; d=json.loads(Path(\"docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json\").read_text()); roles={p.stem for p in Path(\"app/Ai/Agents\").glob(\"*.php\") if p.stem != \"EditorialAgent\"}; assert d[\"schema_version\"] == 1 and d[\"recorded_at\"]; recommendations=d[\"recommendations\"]; assert roles == {r[\"agent\"] for r in recommendations}; assert all(r[\"model\"] and r[\"rationale\"] and r[\"sources\"] for r in recommendations); completed=[r for r in d[\"live_trials\"] if r[\"status\"] == \"completed\" and all(r.get(k) for k in [\"scenario\",\"agent\",\"requested_model\",\"returned_model\",\"input\",\"output\"])]; assert all(any(t[\"scenario\"] == \"initial\" and t[\"agent\"] == r[\"agent\"] and t[\"requested_model\"] == r[\"model\"] for t in completed) for r in recommendations); assert any(r[\"scenario\"] == \"ask_author_continuation\" and r[\"agent\"] == \"Interviewer\" for r in completed); assert any(r[\"scenario\"] == \"auto_probe\" and r[\"requested_model\"] == \"openrouter/auto\" and r[\"returned_model\"] != \"openrouter/auto\" for r in completed)'",
         "expect": "exits 0 after Phase 3 records real trial evidence; it makes no network request and does not establish prose quality or owner approval"
       }
     },
@@ -178,7 +182,7 @@
       },
       {
         "item": "Focused regression coverage and operational/design guidance reconciliation",
-        "reason": "Changes cross settings, queues, approvals, migrations, authorization and existing UI. Tests and existing runbooks/shared rules must describe the same simplified system; preserve the current uncommitted publishing UI work."
+        "reason": "Changes cross settings, queues, approvals, migrations, authorization and existing UI. Tests and existing runbooks/shared rules must describe the same simplified system; preserve the existing publishing UI work, now committed and fast-forwarded into main."
       }
     ],
     "full": [],
@@ -264,12 +268,17 @@
       "reason": "The owner explicitly approved schema removal; articles, revisions, approvals, conversations and native usage are retained."
     },
     {
+      "decision": "Execute and commit directly on main after fast-forward-only integration of the existing publishing branch.",
+      "rejected": "Create an express-finish isolation branch or a merge commit.",
+      "reason": "After committing the prior work, the owner explicitly requested main-only development and a ff-only merge because there are no users. main was fast-forwarded from 72f7d8a to df1d96e with a clean tree; no push was performed. This overrides the skill's default isolation branch."
+    },
+    {
       "decision": "Mechanically verify removal of legacy environment configuration and completeness of structured live evidence, while keeping semantic guidance and editorial-quality reviews human.",
       "rejected": "Use reviewer judgment alone to establish configuration cleanup and presence of trial evidence.",
       "reason": "The success-criteria critic identified two independently checkable artifact requirements. The added checks perform no paid calls and do not pretend that artifact existence proves quality."
     },
     {
-      "decision": "Generate phase specs after approval of this Draft contract, and before implementation; stop if required rule-recording tooling cannot be reached.",
+      "decision": "Generate phase specs after contract approval and before implementation; stop if required rule-recording tooling cannot be reached.",
       "rejected": "Treat not-yet-generated specs as a preapproval dependency, or hand-edit shared rules when a child lacks record-rule.",
       "reason": "The dependency review exposed a lifecycle ambiguity, not a missing implementation dependency. The ideation lifecycle intentionally generates specs after approval, and project rules forbid a direct-edit fallback."
     },
@@ -284,13 +293,23 @@
       "reason": "The owner requested naming consistency and confirmed a live key exists while noting that workspace configuration may still be necessary."
     },
     {
+      "decision": "Finish and commit the approved contract and three standalone specs, then wait for the owner to invoke execution.",
+      "rejected": "Start the express implementation or paid trial immediately after artifact generation.",
+      "reason": "At the run-mode question, the owner explicitly chose artifact generation and commit only. This preserves express artifact approval and main-only execution semantics without starting any implementation. No new branch or push is authorized."
+    },
+    {
+      "decision": "Require evidence for the selected recommended models, the native continuation and an independently recorded Auto probe.",
+      "rejected": "Let a different model's old trial, an empty Auto result, or a missing continuation satisfy the completeness check.",
+      "reason": "Spec self-review identified gaps in the initial evidence predicate. Scenario-tagged records tighten the existing approved validation scope without adding paid invocations or substituting mechanical checks for human quality judgment."
+    },
+    {
       "decision": "Skip mining the five older implementation-note files during this interview.",
       "rejected": "Expand intake into a retrospective of publishing and marketing runs.",
       "reason": "The owner selected skip; existing learnings and current-code evidence are sufficient for this focused change."
     }
   ],
   "execution": {
-    "strategy": "Sequential: simplify the execution/storage boundary first, then expose its settings, then run the bounded live trial and owner acceptance. All phases must preserve unrelated uncommitted changes. Phase specPaths name planned artifacts: ideation generates them after contract approval and before any implementation, not before review of this Draft contract.",
+    "strategy": "Focused MVP, sequential: simplify execution/storage, expose settings, then perform the bounded live trial and owner acceptance. The three standalone specs are ready. Current handoff is artifacts and commit only: wait for the owner to invoke execution; do not start implementation or paid calls during this finish. Later execution commits directly on main per the owner's explicit override, with express/strict review semantics; do not create an isolation branch or merge commit, and do not push. If new unrelated uncommitted changes appear, stop rather than including them. Capture the starting main SHA for the eventual review diff. Dispatch only the three phases with specPath; Owner editorial acceptance is a non-dispatchable human checkpoint, not a builder phase or an automatic pass.",
     "phases": [
       {
         "title": "Native agent configuration and budget-free execution",
@@ -313,7 +332,7 @@
         "blocking": true,
         "prereqs": ["Publishing settings and operational integration"],
         "specPath": "docs/ideation/2026-09-24-publishing-agent-simplification/spec-phase-3.md",
-        "notes": "The owner confirms .env contains a live OpenRouter key, but workspace configuration may still be needed. Before any paid invocation, confirm the intended workspace/key is ready without reading, logging or displaying secret values; stop and ask the owner if configuration is incomplete, and do not alter workspace or key settings. No paid calls occur during ideation. Use the configured dedicated OpenRouter key and isolated synthetic fixtures for one scripted editorial journey covering the existing roles plus an AskAuthor continuation. Limit the initial exercise to one invocation per role plus that continuation, and one separate Auto Router compatibility probe; request approval before expanding the paid exercise or rerunning the whole journey. No production article mutation/publication, key-cap changes, automatic spend monitoring, committed evaluation service, or new dependency. Paid trial execution is explicit and never part of verify.mjs, composer test or normal CI. Record actual nonsecret evidence at docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json: schema_version=1, recorded_at, recommendations [{agent, model, rationale, sources}], live_trials [{agent, requested_model, returned_model, input, output, status}]. Separate sourced vendor claims from observed results in each rationale. Include the Auto Router probe and human-approval continuation records. Missing credentials/provider capacity or missing required evidence means incomplete validation, never a fake pass. Refine only justified recommendations; run the focused offline regression suite afterward."
+        "notes": "The owner confirms .env contains a live OpenRouter key, but workspace configuration may still be needed. Before any paid invocation, confirm the intended workspace/key is ready without reading, logging or displaying secret values; stop and ask the owner if configuration is incomplete, and do not alter workspace or key settings. No paid calls occur during ideation. Use the configured dedicated OpenRouter key and isolated synthetic fixtures for one scripted editorial journey covering the existing roles plus an AskAuthor continuation. Limit the initial exercise to one invocation per role plus that continuation, and one separate Auto Router compatibility probe; request approval before expanding the paid exercise or rerunning the whole journey. No production article mutation/publication, key-cap changes, automatic spend monitoring, committed evaluation service, or new dependency. Paid trial execution is explicit and never part of verify.mjs, composer test or normal CI. Record actual nonsecret evidence at docs/ideation/2026-09-24-publishing-agent-simplification/model-validation.json: schema_version=1, recorded_at, recommendations [{agent, model, rationale, sources}], live_trials [{scenario, agent, requested_model, returned_model, input, output, status}], with scenario initial, ask_author_continuation or auto_probe. Separate sourced vendor claims from observed results in each rationale. Include the Auto Router probe and human-approval continuation records. Missing credentials/provider capacity or missing required evidence means incomplete validation, never a fake pass. Refine only justified recommendations; run the focused offline regression suite afterward."
       },
       {
         "title": "Owner editorial acceptance",
