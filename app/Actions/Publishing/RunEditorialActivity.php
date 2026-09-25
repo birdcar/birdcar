@@ -510,10 +510,30 @@ class RunEditorialActivity implements ShouldQueue
         ])->save();
     }
 
+    /**
+     * Article bodies use heading levels 2 and 3 because the title lives in metadata. A drafted level-1 heading is
+     * demoted rather than discarding the whole paid draft over formatting.
+     *
+     * @param  array<mixed>  $node
+     * @return array<mixed>
+     */
+    private function withArticleHeadingLevels(array $node): array
+    {
+        if (($node['type'] ?? null) === 'heading' && is_array($node['attrs'] ?? null) && is_int($node['attrs']['level'] ?? null)) {
+            $node['attrs']['level'] = min(3, max(2, $node['attrs']['level']));
+        }
+
+        if (is_array($node['content'] ?? null)) {
+            $node['content'] = array_map(fn (mixed $child): mixed => is_array($child) ? $this->withArticleHeadingLevels($child) : $child, $node['content']);
+        }
+
+        return $node;
+    }
+
     /** @param array<string, mixed> $payload */
     private function applyDraft(EditorialActivity $activity, User $actor, Article $article, array $payload, WriteArticle $writer): void
     {
-        $document = is_array($payload['document'] ?? null) ? $payload['document'] : [];
+        $document = $this->withArticleHeadingLevels(is_array($payload['document'] ?? null) ? $payload['document'] : []);
         $metadata = is_array($payload['metadataProposals'] ?? null) ? $payload['metadataProposals'] : [];
         $currentRevision = $article->workingRevision()->first();
         $currentDocumentValue = $currentRevision?->getAttribute('document');

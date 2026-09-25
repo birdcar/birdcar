@@ -225,7 +225,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                 ]))->required(),
             ],
             EditorialActivityKind::Draft => [
-                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. The encoded string must stay under '.$this->maxFieldBytes().' bytes.')->required(),
+                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes.')->required(),
                 'metadataProposals' => $schema->object([
                     'title' => $schema->string()->nullable(),
                     'description' => $schema->string()->nullable(),

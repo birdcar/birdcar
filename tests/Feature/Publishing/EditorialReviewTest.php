@@ -54,6 +54,36 @@ test('initial draft writes only into an empty untouched manuscript', function ()
         ->and($activity->fresh()?->proposal['metadata']['title'])->toBe('AI Draft');
 });
 
+test('a drafted level-one heading is demoted instead of discarding the draft', function (): void {
+    setPublishingAgentsPaused(false);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+            'id' => 'gen-draft-heading',
+            'choices' => [['message' => ['content' => json_encode([
+                'document' => ['version' => 1, 'type' => 'doc', 'content' => [
+                    ['type' => 'heading', 'attrs' => ['level' => 1], 'content' => [['type' => 'text', 'text' => 'Eight ways work gets stuck']]],
+                    ['type' => 'heading', 'attrs' => ['level' => 4], 'content' => [['type' => 'text', 'text' => 'A smaller heading']]],
+                    ['type' => 'paragraph', 'text' => 'Body'],
+                ]],
+                'metadataProposals' => ['title' => 'Eight ways work gets stuck'],
+            ])]]],
+        ]),
+    ]);
+
+    $actor = reviewAuthor();
+    $attempt = reviewAttempt($actor, []);
+    $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Draft, [], 'draft-heading-test');
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
+
+    $document = $attempt->article()->firstOrFail()->fresh()?->workingRevision?->document;
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed)
+        ->and($document['content'][0]['attrs']['level'])->toBe(2)
+        ->and($document['content'][1]['attrs']['level'])->toBe(3);
+});
+
 test('initial draft does not overwrite nested manuscript text', function (): void {
     setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
