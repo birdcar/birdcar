@@ -187,12 +187,6 @@
     .page-title { background: var(--color-ink); color: var(--color-paper); padding: 4.5rem 7%; display: grid; grid-template-columns: 1.1fr 1fr; gap: 7%; align-items: center; }
     .page-title h1 { font-size: clamp(4rem, 7.5vw, 7.2rem); }
     .page-title p { max-width: 43ch; font-size: 1.35rem; }
-    .work-story { display: grid; grid-template-columns: .85fr 1.15fr; gap: 3rem 8%; }
-    .work-title { background: var(--color-cyan); color: var(--color-ink); grid-template-columns: 1.35fr 1fr; align-items: end; }
-    .work-title h1 { font-size: clamp(3rem, 6vw, 6rem); }
-    .story-heading h2 { font-size: clamp(2.3rem, 3.6vw, 3.5rem); }
-    .story-body { padding-top: .6rem; }
-    .story-body p { max-width: 60ch; }
     .reporting-diagram { grid-column: 1 / -1; margin: 3rem 0 0; min-width: 0; }
     .reporting-comparison { display: grid; grid-template-columns: .8fr 1.2fr; gap: 4rem; align-items: center; }
     .reporting-before h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; max-width: 18ch; }
@@ -212,9 +206,6 @@
     .reporting-result strong { display: block; font-size: 1.25rem; font-weight: 600; }
     .reporting-result span { display: block; font-size: 1rem; margin-top: .5rem; }
     .reporting-diagram figcaption { border-top: 1px solid var(--color-ink); padding-top: 1.25rem; margin-top: 2rem; font-size: 1rem; max-width: 75ch; }
-    .story-bottom-heading { grid-column: 1; font-size: clamp(2.4rem, 3.4vw, 3.2rem); font-weight: 600; line-height: 1.1; }
-    .story-bottom { grid-column: 2; padding-top: .6rem; }
-    .story-bottom p { max-width: 60ch; }
     .writing-title { background: var(--color-cyan); color: var(--color-ink); align-items: end; padding-block: 3rem; }
     .writing-title h1 { font-size: clamp(3rem, 5vw, 4.5rem); }
     .writing-title > div p:first-child { font-weight: 600; font-size: 1.5rem; }
@@ -415,13 +406,6 @@
     .page-title { grid-template-columns: 1fr; padding: 3rem 6%; gap: 1.5rem; }
     .page-title h1 { font-size: clamp(3.8rem, 12vw, 5rem); }
     .page-title p { font-size: 1.25rem; }
-    .work-story { grid-template-columns: 1fr; gap: 2rem; }
-    .work-title { grid-template-columns: 1fr; }
-    .work-title h1 { font-size: clamp(2.6rem, 10.5vw, 4.5rem); }
-    .story-heading h2 { font-size: 2.6rem; }
-    .story-body { padding-top: 0; }
-    .story-bottom-heading { grid-column: 1; font-size: 2.3rem; }
-    .story-bottom { grid-column: 1; padding-top: 0; }
     .reporting-diagram { margin: 1rem 0; }
     .reporting-comparison { grid-template-columns: 1fr; gap: 1.5rem; }
     .reporting-before .reporting-relationship { flex-direction: column; align-items: start; gap: .75rem; }

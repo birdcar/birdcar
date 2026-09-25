@@ -375,16 +375,14 @@ test('the approach navigation resolves to a real section and the logo appears on
     $response->assertSee('href="'.route('public.index').'#how-i-work"', false);
 });
 
-test('the reporting illustration connects only the supplied project facts in static reading order', function (string $path) {
+test('the reporting story connects only the supplied project facts in static reading order', function (string $path) {
     $this->get($path)->assertSeeTextInOrder([
         'Finding the numbers by hand',
-        'Performance numbers had to be gathered for reporting.',
+        'reporting involved finding performance numbers by hand',
+        'with client management and data that updates live',
         'A client-facing reporting platform',
-        'Performance data',
-        'Live-updating data',
-        'Client management',
+        'an offering the agency can sell to its customers',
         'Part of the agency’s service',
-        'An offering Craft &amp; Communicate can sell to its customers.',
         'not a product screenshot or measured results',
     ], false)
         ->assertDontSee('GHX')
