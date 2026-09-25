@@ -1,0 +1,42 @@
+{
+  "title": "Eight ways work gets stuck: choose the page structure",
+  "question": "The eight pattern URLs stay exactly as they are; this is composition. Lock one structure, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "hotspots",
+      "label": "One business, eight hotspots",
+      "kicker": "THE ROLL",
+      "thesis": "The homepage's miniature business becomes the map: a numbered pin on each spot where a pattern shows up.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#e2483d"],
+      "materials": ["the homepage diorama plate", "eight numbered pins with pill tags", "a zoomed diorama crop beside each entry"],
+      "viewport": "Title, lead and booking at left; the diorama at right with eight pins and tags, each linking to its entry.",
+      "risk": "Reuses the homepage's hero image at full size, so the page can feel like a second homepage unless the pins lead.",
+      "comp": ".impeccable/mocks/decision/wbb7f-hotspots.png"
+    },
+    {
+      "id": "self-check",
+      "label": "Check what you recognize",
+      "kicker": "DEALT",
+      "thesis": "Tick the signs you've seen; the patterns behind them rise to the top, then book a Walkthrough with them.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["white check-chip card", "ranked pattern list with meters", "a small canary"],
+      "viewport": "A cloud of real signal chips at left; your likely patterns ranked at right with a Walkthrough button.",
+      "risk": "Interactive by design: without JavaScript it must still read as a plain list, and the meters must never look like a score.",
+      "comp": ".impeccable/mocks/decision/wbb7f-self-check.png"
+    },
+    {
+      "id": "cards",
+      "label": "Cards on the desk",
+      "kicker": "DEALT",
+      "thesis": "Eight pattern cards laid out on the owner's desk, one just picked up.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["the Walkthrough desk plate", "eight white index cards", "canary"],
+      "viewport": "Title and booking at left; the desk at right with eight readable cards fanned on the blotter.",
+      "risk": "Close kin to the Walkthrough's desk; the cards must stay readable links, not a decorative spread.",
+      "comp": ".impeccable/mocks/decision/wbb7f-cards.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}
