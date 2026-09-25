@@ -33,14 +33,14 @@ test('booking controls preserve their exact placements and real route or anchor 
     foreach ($controls as $control) {
         $actual[] = $control->getAttribute('data-booking-cta');
         expect($control->getAttribute('href'))->toBe($path === '/walkthrough' ? '#choose-a-time' : route('public.walkthrough'));
-        expect($control->getAttribute('data-cal-namespace'))->toBe($path === '/walkthrough' ? '' : 'walkthrough');
+        expect($control->hasAttribute('data-cal-link'))->toBeFalse();
     }
 
     expect($actual)->toBe($placements);
 })->with([
     ['/', ['header', 'mobile-menu', 'hero', 'homepage-strip', 'closing-invitation']],
     ['/work', ['header', 'mobile-menu', 'closing-invitation']],
-    ['/walkthrough', ['header', 'mobile-menu', 'walkthrough-hero']],
+    ['/walkthrough', ['header', 'mobile-menu', 'walkthrough-hero', 'walkthrough-close']],
 ]);
 
 test('the walkthrough page marks its hero control and the plain Cal.com fallback link', function () {

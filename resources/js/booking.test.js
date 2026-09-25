@@ -3,28 +3,25 @@ import posthog from 'posthog-js';
 import { initAnalytics } from './analytics';
 import { initBooking } from './booking';
 
-const originals = Object.fromEntries(['document', 'window', 'getComputedStyle', 'customElements'].map((key) => [key, globalThis[key]]));
+const originals = Object.fromEntries(['document', 'window', 'getComputedStyle'].map((key) => [key, globalThis[key]]));
 let api;
-let source;
-let colors;
-let ready;
 let inline;
+let colors;
+let present;
 let capture;
 let scripts;
 
 beforeEach(() => {
     api = mock();
-    source = { dataset: { calNamespace: 'walkthrough', calLink: 'birdcar/walkthrough' } };
+    inline = Object.assign(new EventTarget(), { dataset: { calInline: '', calNamespace: 'walkthrough', calLink: 'birdcar/walkthrough' } });
     colors = {};
-    ready = false;
-    inline = false;
+    present = true;
     scripts = [];
     globalThis.document = Object.assign(new EventTarget(), {
         body: { dataset: { posthogToken: 'local-test-token', posthogHost: 'https://analytics.invalid' } },
-        documentElement: {},
         head: { appendChild: (script) => { scripts.push(script); return script; } },
         createElement: () => new EventTarget(),
-        querySelector: (selector) => selector === '[data-cal-inline]' && !inline ? null : source,
+        querySelector: (selector) => selector === '[data-cal-inline]' && present ? inline : null,
     });
     globalThis.window = {
         Cal: Object.assign(mock(), { ns: { walkthrough: api } }),
@@ -34,7 +31,6 @@ beforeEach(() => {
     capture = spyOn(posthog, 'capture').mockImplementation(() => {});
     initAnalytics();
     globalThis.getComputedStyle = () => ({ getPropertyValue: (key) => colors[key] ?? '' });
-    globalThis.customElements = { get: () => ready ? class {} : undefined };
 });
 
 afterEach(() => {
@@ -45,71 +41,35 @@ afterEach(() => {
     }
 });
 
-function click(properties = {}) {
-    const event = new Event('click', { cancelable: true });
-    const values = { button: 0, target: { closest: () => source }, ...properties };
-    for (const [key, value] of Object.entries(values)) {
-        Object.defineProperty(event, key, { value });
-    }
-    event.stopPropagation = mock(event.stopPropagation.bind(event));
-    document.dispatchEvent(event);
-    return event;
+function callback(action) {
+    return api.mock.calls.find(([command, options]) => command === 'on' && options.action === action)[1].callback;
 }
 
-test('calendar theme uses the clear argument fallback colors when tokens are unavailable', () => {
+test('calendar theme falls back to the studio palette when tokens are unavailable', () => {
     initBooking();
 
     expect(api.mock.calls.find(([command]) => command === 'ui')[1].cssVarsPerTheme).toEqual({
-        light: { 'cal-brand': '#102a33', 'cal-brand-emphasis': '#214b57', 'cal-brand-text': '#ffffff', 'cal-bg': '#ffffff' },
-        dark: { 'cal-brand': '#b7edf1', 'cal-brand-emphasis': '#ffffff', 'cal-brand-text': '#102a33' },
+        light: { 'cal-brand': '#f7c848', 'cal-brand-emphasis': '#efb925', 'cal-brand-text': '#0b141a', 'cal-bg': '#ffffff' },
     });
 });
 
-test('calendar theme follows the active marketing tokens for inline and modal views', () => {
-    colors = { '--color-ink': ' ink ', '--color-paper': ' paper ', '--color-cyan': ' cyan ', '--color-deep-teal': ' teal ' };
-    inline = true;
+test('calendar theme follows the active studio tokens', () => {
+    colors = { '--studio-yellow': ' yellow ', '--studio-yellow-deep': ' deep ', '--studio-ink': ' ink ', '--studio-paper': ' paper ' };
 
     initBooking();
 
     expect(api.mock.calls.find(([command]) => command === 'ui')[1].cssVarsPerTheme).toEqual({
-        light: { 'cal-brand': 'ink', 'cal-brand-emphasis': 'teal', 'cal-brand-text': 'paper', 'cal-bg': 'paper' },
-        dark: { 'cal-brand': 'cyan', 'cal-brand-emphasis': 'paper', 'cal-brand-text': 'ink' },
+        light: { 'cal-brand': 'yellow', 'cal-brand-emphasis': 'deep', 'cal-brand-text': 'ink', 'cal-bg': 'paper' },
     });
     expect(api.mock.calls.find(([command]) => command === 'inline')[1]).toMatchObject({
-        elementOrSelector: source,
+        elementOrSelector: inline,
         calLink: 'birdcar/walkthrough',
         config: { theme: 'light' },
     });
 });
 
-test('booking links retain native navigation until the modal can take over', () => {
-    initBooking();
-
-    expect(click().defaultPrevented).toBe(false);
-    ready = true;
-    expect(click().defaultPrevented).toBe(true);
-});
-
-test.each(['altKey', 'ctrlKey', 'metaKey', 'shiftKey'])('booking never intercepts %s clicks', (modifier) => {
-    ready = true;
-    initBooking();
-
-    const event = click({ [modifier]: true });
-
-    expect(event.defaultPrevented).toBe(false);
-    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
-});
-
-test('booking never intercepts middle clicks or unrelated links', () => {
-    ready = true;
-    initBooking();
-
-    expect(click({ button: 1 }).defaultPrevented).toBe(false);
-    expect(click({ target: { closest: () => null } }).defaultPrevented).toBe(false);
-});
-
-test('pages without booking controls do not load or configure Cal', () => {
-    source = null;
+test('pages without the inline calendar do not load or configure Cal', () => {
+    present = false;
 
     initBooking();
 
@@ -118,8 +78,23 @@ test('pages without booking controls do not load or configure Cal', () => {
     expect(scripts).toHaveLength(0);
 });
 
-test.each([false, true])('the official loader queues configuration and callbacks until its script loads (inline: %s)', (isInline) => {
-    inline = isInline;
+test('a gated calendar loads Cal only once the fit card opens it', () => {
+    inline.dataset.calDefer = '';
+    delete window.Cal;
+
+    initBooking();
+
+    expect(window.Cal).toBeUndefined();
+    expect(scripts).toHaveLength(0);
+
+    inline.dispatchEvent(new Event('booking:open'));
+    inline.dispatchEvent(new Event('booking:open'));
+
+    expect(scripts).toHaveLength(1);
+    expect(window.Cal.ns.walkthrough.q.filter(([command]) => command === 'inline')).toHaveLength(1);
+});
+
+test('the official loader queues configuration and callbacks until its script loads', () => {
     delete window.Cal;
 
     initBooking();
@@ -131,94 +106,55 @@ test.each([false, true])('the official loader queues configuration and callbacks
     const queued = window.Cal.ns.walkthrough.q.map((args) => [...args]);
     expect(queued[0]).toEqual(['init', 'walkthrough', { origin: 'https://app.cal.com' }]);
     expect(queued.filter(([command]) => command === 'on').map(([, options]) => options.action)).toEqual(['linkReady', 'bookingSuccessfulV2']);
-    expect(queued.some(([command]) => command === 'inline')).toBe(isInline);
+    expect(queued.some(([command]) => command === 'inline')).toBe(true);
     expect(capture).not.toHaveBeenCalled();
-
-    scripts[0].dispatchEvent(new Event('error'));
-
-    expect(click().defaultPrevented).toBe(false);
-    expect(scripts).toHaveLength(1);
 });
 
-test('loaded Cal reuses its script and leaves already-cancelled navigation alone', () => {
-    ready = true;
+test('readiness retains its legacy event name in inline mode', () => {
     initBooking();
 
-    const event = new Event('click', { cancelable: true });
-    event.preventDefault();
-    Object.defineProperty(event, 'target', { value: { closest: () => source } });
-    event.stopPropagation = mock();
-    document.dispatchEvent(event);
-
-    expect(scripts).toHaveLength(0);
-    expect(event.stopPropagation).not.toHaveBeenCalled();
-});
-
-test.each([false, true])('readiness retains its legacy event name and mode (inline: %s)', (isInline) => {
-    inline = isInline;
-    initBooking();
-    const callback = api.mock.calls.find(([command, options]) => command === 'on' && options.action === 'linkReady')[1].callback;
-
-    callback();
-    callback();
+    callback('linkReady')();
+    callback('linkReady')();
 
     expect(capture.mock.calls).toEqual([
-        ['booking_embed_opened', { mode: isInline ? 'inline' : 'modal' }],
-        ['booking_embed_opened', { mode: isInline ? 'inline' : 'modal' }],
+        ['booking_embed_opened', { mode: 'inline' }],
+        ['booking_embed_opened', { mode: 'inline' }],
     ]);
 });
 
-test.each([false, true])('completed booking forwards only allowed properties (inline: %s)', (isInline) => {
-    inline = isInline;
+test('completed booking forwards only allowed properties', () => {
     initBooking();
-    const callback = api.mock.calls.find(([command, options]) => command === 'on' && options.action === 'bookingSuccessfulV2')[1].callback;
 
-    callback({ detail: { data: {
+    callback('bookingSuccessfulV2')({ detail: { data: {
         uid: 'synthetic-booking', eventTypeId: 42, startTime: '2030-01-02T12:00:00Z', status: 'ACCEPTED',
         email: 'private@example.invalid', attendees: [{ name: 'Private name' }], title: 'Private title',
         responses: { notes: 'Private form text' }, mode: 'untrusted',
     } } });
 
     expect(capture.mock.calls).toEqual([['booking_completed', {
-        mode: isInline ? 'inline' : 'modal', booking_uid: 'synthetic-booking', event_type_id: 42,
+        mode: 'inline', booking_uid: 'synthetic-booking', event_type_id: 42,
         start_time: '2030-01-02T12:00:00Z', status: 'ACCEPTED',
     }]]);
 });
 
-test.each([false, true])('completed booking preserves a nullable event type (inline: %s)', (isInline) => {
-    inline = isInline;
+test('completed booking preserves a nullable event type', () => {
     initBooking();
-    const callback = api.mock.calls.find(([command, options]) => command === 'on' && options.action === 'bookingSuccessfulV2')[1].callback;
 
-    callback({ detail: { data: { uid: 'nullable-type', eventTypeId: null } } });
+    callback('bookingSuccessfulV2')({ detail: { data: { uid: 'nullable-type', eventTypeId: null } } });
 
     expect(capture.mock.calls).toEqual([['booking_completed', {
-        mode: isInline ? 'inline' : 'modal', booking_uid: 'nullable-type', event_type_id: null,
-        start_time: undefined, status: undefined,
-    }]]);
-});
-
-test('incomplete inline booking data retains inline mode without inventing optional values', () => {
-    inline = true;
-    initBooking();
-    const callback = api.mock.calls.find(([command, options]) => command === 'on' && options.action === 'bookingSuccessfulV2')[1].callback;
-
-    callback({ detail: {} });
-
-    expect(capture.mock.calls).toEqual([['booking_completed', {
-        mode: 'inline', booking_uid: undefined, event_type_id: undefined,
+        mode: 'inline', booking_uid: 'nullable-type', event_type_id: null,
         start_time: undefined, status: undefined,
     }]]);
 });
 
 test.each([{}, { detail: {} }, { detail: { data: null } }, { detail: { data: { uid: 'partial' } } }])('incomplete booking payloads do not throw or forward unexpected values %j', (event) => {
     initBooking();
-    const callback = api.mock.calls.find(([command, options]) => command === 'on' && options.action === 'bookingSuccessfulV2')[1].callback;
 
-    callback(event);
+    callback('bookingSuccessfulV2')(event);
 
     expect(capture.mock.calls).toEqual([['booking_completed', {
-        mode: 'modal', booking_uid: event.detail?.data?.uid, event_type_id: undefined,
+        mode: 'inline', booking_uid: event.detail?.data?.uid, event_type_id: undefined,
         start_time: undefined, status: undefined,
     }]]);
 });

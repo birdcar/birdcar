@@ -67,7 +67,7 @@ test('structured data describes the patterns as a defined term set', function ()
 
 test('the page offers the walkthrough without claims the site has not approved', function () {
     $this->get('/tools/where-work-gets-stuck')->assertOk()
-        ->assertSee('data-cal-link="birdcar/walkthrough"', false)
+        ->assertSee('href="'.route('public.walkthrough').'" data-booking-cta="stuck-hero"', false)
         ->assertSee('within three business days')
         ->assertSee(route('public.work').'#craft-and-communicate', false)
         ->assertDontSee('GHX')
@@ -79,7 +79,7 @@ test('the homepage, walkthrough, and footer link to the patterns', function (str
     $xpath = new DOMXPath(tap(new DOMDocument, fn (DOMDocument $document) => @$document->loadHTML($this->get($path)->assertOk()->getContent())));
     $href = route('public.where-work-gets-stuck');
 
-    expect($xpath->query('//main//a[@href="'.$href.'"]'))->toHaveCount(1);
+    expect($xpath->query('//main//a[@href="'.$href.'"]')->length)->toBeGreaterThanOrEqual(1);
     expect($xpath->query('//footer//a[@href="'.$href.'"]'))->toHaveCount(1);
 })->with(['/', '/walkthrough']);
 

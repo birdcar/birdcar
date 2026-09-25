@@ -27,19 +27,21 @@ test('canonical and social metadata use the configured origin without tracking p
 
 test('marketing pages declare current browser and home screen branding', function () {
     $this->get('/')
-        ->assertSee('<link rel="icon" href="'.asset('favicon.ico?v=2').'" sizes="16x16 32x32 48x48" type="image/x-icon">', false)
-        ->assertSee('<link rel="icon" href="'.asset('favicon.svg?v=2').'" sizes="any" type="image/svg+xml">', false)
-        ->assertSee('<link rel="apple-touch-icon" href="'.asset('apple-touch-icon.png?v=2').'" sizes="180x180">', false)
-        ->assertSee('name="theme-color" content="#b7edf1"', false);
+        ->assertSee('<link rel="icon" href="'.asset('marketing-icon.ico').'" sizes="16x16 32x32 48x48" type="image/x-icon">', false)
+        ->assertSee('<link rel="icon" href="'.asset('marketing-icon.svg').'" sizes="any" type="image/svg+xml">', false)
+        ->assertSee('<link rel="apple-touch-icon" href="'.asset('marketing-touch-icon.png').'" sizes="180x180">', false)
+        ->assertSee('name="theme-color" content="#edf3f0"', false)
+        ->assertDontSee('favicon.svg');
 });
 
-test('the favicon uses the current cyan field and ink mark', function () {
-    $icon = simplexml_load_file(public_path('favicon.svg'));
+test('the marketing icon draws the canary on the studio ink ground', function () {
+    $icon = simplexml_load_file(public_path('marketing-icon.svg'));
 
-    expect((string) $icon->rect['fill'])->toBe('#b7edf1');
-    expect((string) $icon->path['fill'])->toBe('#102a33');
-    expect(getimagesize(public_path('apple-touch-icon.png')))
+    expect((string) $icon->rect['fill'])->toBe('#0b141a');
+    expect((string) $icon->path[0]['fill'])->toBe('#f7c948');
+    expect(getimagesize(public_path('marketing-touch-icon.png')))
         ->toMatchArray([0 => 180, 1 => 180, 2 => IMAGETYPE_PNG]);
+    expect(getimagesize(public_path('marketing-icon.ico')))->not->toBeFalse();
 });
 
 test('structured article data identifies its real author and original publication date', function () {

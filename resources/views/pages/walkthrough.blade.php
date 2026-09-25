@@ -4,63 +4,96 @@ use function Laravel\Folio\name;
 
 name('public.walkthrough');
 
+$steps = [
+    ['title' => 'Check the fit.', 'text' => 'Three questions, so neither of us spends the hour on the wrong thing.'],
+    ['title' => 'Choose a time.', 'text' => 'A video call, or in person if you’d rather.'],
+    ['title' => 'Walk me through it.', 'text' => 'Show me the work, awkward bits included.'],
+    ['title' => 'Keep the report.', 'text' => 'My recommendations in writing, within three business days.'],
+];
+
+$questions = [
+    ['question' => 'Is the Walkthrough really free?', 'answer' => 'Yes. The conversation and the written report are free. You don’t have to buy implementation to receive or use the report, and I won’t raise it unless you do.'],
+    ['question' => 'Do I need to know what I want built?', 'answer' => 'No. Show me what’s painful and how it works today; you’ll leave with a clearer view of what would make it better.'],
+    ['question' => 'Is this a fit for my business?', 'answer' => 'If you have customers, people doing the work, and a process that takes too much chasing, copying, or remembering, there’s something useful to look at. The operational problem matters more than the industry. One condition: this works when I can talk to the people doing the work. If that isn’t possible, I’m not the right fit.'],
+    ['question' => 'What happens after I get the report?', 'answer' => 'You decide what to do with it. If you’d like my help, I can discuss a separate implementation engagement with you. If you want a deeper look before deciding, the same process runs as a paid discovery week with your team. You can also use the recommendations yourself or leave it there.'],
+    ['question' => 'What can an hour actually tell you?', 'answer' => 'Enough to see the shape of the problem and where I’d look first. That’s what you get in the report: what’s happening, what I recommend, and where I’d start. When something needs a closer look, the report says so.'],
+    ['question' => 'Is this an AI project?', 'answer' => 'It’s a Walkthrough of your work. AI might be useful, and so might connecting the tools you already use or changing a process. I recommend what makes sense for the problem.'],
+    ['question' => 'Is this about replacing my team?', 'answer' => 'No. The point is to give the people you already have room for work that’s worth their time. That rules out surveillance, and projects whose whole purpose is cutting people regardless of the consequences.'],
+];
+
 ?>
 <x-marketing.layout title="Book a free Walkthrough" active="walkthrough" description="A free hour with me on the work that keeps coming back to you, then a written report within three business days. Yours to keep.">
-    <section class="offer-opening" aria-labelledby="offer-heading">
-        <div class="offer-copy">
-            <h1 id="offer-heading">An hour on the work.<br>A report you can use.</h1>
-            <p>When you’re the person keeping track of everything, it’s hard to step back far enough to see what needs to change. So I start with the people doing the work, not with software.</p>
-            <p>In a free Walkthrough, you spend about an hour showing me the work that’s giving you trouble. Within three business days you get my recommendations in writing.</p>
-            <p>The hour is about your work. If you want to talk about hiring me, you’ll bring it up, not me.</p>
-            <x-marketing.booking-link inline placement="walkthrough-hero" class="button button-yellow">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
-            <p class="action-note">About an hour with me. A written report within three business days. Free.</p>
-        </div>
-        <aside class="offer-report" aria-labelledby="report-heading">
-            <svg class="report-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M1 1H83L99 13V99H1Z M83 1V13H99" /></svg>
-            <div class="offer-report-content">
+    <section class="wt-hero" aria-labelledby="offer-heading">
+        <div class="wt-hero-copy">
+            <h1 id="offer-heading">An hour on the work.<br> A report you can use.</h1>
+            <p class="wt-lead">In a free Walkthrough, you spend about an hour showing me the work that’s giving you trouble. Within three business days you get my recommendations in writing.</p>
+            <p class="wt-promise">The hour is about your work. If you want to talk about hiring me, you’ll bring it up, not me.</p>
+            <aside class="wt-report" aria-labelledby="report-heading">
                 <h2 id="report-heading">Your Walkthrough report</h2>
-                <p>In writing, within three business days.</p>
-                <dl class="report-contents">
-                    <div><dt>What’s happening</dt><dd>The problems in your work as I’ve understood them.</dd></div>
-                    <div><dt>What I recommend</dt><dd>What I’d change, and what each change fixes for you.</dd></div>
-                    <div class="first-recommendation"><dt>Where I’d start</dt><dd>The first change I’d make for you, and why it comes first.</dd></div>
-                </dl>
-                <p class="report-signoff">Yours to keep. No purchase required.</p>
-            </div>
-        </aside>
-    </section>
-    <section class="offer-outcome section-space" aria-labelledby="outcome-heading">
-        <h2 id="outcome-heading">Bring the problem.<br>I’ll bring the questions.</h2>
-        <div><p>Maybe onboarding a new client involves a dozen reminders. Maybe reporting eats an afternoon. Maybe the process works perfectly, as long as you’re there to keep it working. Left alone, that kind of work has one fix: another coordinator, another subscription, or another late night. That’s the expensive version of standing still.</p><p>What would change if the reminders sent themselves and the report was ready before you asked for it? You don’t need to diagnose it first. Bring one example, and an hour is enough to see the shape of it.</p><a class="text-link offer-detail-link" href="{{ route('public.where-work-gets-stuck') }}">Not sure how to describe it? Start with these eight <x-marketing.arrow /></a></div>
-    </section>
-    <section class="offer-steps section-space" aria-labelledby="meeting-heading">
-        <h2 id="meeting-heading">Here’s how it works.</h2>
-        <ol>
-            <li><span class="step-number">1</span><div><h3>Choose a time.</h3><p>Book an hour that works for you. It’s a video call unless you’d rather meet in person. Bring an example of the work you’d like to talk through; a few notes are plenty.</p></div></li>
-            <li><span class="step-number">2</span><div><h3>Walk me through it.</h3><p>You walk me through how the work happens, who’s involved, and where it gets difficult. I keep asking until the problem makes sense in your context.</p></div></li>
-            <li><span class="step-number">3</span><div><h3>Keep the report.</h3><p>Within three business days of the conversation, you get my observations and recommendations in writing, to use on your own or with my help.</p></div></li>
-        </ol>
-        <div class="offer-choice">
-            <h3>The next step is your choice.</h3>
-            <p>The free Walkthrough gives you a report, not a working implementation. Use the recommendations yourself, talk to me about a separate implementation purchase, or leave it there. You keep the report either way.</p>
+                <ul role="list">
+                    <li>What’s happening</li>
+                    <li>What I recommend</li>
+                    <li class="wt-report-start">Where I’d start</li>
+                </ul>
+            </aside>
+            <p class="wt-report-terms">In writing within three business days. Yours to keep.</p>
+        </div>
+        <div class="wt-desk">
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/walkthrough/desk-1000.webp') }} 1000w, {{ asset('images/walkthrough/desk.webp') }} 2000w" sizes="(min-width: 1100px) 64vw, 100vw">
+                <img class="wt-desk-plate" src="{{ asset('images/walkthrough/desk.png') }}" width="2000" height="1179" alt="" fetchpriority="high">
+            </picture>
+            <div class="wt-card-stack" aria-hidden="true"></div>
+            <x-marketing.fit-card />
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/walkthrough/canary.webp') }}?v=2">
+                <img class="wt-canary" src="{{ asset('images/walkthrough/canary.png') }}?v=2" width="320" height="334" alt="">
+            </picture>
         </div>
     </section>
-    <section class="assessment-faq section-space" aria-labelledby="questions-heading">
+
+    <ol class="wt-steps" aria-label="How the Walkthrough works">
+        @foreach ($steps as $step)
+            <li><span class="wt-step-number" aria-hidden="true">{{ $loop->iteration }}</span><div><h2>{{ $step['title'] }}</h2><p>{{ $step['text'] }}</p></div></li>
+        @endforeach
+    </ol>
+
+    <section class="wt-problem studio-section-intro" aria-labelledby="outcome-heading">
+        <h2 id="outcome-heading">Bring the problem.<br> I’ll bring the questions.</h2>
+        <div>
+            <p>When you’re the person keeping track of everything, it’s hard to step back far enough to see what needs to change. So I start with the people doing the work, not with software.</p>
+            <p>Maybe onboarding a new client involves a dozen reminders. Maybe reporting eats an afternoon. Maybe the process works perfectly, as long as you’re there to keep it working. Left alone, that kind of work has one fix: another coordinator, another subscription, or another late night. That’s the expensive version of standing still.</p>
+            <p>What would change if the reminders sent themselves and the report was ready before you asked for it? You don’t need to diagnose it first. Bring one example, and an hour is enough to see the shape of it.</p>
+            <a class="studio-link" href="{{ route('public.where-work-gets-stuck') }}">Not sure how to describe it? Start with these eight <x-marketing.arrow /></a>
+        </div>
+    </section>
+
+    <section class="wt-choice" aria-labelledby="choice-heading">
+        <h2 id="choice-heading">The next step is your choice.</h2>
+        <div>
+            <p>The report covers what’s happening, what I recommend, and where I’d start: the first change I’d make for you, and why it comes first.</p>
+            <p>The free Walkthrough gives you a report, not a working implementation. You keep it either way.</p>
+            <ul role="list">
+                <li>Use the recommendations yourself.</li>
+                <li>Talk to me about a separate implementation purchase.</li>
+                <li>Keep the report, or leave it there.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="wt-faq" aria-labelledby="questions-heading">
         <h2 id="questions-heading">A few fair questions.</h2>
         <div>
-            <details><summary>Is the Walkthrough really free?<x-marketing.arrow /></summary><p>Yes. The conversation and the written report are free. You don’t have to buy implementation to receive or use the report, and I won’t raise it unless you do.</p></details>
-            <details><summary>Do I need to know what I want built?<x-marketing.arrow /></summary><p>No. Show me what’s painful and how it works today; you’ll leave with a clearer view of what would make it better.</p></details>
-            <details><summary>Is this a fit for my business?<x-marketing.arrow /></summary><p>If you have customers, people doing the work, and a process that takes too much chasing, copying, or remembering, there’s something useful to look at. The operational problem matters more than the industry. One condition: this works when I can talk to the people doing the work. If that isn’t possible, I’m not the right fit.</p></details>
-            <details><summary>What happens after I get the report?<x-marketing.arrow /></summary><p>You decide what to do with it. If you’d like my help, I can discuss a separate implementation engagement with you. If you want a deeper look before deciding, the same process runs as a paid discovery week with your team. You can also use the recommendations yourself or leave it there.</p></details>
-            <details><summary>What can an hour actually tell you?<x-marketing.arrow /></summary><p>Enough to see the shape of the problem and where I’d look first. That’s what you get in the report: what’s happening, what I recommend, and where I’d start. When something needs a closer look, the report says so.</p></details>
-            <details><summary>Is this an AI project?<x-marketing.arrow /></summary><p>It’s a Walkthrough of your work. AI might be useful, and so might connecting the tools you already use or changing a process. I recommend what makes sense for the problem.</p></details>
-            <details><summary>Is this about replacing my team?<x-marketing.arrow /></summary><p>No. The point is to give the people you already have room for work that’s worth their time. That rules out surveillance, and projects whose whole purpose is cutting people regardless of the consequences.</p></details>
+            @foreach ($questions as $item)
+                <details><summary>{{ $item['question'] }}<span class="wt-faq-icon" aria-hidden="true"></span></summary><p>{{ $item['answer'] }}</p></details>
+            @endforeach
         </div>
     </section>
-    <section class="offer-close" id="choose-a-time" aria-labelledby="book-heading">
-        <h2 id="book-heading">Make a little room<br>to figure it out.</h2>
-        <p>Pick an hour that suits you. The report follows within three business days, and it’s yours whatever you decide.</p>
-        <div class="booking-calendar" data-cal-inline data-cal-link="{{ config('marketing.booking_calendar') }}" data-cal-namespace="{{ config('marketing.booking_namespace') }}"></div>
-        <p class="action-note">If the calendar doesn’t load, <a href="{{ config('marketing.booking_url') }}" data-booking-fallback>book on Cal.com</a>.</p>
+
+    <section class="studio-close wt-close" aria-labelledby="book-heading">
+        <h2 id="book-heading">Make a little room to figure it out.</h2>
+        <p>Answer three quick checks and pick an hour that suits you. The report follows within three business days, and it’s yours whatever you decide.</p>
+        <a class="studio-button" href="#choose-a-time" data-booking-cta="walkthrough-close">Check the fit and pick a time <x-marketing.arrow /></a>
+        <p class="studio-terms">About an hour with me. A written report within three business days. Free.</p>
     </section>
 </x-marketing.layout>

@@ -46,64 +46,52 @@ function ensureCal() {
     return Cal;
 }
 
-/**
- * Cal's document listener opens the modal for any `[data-cal-link]` element
- * but does not cancel an anchor's navigation. Keep the href as the
- * no-JavaScript fallback and only cancel it once the embed can take over.
- * Capture modified clicks before Cal's delegated listener opens a second UI.
- */
-function keepTriggersOnPage() {
-    document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('a[data-cal-link]');
-
-        if (!trigger || event.defaultPrevented) return;
-        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-            event.stopPropagation();
-            return;
-        }
-        if (!customElements.get('cal-modal-box')) return;
-
-        event.preventDefault();
-    }, { capture: true });
-}
-
 function themeColor(name, fallback) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+    return getComputedStyle(document.body).getPropertyValue(name).trim() || fallback;
 }
 
+/**
+ * The Walkthrough page's inline calendar is the only Cal surface. When the fit
+ * card gates it (`data-cal-defer`), Cal loads once the card dispatches
+ * `booking:open`, so visitors who never pass the fit check never load Cal.
+ */
 export function initBooking() {
     const inline = document.querySelector('[data-cal-inline]');
-    const trigger = document.querySelector('[data-cal-link]');
-    const source = inline ?? trigger;
 
-    if (!source) return;
+    if (!inline) return;
 
-    const namespace = source.dataset.calNamespace;
+    if ('calDefer' in inline.dataset) {
+        inline.addEventListener('booking:open', () => loadCalendar(inline), { once: true });
+        return;
+    }
+
+    loadCalendar(inline);
+}
+
+function loadCalendar(inline) {
+    const namespace = inline.dataset.calNamespace;
     const Cal = ensureCal();
 
     Cal('init', namespace, { origin: EMBED_ORIGIN });
     Cal.config = Cal.config || {};
     Cal.config.forwardQueryParams = true;
 
-    const ink = themeColor('--color-ink', '#102a33');
-    const paper = themeColor('--color-paper', '#ffffff');
-    const cyan = themeColor('--color-cyan', '#b7edf1');
-    const teal = themeColor('--color-deep-teal', '#214b57');
-
     Cal.ns[namespace]('ui', {
         cssVarsPerTheme: {
-            light: { 'cal-brand': ink, 'cal-brand-emphasis': teal, 'cal-brand-text': paper, 'cal-bg': paper },
-            dark: { 'cal-brand': cyan, 'cal-brand-emphasis': paper, 'cal-brand-text': ink },
+            light: {
+                'cal-brand': themeColor('--studio-yellow', '#f7c848'),
+                'cal-brand-emphasis': themeColor('--studio-yellow-deep', '#efb925'),
+                'cal-brand-text': themeColor('--studio-ink', '#0b141a'),
+                'cal-bg': themeColor('--studio-paper', '#ffffff'),
+            },
         },
-        hideEventTypeDetails: false,
+        hideEventTypeDetails: true,
         layout: 'month_view',
     });
 
-    const mode = inline ? 'inline' : 'modal';
-
     Cal.ns[namespace]('on', {
         action: 'linkReady',
-        callback: () => track(EVENTS.embedOpened, { mode }),
+        callback: () => track(EVENTS.embedOpened, { mode: 'inline' }),
     });
 
     Cal.ns[namespace]('on', {
@@ -111,17 +99,13 @@ export function initBooking() {
         callback: (event) => {
             const { uid, eventTypeId, startTime, status } = event.detail?.data ?? {};
 
-            track(EVENTS.bookingCompleted, { mode, booking_uid: uid, event_type_id: eventTypeId, start_time: startTime, status });
+            track(EVENTS.bookingCompleted, { mode: 'inline', booking_uid: uid, event_type_id: eventTypeId, start_time: startTime, status });
         },
     });
 
-    if (trigger) keepTriggersOnPage();
-
-    if (inline) {
-        Cal.ns[namespace]('inline', {
-            elementOrSelector: inline,
-            calLink: inline.dataset.calLink,
-            config: { layout: 'month_view', useSlotsViewOnSmallScreen: 'true', theme: 'light' },
-        });
-    }
+    Cal.ns[namespace]('inline', {
+        elementOrSelector: inline,
+        calLink: inline.dataset.calLink,
+        config: { layout: 'month_view', useSlotsViewOnSmallScreen: 'true', theme: 'light' },
+    });
 }

@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough', $schema))
         @head
-        <link rel="icon" href="{{ asset('favicon.ico?v=2') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
-        <link rel="icon" href="{{ asset('favicon.svg?v=2') }}" sizes="any" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png?v=2') }}" sizes="180x180">
+        <link rel="icon" href="{{ asset('marketing-icon.ico') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
+        <link rel="icon" href="{{ asset('marketing-icon.svg') }}" sizes="any" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="{{ asset('marketing-touch-icon.png') }}" sizes="180x180">
         <link rel="alternate" type="application/rss+xml" title="Birdcar Writing" href="{{ route('public.feed') }}">
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -23,7 +23,7 @@
                 <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                 <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
                 <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
-                <x-marketing.booking-link class="nav-booking" placement="header" :inline="$active === 'walkthrough'" :aria-current="$active === 'walkthrough' ? 'page' : null">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                <x-marketing.booking-link class="nav-booking" placement="header" :on-walkthrough="$active === 'walkthrough'" :aria-current="$active === 'walkthrough' ? 'page' : null">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
             </nav>
             <details class="mobile-menu">
                 <summary>Menu <span class="menu-icon" aria-hidden="true"></span></summary>
@@ -31,7 +31,7 @@
                     <a href="{{ route('public.index') }}#how-i-work">How I work</a>
                     <a href="{{ route('public.work') }}" @if ($active === 'work') aria-current="page" @endif>Selected work</a>
                     <a href="{{ route('public.writing') }}" @if ($active === 'writing') aria-current="page" @endif>Writing</a>
-                    <x-marketing.booking-link placement="mobile-menu" :inline="$active === 'walkthrough'" :aria-current="$active === 'walkthrough' ? 'page' : null">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
+                    <x-marketing.booking-link placement="mobile-menu" :on-walkthrough="$active === 'walkthrough'" :aria-current="$active === 'walkthrough' ? 'page' : null">Book a free Walkthrough <x-marketing.arrow /></x-marketing.booking-link>
                 </nav>
             </details>
         </header>

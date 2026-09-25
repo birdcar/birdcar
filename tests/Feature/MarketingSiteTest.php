@@ -156,18 +156,18 @@ test('the homepage connects a recognizable problem to help without requiring a c
     ], false);
 });
 
-test('booking buttons away from the walkthrough page open the calendar in place and keep the walkthrough link as fallback', function (string $path) {
+test('booking buttons away from the walkthrough page lead to its fit check instead of opening a calendar', function (string $path) {
     if ($path === '/writing/') {
         marketingSiteImportArchive($this);
     }
 
     $this->get($path)->assertOk()
         ->assertSee('href="'.route('public.walkthrough').'"', false)
-        ->assertSee('data-cal-link="birdcar/walkthrough"', false)
-        ->assertSee('data-cal-namespace="walkthrough"', false)
-        ->assertSee('data-cal-config=', false)
+        ->assertDontSee('data-cal-link')
+        ->assertDontSee('data-cal-namespace')
+        ->assertDontSee('data-cal-config')
         ->assertDontSee('data-cal-inline');
-})->with(['/', '/work', '/writing/']);
+})->with(['/', '/work', '/writing/', '/tools/where-work-gets-stuck']);
 
 test('no page still calls the offer a free assessment', function (string $path) {
     if ($path === '/writing/') {
