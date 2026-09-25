@@ -1,0 +1,4 @@
+{
+  "prompt": "Edit the attached image, which is a crop of an isometric architectural model render. Remove the tall stack of paper completely and show the clean wooden desktop in its place with a coffee mug and one neat closed folder. Switch the small red warning light off so it is a dark, unlit dome with no glow. Open the brass bird cage door and move the canary so it perches on top of the cage. The owner leans back, relaxed, looking at the laptop. Keep everything else identical: exact same framing, crop, camera, perspective, walls, glass, furniture, colours and lighting. No text anywhere. Output the same aspect ratio as the input.\n\n[Delivery derivative of .impeccable/assets/plates/owner-office-after.png (Codex image_generation): trimmed/padded and encoded to WebP with cwebp.]",
+  "createdAt": "2026-09-25T14:58:10.643Z"
+}

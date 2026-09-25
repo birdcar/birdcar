@@ -20,17 +20,19 @@ afterEach(function () {
 test('the homepage presents the approved offer and only the approved work story', function () {
     $this->get('/')
         ->assertOk()
-        ->assertSee('I help businesses untangle work')
-        ->assertSeeTextInOrder(['I’m Nick Cannariato', 'also known as Birdcar', 'canary auto', 'more than twenty years'])
+        ->assertSee('<title>Better work, faster. Without another hire. — Birdcar</title>', false)
+        ->assertSee('I find where work keeps landing on your desk')
+        ->assertSeeTextInOrder(['I’m Nick Cannariato', 'Most people call me Birdcar', 'canary auto', 'more than twenty years'])
         ->assertSee('fifteen years')
         ->assertSee('GitHub, Heroku, and Zapier')
-        ->assertSee('another hire, another subscription, or another hour of your evening')
+        ->assertSeeTextInOrder(['Where I’ve built systems', 'GitHub', 'Heroku', 'Zapier', 'Twilio', 'Salesforce'])
         ->assertSee('Implementation is a separate purchase')
         ->assertSee('working system, documentation, and training')
         ->assertSee('within three business days')
         ->assertSee('Craft &amp; Communicate', false)
         ->assertSee(route('public.walkthrough'), false)
         ->assertSee('Book a free Walkthrough')
+        ->assertDontSeeText('Apple')
         ->assertDontSee('GHX')
         ->assertDontSee('DataDash')
         ->assertDontSee('WorkOS')
@@ -38,38 +40,46 @@ test('the homepage presents the approved offer and only the approved work story'
         ->assertDontSee('Your AI wrote a bug');
 });
 
-test('the homepage explains the whole walkthrough in visible reading order before the work story', function () {
+test('the homepage explains the change, the offer, and the work in visible reading order', function () {
     $response = $this->get('/')->assertOk()->assertSeeTextInOrder([
-        'Why does everything',
+        'Better work,',
         'Book a free Walkthrough',
-        'The free Walkthrough takes it from there.',
-        'Show me the work',
-        'Pick a process your team actually performs',
-        'about an hour with me and the person doing the work',
+        'Where I’ve built systems',
+        'Here’s what changes when the work stops routing through you.',
+        'Today, every question finds its way to your desk.',
+        'In a Walkthrough, I follow the work through the business.',
+        'Then I build what fixes it.',
+        'What I build',
+        'It starts with a free Walkthrough.',
+        'The Walkthrough',
         'you’ll bring it up, not me',
-        'Keep the report',
-        'Within three business days, I’ll send you a written report',
-        'What’s getting in the way',
-        'What I’d change',
-        'Where I’d start',
-        'The first change and why it comes first.',
-        'Choose what happens next',
-        'Use the recommendations yourself.',
-        'Hire me for a separate implementation.',
-        'Or do nothing. No purchase obligation.',
-        'Which part of the week would you change?',
+        'The report',
+        'within three business days',
+        'where I’d start',
+        'The build',
+        'Implementation is a separate purchase',
+        'Care',
         'Craft &amp; Communicate',
     ], false);
 
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $xpath = new DOMXPath($document);
-
-    expect($xpath->query('//figure[@data-walkthrough-diagram]/ol/li'))->toHaveCount(3);
-    expect($xpath->query('//figure[@data-walkthrough-diagram]/figcaption'))->toHaveCount(0);
-    expect($xpath->query('//figure[@data-walkthrough-diagram]//*[@hidden or @aria-hidden="true"]//p'))->toHaveCount(0);
-    expect($xpath->query('//figure[@data-walkthrough-diagram]//svg[not(@aria-hidden="true" or ancestor::*[@aria-hidden="true"])]'))->toHaveCount(0);
     $response->assertDontSee('future-horizon')->assertDontSee('Direction contract');
+});
+
+test('the homepage miniature keeps every state readable without scripts', function () {
+    $response = $this->get('/')->assertOk();
+    $document = new DOMDocument;
+    @$document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());
+    $xpath = new DOMXPath($document);
+    $story = '//figure[contains(@class, "miniature-story")]';
+
+    expect($xpath->query($story.'//input[@type="radio"][@name="miniature-state"]'))->toHaveCount(3);
+    expect($xpath->query($story.'//input[@checked][@value="today"]'))->toHaveCount(1);
+    expect($xpath->query($story.'//li/*[@data-when="today"]'))->toHaveCount(5);
+    expect($xpath->query($story.'//li/a[@data-when="walkthrough"][contains(@href, "/tools/where-work-gets-stuck#")]'))->toHaveCount(5);
+    expect($xpath->query($story.'//li/*[@data-when="fixed"]'))->toHaveCount(5);
+    expect($xpath->query('//figure[@data-miniature]//canvas[not(@aria-hidden="true")]'))->toHaveCount(0);
+    expect($xpath->query('//figure[@data-miniature]//img[contains(@class, "miniature-plate")][@alt!=""]'))->toHaveCount(2);
+    $response->assertSeeTextInOrder(['Waiting on your yes', 'Waiting on a reply', 'It runs on remembering', 'Assembled by hand', 'The same information, typed twice']);
 });
 
 test('repeated walkthrough figures keep complete semantic explanations without duplicate identifiers', function () {
@@ -130,21 +140,17 @@ test('conversion pages make the readers independent next steps visible without o
 
     expect($visible)->toContain(...$choices);
 })->with([
-    ['/', ['Use the recommendations yourself.', 'Hire me for a separate implementation.', 'Or do nothing. No purchase obligation.']],
+    ['/', ['Yours to keep, whatever you decide.', 'Implementation is a separate purchase.']],
     ['/walkthrough', ['Use the recommendations yourself', 'separate implementation purchase', 'or leave it there', 'not a working implementation']],
 ]);
 
 test('the homepage connects a recognizable problem to help without requiring a case study visit', function () {
     $this->get('/')->assertSeeTextInOrder([
-        'Why does everything',
+        'Better work,',
         'Book a free Walkthrough',
-        'Keep the report',
-        'The follow-up that depends on your memory.',
+        'The Friday report someone builds by hand.',
         'Book a free Walkthrough',
         'Craft &amp; Communicate',
-        'Understand',
-        'Build',
-        'Care',
         'fifteen years',
         'Book a free Walkthrough',
     ], false);
@@ -387,7 +393,7 @@ test('the reporting illustration connects only the supplied project facts in sta
         ->assertDontSee('hours saved')
         ->assertDontSee('revenue increased')
         ->assertDontSee('fully automated');
-})->with(['/', '/work']);
+})->with(['/work']);
 
 test('repeated reporting figures preserve their full explanation without identifier collisions', function () {
     $html = Blade::render('<x-marketing.reporting-diagram /><x-marketing.reporting-diagram />');

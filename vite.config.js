@@ -13,6 +13,10 @@ export default defineConfig({
                     weights: [400, 500, 600, 700],
                     display: 'swap',
                 }),
+                bunny('Mona Sans', {
+                    weights: [400, 500, 600, 700, 800],
+                    display: 'swap',
+                }),
             ],
         }),
         tailwindcss(),
