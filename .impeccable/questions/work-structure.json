@@ -1,0 +1,42 @@
+{
+  "title": "Selected work: choose the page structure",
+  "question": "Craft & Communicate is the only story, and every picture is labeled as illustration. Lock one structure for /work, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "journey",
+      "label": "One report's journey",
+      "kicker": "THE ROLL",
+      "thesis": "Scroll follows one report down a dotted route: gathered by hand, brought into the platform, sold as the agency's service.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["vertical packet route", "three stacked isometric vignettes", "pill tags carrying the facts"],
+      "viewport": "Title and lead at left; at right the route starts at a by-hand workstation and a canary packet travels down toward the platform module.",
+      "risk": "The story is only fully told after scrolling; the first viewport shows the problem more than the result.",
+      "comp": ".impeccable/mocks/decision/wfccd-journey.png"
+    },
+    {
+      "id": "before-after",
+      "label": "Before and after",
+      "kicker": "DEALT",
+      "thesis": "One agency diorama with a Before / After control, like the homepage story but about their reporting.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["floating agency diorama", "Before / After pill control", "teal live lanes to client desks"],
+      "viewport": "Title and lead at left; the agency diorama at right in its after state, lanes running from the platform to client desks, with the toggle above.",
+      "risk": "Closest to the homepage's own device; it proves consistency more than it adds a new idea.",
+      "comp": ".impeccable/mocks/decision/wfccd-before-after.png"
+    },
+    {
+      "id": "three-rooms",
+      "label": "Three rooms, one route",
+      "kicker": "DEALT",
+      "thesis": "The whole story in one panorama: by hand, the platform, the agency's clients, joined by one route.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["horizontal three-vignette panorama", "one packet route", "caption band"],
+      "viewport": "Title and lead across the top; three vignettes left to right with a packet route; the illustration caption below.",
+      "risk": "Three vignettes at once can read as a diagram strip; the center platform has to win the scale contest.",
+      "comp": ".impeccable/mocks/decision/wfccd-three-rooms.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}
