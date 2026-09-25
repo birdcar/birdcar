@@ -232,6 +232,31 @@ test('develop idea starts one pending interview and redirects to the workspace',
         ->and($activities->first()->status)->not->toBe(EditorialActivityStatus::Running);
 });
 
+test('workspace shows queued agent work and its activity log without allowance controls', function (): void {
+    $user = publishingUser();
+    $article = activeArticleFor($user, 'Queued agent idea');
+    EditorialActivity::factory()->create([
+        'article_id' => $article->id,
+        'attempt_id' => $article->current_attempt_id,
+        'initiating_user_id' => $user->id,
+        'kind' => EditorialActivityKind::Interview,
+        'status' => EditorialActivityStatus::Pending,
+    ]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('admin.publishing.article-workspace', ['article' => $article])
+        ->assertSee('Agent work is queued; publishing agents are paused')
+        ->assertSee('Activity log')
+        ->assertDontSee('allowance')
+        ->assertDontSee('Agent budget');
+
+    setPublishingAgentsPaused(false);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
+        ->assertSee('Ready for the next available worker');
+});
+
 test('develop idea is forbidden without develop permission', function (): void {
     $user = publishingWriteOnlyUser();
 

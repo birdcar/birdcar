@@ -11,10 +11,9 @@ use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
-use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialModelBudget;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublicSourceFetcher;
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -24,12 +23,8 @@ beforeEach(function (): void {
 });
 
 test('research stores retrieved citation text and fetches pointers without content', function (): void {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
-    config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
-    config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
-    config()->set('publishing_agents.routes.default.context_tokens', 100);
-    config()->set('publishing_agents.routes.default.max_completion_tokens', 50);
 
     Http::preventStrayRequests();
     Http::fake([
@@ -47,7 +42,6 @@ test('research stores retrieved citation text and fetches pointers without conte
                 'type' => 'url_citation',
                 'url_citation' => ['url' => 'https://example.com/a', 'content' => 'A supporting passage.'],
             ]]]]],
-            'usage' => ['cost' => '0.00005'],
         ]),
         'https://example.com/b' => Http::response('<p>Fetched public passage.</p>', 200, ['Content-Type' => 'text/html']),
     ]);
@@ -59,7 +53,7 @@ test('research stores retrieved citation text and fetches pointers without conte
     $fetcher->useTransport(fn (string $url, array $options): array => ['status' => 200, 'headers' => ['Content-Type' => 'text/html'], 'body' => '<p>Fetched public passage.</p>']);
 
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::ResearchChallenge, [], 'research-test');
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class), $fetcher);
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class), $fetcher);
 
     $openRouterText = EvidenceSource::query()->where('retrieval_method', 'openrouter-web')->first()?->extracted_text;
 
@@ -72,12 +66,8 @@ test('research stores retrieved citation text and fetches pointers without conte
 });
 
 test('research records unresolved source when public fetch is denied', function (): void {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
-    config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
-    config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
-    config()->set('publishing_agents.routes.default.context_tokens', 100);
-    config()->set('publishing_agents.routes.default.max_completion_tokens', 50);
 
     Http::preventStrayRequests();
     Http::fake([
@@ -91,7 +81,6 @@ test('research records unresolved source when public fetch is denied', function 
                 'contradictions' => [],
                 'gaps' => [],
             ])]]],
-            'usage' => ['cost' => '0.00005'],
         ]),
     ]);
 
@@ -99,7 +88,7 @@ test('research records unresolved source when public fetch is denied', function 
     $attempt = evidenceAttempt($actor);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::ResearchChallenge, [], 'research-denied-source');
 
-    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class), app(PublicSourceFetcher::class));
+    app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class), app(PublicSourceFetcher::class));
 
     $source = EvidenceSource::query()->where('activity_id', $activity->id)->first();
     expect($activity->fresh()?->status->value)->toBe('completed')
@@ -240,11 +229,11 @@ function evidenceAttempt(User $actor): PublishingAttempt
     $revision = $writer->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Evidence'], 'evidence-draft-'.uniqid());
 
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Evidence']);
-    $enabled = (bool) config('publishing_agents.enabled', false);
-    config()->set('publishing_agents.enabled', false);
+    $paused = app(PublishingAgentSettings::class)->paused;
+    setPublishingAgentsPaused(true);
     $approve = app(ApprovePublishingStage::class);
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
-    config()->set('publishing_agents.enabled', $enabled);
+    setPublishingAgentsPaused($paused);
 
     return $attempt->fresh();
 }

@@ -33,7 +33,7 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
     $this->assertDatabaseHas('permissions', ['name' => 'publishing.develop', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'publishing.approve', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'publishing.publish', 'guard_name' => 'web']);
-    $this->assertDatabaseHas('permissions', ['name' => 'publishing.budget', 'guard_name' => 'web']);
+    $this->assertDatabaseMissing('permissions', ['name' => 'publishing.budget', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'admin.access', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.viewer', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.editor', 'guard_name' => 'web']);
@@ -44,7 +44,6 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
         ->and(permissionNamesForRole('organizations.editor'))->toBe(['organizations.update'])
         ->and(permissionNamesForRole('publishing.author'))->toBe([
             'publishing.approve',
-            'publishing.budget',
             'publishing.develop',
             'publishing.publish',
             'publishing.view',

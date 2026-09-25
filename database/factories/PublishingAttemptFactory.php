@@ -35,10 +35,8 @@ class PublishingAttemptFactory extends Factory
             'parked_reason' => null,
             'abandoned_at' => null,
             'abandoned_reason' => null,
-            'allowance_nano_usd' => 5_000_000_000,
             'review_cycle' => 1,
             'recheck_used' => false,
-            'allowance_changes' => [],
         ];
     }
 

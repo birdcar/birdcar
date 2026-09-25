@@ -14,8 +14,6 @@ use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\User;
-use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialModelBudget;
 use App\Services\Publishing\EditorialOutput;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -189,12 +187,8 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 
 function journeyConfigureAgents(): void
 {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
-    config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
-    config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
-    config()->set('publishing_agents.routes.default.context_tokens', 100);
-    config()->set('publishing_agents.routes.default.max_completion_tokens', 50);
 }
 
 /**
@@ -207,7 +201,6 @@ function journeyOpenRouterResponse(string $id, array $payload, array $annotation
     return [
         'id' => $id,
         'choices' => [['message' => ['content' => json_encode($payload, JSON_THROW_ON_ERROR), 'annotations' => $annotations]]],
-        'usage' => ['cost' => '0.00005'],
     ];
 }
 
@@ -232,7 +225,7 @@ function journeyDrainEditorialActivities(int $limit = 10): void
             return;
         }
 
-        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
+        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
     }
 }
 

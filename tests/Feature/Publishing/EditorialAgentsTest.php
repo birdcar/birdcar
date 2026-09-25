@@ -15,8 +15,8 @@ use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Services\Publishing\EditorialOutput;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
+use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Approvals\Approval;
-use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Laravel\Ai\Tools\Request;
 
@@ -29,17 +29,15 @@ function editorialActivity(EditorialActivityKind $kind, array $input = []): Edit
 }
 
 test('it selects the role-specific SDK agent for each editorial activity kind', function () {
-    $endpoint = ['provider' => 'openrouter'];
-
-    expect(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Interview), $endpoint))->toBeInstanceOf(Interviewer::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ResearchChallenge), $endpoint))->toBeInstanceOf(Researcher::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Plan), $endpoint))->toBeInstanceOf(Planner::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Draft), $endpoint))->toBeInstanceOf(Drafter::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewFacts), $endpoint))->toBeInstanceOf(FactReviewer::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewVoice), $endpoint))->toBeInstanceOf(VoiceReviewer::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewBuyer), $endpoint))->toBeInstanceOf(BuyerReviewer::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Reconciliation), $endpoint))->toBeInstanceOf(ReviewReconciler::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Recheck), $endpoint))->toBeInstanceOf(RevisionRechecker::class);
+    expect(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Interview)))->toBeInstanceOf(Interviewer::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ResearchChallenge)))->toBeInstanceOf(Researcher::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Plan)))->toBeInstanceOf(Planner::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Draft)))->toBeInstanceOf(Drafter::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewFacts)))->toBeInstanceOf(FactReviewer::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewVoice)))->toBeInstanceOf(VoiceReviewer::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewBuyer)))->toBeInstanceOf(BuyerReviewer::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Reconciliation)))->toBeInstanceOf(ReviewReconciler::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Recheck)))->toBeInstanceOf(RevisionRechecker::class);
 });
 
 test('it prompts the native SDK with frozen context and returns structured output from the fake', function () {
@@ -48,9 +46,9 @@ test('it prompts the native SDK with frozen context and returns structured outpu
         'argument' => 'The editorial argument.',
         'visualPlan' => [['slot' => 'hero', 'description' => 'Product screenshot']],
     ]]);
-    $agent = new Planner(editorialActivity(EditorialActivityKind::Plan), ['provider' => 'openrouter']);
+    $agent = new Planner(editorialActivity(EditorialActivityKind::Plan));
 
-    $response = $agent->prompt($agent->promptText(), provider: Lab::OpenRouter, model: 'openai/gpt-4o-mini');
+    $response = $agent->prompt($agent->promptText());
 
     expect($response)->toBeInstanceOf(StructuredAgentResponse::class)
         ->and($response['argument'])->toBe('The editorial argument.')
@@ -61,11 +59,11 @@ test('it prompts the native SDK with frozen context and returns structured outpu
 });
 
 test('it exposes meaningful native structured schemas without empty arbitrary objects', function () {
-    $schema = (new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge), []))->schema(new JsonSchemaTypeFactory);
+    $schema = (new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge)))->schema(new JsonSchemaTypeFactory);
     $claims = $schema['claims']->toArray();
     $sourceReferences = $schema['sourceReferences']->toArray();
-    $draftSchema = (new Drafter(editorialActivity(EditorialActivityKind::Draft), []))->schema(new JsonSchemaTypeFactory);
-    $reconciliationSchema = (new ReviewReconciler(editorialActivity(EditorialActivityKind::Reconciliation), []))->schema(new JsonSchemaTypeFactory);
+    $draftSchema = (new Drafter(editorialActivity(EditorialActivityKind::Draft)))->schema(new JsonSchemaTypeFactory);
+    $reconciliationSchema = (new ReviewReconciler(editorialActivity(EditorialActivityKind::Reconciliation)))->schema(new JsonSchemaTypeFactory);
 
     expect(array_keys($schema))->toBe(['claims', 'sourceReferences', 'contradictions', 'gaps'])
         ->and($claims['items']['properties'])->toHaveKeys(['statement', 'supporting_quotations', 'severity'])
@@ -76,28 +74,80 @@ test('it exposes meaningful native structured schemas without empty arbitrary ob
         ->and($draftSchema['document']->toArray()['type'])->toBe('string');
 });
 
-test('it pins one-step execution and OpenRouter Exa plugin routing options', function () {
-    $agent = new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge), [
-        'provider' => 'openrouter',
-        'max_completion_tokens' => 1234,
-        'max_price' => ['prompt' => '0.10', 'completion' => '0.20'],
-    ]);
+/** @return array<string, mixed> */
+function sentEditorialAgentRequest(EditorialAgent $agent): array
+{
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    Http::preventStrayRequests();
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response([
+        'id' => 'gen-config', 'model' => $agent->model(),
+        'choices' => [['finish_reason' => 'stop', 'message' => ['role' => 'assistant', 'content' => '{}']]],
+    ])]);
 
-    $options = $agent->providerOptions(Lab::OpenRouter);
+    $agent->prompt($agent->promptText());
 
-    expect($agent->maxSteps())->toBe(1)
-        ->and($agent->maxTokens())->toBe(1234)
-        ->and($options['provider']['only'])->toBe(['openrouter'])
-        ->and($options['provider']['allow_fallbacks'])->toBeFalse()
-        ->and($options['provider']['require_parameters'])->toBeTrue()
-        ->and($options['provider']['max_price'])->toBe(['prompt' => '0.10', 'completion' => '0.20'])
-        ->and($options['max_completion_tokens'])->toBe(1234)
-        ->and($options['plugins'])->toBe([['id' => 'web', 'engine' => 'exa', 'mode' => 'auto', 'max_results' => 5]]);
+    return Http::recorded()->sole()[0]->data();
+}
+
+test('each role sends its explicit native recommendation without price or provider pins', function (EditorialActivityKind $kind, string $model, string $effort, int $maxTokens) {
+    $agent = EditorialAgent::forActivity(editorialActivity($kind));
+
+    $body = sentEditorialAgentRequest($agent);
+
+    expect(EditorialAgent::recommendedModelFor($kind))->toBe($model)
+        ->and(EditorialAgent::allowsModel($model))->toBeTrue()
+        ->and($agent->maxSteps())->toBe(1)
+        ->and($agent->timeout())->toBeLessThan(60)
+        ->and($body['model'])->toBe($model)
+        ->and($body['max_tokens'])->toBe($maxTokens)
+        ->and($body['reasoning'])->toBe(['effort' => $effort])
+        ->and($body['provider'])->toBe(['require_parameters' => true])
+        ->and($body)->not->toHaveKeys(['max_price', 'max_completion_tokens']);
+})->with([
+    'interviewer' => [EditorialActivityKind::Interview, 'google/gemini-3.8-flash', 'low', 4000],
+    'researcher' => [EditorialActivityKind::ResearchChallenge, 'google/gemini-3.8-flash', 'medium', 8000],
+    'planner' => [EditorialActivityKind::Plan, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
+    'drafter' => [EditorialActivityKind::Draft, 'google/gemini-3.8-flash', 'medium', 16000],
+    'fact reviewer' => [EditorialActivityKind::ReviewFacts, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
+    'voice reviewer' => [EditorialActivityKind::ReviewVoice, 'google/gemini-3.8-flash', 'medium', 8000],
+    'buyer reviewer' => [EditorialActivityKind::ReviewBuyer, 'deepseek/deepseek-v4.1-flash', 'low', 6000],
+    'reconciler' => [EditorialActivityKind::Reconciliation, 'deepseek/deepseek-v4.1-flash', 'low', 6000],
+    'rechecker' => [EditorialActivityKind::Recheck, 'deepseek/deepseek-v4-pro-0813', 'high', 12000],
+]);
+
+test('allowlisted overrides replace only the model and keep role reasoning where supported', function (string $override) {
+    $body = sentEditorialAgentRequest(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Plan), $override));
+
+    expect($body['model'])->toBe($override)
+        ->and($body['reasoning'])->toBe(['effort' => 'high'])
+        ->and($body['provider'])->toBe(['require_parameters' => true]);
+})->with(['google/gemini-3.8-flash', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash']);
+
+test('auto router requests omit forced reasoning while research keeps Exa search', function () {
+    $research = sentEditorialAgentRequest(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ResearchChallenge), EditorialAgent::AUTO_ROUTER));
+
+    expect($research['model'])->toBe('openrouter/auto')
+        ->and($research)->not->toHaveKey('reasoning')
+        ->and($research['provider'])->toBe(['require_parameters' => true])
+        ->and($research['plugins'])->toBe([['id' => 'web', 'engine' => 'exa', 'mode' => 'auto', 'max_results' => 5]]);
+});
+
+test('only research requests carry the Exa web plugin', function () {
+    expect(sentEditorialAgentRequest(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Draft))))->not->toHaveKey('plugins')
+        ->and(sentEditorialAgentRequest(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ResearchChallenge)))['plugins'][0]['engine'])->toBe('exa');
+});
+
+test('the allowlist rejects unknown identifiers and marks auto as reasoning-incompatible', function () {
+    expect(EditorialAgent::allowsModel('openai/gpt-unknown'))->toBeFalse()
+        ->and(EditorialAgent::allowsModel(''))->toBeFalse()
+        ->and(EditorialAgent::modelSupportsReasoning(EditorialAgent::AUTO_ROUTER))->toBeFalse()
+        ->and(config('publishing_agents'))->not->toHaveKeys(['routes', 'role_routes', 'enabled'])
+        ->and(json_encode(config('publishing_agents')))->not->toContain('price');
 });
 
 test('it routes only interviewers to the author approval tool', function () {
-    $interviewerTools = iterator_to_array((new Interviewer(editorialActivity(EditorialActivityKind::Interview), []))->tools());
-    $plannerTools = iterator_to_array((new Planner(editorialActivity(EditorialActivityKind::Plan), []))->tools());
+    $interviewerTools = iterator_to_array((new Interviewer(editorialActivity(EditorialActivityKind::Interview)))->tools());
+    $plannerTools = iterator_to_array((new Planner(editorialActivity(EditorialActivityKind::Plan)))->tools());
 
     expect($interviewerTools)->toHaveCount(1)
         ->and($interviewerTools[0])->toBeInstanceOf(AskAuthor::class)

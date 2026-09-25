@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +45,9 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function setPublishingAgentsPaused(bool $paused): void
 {
-    // ..
+    $settings = app(PublishingAgentSettings::class);
+    $settings->paused = $paused;
+    $settings->save();
 }

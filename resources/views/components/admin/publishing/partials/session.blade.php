@@ -41,12 +41,12 @@
             <div class="publishing-work-status" role="status">
                 <span class="publishing-activity-mark" data-publishing-activity aria-hidden="true"><span></span><span></span><span></span></span>
                 <div>
-                    <p class="font-medium">{{ config('publishing_agents.enabled') ? ($currentActivity?->status === \App\Models\Publishing\EditorialActivityStatus::Running ? 'Your editorial partner is working' : 'Ready for the next available worker') : 'Agent work is queued; agents are currently disabled' }}</p>
+                    <p class="font-medium">{{ $agentsPaused ? 'Agent work is queued; publishing agents are paused' : ($currentActivity?->status === \App\Models\Publishing\EditorialActivityStatus::Running ? 'Your editorial partner is working' : 'Ready for the next available worker') }}</p>
                     <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ match ($currentActivity?->kind?->value) { 'interview' => 'Making room for your perspective.', 'research_challenge' => 'Checking the evidence behind the argument.', 'plan' => 'Organizing the argument into a plan for your approval.', 'draft' => 'Drafting from your approved plan.', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck' => 'Reading carefully. Your manuscript remains yours.', default => 'You can leave this page and return to the same work.' } }}</p>
                 </div>
             </div>
         @elseif (in_array($currentActivity?->status?->value, ['failed', 'paused'], true))
-            <flux:callout variant="warning" heading="Agent work needs attention" :text="$currentActivity->pause_reason ?? $currentActivity->error_reason ?? 'Open activity and allowance below for details. Your saved work is safe.'" />
+            <flux:callout variant="warning" heading="Agent work needs attention" :text="$currentActivity->pause_reason ?? $currentActivity->error_reason ?? 'Open activity below for details. Your saved work is safe.'" />
         @endif
     </div>
 

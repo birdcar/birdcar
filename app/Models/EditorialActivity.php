@@ -25,6 +25,13 @@ class EditorialActivity extends Model
     /** @use HasFactory<EditorialActivityFactory> */
     use HasFactory;
 
+    public const ATTEMPT_PAUSE_REASON = 'Publishing attempt paused.';
+
+    public const LEGACY_PRE_CALL_PAUSE_REASON = 'Paused before any provider request by the removed agent budget checks. Resume the publishing attempt to run it again.';
+
+    /** Pause reasons an explicit attempt resume may return to pending work. */
+    public const RESUMABLE_PAUSE_REASONS = [self::ATTEMPT_PAUSE_REASON, self::LEGACY_PRE_CALL_PAUSE_REASON];
+
     /**
      * @return array<string, string>
      */
@@ -75,12 +82,6 @@ class EditorialActivity extends Model
     public function revision(): BelongsTo
     {
         return $this->belongsTo(ArticleRevision::class, 'revision_id');
-    }
-
-    /** @return HasMany<AgentBudgetReservation, $this> */
-    public function reservations(): HasMany
-    {
-        return $this->hasMany(AgentBudgetReservation::class, 'activity_id');
     }
 
     /** @return HasMany<EvidenceSource, $this> */

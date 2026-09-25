@@ -14,7 +14,6 @@ final class Catalog implements AuthorizationCatalog
             Permission::Develop,
             Permission::Approve,
             Permission::Publish,
-            Permission::Budget,
         ];
     }
 
@@ -29,7 +28,6 @@ final class Catalog implements AuthorizationCatalog
                     Permission::Develop,
                     Permission::Approve,
                     Permission::Publish,
-                    Permission::Budget,
                 ],
             ],
         ];

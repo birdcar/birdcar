@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['article_id', 'user_id', 'stage', 'input_version', 'brief', 'angle', 'plan', 'interview_context', 'paused_at', 'pause_reason', 'parked_at', 'parked_reason', 'abandoned_at', 'abandoned_reason', 'allowance_nano_usd', 'review_cycle', 'recheck_used', 'allowance_changes'])]
+#[Fillable(['article_id', 'user_id', 'stage', 'input_version', 'brief', 'angle', 'plan', 'interview_context', 'paused_at', 'pause_reason', 'parked_at', 'parked_reason', 'abandoned_at', 'abandoned_reason', 'review_cycle', 'recheck_used'])]
 class PublishingAttempt extends Model
 {
     /** @use HasFactory<PublishingAttemptFactory> */
@@ -30,10 +30,8 @@ class PublishingAttempt extends Model
             'paused_at' => 'datetime',
             'parked_at' => 'datetime',
             'abandoned_at' => 'datetime',
-            'allowance_nano_usd' => 'integer',
             'review_cycle' => 'integer',
             'recheck_used' => 'boolean',
-            'allowance_changes' => 'array',
         ];
     }
 
@@ -83,14 +81,6 @@ class PublishingAttempt extends Model
     public function editorialActivities(): HasMany
     {
         return $this->hasMany(EditorialActivity::class, 'attempt_id');
-    }
-
-    /**
-     * @return HasMany<AgentBudgetReservation, $this>
-     */
-    public function budgetReservations(): HasMany
-    {
-        return $this->hasMany(AgentBudgetReservation::class, 'attempt_id');
     }
 
     /**

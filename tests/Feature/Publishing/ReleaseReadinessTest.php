@@ -6,7 +6,6 @@ use App\Actions\Publishing\CheckArticleRelease;
 use App\Actions\Publishing\ManageArticleRelease;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Role as PublishingRole;
-use App\Models\AgentBudgetReservation;
 use App\Models\Article;
 use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
@@ -68,7 +67,7 @@ test('safe article packages include a current readiness hash and stale findings 
         ->toThrow(RuntimeException::class, 'readiness check is stale');
 });
 
-test('release freshness hashes evidence contents and excludes budget bookkeeping', function (): void {
+test('release freshness hashes evidence contents', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
     $article = $write->capture($actor, 'Evidence freshness.', 'evidence-freshness');
@@ -90,19 +89,6 @@ test('release freshness hashes evidence contents and excludes budget bookkeeping
     ]);
     $releases = app(ManageArticleRelease::class);
     $release = $releases->prepare($actor, $attempt, $revision->id, 'evidence-freshness');
-
-    AgentBudgetReservation::create([
-        'attempt_id' => $attempt->id,
-        'activity_id' => null,
-        'call_number' => 1,
-        'local_call_key' => 'evidence-freshness-budget',
-        'reserved_nano_usd' => 1_000,
-        'actual_nano_usd' => 500,
-        'state' => AgentBudgetReservation::STATE_SETTLED,
-        'price_snapshot' => ['model' => 'fixture'],
-        'request_bound' => ['scope' => 'budget-only'],
-        'settled_at' => now(),
-    ]);
 
     $approval = $releases->approve($actor, $release, $release->release_hash);
     expect($approval->release_id)->toBe($release->id);

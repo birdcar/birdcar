@@ -6,7 +6,7 @@
                 <p class="mt-4 max-w-xl text-base leading-relaxed text-zinc-600 dark:text-zinc-300">Start with a conversation. Your editorial partner will ask questions, help find the argument, and bring a direction back for your approval.</p>
                 @can('develop', $article)
                     <flux:button class="mt-7" variant="primary" icon:trailing="arrow-right" wire:click="startDevelopment" data-publishing-editor-action>Develop this idea</flux:button>
-                    <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-300">Starts an interview with a $5 agent allowance. Nothing publishes without you.</p>
+                    <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-300">Starts an interview with your editorial agents. Nothing publishes without you.</p>
                 @endcan
                 @if ($article->published_release_id)<flux:callout class="mt-6" text="Your published version stays live while you work on a revision." />@endif
             </div>
@@ -88,7 +88,7 @@
                     <div><flux:heading level="3">Visual plan</flux:heading><x-admin.publishing.partials.editorial-content class="mt-3" :value="$displayPlan['visualPlan'] ?? []" /></div>
                     @if (! $planApproved && $angleApproved && ! $working)
                         @can('approve', $article)<flux:button variant="primary" wire:click="approvePlan('{{ $planInputHash }}')" data-publishing-editor-action>Approve plan and draft</flux:button>@endcan
-                        <p class="text-sm text-zinc-600 dark:text-zinc-300">Authorizes drafting from this plan, within the remaining allowance.</p>
+                        <p class="text-sm text-zinc-600 dark:text-zinc-300">Authorizes drafting from this plan.</p>
                     @elseif ($planApproved)
                         <flux:button variant="primary" @click="selectMode('write')" icon:trailing="arrow-right">Go to the manuscript</flux:button>
                     @endif

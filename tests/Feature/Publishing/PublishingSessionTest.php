@@ -16,7 +16,7 @@ use Spatie\Permission\PermissionRegistrar;
 beforeEach(function (): void {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     $this->artisan('authorization:sync')->assertSuccessful();
-    config(['publishing_agents.enabled' => false]);
+    setPublishingAgentsPaused(true);
     Http::preventStrayRequests();
 });
 

@@ -13,6 +13,7 @@ use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\PublishingFingerprint;
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -65,7 +66,7 @@ class ApprovePublishingStage
             $lockedAttempt->forceFill(['stage' => $this->nextStage($kind)])->save();
             $lockedAttempt->refresh();
 
-            if ((bool) config('publishing_agents.enabled', false)) {
+            if (! app(PublishingAgentSettings::class)->paused) {
                 if ($kind === ApprovalKind::Angle) {
                     app(StartEditorialActivity::class)->start($actor, $lockedAttempt, EditorialActivityKind::ResearchChallenge, [], 'research-'.$lockedAttempt->review_cycle);
                 }

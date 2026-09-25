@@ -335,7 +335,7 @@ test('imported published articles show historical published release readiness wi
         ->assertSee('release='.$release->id, false);
 });
 
-test('workspace wires agent activity budget source voice and interview answer actions', function (): void {
+test('workspace wires agent activity source voice and interview answer actions without allowance controls', function (): void {
     $user = editorUser();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
@@ -354,14 +354,12 @@ test('workspace wires agent activity budget source voice and interview answer ac
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->set('budgetTopUpNanoUsd', 500_000_000)
-        ->set('budgetMutationKey', 'ui-topup-test')
         ->set('selectedVoiceSampleArticleIds', [$archive->id])
         ->set('interviewAnswers', 'The best customer objected to onboarding time.')
-        ->call('topUpBudget')
         ->call('startInterview')
         ->call('submitInterviewAnswers')
-        ->assertSee('Agent budget')
+        ->assertDontSee('Agent budget')
+        ->assertDontSee('Add allowance')
         ->assertSee('Activity log');
 
     $approve->approve($user, $attempt->fresh(), ApprovalKind::Angle, $approve->inputHashFor($attempt->fresh(), ApprovalKind::Angle));
@@ -371,14 +369,13 @@ test('workspace wires agent activity budget source voice and interview answer ac
         ->set('sourceUrl', 'https://example.com/source')
         ->call('startResearch');
 
-    expect($attempt->fresh()?->allowance_nano_usd)->toBe(5_500_000_000)
-        ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'interview')->first()?->input['voice_sample_ids'])->toBe([$archive->id])
+    expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'interview')->first()?->input['voice_sample_ids'])->toBe([$archive->id])
         ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'research_challenge')->first()?->input['source_url'])->toBe('https://example.com/source')
         ->and($attempt->fresh()?->interview_context['answers'])->toBe('The best customer objected to onboarding time.');
 });
 
 test('view only workspace caller cannot start agent work or persist context selections', function (): void {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     Queue::fake();
 
     $user = editorUser();
@@ -407,7 +404,7 @@ test('view only workspace caller cannot start agent work or persist context sele
 });
 
 test('stale workspace component after attempt replacement cannot persist source context or dispatch work', function (): void {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     Queue::fake();
 
     $user = editorUser();
@@ -446,7 +443,7 @@ test('stale workspace component after attempt replacement cannot persist source 
 });
 
 test('changing a selected angle after approval invalidates downstream gates without starting agent work', function (): void {
-    config()->set('publishing_agents.enabled', false);
+    setPublishingAgentsPaused(true);
     Queue::fake();
 
     $user = editorUser();

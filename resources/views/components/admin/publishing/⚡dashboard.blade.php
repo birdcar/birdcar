@@ -182,7 +182,7 @@ new #[Layout('layouts.admin')] class extends Component
             <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-300">
                 <span wire:loading wire:target="saveForLater">Saving idea…</span>
                 <span wire:loading wire:target="developIdea">Opening your next piece…</span>
-                <span>Send to develop with a $5 agent allowance. Bookmark to keep it for later.</span>
+                <span>Send to develop with your editorial agents. Bookmark to keep it for later.</span>
             </div>
         </flux:field>
     </form>

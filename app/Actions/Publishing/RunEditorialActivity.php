@@ -3,7 +3,6 @@
 namespace App\Actions\Publishing;
 
 use App\Ai\Agents\EditorialAgent;
-use App\Models\AgentBudgetReservation;
 use App\Models\Article;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
@@ -14,12 +13,10 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
-use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialModelBudget;
 use App\Services\Publishing\EditorialOutput;
-use App\Services\Publishing\OpenRouterBilling;
 use App\Services\Publishing\PublicSourceFetcher;
 use App\Services\Publishing\PublishingFingerprint;
+use App\Settings\PublishingAgentSettings;
 use BackedEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,7 +29,6 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Ai\Approvals\Decision;
 use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\ConversationStore;
-use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\StructuredAgentResponse;
@@ -43,9 +39,11 @@ class RunEditorialActivity implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public const MODEL_CONTINUITY_ERROR = 'The model that started this agent conversation cannot be identified, so the approval cannot continue without re-routing. Review the activity and start new work instead.';
+
     public function __construct(public int $activityId) {}
 
-    public function handle(EditorialModelBudget $client, AgentBudget $budget, EditorialOutput $prompts, WriteArticle $writer, ?PublicSourceFetcher $fetcher = null): void
+    public function handle(EditorialOutput $prompts, WriteArticle $writer, ?PublicSourceFetcher $fetcher = null): void
     {
         $claim = $this->claimActivity();
         if ($claim === null) {
@@ -53,21 +51,23 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         [$activity, $actor] = $claim;
-        $reservation = null;
-        $paidOutcomeResolved = false;
-        $completionReceived = false;
+        $continuation = false;
+        $invoked = false;
+        $responseReceived = false;
 
         try {
             $kind = $this->kind($activity);
-            $route = filled($activity->tool_decisions) && filled($activity->model_snapshot)
-                ? $activity->model_snapshot : $this->routeForKind($kind);
-            $endpoint = $client->pricedEndpoint($route);
-            $agent = EditorialAgent::forActivity($activity, $endpoint);
+            $decisions = $this->decisionsFor($activity);
+            $continuation = $decisions !== null;
+            $agent = $continuation
+                ? EditorialAgent::pinnedForActivity($activity, $this->pinnedExecution($activity))
+                : $this->configuredAgent($activity, $kind);
+            $execution = $continuation ? $this->storedExecution($activity) : $agent->executionSnapshot();
+            $this->ensureCredentials();
             $conversationId = $this->conversationFor($activity, $actor);
             $agent->continue($conversationId, as: $actor);
-            $decisions = $this->decisionsFor($activity);
             if ($decisions !== null && collect($activity->tool_decisions)->every(fn (array $decision): bool => $decision['action'] === 'reject')) {
-                $agent->prompt($decisions, provider: Lab::OpenRouter, model: (string) $endpoint['model']);
+                $agent->prompt($decisions);
                 $activity->forceFill([
                     'status' => EditorialActivityStatus::Declined,
                     'pending_tool_approvals' => null,
@@ -77,50 +77,20 @@ class RunEditorialActivity implements ShouldQueue
 
                 return;
             }
-            $pluginNanoUsd = $kind === EditorialActivityKind::ResearchChallenge ? (int) config('publishing_agents.limits.exa_web_search_nano_usd', 7_000_000) : 0;
-            $quote = $client->quote($endpoint, [
-                'prompt_tokens' => $endpoint['context_tokens'] ?? null,
-                'max_completion_tokens' => $endpoint['max_completion_tokens'] ?? null,
-                'plugin_nano_usd' => $pluginNanoUsd,
-            ]);
-            $reservation = $this->reserveAfterFreshActivityCheck($budget, $actor, $activity, $quote);
-            if (! $reservation instanceof AgentBudgetReservation) {
+            if (! $this->confirmBeforeInvocation($actor, $activity, $execution)) {
                 return;
             }
-            $agentResponse = $agent->prompt(
-                $decisions ?? $agent->promptText(),
-                provider: Lab::OpenRouter,
-                model: (string) $endpoint['model'],
-                timeout: (int) config('publishing_agents.http_timeout', 30),
-            );
-            $completionReceived = true;
+            $invoked = true;
+            $agentResponse = $agent->prompt($decisions ?? $agent->promptText());
+            $responseReceived = true;
             $response = $agentResponse->raw?->json() ?? [];
             if (! is_array($response)) {
                 throw new RuntimeException('OpenRouter returned a malformed response.');
             }
             $generationId = $this->generationId($response);
-            $actualNanoUsd = $this->actualCostNanoUsd($response);
-            if ($generationId !== null) {
-                $reservation->forceFill(['provider_generation_id' => $generationId])->save();
-            }
-
-            if ($actualNanoUsd === null && $generationId !== null) {
-                $generation = app(OpenRouterBilling::class)->generation($generationId);
-                $actualNanoUsd = $this->actualCostNanoUsd($generation);
-            }
-
-            if ($actualNanoUsd === null) {
-                $budget->retainUnknown($reservation, 'OpenRouter did not return complete cost metadata.', $generationId);
-                $paidOutcomeResolved = true;
-                $this->pauseActivity($activity, 'Billing outcome is unknown.');
-
-                return;
-            }
-
-            $budget->settle($reservation, $actualNanoUsd, $generationId);
-            $paidOutcomeResolved = true;
+            $execution = $this->withReturnedModel($execution, $agentResponse->meta->model);
             if ($agentResponse->hasPendingApprovals()) {
-                $this->applyResult($activity, $actor, [], $writer, $generationId, $endpoint, [], $agentResponse);
+                $this->applyResult($activity, $actor, [], $writer, $generationId, $execution, [], $agentResponse);
 
                 return;
             }
@@ -141,16 +111,9 @@ class RunEditorialActivity implements ShouldQueue
                 $evidenceTexts = $evidenceTexts + $responseLocalEvidence;
             }
             $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts);
-            $this->applyResult($activity, $actor, $validated, $writer, $generationId, $endpoint, $preparedEvidenceSources);
+            $this->applyResult($activity, $actor, $validated, $writer, $generationId, $execution, $preparedEvidenceSources);
         } catch (Throwable $throwable) {
-            $this->resolveReservationFailure($budget, $reservation, $throwable, $paidOutcomeResolved, $completionReceived);
-            if ($reservation instanceof AgentBudgetReservation || $this->isDeterministicPreCallSpendBlocker($throwable)) {
-                $this->pauseActivity($activity, $throwable->getMessage());
-
-                return;
-            }
-
-            $this->failOrPause($activity, $throwable);
+            $this->handleFailure($activity, $throwable, $continuation, $invoked, $responseReceived);
         }
     }
 
@@ -159,6 +122,10 @@ class RunEditorialActivity implements ShouldQueue
      */
     private function claimActivity(): ?array
     {
+        if (app(PublishingAgentSettings::class)->paused) {
+            return null;
+        }
+
         /** @var array{EditorialActivity, User}|null $claim */
         $claim = DB::transaction(function (): ?array {
             $activity = EditorialActivity::query()->whereKey($this->activityId)->lockForUpdate()->first();
@@ -175,44 +142,7 @@ class RunEditorialActivity implements ShouldQueue
             $article = Article::query()->whereKey($activity->article_id)->lockForUpdate()->firstOrFail();
             $actor = $activity->initiator()->first();
 
-            if (! $actor instanceof User || ! $this->actorCanRunKind($actor, $this->kind($activity))) {
-                $activity->forceFill([
-                    'status' => EditorialActivityStatus::Paused,
-                    'paused_at' => now(),
-                    'pause_reason' => 'The initiating actor can no longer run this publishing agent work.',
-                ])->save();
-
-                return null;
-            }
-
-            if ((int) ($article->current_attempt_id ?? 0) !== (int) $attempt->id || $attempt->paused_at !== null || $attempt->parked_at !== null || $attempt->abandoned_at !== null) {
-                $activity->forceFill([
-                    'status' => EditorialActivityStatus::Paused,
-                    'paused_at' => now(),
-                    'pause_reason' => 'The publishing attempt is blocked or no longer current.',
-                ])->save();
-
-                return null;
-            }
-
-            if ($activity->revision_id !== null && (int) ($article->working_revision_id ?? 0) !== (int) $activity->revision_id) {
-                $activity->forceFill([
-                    'status' => EditorialActivityStatus::Stale,
-                    'completed_at' => now(),
-                    'error_reason' => 'The article revision changed before the activity could run.',
-                ])->save();
-
-                return null;
-            }
-
-            $staleReason = $this->staleReason($activity, $attempt, $article);
-            if ($staleReason !== null) {
-                $activity->forceFill([
-                    'status' => EditorialActivityStatus::Stale,
-                    'completed_at' => now(),
-                    'error_reason' => $staleReason,
-                ])->save();
-
+            if (! $this->passesExecutionChecks($activity, $attempt, $article, $actor, 'The article revision changed before the activity could run.')) {
                 return null;
             }
 
@@ -232,76 +162,157 @@ class RunEditorialActivity implements ShouldQueue
     }
 
     /**
-     * @param  array{reserved_nano_usd: int, price_snapshot: array<string, mixed>, request_bound: array<string, mixed>}  $quote
+     * Recheck ownership, permission, attempt state and frozen inputs immediately before the provider request,
+     * then capture the execution choice. No transaction is held across the external call.
+     *
+     * @param  array<string, mixed>  $execution
      */
-    private function reserveAfterFreshActivityCheck(AgentBudget $budget, User $actor, EditorialActivity $activity, array $quote): ?AgentBudgetReservation
+    private function confirmBeforeInvocation(User $actor, EditorialActivity $activity, array $execution): bool
     {
-        /** @var AgentBudgetReservation|null $reservation */
-        $reservation = DB::transaction(function () use ($budget, $actor, $activity, $quote): ?AgentBudgetReservation {
+        /** @var bool $confirmed */
+        $confirmed = DB::transaction(function () use ($actor, $activity, $execution): bool {
             $locked = EditorialActivity::query()->whereKey($activity->id)->lockForUpdate()->first();
             if (! $locked instanceof EditorialActivity || $this->status($locked) !== EditorialActivityStatus::Running) {
-                return null;
+                return false;
             }
 
             $attempt = PublishingAttempt::query()->whereKey($locked->attempt_id)->lockForUpdate()->firstOrFail();
             $article = Article::query()->whereKey($locked->article_id)->lockForUpdate()->firstOrFail();
             $freshActor = User::query()->whereKey($actor->id)->first();
 
-            if (! $freshActor instanceof User || ! $this->actorCanRunKind($freshActor, $this->kind($locked))) {
-                $locked->forceFill([
-                    'status' => EditorialActivityStatus::Paused,
-                    'paused_at' => now(),
-                    'pause_reason' => 'The initiating actor can no longer run this publishing agent work.',
-                ])->save();
-
-                return null;
+            if (! $this->passesExecutionChecks($locked, $attempt, $article, $freshActor, 'The article revision changed before the provider request.')) {
+                return false;
             }
 
-            if ((int) ($article->current_attempt_id ?? 0) !== (int) $attempt->id || $attempt->paused_at !== null || $attempt->parked_at !== null || $attempt->abandoned_at !== null) {
-                $locked->forceFill([
-                    'status' => EditorialActivityStatus::Paused,
-                    'paused_at' => now(),
-                    'pause_reason' => 'The publishing attempt is blocked or no longer current.',
-                ])->save();
+            $locked->forceFill(['model_snapshot' => $execution])->save();
 
-                return null;
-            }
-
-            if ($locked->revision_id !== null && (int) ($article->working_revision_id ?? 0) !== (int) $locked->revision_id) {
-                $locked->forceFill([
-                    'status' => EditorialActivityStatus::Stale,
-                    'completed_at' => now(),
-                    'error_reason' => 'The article revision changed before budget could be reserved.',
-                ])->save();
-
-                return null;
-            }
-
-            $staleReason = $this->staleReason($locked, $attempt, $article);
-            if ($staleReason !== null) {
-                $locked->forceFill([
-                    'status' => EditorialActivityStatus::Stale,
-                    'completed_at' => now(),
-                    'error_reason' => $staleReason,
-                ])->save();
-
-                return null;
-            }
-
-            return $budget->reserve($freshActor, $attempt, $locked, $quote['reserved_nano_usd'], $quote['price_snapshot'], $quote['request_bound']);
+            return true;
         });
 
-        return $reservation;
+        return $confirmed;
+    }
+
+    /** @phpstan-assert-if-true User $actor */
+    private function passesExecutionChecks(EditorialActivity $activity, PublishingAttempt $attempt, Article $article, ?User $actor, string $revisionChangedReason): bool
+    {
+        if (! $actor instanceof User || ! $this->actorCanRunKind($actor, $this->kind($activity))) {
+            $activity->forceFill([
+                'status' => EditorialActivityStatus::Paused,
+                'paused_at' => now(),
+                'pause_reason' => 'The initiating actor can no longer run this publishing agent work.',
+            ])->save();
+
+            return false;
+        }
+
+        if ((int) ($article->current_attempt_id ?? 0) !== (int) $attempt->id || $attempt->paused_at !== null || $attempt->parked_at !== null || $attempt->abandoned_at !== null) {
+            $activity->forceFill([
+                'status' => EditorialActivityStatus::Paused,
+                'paused_at' => now(),
+                'pause_reason' => 'The publishing attempt is blocked or no longer current.',
+            ])->save();
+
+            return false;
+        }
+
+        if ($activity->revision_id !== null && (int) ($article->working_revision_id ?? 0) !== (int) $activity->revision_id) {
+            $activity->forceFill([
+                'status' => EditorialActivityStatus::Stale,
+                'completed_at' => now(),
+                'error_reason' => $revisionChangedReason,
+            ])->save();
+
+            return false;
+        }
+
+        $staleReason = $this->staleReason($activity, $attempt, $article);
+        if ($staleReason !== null) {
+            $activity->forceFill([
+                'status' => EditorialActivityStatus::Stale,
+                'completed_at' => now(),
+                'error_reason' => $staleReason,
+            ])->save();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function configuredAgent(EditorialActivity $activity, EditorialActivityKind $kind): EditorialAgent
+    {
+        $override = app(PublishingAgentSettings::class)->modelOverrideFor($kind);
+        if ($override !== null && ! EditorialAgent::allowsModel($override)) {
+            throw new RuntimeException('The saved model override for this agent role is not supported. Reset it in the publishing agent settings.');
+        }
+
+        $agent = EditorialAgent::forActivity($activity, $override);
+        if (! EditorialAgent::allowsModel($agent->model())) {
+            throw new RuntimeException('The recommended model for this agent role is not in the supported model list.');
+        }
+
+        return $agent;
+    }
+
+    /**
+     * @return array{model: string, reasoning_effort: string|null}
+     */
+    private function pinnedExecution(EditorialActivity $activity): array
+    {
+        $execution = $this->storedExecution($activity);
+        $model = $execution['model'] ?? null;
+        if (! is_string($model) || $model === '' || $model === EditorialAgent::AUTO_ROUTER) {
+            throw new RuntimeException(self::MODEL_CONTINUITY_ERROR);
+        }
+
+        $effort = $execution['reasoning_effort'] ?? null;
+
+        return ['model' => $model, 'reasoning_effort' => is_string($effort) ? $effort : null];
+    }
+
+    /**
+     * Keep only execution identity from the stored snapshot; budget-era pricing and provider pins are ignored.
+     *
+     * @return array<string, mixed>
+     */
+    private function storedExecution(EditorialActivity $activity): array
+    {
+        $snapshot = is_array($activity->model_snapshot) ? $activity->model_snapshot : [];
+
+        return array_intersect_key($snapshot, array_flip(['requested_model', 'model', 'returned_model', 'reasoning_effort']));
+    }
+
+    /**
+     * @param  array<string, mixed>  $execution
+     * @return array<string, mixed>
+     */
+    private function withReturnedModel(array $execution, ?string $returnedModel): array
+    {
+        $returnedModel = is_string($returnedModel) && trim($returnedModel) !== '' ? $returnedModel : null;
+        $execution['returned_model'] = $returnedModel ?? ($execution['returned_model'] ?? null);
+
+        if (($execution['model'] ?? null) === EditorialAgent::AUTO_ROUTER && $returnedModel !== null && $returnedModel !== EditorialAgent::AUTO_ROUTER) {
+            $execution['model'] = $returnedModel;
+        }
+
+        return $execution;
+    }
+
+    private function ensureCredentials(): void
+    {
+        if ((string) config('ai.providers.openrouter.key', '') === '') {
+            throw new RuntimeException('OpenRouter credentials are not configured.');
+        }
     }
 
     /**
      * @param  array<string, mixed>  $payload
-     * @param  array<string, mixed>  $endpoint
+     * @param  array<string, mixed>  $execution
      * @param  list<array<string, mixed>>  $preparedEvidenceSources
      */
-    private function applyResult(EditorialActivity $activity, User $actor, array $payload, WriteArticle $writer, ?string $generationId, array $endpoint, array $preparedEvidenceSources, ?AgentResponse $agentResponse = null): void
+    private function applyResult(EditorialActivity $activity, User $actor, array $payload, WriteArticle $writer, ?string $generationId, array $execution, array $preparedEvidenceSources, ?AgentResponse $agentResponse = null): void
     {
-        DB::transaction(function () use ($activity, $actor, $payload, $writer, $generationId, $endpoint, $preparedEvidenceSources, $agentResponse): void {
+        DB::transaction(function () use ($activity, $actor, $payload, $writer, $generationId, $execution, $preparedEvidenceSources, $agentResponse): void {
             $locked = EditorialActivity::query()->whereKey($activity->id)->lockForUpdate()->firstOrFail();
             if ($this->status($locked) === EditorialActivityStatus::Completed) {
                 return;
@@ -328,7 +339,7 @@ class RunEditorialActivity implements ShouldQueue
                     'response' => $payload,
                     'generation_id' => $generationId,
                     'paused_at' => now(),
-                    'pause_reason' => 'The paid result returned after the publishing attempt was blocked or replaced.',
+                    'pause_reason' => 'The agent result returned after the publishing attempt was blocked or replaced.',
                 ])->save();
 
                 return;
@@ -340,7 +351,7 @@ class RunEditorialActivity implements ShouldQueue
                     'response' => $payload,
                     'generation_id' => $generationId,
                     'completed_at' => now(),
-                    'error_reason' => 'The paid result targeted a stale revision.',
+                    'error_reason' => 'The agent result targeted a stale revision.',
                 ])->save();
 
                 return;
@@ -373,12 +384,15 @@ class RunEditorialActivity implements ShouldQueue
                     'approvals.*.arguments.questions' => ['required', 'array', 'min:1', 'max:10'],
                     'approvals.*.arguments.questions.*' => ['required', 'string', 'max:2000'],
                 ])->validate();
+                $continuable = is_string($execution['model'] ?? null) && $execution['model'] !== EditorialAgent::AUTO_ROUTER;
                 $locked->forceFill([
-                    'status' => EditorialActivityStatus::AwaitingApproval,
+                    'status' => $continuable ? EditorialActivityStatus::AwaitingApproval : EditorialActivityStatus::Paused,
                     'pending_tool_approvals' => $pending,
                     'tool_decisions' => null,
-                    'model_snapshot' => $endpoint,
+                    'model_snapshot' => $execution,
                     'generation_id' => $generationId,
+                    'paused_at' => $continuable ? null : now(),
+                    'pause_reason' => $continuable ? null : self::MODEL_CONTINUITY_ERROR,
                 ])->save();
 
                 return;
@@ -413,7 +427,7 @@ class RunEditorialActivity implements ShouldQueue
                 'pending_tool_approvals' => null,
                 'tool_decisions' => null,
                 'response' => $payload,
-                'model_snapshot' => $endpoint,
+                'model_snapshot' => $execution,
                 'generation_id' => $generationId,
                 'completed_at' => now(),
             ])->save();
@@ -840,37 +854,68 @@ class RunEditorialActivity implements ShouldQueue
         ];
     }
 
-    private function isDeterministicPreCallSpendBlocker(Throwable $throwable): bool
+    private function handleFailure(EditorialActivity $activity, Throwable $throwable, bool $continuation, bool $invoked, bool $responseReceived): void
     {
-        $message = $throwable->getMessage();
+        if (! $invoked) {
+            $this->pauseActivity($activity, $throwable->getMessage());
 
-        foreach ([
-            'Publishing agents are disabled.',
-            'OpenRouter credentials are not configured.',
-            'Publishing agent route is not configured.',
-            'Publishing agent model and provider must be explicit.',
-            'Publishing agent pricing is missing.',
-            'Publishing agent context and output limits must be configured.',
-            'A conservative token bound is required before spending.',
-            'Endpoint pricing is missing.',
-            'Endpoint pricing must be a non-negative decimal string.',
-            'This user is not allowed to spend publishing agent budget.',
-            'Reservations must be positive.',
-            'Blocked publishing attempts cannot spend agent budget.',
-            'Budget reservations cannot cross attempts.',
-            'The publishing agent budget allowance would be exceeded.',
-        ] as $blocker) {
-            if (str_contains($message, $blocker)) {
-                return true;
-            }
+            return;
         }
 
-        return false;
+        if (! $responseReceived) {
+            $status = $this->providerStatus($throwable);
+            if ($status === 429 && ! $continuation) {
+                $this->failOrPause($activity, 'OpenRouter rate limited the request (HTTP 429) before generating output.');
+
+                return;
+            }
+
+            if ($status !== null && in_array($status, [400, 401, 402, 403, 404, 422], true)) {
+                $this->rejectActivity($activity, $this->rejectionReason($status));
+
+                return;
+            }
+
+            $this->pauseActivity($activity, $continuation
+                ? 'The approval continuation did not complete; its provider outcome is uncertain. Review the activity before starting new work.'
+                : 'The provider request did not complete (timeout, disconnect or provider error), so its outcome is uncertain. Review the activity before rerunning it.');
+
+            return;
+        }
+
+        if ($continuation) {
+            $this->pauseActivity($activity, 'The approval continuation returned unusable output: '.$throwable->getMessage().' Review the activity instead of replaying the answered request.');
+
+            return;
+        }
+
+        $this->failOrPause($activity, $throwable->getMessage());
     }
 
-    private function failOrPause(EditorialActivity $activity, Throwable $throwable): void
+    private function providerStatus(Throwable $throwable): ?int
     {
-        DB::transaction(function () use ($activity, $throwable): void {
+        do {
+            if ($throwable instanceof RequestException && $throwable->response !== null) {
+                return $throwable->response->status();
+            }
+            $throwable = $throwable->getPrevious();
+        } while ($throwable !== null);
+
+        return null;
+    }
+
+    private function rejectionReason(int $status): string
+    {
+        return match ($status) {
+            401, 403 => 'OpenRouter rejected the request (HTTP '.$status.'). Check the OpenRouter API key and its permissions.',
+            402 => 'OpenRouter rejected the request (HTTP 402). The OpenRouter key or workspace has no remaining credit or limit.',
+            default => 'OpenRouter rejected the request (HTTP '.$status.'). Check that the selected model is available and supports the requested parameters.',
+        };
+    }
+
+    private function failOrPause(EditorialActivity $activity, string $reason): void
+    {
+        DB::transaction(function () use ($activity, $reason): void {
             $locked = EditorialActivity::query()->whereKey($activity->id)->lockForUpdate()->first();
             if (! $locked instanceof EditorialActivity || $this->status($locked) === EditorialActivityStatus::Completed) {
                 return;
@@ -881,11 +926,21 @@ class RunEditorialActivity implements ShouldQueue
             $locked->forceFill([
                 'status' => $status,
                 'paused_at' => $status === EditorialActivityStatus::Paused ? now() : null,
-                'pause_reason' => $status === EditorialActivityStatus::Paused ? $throwable->getMessage() : null,
-                'error_reason' => $throwable->getMessage(),
+                'pause_reason' => $status === EditorialActivityStatus::Paused ? $reason : null,
+                'error_reason' => $reason,
                 'available_at' => now()->addMinute(),
             ])->save();
         });
+    }
+
+    private function rejectActivity(EditorialActivity $activity, string $reason): void
+    {
+        EditorialActivity::query()->whereKey($activity->id)->update([
+            'status' => EditorialActivityStatus::Paused->value,
+            'paused_at' => now(),
+            'pause_reason' => $reason,
+            'error_reason' => $reason,
+        ]);
     }
 
     private function pauseActivity(EditorialActivity $activity, string $reason): void
@@ -895,33 +950,6 @@ class RunEditorialActivity implements ShouldQueue
             'paused_at' => now(),
             'pause_reason' => $reason,
         ]);
-    }
-
-    private function resolveReservationFailure(AgentBudget $budget, ?AgentBudgetReservation $reservation, Throwable $throwable, bool $paidOutcomeResolved, bool $completionReceived): void
-    {
-        if (! $reservation instanceof AgentBudgetReservation || $paidOutcomeResolved) {
-            return;
-        }
-
-        if (! $completionReceived && $this->isKnownNonBillableFailure($throwable)) {
-            $budget->release($reservation, $throwable->getMessage());
-
-            return;
-        }
-
-        $budget->retainUnknown($reservation, 'Exception after reserving budget: '.$throwable->getMessage(), $reservation->provider_generation_id);
-    }
-
-    private function isKnownNonBillableFailure(Throwable $throwable): bool
-    {
-        do {
-            if ($throwable instanceof RequestException && $throwable->response !== null) {
-                return in_array($throwable->response->status(), [400, 401, 402, 403, 404, 422], true);
-            }
-            $throwable = $throwable->getPrevious();
-        } while ($throwable !== null);
-
-        return false;
     }
 
     private function actorCanRunKind(User $actor, EditorialActivityKind $kind): bool
@@ -1042,7 +1070,7 @@ class RunEditorialActivity implements ShouldQueue
             $frozenPlanHash = app(PublishingFingerprint::class)->hash($frozenPlan);
             $currentPlanHash = app(PublishingFingerprint::class)->hash($currentPlan);
             if (! hash_equals($frozenPlanHash, $currentPlanHash)) {
-                return 'The plan input changed before the paid plan result could be applied.';
+                return 'The plan input changed before the plan result could be applied.';
             }
         }
 
@@ -1137,24 +1165,6 @@ class RunEditorialActivity implements ShouldQueue
         return $stage instanceof BackedEnum ? (string) $stage->value : (string) $stage;
     }
 
-    /** @return array<string, mixed> */
-    private function routeForKind(EditorialActivityKind $kind): array
-    {
-        $routeName = 'default';
-        if ($kind === EditorialActivityKind::ReviewFacts) {
-            $candidate = (string) config('publishing_agents.role_routes.review_facts', 'premium');
-            $premium = config('publishing_agents.routes.'.$candidate);
-            $routeName = is_array($premium) && is_string($premium['model'] ?? null) && $premium['model'] !== '' ? $candidate : 'default';
-        }
-
-        $route = config('publishing_agents.routes.'.$routeName);
-        if (! is_array($route)) {
-            throw new RuntimeException('Publishing agent route is not configured.');
-        }
-
-        return $route;
-    }
-
     private function conversationFor(EditorialActivity $activity, User $actor): string
     {
         if ($activity->ai_conversation_id === null) {
@@ -1191,35 +1201,6 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         return Decisions::from($decisions);
-    }
-
-    /** @param array<string, mixed> $response */
-    private function actualCostNanoUsd(array $response): ?int
-    {
-        $value = data_get($response, 'data.total_cost') ?? data_get($response, 'total_cost') ?? data_get($response, 'usage.cost') ?? data_get($response, 'usage.total_cost');
-        if (is_int($value)) {
-            return $value * 1_000_000_000;
-        }
-        if (is_float($value)) {
-            return (int) ceil($value * 1_000_000_000);
-        }
-        if (is_string($value) && preg_match('/^\d+(?:\.\d+)?$/', $value)) {
-            return $this->decimalUsdToNanoUsd($value);
-        }
-
-        return null;
-    }
-
-    private function decimalUsdToNanoUsd(string $decimalUsd): int
-    {
-        [$whole, $fraction] = array_pad(explode('.', $decimalUsd, 2), 2, '');
-        $fraction = str_pad($fraction, 10, '0');
-        $nano = ((int) $whole * 1_000_000_000) + (int) substr($fraction, 0, 9);
-        if (preg_match('/[1-9]/', substr($fraction, 9)) === 1) {
-            $nano++;
-        }
-
-        return $nano;
     }
 
     /** @param array<string, mixed> $response */

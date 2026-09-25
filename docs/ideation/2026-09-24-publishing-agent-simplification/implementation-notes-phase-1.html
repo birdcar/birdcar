@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 1 (phase number, twice), Publishing Agent Simplification, 2026-09-25, Native agent configuration and budget-free execution —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 1</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 1</h1>
+      <p class="doc-meta">Publishing Agent Simplification · 2026-09-25 · Native agent configuration and budget-free execution</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Preflight — record-rule appended instead of replacing</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec requires the rule change via Boost record-rule, with the old sentence replaced rather than left beside a new one. The working tree already carried the intended wording (scout risk). Calling record-rule with the existing title appended a second, identical section.</dd>
+          <dt>Decision</dt>
+          <dd>Called record-rule (so the rule&#x27;s provenance is the Boost tool), then removed only the exact duplicate section it appended, leaving .ai/rules/ai.md with one section whose text is the record-rule note. No rule text was hand-authored.</dd>
+          <dt>Alternative</dt>
+          <dd>Leaving two identical sections, or skipping record-rule because the text was already present.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Per-agent configuration — dotted model identifiers</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The allowlist is keyed by OpenRouter model IDs such as google/gemini-3.8-flash. Laravel&#x27;s dotted config() lookup splits on the dot in &#x27;3.8&#x27; and silently returned null, so allowlisted models read as unknown.</dd>
+          <dt>Decision</dt>
+          <dd>EditorialAgent reads the whole publishing_agents.models array and indexes it by the full ID (modelDefinition()). Covered by the per-role request-body tests.</dd>
+          <dt>Alternative</dt>
+          <dd>Renaming keys or storing IDs as list values with an id field.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Per-agent configuration — token and timeout allowances</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks for role-appropriate output allowances that fit the job/worker timeout ordering but gives no numbers. OpenRouter documents that max_tokens covers reasoning plus visible output.</dd>
+          <dt>Decision</dt>
+          <dd>Native #[MaxTokens] attributes per role: 4k Interviewer, 6k Buyer/Reconciler, 8k Researcher/Voice, 12k Planner/Fact/Recheck, 16k Drafter. A code-owned 50s http_timeout (agent timeout() method) stays below Horizon&#x27;s 60s supervisor timeout and the documented queue:work --timeout=600. Recorded in the spec&#x27;s research section.</dd>
+          <dt>Alternative</dt>
+          <dd>Raising Horizon&#x27;s timeout or giving the Drafter a longer timeout than the Horizon supervisor allows.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Typed settings — package docblock parser</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spatie settings resolves property types from docblocks and rejects array-key and mixed, so the stored overrides cannot be typed as untrusted mixed data.</dd>
+          <dt>Decision</dt>
+          <dd>Kept @var array&lt;string, string&gt;; every read path revalidates (runner pauses with an actionable error for a non-allowlisted stored override; overrideModel/resetModel drop unknown roles and models on the next save).</dd>
+          <dt>Alternative</dt>
+          <dd>A custom cast or a Data object for one small array.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Typed settings — published config and cache knobs</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to publish the package config but add no new environment knobs; the published file reads SETTINGS_CACHE_ENABLED and SETTINGS_CACHE_MEMO.</dd>
+          <dt>Decision</dt>
+          <dd>Published config/settings.php, hard-coded cache enabled/memo to false, and registered PublishingAgentSettings explicitly alongside auto-discovery.</dd>
+          <dt>Alternative</dt>
+          <dd>Keeping the env() reads from the stub.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Execution — 429 retry mechanism</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The failure policy allows a pre-generation 429 to use the &#x27;existing bounded retry/backoff mechanism&#x27;. In reality failOrPause() only marks the activity Failed with available_at +1 minute until run_count exceeds limits.max_retries, then pauses. Recovery re-dispatches only Pending work, and the job has no tries/backoff, so a Failed activity reruns only when something redelivers it.</dd>
+          <dt>Decision</dt>
+          <dd>Kept that existing behaviour for non-continuation 429s with a fixed message, and added no retry service (spec L213). A 429 during an approval continuation pauses instead, because retrying could replay resolved Decisions.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding Failed rows to recovery or giving the job tries/backoff, which would expand the workflow.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Execution — classifying failures without reservations</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Previously any exception after a reservation paused, and other exceptions went through failOrPause. Without reservations, the runner needs another way to tell a known outcome from an uncertain one.</dd>
+          <dt>Decision</dt>
+          <dd>The runner tracks whether the provider was invoked and whether a response arrived. Failures before invocation (credentials, invalid model config, conversation ownership) pause with their application message. HTTP 400/401/402/403/404/422 pause with a fixed actionable message and error_reason, never echoing the response body. Timeouts, disconnects, 5xx and unknown errors pause as uncertain. An unusable response after a fresh call goes through failOrPause; after a continuation it pauses, so answered Decisions are not replayed.</dd>
+          <dt>Alternative</dt>
+          <dd>Treating 5xx as retryable (a 504 can be an uncertain outcome) or reusing failOrPause for continuations.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Execution — test seam between claim and call</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The old revalidation test injected a mutation through an EditorialModelBudget::quote() subclass, and that class is now deleted.</dd>
+          <dt>Decision</dt>
+          <dd>Tests register an EditorialActivity::saved listener that fires when the claimed Running activity first records ai_conversation_id. That save happens after the claim and before confirmBeforeInvocation(), so it is a real model event with no production hook.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding an injectable callback or keeping a pricing class only for tests.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Execution — model snapshot and Auto pinning</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to capture the execution choice at first invocation and pin Auto continuations to the returned concrete model, but gives no snapshot shape.</dd>
+          <dt>Decision</dt>
+          <dd>model_snapshot = {requested_model, model, reasoning_effort, returned_model}. It is written inside the pre-invocation transaction, and model is replaced by the returned model when Auto was requested. If Auto returns no usable concrete model with pending approvals, the activity pauses with MODEL_CONTINUITY_ERROR. Continuations read only those keys and ignore legacy provider/pricing keys, and a legacy snapshot whose model is still valid continues on that model. A retry of a Failed non-continuation activity resolves current settings again.</dd>
+          <dt>Alternative</dt>
+          <dd>Reusing the snapshot for every retry, which would stop an owner from fixing a bad override.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Schema — legacy pause classification</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Reservation state is needed to classify budget-era pauses, and the forward migration deletes it.</dd>
+          <dt>Decision</dt>
+          <dd>Before dropping the table, the migration rewrites activity pause_reasons. The 14 known pre-call blocker messages with no open (reserved/unknown) reservation get EditorialActivity::LEGACY_PRE_CALL_PAUSE_REASON, which attempt resume() now returns to Pending alongside &#x27;Publishing attempt paused.&#x27;. &#x27;Billing outcome is unknown.&#x27; and any pause with an open reservation get an explanatory protected reason. Budget-written attempt pause reasons are rewritten with actionable wording. The migration also copies generation IDs into null editorial_activities.generation_id and strips financial keys from model_snapshot, using portable query-builder chunks.</dd>
+          <dt>Alternative</dt>
+          <dd>A mass status reset, or classifying at runtime after the reservation data is gone.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Scope — unlisted required changes</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The scout identified dependencies outside the spec&#x27;s file table.</dd>
+          <dt>Decision</dt>
+          <dd>Changed tests/Feature/Publishing/ReleaseReadinessTest.php (dropped its AgentBudgetReservation fixture and renamed the test; evidence-freshness assertions kept), the dashboard&#x27;s &#x27;$5 agent allowance&#x27; copy, tests/Pest.php (shared setPublishingAgentsPaused() helper, because Pest helper functions are global and eight files need it), and the spec&#x27;s research section (catalog and docs recheck, per Rollout). PublishingAuthorizationTest.php contains no budget assertions and was left unchanged.</dd>
+          <dt>Alternative</dt>
+          <dd>Defining the same helper in each test file, where the names would collide.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Preflight — Boost documentation search</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec §1.2 asks for Boost search-docs before API-dependent edits.</dd>
+          <dt>Decision</dt>
+          <dd>Relied on the installed vendor source for laravel/ai 0.11.2 and spatie/laravel-settings 3.9.0 (Promptable resolution, TextGenerationOptions, OpenRouter request builder, settings container, migrator and docblock resolver), because the installed source is authoritative for these exact versions. database-schema was used against the live PostgreSQL database and matched the historical migrations.</dd>
+          <dt>Alternative</dt>
+          <dd>Version-agnostic documentation, which would not reflect 0.x SDK internals.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

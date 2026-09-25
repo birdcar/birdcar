@@ -19,7 +19,7 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
-use App\Services\Publishing\AgentBudget;
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -41,8 +41,6 @@ new #[Layout('layouts.admin')] class extends Component
     public ?string $angleInputHash = null;
     public ?string $planInputHash = null;
     public ?string $releaseInputHash = null;
-    public int $budgetTopUpNanoUsd = 1_000_000_000;
-    public string $budgetMutationKey = '';
     public string $sourceUrl = '';
     public string $voiceSample = '';
     public string $interviewAnswers = '';
@@ -88,7 +86,6 @@ new #[Layout('layouts.admin')] class extends Component
             $this->metadata = $revision->metadata ?? [];
         }
         $this->details = ['title' => (string) ($this->metadata['title'] ?? ''), 'description' => (string) ($this->metadata['description'] ?? ''), 'date' => (string) ($this->metadata['date'] ?? $article->first_published_at?->toDateString() ?? now()->toDateString())];
-        $this->budgetMutationKey = (string) Str::uuid();
         $this->hydrateAgentSelectionsFromAttempt();
         $this->refreshApprovalInputs();
     }
@@ -643,26 +640,6 @@ new #[Layout('layouts.admin')] class extends Component
         return $revisionId === null ? null : (int) $revisionId;
     }
 
-    public function topUpBudget(?AgentBudget $budget = null): void
-    {
-        Gate::authorize(PublishingPermission::Budget->value);
-        $budget ??= app(AgentBudget::class);
-        $attempt = $this->article->currentAttempt;
-        if ($attempt === null) {
-            $this->saveError = 'No active publishing attempt exists.';
-            return;
-        }
-
-        try {
-            $budget->increaseAllowance(auth()->user(), $attempt, $this->budgetTopUpNanoUsd, $this->budgetMutationKey !== '' ? $this->budgetMutationKey : 'ui-topup-'.uniqid());
-            $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
-            $this->budgetMutationKey = (string) Str::uuid();
-            session()->flash('status', 'Agent allowance increased.');
-        } catch (Throwable $exception) {
-            $this->saveError = $exception->getMessage();
-        }
-    }
-
     private function startActivity(EditorialActivityKind $kind, ?StartEditorialActivity $activities, array $input = [], bool $persistSelectedEvidence = false): void
     {
         Gate::authorize(PublishingPermission::Develop->value);
@@ -882,7 +859,6 @@ new #[Layout('layouts.admin')] class extends Component
         $release = $this->currentReleasePackage();
         $release ??= $attempt === null || $attempt->stage === EditorialStage::Published ? $this->article->publishedRelease : null;
 
-        $budget = $attempt === null ? null : app(AgentBudget::class)->available($attempt);
         $activities = $attempt === null ? collect() : $attempt->editorialActivities()->where('review_cycle', $attempt->review_cycle)->latest()->get();
         $findings = $attempt === null ? collect() : EditorialFinding::query()
             ->where('attempt_id', $attempt->id)
@@ -933,7 +909,7 @@ new #[Layout('layouts.admin')] class extends Component
             'previewUrl' => $previewUrl,
             'release' => $release,
             'protectedBlocks' => $this->protectedBlocks(),
-            'agentBudget' => $budget,
+            'agentsPaused' => app(PublishingAgentSettings::class)->paused,
             'agentActivities' => $activities,
             'pendingAgentRequests' => $attempt === null ? collect() : $attempt->editorialActivities()
                 ->where('status', EditorialActivityStatus::AwaitingApproval)

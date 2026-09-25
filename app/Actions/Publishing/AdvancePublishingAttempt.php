@@ -53,10 +53,8 @@ class AdvancePublishingAttempt
                 'angle' => [],
                 'plan' => [],
                 'interview_context' => [],
-                'allowance_nano_usd' => 5_000_000_000,
                 'review_cycle' => 1,
                 'recheck_used' => false,
-                'allowance_changes' => [],
             ]);
 
             $lockedArticle->forceFill(['current_attempt_id' => $attempt->id])->save();
@@ -295,7 +293,7 @@ class AdvancePublishingAttempt
                     ->update([
                         'status' => EditorialActivityStatus::Paused->value,
                         'paused_at' => now(),
-                        'pause_reason' => 'Publishing attempt paused.',
+                        'pause_reason' => EditorialActivity::ATTEMPT_PAUSE_REASON,
                     ]);
             }
 
@@ -303,7 +301,7 @@ class AdvancePublishingAttempt
                 EditorialActivity::query()
                     ->where('attempt_id', $lockedAttempt->id)
                     ->where('status', EditorialActivityStatus::Paused->value)
-                    ->where('pause_reason', 'Publishing attempt paused.')
+                    ->whereIn('pause_reason', EditorialActivity::RESUMABLE_PAUSE_REASONS)
                     ->update([
                         'status' => EditorialActivityStatus::Pending->value,
                         'paused_at' => null,

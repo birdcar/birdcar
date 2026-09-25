@@ -9,5 +9,4 @@ enum Permission: string
     case Develop = 'publishing.develop';
     case Approve = 'publishing.approve';
     case Publish = 'publishing.publish';
-    case Budget = 'publishing.budget';
 }

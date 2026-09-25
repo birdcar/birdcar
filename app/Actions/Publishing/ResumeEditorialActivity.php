@@ -8,6 +8,7 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -70,7 +71,9 @@ class ResumeEditorialActivity
                 'tool_decisions' => $decisions,
                 'available_at' => now(),
             ])->save();
-            RunEditorialActivity::dispatch((int) $locked->id)->afterCommit();
+            if (! app(PublishingAgentSettings::class)->paused) {
+                RunEditorialActivity::dispatch((int) $locked->id)->afterCommit();
+            }
         });
     }
 }

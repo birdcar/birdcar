@@ -60,12 +60,6 @@ class ArticlePolicy
             && (int) $article->author_id === (int) $user->id;
     }
 
-    public function budget(User $user, Article $article): bool
-    {
-        return $user->can(PublishingPermission::Budget->value)
-            && (int) $article->author_id === (int) $user->id;
-    }
-
     /**
      * Determine whether the user can delete the model.
      */

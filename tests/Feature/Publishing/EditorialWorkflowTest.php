@@ -16,8 +16,6 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
-use App\Services\Publishing\AgentBudget;
-use App\Services\Publishing\EditorialModelBudget;
 use App\Services\Publishing\EditorialOutput;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -28,7 +26,7 @@ beforeEach(function (): void {
     $this->artisan('authorization:sync')->assertSuccessful();
 });
 
-test('captured ideas stay idle until deliberate develop creates one allowance backed attempt', function (): void {
+test('captured ideas stay idle until deliberate develop creates one attempt', function (): void {
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
@@ -41,7 +39,6 @@ test('captured ideas stay idle until deliberate develop creates one allowance ba
     expect($article->current_attempt_id)->toBeNull()
         ->and($attempt->is($duplicateAttempt))->toBeTrue()
         ->and($attempt->stage)->toBe(EditorialStage::Developing)
-        ->and($attempt->allowance_nano_usd)->toBe(5_000_000_000)
         ->and($article->fresh()?->current_attempt_id)->toBe($attempt->id);
 });
 
@@ -281,12 +278,8 @@ test('plan approval requires research bound to the exact approved brief and angl
 });
 
 test('agent generated plan is persisted displayed approved by human and gates draft reviews', function (): void {
-    config()->set('publishing_agents.enabled', true);
+    setPublishingAgentsPaused(false);
     config()->set('ai.providers.openrouter.key', 'test-key');
-    config()->set('publishing_agents.routes.default.pricing.prompt', '0.000001');
-    config()->set('publishing_agents.routes.default.pricing.completion', '0.000002');
-    config()->set('publishing_agents.routes.default.context_tokens', 100);
-    config()->set('publishing_agents.routes.default.max_completion_tokens', 50);
 
     $responses = [
         [
@@ -300,7 +293,6 @@ test('agent generated plan is persisted displayed approved by human and gates dr
                 'type' => 'url_citation',
                 'url_citation' => ['url' => 'https://example.com/research', 'content' => 'Retained source passage supports the generated plan.'],
             ]]]]],
-            'usage' => ['cost' => '0.00005'],
         ],
         [
             'id' => 'gen-plan-pipeline',
@@ -309,7 +301,6 @@ test('agent generated plan is persisted displayed approved by human and gates dr
                 'argument' => 'The article should explain the publishing control loop.',
                 'visualPlan' => [['slot' => 'hero', 'description' => 'Workflow diagram']],
             ])]]],
-            'usage' => ['cost' => '0.00005'],
         ],
         [
             'id' => 'gen-draft-pipeline',
@@ -317,22 +308,18 @@ test('agent generated plan is persisted displayed approved by human and gates dr
                 'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'Agent drafted manuscript.']]],
                 'metadataProposals' => [],
             ])]]],
-            'usage' => ['cost' => '0.00005'],
         ],
         [
             'id' => 'gen-review-facts-pipeline',
             'choices' => [['message' => ['content' => json_encode(['findings' => []])]]],
-            'usage' => ['cost' => '0.00005'],
         ],
         [
             'id' => 'gen-review-voice-pipeline',
             'choices' => [['message' => ['content' => json_encode(['findings' => []])]]],
-            'usage' => ['cost' => '0.00005'],
         ],
         [
             'id' => 'gen-review-buyer-pipeline',
             'choices' => [['message' => ['content' => json_encode(['findings' => []])]]],
-            'usage' => ['cost' => '0.00005'],
         ],
     ];
 
@@ -416,7 +403,7 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         ->and(data_get($reviewRequest, 'response_format.json_schema.schema.properties.findings.items.properties.supporting_quotations.items.properties.quote.type'))->toBe('string');
 });
 
-test('pause resume park and abandon retain the attempt identity without creating allowances', function (): void {
+test('pause resume park and abandon retain the attempt identity without creating new attempts', function (): void {
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
@@ -433,7 +420,8 @@ test('pause resume park and abandon retain the attempt identity without creating
         ->and($resumed->paused_at)->toBeNull()
         ->and($parked->parked_at)->not->toBeNull()
         ->and($abandoned->stage)->toBe(EditorialStage::Abandoned)
-        ->and($abandoned->allowance_nano_usd)->toBe(5_000_000_000);
+        ->and($abandoned->id)->toBe($attempt->id)
+        ->and($article->publishingAttempts()->count())->toBe(1);
 });
 
 test('interruption transitions reject non current and terminal attempts', function (): void {
@@ -503,7 +491,7 @@ function drainEditorialActivities(int $limit = 10): void
             return;
         }
 
-        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialModelBudget::class), app(AgentBudget::class), app(EditorialOutput::class), app(WriteArticle::class));
+        app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
     }
 }
 
@@ -612,7 +600,7 @@ function editorialDocument(string $text): array
     ];
 }
 
-test('pause and resume move pending agent activities without resetting allowance', function (): void {
+test('pause and resume move pending agent activities without resetting their work', function (): void {
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
@@ -623,9 +611,9 @@ test('pause and resume move pending agent activities without resetting allowance
 
     $advance->pause($actor, $attempt, 'Waiting.');
     expect($activity->fresh()?->status->value)->toBe('paused')
-        ->and($attempt->fresh()?->allowance_nano_usd)->toBe(5_000_000_000);
+        ->and($activity->fresh()?->pause_reason)->toBe('Publishing attempt paused.');
 
     $advance->resume($actor, $attempt);
     expect($activity->fresh()?->status->value)->toBe('pending')
-        ->and($attempt->fresh()?->allowance_nano_usd)->toBe(5_000_000_000);
+        ->and($activity->fresh()?->idempotency_key)->toBe($activity->idempotency_key);
 });

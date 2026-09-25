@@ -16,6 +16,7 @@ use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublishingFingerprint;
+use App\Settings\PublishingAgentSettings;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -111,7 +112,7 @@ class StartEditorialActivity
             ]);
         });
 
-        if ((bool) config('publishing_agents.enabled', false)) {
+        if (! app(PublishingAgentSettings::class)->paused) {
             RunEditorialActivity::dispatch((int) $activity->id)->afterCommit();
         }
 

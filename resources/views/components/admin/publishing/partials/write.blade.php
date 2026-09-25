@@ -91,7 +91,7 @@
                 @endforelse
             </div>
             @if ($planApproved)
-                @can('approve', $article)<details class="publishing-disclosure mt-8"><summary>Start another review cycle</summary><p class="my-3 text-sm text-zinc-600 dark:text-zinc-300">The default is one review batch and one focused recheck. A new cycle is a deliberate restart, within the remaining allowance.</p><flux:button size="sm" wire:click="restartReview" data-publishing-editor-action>Restart cycle</flux:button></details>@endcan
+                @can('approve', $article)<details class="publishing-disclosure mt-8"><summary>Start another review cycle</summary><p class="my-3 text-sm text-zinc-600 dark:text-zinc-300">The default is one review batch and one focused recheck. A new cycle is a deliberate restart.</p><flux:button size="sm" wire:click="restartReview" data-publishing-editor-action>Restart cycle</flux:button></details>@endcan
             @endif
             @if ($protectedBlocks !== [])
                 <details class="publishing-disclosure mt-8"><summary>Protected passages ({{ count($protectedBlocks) }})</summary><div class="mt-4 space-y-3">@foreach ($protectedBlocks as $block)<div wire:key="protected-{{ $block['id'] }}" class="flex flex-wrap items-center justify-between gap-2"><code class="text-xs">{{ $block['id'] }}</code>@can('update', $article)<flux:button size="sm" variant="ghost" wire:click="unprotectBlock('{{ $block['id'] }}')" data-publishing-editor-action>Remove protection</flux:button>@endcan</div>@endforeach</div></details>
