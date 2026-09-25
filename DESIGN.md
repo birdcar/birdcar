@@ -1,6 +1,6 @@
 ---
 name: Birdcar — Your business, in miniature
-description: "Marketing world built first on the homepage and now shipped site-wide as shared chrome: pale daylight ground, ink, canary yellow for actions and packets, a teal fixed-state accent, Mona Sans grotesk headings and body, one Alkaline wordmark, and (on the homepage) a canvas-drawn packet-flow diorama. The Walkthrough, Work, and 'Eight ways work gets stuck' tool pages have also migrated: Walkthrough with its own desk-plate composition and a fit-check card gating the calendar, Work with a scroll journey of three isometric rooms joined by a canary dotted route, and the tool page with eight pattern cards laid on a desk plate as real links, a closing self-check of tickable signs, and print styling meant to read as a handout. The clear argument (cyan fields, Barlow, flat diagrams) is retired as direction and still renders inside the Writing index/article page bodies until they migrate; Admin keeps its Flux Pro/Inter system unchanged."
+description: "Marketing world built first on the homepage and now shipped site-wide, on every page: pale daylight ground, ink, canary yellow for actions and packets, a teal fixed-state accent, Mona Sans grotesk headings and body, one Alkaline wordmark, and (on the homepage) a canvas-drawn packet-flow diorama. Walkthrough, Work, and 'Eight ways work gets stuck' compose the same materials into a desk-plate booking gate, a room-by-room proof journey, and a desk map of real pattern links. Writing completes the rollout: a big calm table of contents at /writing and a quiet single-column reading surface for every essay, both carrying the canary. The clear argument (cyan fields, Barlow, flat diagrams), the site's original direction, was retired on 2026-09-25 and no longer renders anywhere on marketing; Admin keeps its own Flux Pro/Inter system, with its own literal accent values, unchanged."
 colors:
   studio-ground: "#edf3f0"
   studio-ink: "#0b141a"
@@ -11,12 +11,7 @@ colors:
   studio-yellow-deep: "#efb925"
   studio-teal: "#5fb8bf"
   studio-red: "#e2483d"
-  ink: "#102a33"
   paper: "#ffffff"
-  cyan: "#b7edf1"
-  emphasis: "#f7cb58"
-  deep-teal: "#214b57"
-  cyan-wash: "#b7edf130"
 typography:
   wordmark:
     fontFamily: "Alkaline, cursive"
@@ -95,29 +90,53 @@ typography:
     fontWeight: 700
     lineHeight: 1.1
     letterSpacing: "-.035em"
+  studio-index-title:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(5rem, 9.9vw, 12rem)"
+    fontWeight: 800
+    lineHeight: .92
+    letterSpacing: "-.04em"
+  studio-index-lead:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.375rem, 2.15vw, 2.5rem)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-.035em"
+  studio-index-row-title:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.5rem, 2.15vw, 2.5rem)"
+    fontWeight: 700
+    lineHeight: 1.12
+    letterSpacing: "-.035em"
+  studio-essay-title:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.6rem, 6.35vw, 6.25rem)"
+    fontWeight: 800
+    lineHeight: 1.02
+    letterSpacing: "-.04em"
+  studio-essay-description:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.25rem, 1.95vw, 1.875rem)"
+    fontWeight: 400
+    lineHeight: 1.27
+    letterSpacing: "-.02em"
+  studio-article-body:
+    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.125rem, 1.48vw, 1.4375rem)"
+    fontWeight: 400
+    lineHeight: 1.45
+    letterSpacing: "-.012em"
   admin-operational:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.5
-  display:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(3rem, 6.65vw, 6rem)"
-    fontWeight: 600
-    lineHeight: 1.02
-    letterSpacing: "-.025em"
-  body:
-    fontFamily: "Barlow, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 400
-    lineHeight: 1.55
 rounded:
   studio-tag: "7px"
   studio-control: "8px"
   studio-button: "10px"
   studio-card: "14px"
   studio-pill: "999px"
-  nav: "3px"
   control: "5px"
   circle: "50%"
   square: "0"
@@ -154,19 +173,9 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.studio-ink}"
     rounded: "{rounded.studio-card}"
-  button-yellow:
-    backgroundColor: "{colors.emphasis}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
-    padding: "1rem 1.6rem"
-  nav-booking-legacy:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.nav}"
-    padding: ".7rem 1rem"
   calendar-shell:
     backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
+    textColor: "{colors.studio-ink}"
     rounded: "{rounded.control}"
     padding: ".5rem"
 ---
@@ -179,13 +188,15 @@ components:
 
 On 2026-09-25 the owner retired The clear argument (cyan editorial fields, Barlow, flat line diagrams, square report shapes) as the marketing direction because it didn't demonstrate capability. The replacement, built first on the homepage, shows the owner's own business as a premium matte isometric diorama: a cutaway van bay, office, front desk, and glass owner's office where paper piles up under a red warning light. Glowing canary-yellow packets travel dotted routes onto the owner's desk; scrolling the page pins the diorama and crossfades it through three states — Today, Walkthrough, After the fix — while white pill tags name the actual work sitting on each desk, drawn from the shared "where work gets stuck" pattern vocabulary. The world is pale daylight (`#eef3f1`-family ground), heavy tight Mona Sans grotesk, one Alkaline wordmark, and a canary: dry wit and small clickable toys, never cute or small-time, never generic AI gloss.
 
-**Rollout status.** The shared foundation shipped site-wide on 2026-09-25, the first rollout step beyond the homepage: the `@layer base` reset (no Barlow, no default body font or background), the `.marketing-page` studio tokens, Mona Sans, the header (Alkaline wordmark, desktop nav, canary booking pill, mobile menu), the footer, the skip link, and the shared `.studio-button`/`.studio-link`/`.studio-terms`/`.studio-section-intro`/`.studio-close` components all now live unlayered in `resources/css/marketing.css` and render on every marketing page and the admin article preview (`public/marketing-icon.svg`/`.ico`, `public/marketing-touch-icon.png`, and the theme-color meta in `app/Services/MarketingSite.php`, now `#edf3f0`, shipped with it). `public/favicon.svg` — the retired cyan/ink "B" — is intentionally unchanged; Admin's Flux brand components still point at `/favicon.svg` for their own identity. Because `.marketing-page :is(h1, h2, h3)` sits outside any `@layer` while every retired per-page heading override still lives inside `@layer components`, the unlayered rule wins regardless of selector specificity — every heading on every marketing page, including pages not yet migrated, now renders Mona Sans 700 at `-.035em`. Only the Writing index and articles still render The clear argument's page-body sections: cyan fields, Barlow non-heading text, square report shapes, and flat line diagrams, still defined in `@layer components` in `resources/css/marketing.css`, to be deleted once Writing migrates. The header/footer partial itself (`resources/views/components/marketing/layout.blade.php`) is unchanged markup; only the homepage additionally repositions it via `.home-page .site-header` in `resources/css/home.css` (absolute, over the hero). Treat every retired-system detail recorded below as legacy identification for Writing's page bodies only, not as guidance for new work; do not extend cyan fields, Barlow, or the flat report/diagram vocabulary to any new page.
+**Rollout status: complete.** The shared foundation shipped site-wide on 2026-09-25: the `@layer base` reset (no Barlow, no default body font or background), the `.marketing-page` studio tokens, Mona Sans, the header (Alkaline wordmark, desktop nav, canary booking pill, mobile menu), the footer, the skip link, and the shared `.studio-button`/`.studio-link`/`.studio-terms`/`.studio-section-intro`/`.studio-close` components all live unlayered in `resources/css/marketing.css` and render on every marketing page and the admin article preview (`public/marketing-icon.svg`/`.ico`, `public/marketing-touch-icon.png`, and the theme-color meta in `app/Services/MarketingSite.php`, `#edf3f0`, shipped with it). `public/favicon.svg` — the retired cyan/ink "B" — is intentionally unchanged; Admin's Flux brand components still point at `/favicon.svg` for their own identity. `.marketing-page :is(h1, h2, h3)` stays unlayered by convention, not by necessity: `resources/css/marketing.css` carries no `@layer components` block at all any more, so there is nothing left for it to need to beat on specificity or cascade order. Writing (the index and every essay) was the last page to migrate, on 2026-09-25, closing the rollout; see "Writing migrates" below. The header/footer partial itself (`resources/views/components/marketing/layout.blade.php`) is unchanged markup; only the homepage additionally repositions it via `.home-page .site-header` in `resources/css/home.css` (absolute, over the hero). The clear argument (cyan fields, Barlow, square report shapes, flat line diagrams) — the site's original direction — was retired on 2026-09-25 and no longer renders anywhere in the codebase; treat every mention of it below as history, never as guidance for new work.
 
 **The Walkthrough migrates.** On 2026-09-25 the Walkthrough page (`/walkthrough`) also moved into this world, the first inner page (beyond the shared foundation) to do so: its own desk-plate composition in `resources/css/walkthrough.css`, `resources/views/pages/walkthrough.blade.php`, and `resources/views/components/marketing/fit-card.blade.php`. Its legacy assessment-layout rules were deleted from `resources/css/marketing.css`; the `.walkthrough-diagram`/`.walkthrough-stages`/`.walkthrough-choices` rules that remain there belong to the Writing article-diagram vocabulary (`.article-diagram .walkthrough-stages`), not the page. Details are recorded throughout the sections below and in Components.
 
 **Work migrates.** The same day, the selected-work page (`/work`) moved into this world as "Craft & Communicate's reporting, illustrated": `resources/views/pages/work.blade.php`, `resources/css/work.css`, and `resources/js/journey.js` replace the retired `.work-story`/`.work-title`/`.story-heading`/`.story-bottom` rules, deleted from `resources/css/marketing.css`. It reuses the shared `x-marketing.assessment-invitation` component (now built on `.studio-close`/`.studio-button`/`.studio-terms` rather than the legacy `.closing-invitation`) for its closing invitation, and ships its own rasters (`public/images/work/room-hand`, `room-platform`, `room-clients`, each a WebP 760w/1400w pair plus a PNG fallback, with provenance recorded in a sidecar `.json` beside each file, sourced from `.impeccable/assets/plates/`). Details are recorded in Layout, Elevation & Depth, and Components below.
 
 **The field guide migrates.** Also on 2026-09-25, `/tools/where-work-gets-stuck` ("Eight ways work gets stuck") moved into this world: `resources/views/pages/tools/where-work-gets-stuck.blade.php`, `resources/views/components/marketing/stuck-pattern.blade.php`, `resources/css/stuck.css`, and `resources/js/self-check.js`, importing into `resources/css/app.css` and `resources/js/app.js` alongside the other migrated pages. Its legacy `.stuck-*` rules, `.closing-invitation`, and `.action-note` were deleted from `resources/css/marketing.css`. It reuses `.studio-section-intro` for its intro and `.studio-button` for every booking placement, and ships its own rasters (`public/images/stuck/stuck-desk` at 2000w/1000w WebP plus a PNG fallback, and `stuck-canary`, each with provenance embedded in a sidecar `.json`, sourced from `.impeccable/assets/plates/`). Details are recorded in Layout, Shapes, Elevation & Depth, and Components below.
+
+**Writing migrates, completing the rollout.** On 2026-09-25 the Writing index (`/writing`) and every essay (`/writing/{slug}`) moved into this world, the last marketing surface to do so: `resources/css/writing.css` (new, unlayered, imported last in `resources/css/app.css`), `resources/views/pages/writing/index.blade.php`, `resources/views/pages/writing/[slug].blade.php`, and `resources/js/find-essay.js`. The index is a big, calm table of contents: a `.wr-hero` with the "Writing." title at display scale, the lead and intro copy, a progressive-enhancement find field, and the RSS link, above a white `.wr-archive` panel (rounded on its top corners only, so it reads as a base the page rests on) with a canary perched on its top-right corner, year groups, and whole-row essay links with right-aligned date-and-read-time meta. The essay page is the quiet column: a back link, a Mona Sans 800 title, a description, and a byline on a hairline rule (`var(--studio-rule)`) with a small side-profile canary standing at its right end, then a white `14px` `.article-prose` reading surface holding the essay, and a closing row offering Back to all writing and Subscribe via RSS. Both pages ship their own canary rasters (`public/images/writing/writing-canary.{png,webp}`, `essay-canary.{png,webp}`, provenance embedded, plates in `.impeccable/assets/plates/`), reusing the same slim side-profile pose seen elsewhere on the site. Writing's figures — notes and quotes, ink line/bar charts, and the walkthrough-stage and reporting diagrams (canary-yellow step numbers, a canary-highlighted "Where I'd start" recommendation row) — moved onto studio tokens in the same stylesheet, so the admin publishing preview (`marketing-page reading-page`) and the local figure specimen (`/__design/figures`, also `marketing-page`) render identically. Details are recorded in Layout, Elevation & Depth, and Components below. This closes the rollout: every marketing page now renders Your business, in miniature.
 
 **Key Characteristics:**
 
@@ -219,21 +230,18 @@ The homepage palette is a daylight-and-ink base with one warm accent (canary yel
 - **Studio ink** (`#0b141a`): headings, body text default, and the button/pill text color. Deeper than the retired system's `#102a33`.
 - **Studio ink-soft** (`#323945`) and **studio muted** (`#5c646d`): secondary copy (lead paragraphs, section intros, card body text) and the smallest muted labels (proof heading, offer-terms pill text), respectively.
 - **Studio rule** (`#d5dbd8`): hairline dividers between employer marks and under model-shelf cards.
-- **Paper** (`#ffffff`): section backgrounds for the proof strip, story track, offer track, and person section; also the white pill tags on the diorama. Shared, unchanged, with the retired system and with Admin.
+- **Paper** (`#ffffff`): section backgrounds for the proof strip, story track, offer track, and person section; also the white pill tags on the diorama, the Writing archive panel, and the essay reading surface. Shared unchanged across every era of the site and with Admin.
 
-### Legacy palette (retired direction; still rendering in unmigrated page bodies)
-
-- **Ink** (`#102a33`), **cyan** (`#b7edf1`), **emphasis yellow** (`#f7cb58`), **deep teal** (`#214b57`), and **cyan-wash** (`#b7edf130`) are The clear argument's palette. They still render inside the Writing page bodies (`@layer components` in `resources/css/marketing.css`) until Writing migrates. The favicon and the theme-color meta tag have already migrated to the studio palette (`#edf3f0`) as part of the shared foundation and are no longer part of this legacy set. Deep teal, ink, cyan, and paper are also the tokens the Admin operational extension uses for its light/dark accent — do not remove them even after Writing migrates.
+The clear argument's palette (ink `#102a33`, cyan `#b7edf1`, emphasis yellow `#f7cb58`, deep teal `#214b57`, cyan-wash `#b7edf130`) was retired on 2026-09-25 and, with Writing's migration, no longer renders anywhere in the codebase; those tokens are gone from `resources/css/app.css` and `resources/css/marketing.css`. Admin's light/dark accent uses its own literal `#214b57`/`#b7edf1` values, defined independently in `resources/css/admin.css`'s own `@theme` — a historical coincidence of value, not a shared token, so nothing above needs preserving on Admin's account.
 
 **The Canary Action Rule.** Canary yellow marks the one thing to do or the one thing in motion — a booking button or a packet — never a background wash for a whole section. This carries the retired system's Argument Contrast Rule forward under a new palette.
 
 ## Typography
 
-**Studio Font:** self-hosted Mona Sans (via `bunny()` in `vite.config.js`, weights 400–800), `--font-studio` in `resources/css/app.css`. Used for the `.marketing-page` body font site-wide and, via the unlayered `.marketing-page :is(h1, h2, h3)` rule, for every heading on every marketing page — including pages whose bodies still run the retired system.
+**Studio Font:** self-hosted Mona Sans (via `bunny()` in `vite.config.js`, weights 400–800), `--font-studio` in `resources/css/app.css`. Used for the `.marketing-page` body font site-wide and, via the unlayered `.marketing-page :is(h1, h2, h3)` rule, for every heading on every marketing page.
 **Wordmark Font:** licensed Alkaline; the shared header now renders it at 600 with native (unmodified) tracking on every marketing page — the weight PRODUCT.md commits to for the site-wide rollout. The homepage-only Medium (500) override is gone; there is no more `.home-page`-scoped wordmark rule.
-**Legacy Marketing Font:** Barlow is still self-hosted via `bunny()` and still named by the retired page-body rules (`@layer components` in `resources/css/marketing.css`) — non-heading text, captions, essay meta — on the Writing pages. Because those rules sit inside a CSS layer and the site-wide heading rule does not, Barlow no longer reaches any h1/h2/h3, even on unmigrated pages.
 **Admin Font:** Inter, unchanged (see Admin operational extension).
-**Mono Font:** Commit Mono, unchanged, used only in the retired system's article code blocks.
+**Mono Font:** Commit Mono, unchanged, used for inline `code` and `pre` blocks inside the essay reading surface (`resources/css/writing.css`).
 
 **Character:** Mona Sans is heavier and tighter than Barlow — negative tracking runs to `-.04em` at display size versus the retired system's `-.025em` — giving the new world a denser, more confident grotesk voice against the same sentence-case, direct copy style.
 
@@ -253,9 +261,18 @@ The homepage palette is a daylight-and-ink base with one warm accent (canary yel
 - **Studio fit line** (400, `clamp(.9375rem, 1.19vw, 1.4375rem)`, line-height 1.37, `-.02em`): each fit-check row's question text on the Walkthrough page.
 - **Studio step title** (700, `clamp(1.375rem, 1.95vw, 2.35rem)`, line-height 1.1, `-.035em`): the Walkthrough page's four-step band headings (Check the fit, Choose a time, Walk me through it, Keep the report).
 
+Writing's own headings inherit weight and letter-spacing from the sitewide `:is(h1, h2, h3)` rule and layer their own font-size and line-height in `resources/css/writing.css`:
+
+- **Studio index title** (800, `clamp(5rem, 9.9vw, 12rem)`, line-height .92, `-.04em`): the Writing index's "Writing." hero title, the largest type on the site.
+- **Studio index lead** (700, `clamp(1.375rem, 2.15vw, 2.5rem)`, line-height 1.1, `-.035em`): "Better work, fewer workarounds." beneath the index title.
+- **Studio index row title** (700, `clamp(1.5rem, 2.15vw, 2.5rem)`, line-height 1.12, `-.035em`): each essay's title in the index's year-grouped rows.
+- **Studio essay title** (800, `clamp(2.6rem, 6.35vw, 6.25rem)`, line-height 1.02, `-.04em`): an essay's own `<h1>`.
+- **Studio essay description** (400, `clamp(1.25rem, 1.95vw, 1.875rem)`, line-height 1.27, `-.02em`): the one-line description under an essay's title.
+- **Studio article body** (400, `clamp(1.125rem, 1.48vw, 1.4375rem)` — about 22.7px at 1536px, narrowing to a flat 18px under `1100px` — line-height 1.45 loosening to 1.6 under `1100px`, `-.012em`): the essay's sustained reading prose inside `.article-prose`, measured within a `min(100% - 12%, 49.5rem)` column.
+
 **The One Wordmark Rule.** Alkaline appears once per page as the header wordmark and nowhere else, at Demi (600) with native tracking on every marketing page now that the shared header has rolled out site-wide.
 
-**The Unlayered Foundation Rule.** The shared header, footer, and the `.marketing-page :is(h1, h2, h3)` heading rule live outside any `@layer`, so they beat every retired page's `@layer components` override regardless of selector specificity. This is why every heading on every marketing page already renders Mona Sans even before that page's own body layout has migrated off The clear argument.
+**The Unlayered Foundation Rule.** The shared header, footer, and the `.marketing-page :is(h1, h2, h3)` heading rule live outside any `@layer`, matching every other rule in `resources/css/marketing.css` — the file carries no `@layer components` block for anything to need to beat any more, now that every page has migrated.
 
 ## Layout
 
@@ -275,11 +292,15 @@ The Work page's journey (`.wk-journey`) is a two-column grid: a `47.6vw` text co
 
 The field guide's hero (`/tools/where-work-gets-stuck`) is a third variant of the copy-plus-desk composition: a fixed `50vw` copy column on the left holds the headline, lead, and booking button, while the desk plate is absolutely positioned and bleeds off the right and bottom edges (`left: 19.53vw`, `width: 80.47vw`). `nav#map` overlays the same hero as an ordered list of eight real links, each an `<li>` positioned by `--x`/`--y` custom properties in `vw` units read from the comp's own card coordinates, so the cards sit exactly where the approved comp placed them regardless of viewport width down to `1100px`. Below `1100px` the desk plate moves under the copy at full-bleed width, and `nav#map` drops its absolute positioning for a static two-column CSS grid of the same eight cards. Below the hero, the pattern entries (`article#slug`) run as a single alternating two-column grid per entry (a sticky detail-column header beside the scrollable body), collapsing to one column and a static header below `1100px`; the interlude and closing sections use the same shared two-column grid as the Work and Walkthrough closes.
 
+Writing's index (`/writing`) is a two-column hero: a `44.9vw` intro column carrying the title, lead, description, find field, and RSS link, paired with `minmax(0, 1fr)`, above a white `.wr-archive` panel (margin `0 2.2vw`, radius `14px 14px 0 0`) holding an `11.3vw` year column beside the essay rows. Each `.wr-essay` row is `minmax(0, 1fr) auto`: title and description in the first column, date-and-read-time meta right-aligned in the second and baseline-locked to the title. Below `1100px` the hero, year groups, and essay rows all collapse to one column, the find field narrows to `min(100%, 32rem)`, and the meta line moves under the title. The essay page (`/writing/{slug}`) is the quiet column: `.essay` is `min(100% - 12%, 49.5rem)` wide and centered, holding the back link, title, description, and byline; the `.article-prose` reading surface then bleeds past that column on a negative inline margin (`-4.2rem`, padded back in by the same amount), so the white panel reads slightly wider than the title and byline above it while sharing their center line. Below `1100px` the column narrows to `min(100% - 12%, 44rem)` and the reading surface's bleed shrinks to `-5%`; below `640px` it bleeds to the viewport edge with an `8px` inset on each side, so the reading surface never touches the glass on a phone.
+
 ## Elevation & Depth
 
 The homepage is mostly flat, like the retired system, but adds one new device: colored glow as a signal of motion. Buttons and pills use an ordinary soft, offset ambient shadow at rest (see below). Canvas-drawn elements add a `shadowBlur` glow in the packet's own hue (amber for packets in transit, teal for "fixed"-state lane markers, red for the pulsing warning light) — glow is reserved for things that are moving or urgent, never applied to static UI as decoration. The Work page's SVG route and packet (`resources/css/work.css`) carry the same glow-as-motion treatment through an ordinary `drop-shadow` filter rather than canvas `shadowBlur`.
 
 **Owner direction, 2026-09-25: packets are rare, routes march slowly.** Constant packets from every desk read as too much. `packetsInFlight()` in `resources/js/miniature.js` now launches one path at a time in a shuffled, uneven-interval order (`LAUNCH_ORDER`/`LAUNCH_GAPS`): usually one packet is in flight, never more than two, and never the same desk twice in a row. The After-the-fix teal lane packets stagger on the same schedule. The dotted routes themselves still march continuously — they show direction, not arrival — but at half their previous speed. Reduced motion shows resting packet cubes at rest instead of looping. The Work page's own scroll-driven packet is a separate case: it moves only with scroll position, not on a timer, so the rarity schedule doesn't apply to it, but its route shares the same slow, continuous march (`wk-route-march`, `2.4s`).
+
+Writing carries none of this: no glow, no canvas, no motion beyond the shared foundation's ordinary transitions. Its only elevation is the same white-panel-on-daylight shadow language the rest of the system uses for standing cards, scaled up for the archive and reading-surface panels.
 
 ### Shadow Vocabulary
 
@@ -292,6 +313,8 @@ The homepage is mostly flat, like the retired system, but adds one new device: c
 - **Card ambient, soft** (`0 1px 2px rgb(11 20 26 / .06), 0 14px 32px -18px rgb(11 20 26 / .28)`, and a slightly lighter variant `0 1px 2px rgb(11 20 26 / .06), 0 10px 24px -14px rgb(11 20 26 / .22)`): the Walkthrough hero report card and the two white cards peeking behind the fit card (`.wt-card-stack`).
 - **Card ambient, deep** (`0 1px 2px rgb(11 20 26 / .08), 0 24px 48px -22px rgb(11 20 26 / .4)`): the standing fit card itself, the deepest of the desk's three stacked cards.
 - **Card-stock edge** (`inset 0 -2px 0 rgb(11 20 26 / .07), inset -1px 0 0 rgb(11 20 26 / .04), 0 1px 2px rgb(11 20 26 / .12), 0 12px 20px -12px rgb(11 20 26 / .45)`, deepening on hover/focus/lift to `inset 0 -2px 0 rgb(11 20 26 / .05), 0 2px 4px rgb(11 20 26 / .12), 0 26px 34px -16px rgb(11 20 26 / .5)`): the field guide's eight pattern cards — an inset bottom-and-right edge reads as card-stock thickness under the ordinary offset ambient shadow.
+- **Find field ambient** (`0 1px 2px rgb(11 20 26 / .06), 0 10px 26px -16px rgb(11 20 26 / .35)`): the Writing index's find field at rest.
+- **Reading panel ambient** (`0 1px 2px rgb(11 20 26 / .05), 0 24px 60px -30px rgb(11 20 26 / .28)`, and a slightly deeper sibling `0 1px 2px rgb(11 20 26 / .04), 0 24px 60px -34px rgb(11 20 26 / .28)`): the Writing archive panel and the essay's `.article-prose` reading surface, respectively — the same white-panel-on-daylight family scaled up for a full-width panel.
 
 **The Glow-as-Motion Rule.** Reserve colored glow for something in motion or urgent (a packet, a lane marker, the warning light); static surfaces at rest keep the ordinary blurred, offset ambient shadow.
 
@@ -299,7 +322,7 @@ The homepage is mostly flat, like the retired system, but adds one new device: c
 
 ## Shapes
 
-Controls use soft, generous radii: `7px` for pill tags, `8px` for the header booking pill and the report card's canary highlight bar, `10px` for the primary button and reused by every other pill-shaped control (the fit card's Yes/Not-yet pills, its Show me times action, and the not-the-right-fit panel), `12px` for the field guide's desk cards, `14px` for standing/floating cards (the fit card, its stacked card peeks, the mobile menu panel, the field guide's closing self-check panel), `999px` for the segmented control, the offer-terms/pill labels, and the field guide's self-check chips. This is rounder than the retired system's `3–5px` control radii and its true-circle stage numbers.
+Controls use soft, generous radii: `7px` for pill tags, `8px` for the header booking pill and the report card's canary highlight bar, `10px` for the primary button and reused by every other pill-shaped control (the fit card's Yes/Not-yet pills, its Show me times action, and the not-the-right-fit panel), `12px` for the field guide's desk cards and the Writing index's find field, `14px` for standing/floating cards (the fit card, its stacked card peeks, the mobile menu panel, the field guide's closing self-check panel, the Writing archive panel — top corners only, `14px 14px 0 0` — and the essay's `.article-prose` reading surface, narrowing to `12px` full-bleed under `640px`), `999px` for the segmented control, the offer-terms/pill labels, and the field guide's self-check chips. This is rounder than the retired system's `3–5px` control radii and its true-circle stage numbers.
 
 The signature shape is the isometric packet cube drawn on canvas (`drawCube()` in `resources/js/miniature.js`): three visible faces (top/left/right) in a light/mid/deep tint of the packet's hue, giving every route endpoint and traveling packet the same small 3D block silhouette that echoes the diorama's own isometric rendering style.
 
@@ -345,6 +368,16 @@ Each of the eight named patterns renders as `<article id="{slug}">`, a two-colum
 
 Under "Recognize a few?", `.st-check` pairs a white `14px`-radius panel of tickable pill chips (`.st-check-signs`, one per pattern's first two "You'll notice" signs, interleaved across patterns rather than grouped by pattern) with a live-reordering pattern list (`.st-check-results`). An unchecked chip is a `999px`-radius outline pill with a plain ink-ringed circle; a checked chip inverts to solid ink with white text and its circle fills canary yellow with an inline SVG check — pure CSS (`label:has(input:checked)`), so it works with JavaScript disabled. `resources/js/self-check.js` (`initSelfCheck`) additionally tallies checked signs per pattern, fills that many of the pattern's two hollow dots canary yellow (`data-lit`, transitioning `border-color`/`background-color`), reorders the pattern list most-recognized-first through a View Transition when the browser supports one (ties keep field-guide order), and writes a plain-text summary line ("Sounds most like: X and Y."). **The Dots Are Counts Rule.** A pattern's dots count how many of its signs were ticked; they are never rendered as a percentage, a score, or a ranking number. Without JavaScript, `[data-enhanced]` is never set, so the dots stay hidden and the chips render as a plain, fully checkable checklist beside the patterns in their fixed order. In print, the panel loses its card chrome and shadow and the chip list becomes a two-column checklist (`columns: 2`, no borders, no dots) — the same handout intent as the desk map's print grid.
 
+### Writing archive (signature component)
+
+`.wr-archive` is a white panel (`14px 14px 0 0`, top corners only) holding a raster canary (`writing-canary.webp`/`.png`, 200×199, provenance embedded, sourced from `.impeccable/assets/plates/`) perched at its top-right corner, and the essay list grouped by year (`.wr-year`, an `11.3vw` year label beside an `<ol>` of hairline-divided rows). Each `.wr-essay` is a whole-row `<a>`: title and description in the first column, date-and-read-time meta (a spaced middle-dot separator) right-aligned in the second and baseline-locked to the title. The find field (`[data-find-essay]`, `resources/js/find-essay.js`) is progressive enhancement: it starts `hidden` and only reveals itself once JavaScript runs, filtering rows by title and description on every keystroke, hiding a year group entirely once none of its rows match, and announcing the visible count in a `role="status"` line; without JavaScript the full chronological list stands and reads exactly as print does.
+
+**The Progressive Find Rule.** A find control that depends on JavaScript to filter must never be the only way to reach the list it filters; it starts hidden and the complete, unfiltered list is always the fallback.
+
+### Essay reading surface (signature component)
+
+The essay's own quiet column: a back link, a Mona Sans 800 title (`studio-essay-title`), a description (`studio-essay-description`), and a byline on a hairline rule (`border-bottom: 1px solid var(--studio-rule)`) carrying a small side-profile canary raster (`essay-canary.webp`/`.png`, 160×159, same provenance convention) positioned at the rule's right end. Below the byline, `.article-prose` is a white `14px`-radius panel (`studio-article-body` reading type) holding the essay: notes and asides (`@aside`/`@callout type=key`, the latter titled "Key takeaway") render as daylight-ground panels (`.article-note`), quotes as a similarly toned `blockquote`, code and `pre` in Commit Mono on the same daylight ground, tables with hairline row dividers, and inline images at `10px` radius. Two figure vocabularies carry the same studio tokens: ink line/bar charts (`.article-chart`, `--studio-ink` stroke and fill, an accessible `<details>` data table under every chart) and the walkthrough-stage/reporting diagrams (`.article-diagram`) — numbered stage circles filled canary yellow (`data-diagram-emphasis`) and, in the reporting figure, a canary-highlighted "Where I'd start" recommendation row (`.first-recommendation`) — the same vocabulary the Walkthrough page's own report card uses, ported here for essays that walk through the same shape of work. The essay ends with a plain row offering Back to all writing and Subscribe via RSS. In print, the reading surface loses its card chrome and shadow, figures gain a plain border, data tables unfold in full, and the canary and navigation disappear — the same handout intent as the field guide's print rules.
+
 ### Model shelf card
 
 An isometric capability render (transparent ground) above a name and one sentence, separated from its neighbor by a hairline rule; the whole card lifts and its drop-shadow deepens on hover. Six recur in a three-column grid (two on narrow viewports).
@@ -378,19 +411,20 @@ Publishing motion is useful and bounded. `resources/js/admin/publishing/motion.j
 - **Do** use canary yellow only for actions and things in motion (buttons, packets); use studio teal only for the resolved/"fixed" state.
 - **Do** keep the diorama's meaning readable from the static plate and its real HTML tag labels alone; treat the canvas layer as a motion enhancement, never the only carrier of a relationship.
 - **Do** keep Alkaline to the one header wordmark, at Demi (600) for any newly migrated page, matching the homepage.
-- **Do** self-host Mona Sans and Barlow via `bunny()` rather than a system sans fallback becoming the de facto display face.
+- **Do** self-host Mona Sans via `bunny()` rather than a system sans fallback becoming the de facto display face.
 - **Do** describe the past-employer row as work history in monochrome marks, never as clients or endorsements.
 - **Do** keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.
 - **Do** treat the header, footer, desktop nav, canary booking pill, mobile menu, skip link, and shared studio components (`.studio-button`, `.studio-link`, `.studio-terms`, `.studio-section-intro`, `.studio-close`) as shared foundation available to every marketing page and the admin article preview, not homepage-scoped.
 - **Do** gate the inline Cal embed behind an explicit visitor action (the fit card's Show me times, dispatching `booking:open`); never auto-load Cal on page view, and never point a booking link anywhere but `/walkthrough` or `#choose-a-time`.
 - **Do** keep packets rare and staggered sitewide (usually one in flight, never more than two, never the same desk twice) and keep dotted routes marching slowly to show direction; keep every animated route and packet inside the art, breaking a route into per-figure segments and hiding its packet rather than letting either cross story text at a narrow viewport.
 - **Do** count a self-check's dots as ticked signs, never a percentage or score, and keep chip-style checklists fully checkable and readable with JavaScript disabled and in print.
+- **Do** treat a JavaScript-dependent filter (the Writing find field) as progressive enhancement: hidden until scripts run, with the complete unfiltered list as the permanent, always-correct fallback.
+- **Do** render essay notes, quotes, charts, and diagrams as daylight-ground panels inside the white reading surface, in the same ink/canary vocabulary as the rest of the system, never a separate visual language for article content.
 
 ### Don't:
 
-- **Don't** describe the Writing page bodies as migrated to the new world; their page sections still render The clear argument (cyan fields, Barlow non-heading text, legacy layouts) in `@layer components` in `resources/css/marketing.css` until Writing migrates.
 - **Don't** describe the shared header/footer, the favicon, or the theme-color meta as homepage-only or still retired — they migrated site-wide as the shared foundation.
 - **Don't** carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.
 - **Don't** literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the "Waikthrough" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.
 - **Don't** treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because "grid of same-size cards" is a reusable page scaffold.
-- **Don't** remove the legacy `ink`/`paper`/`cyan`/`deep-teal` tokens even after the remaining marketing pages migrate; Admin depends on them independently of the marketing redesign.
+- **Don't** assume Admin's accent colors are the same tokens as the retired marketing palette: `resources/css/admin.css` defines its own literal `#214b57`/`#b7edf1` values in its own `@theme`, independent of `resources/css/app.css` and `resources/css/marketing.css`, neither of which defines `ink`, `cyan`, `emphasis`, or `deep-teal` any more.
