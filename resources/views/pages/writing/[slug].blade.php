@@ -21,12 +21,18 @@ render(function (View $view, string $slug, ReadPublishedWriting $writing): View 
             <a class="back-link" href="{{ route('public.writing') }}"><x-marketing.arrow /> All writing</a>
             <h1>{{ $article['title'] }}</h1>
             <p class="essay-description">{{ $article['description'] }}</p>
-            <div class="essay-byline"><span>By Birdcar</span><time datetime="{{ $article['date']->format('Y-m-d') }}">{{ $article['date']->format('F j, Y') }}</time><span>{{ $article['readMinutes'] }} min read</span></div>
+            <div class="essay-byline">
+                <span>By Birdcar</span><time datetime="{{ $article['date']->format('Y-m-d') }}">{{ $article['date']->format('F j, Y') }}</time><span>{{ $article['readMinutes'] }} min read</span>
+                <picture>
+                    <source type="image/webp" srcset="{{ asset('images/writing/essay-canary.webp') }}?v=2">
+                    <img class="essay-canary" src="{{ asset('images/writing/essay-canary.png') }}?v=2" width="160" height="159" alt="">
+                </picture>
+            </div>
         </header>
         <div class="article-prose">{!! $content !!}</div>
         <footer class="essay-end">
-            <a class="text-link" href="{{ route('public.writing') }}">Back to all writing <x-marketing.arrow /></a>
-            <a class="text-link" href="{{ route('public.feed') }}">Subscribe via RSS <x-marketing.arrow /></a>
+            <a class="studio-link" href="{{ route('public.writing') }}">Back to all writing <x-marketing.arrow /></a>
+            <a class="studio-link" href="{{ route('public.feed') }}">Subscribe via RSS <x-marketing.arrow /></a>
         </footer>
     </article>
 </x-marketing.layout>

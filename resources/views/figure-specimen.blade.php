@@ -8,7 +8,7 @@
         @fonts
         @vite('resources/css/app.css')
     </head>
-    <body class="reading-page figure-specimen">
+    <body class="marketing-page reading-page figure-specimen">
         <main class="essay">
             <header class="essay-heading">
                 <h1>Reading and figures</h1>

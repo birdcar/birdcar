@@ -5,6 +5,7 @@
 @import './walkthrough.css';
 @import './work.css';
 @import './stuck.css';
+@import './writing.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

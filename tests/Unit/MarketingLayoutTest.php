@@ -1,25 +1,21 @@
 <?php
 
 test('writing subscriptions keep a touch sized target without enlarging the label', function () {
-    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/marketing.css');
+    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/writing.css');
 
-    preg_match('/\.archive-heading a\s*\{([^}]+)\}/', $stylesheet, $subscription);
+    preg_match('/\\.wr-rss\\s*\\{([^}]+)\\}/', $stylesheet, $subscription);
 
     expect($subscription[1])
         ->toContain('min-height: 44px', 'align-items: center')
         ->not->toContain('font-size:');
 });
 
-test('essay arrows stay beside a shrinkable reading column and align with the titles', function () {
-    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/marketing.css');
+test('essay titles keep a shrinkable reading column beside their dates', function () {
+    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/writing.css');
 
-    preg_match('/\.essay-row\s*\{([^}]+)\}/', $stylesheet, $row);
-    preg_match('/\.essay-row > div\s*\{([^}]+)\}/', $stylesheet, $content);
-    preg_match('/\.essay-row > \.arrow\s*\{([^}]+)\}/', $stylesheet, $arrow);
+    preg_match('/\\.wr-essay\\s*\\{([^}]+)\\}/', $stylesheet, $row);
+    preg_match('/\\.wr-essay h3\\s*\\{([^}]+)\\}/', $stylesheet, $title);
 
-    expect($row[1])
-        ->toContain('display: flex', 'align-items: flex-start')
-        ->not->toContain('justify-content: space-between');
-    expect($content[1])->toContain('flex: 0 1 66ch', 'min-width: 0');
-    expect($arrow[1])->toContain('margin-top: .45rem');
+    expect($row[1])->toContain('display: grid', 'grid-template-columns: minmax(0, 1fr) auto');
+    expect($title[1])->toContain('min-width: 0');
 });
