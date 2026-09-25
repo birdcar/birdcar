@@ -2,7 +2,7 @@
 
 Run the public site, Admin, and Agent Publishing Studio locally, including real OpenRouter AI calls. For deployment, use [production setup](production-setup.md) instead. Historical ideation specs describe superseded AI and file-reader implementations.
 
-**Local AI calls still cost real money and send context to external providers.** Keep agents disabled during bootstrap, use a dedicated development OpenRouter key with a spending limit, and use non-sensitive test content. The automated tests described below fake inference; the browser smoke test does not.
+**Local AI calls still cost real money and send context to external providers.** Keep agents paused during bootstrap, use a dedicated development OpenRouter key with a spending limit, and use non-sensitive test content. The automated tests described below fake inference; the browser smoke test does not.
 
 All commands run from the repository root. These are instructions for you to execute, not an automatic setup script. Never point this setup at a production database or mail service.
 
@@ -55,7 +55,6 @@ SESSION_SECURE_COOKIE=true
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 DB_QUEUE_RETRY_AFTER=660
-PUBLISHING_AGENTS_ENABLED=false
 ```
 
 Do not leave `.env.example`'s production `ADMIN_URL` or localhost `APP_URL` in place: authentication, invitations, routing, and previews depend on the configured origins. If your registered local sites use different schemes/ports, use those exact origins; a secure-only session cookie will not work over plain HTTP. Keep the Admin and public hosts distinct.
@@ -105,7 +104,7 @@ php artisan migrate:status --no-interaction
 bun run build
 ```
 
-Migrations provide publishing records, jobs, sessions/cache, `agent_conversations`, `agent_conversation_messages`, and the activity fields for native tool approvals. Do not re-publish SDK migrations or generate a second conversation schema. Authorization sync defines roles/permissions; it does not assign an author to an account.
+Migrations provide publishing records, jobs, sessions/cache, `agent_conversations`, `agent_conversation_messages`, the activity fields for native tool approvals, and the publishing agent settings. A fresh settings row starts with agent requests **paused** and no model overrides. Do not re-publish SDK migrations or generate a second conversation schema. Authorization sync defines roles/permissions, including `publishing.configure-agents` on the author role; it does not assign an author to an account.
 
 No default seeder is required. Avoid `migrate:fresh` on a database whose work you want to keep. Building assets is enough to browse the site; the live asset watcher is optional in section 7.
 
@@ -168,91 +167,45 @@ The first successful import reports `created: 10`; matching repeat imports are s
 
 ## 6. Configure real OpenRouter AI
 
-The application already includes Laravel AI SDK agents and its native OpenRouter provider. Do not install another SDK, configure the generic OpenAI provider, run an MCP server, or send direct chat-completion requests to test around the application's approvals/budget controls.
+The application already includes Laravel AI SDK agents and its native OpenRouter provider. Do not install another SDK, configure the generic OpenAI provider, run an MCP server, or send direct chat-completion requests to test around the application's approval controls.
 
-### Choose and verify the route
+### Credentials
 
-In OpenRouter, choose a currently available model **and upstream endpoint** that support structured JSON output and tool calling. Check that the route accepts the parameters required by those features. Use the exact upstream provider name recognized by OpenRouter, not `openrouter` and not an invented model vendor label.
-
-Record the endpoint's current input/output prices and token limits. Do not rely on the historical model/provider fallback in `config/publishing_agents.php`. This guide intentionally does not freeze a model ID or price that may later be withdrawn or change.
-
-Replace every `REPLACE_*` value below in `.env`; these placeholders are not usable configuration:
+Only the OpenRouter credentials live in `.env`. Replace the placeholder value:
 
 ```dotenv
 OPENROUTER_API_KEY=REPLACE_WITH_YOUR_PRIVATE_DEVELOPMENT_KEY
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-PUBLISHING_AGENTS_HTTP_TIMEOUT=30
-
-PUBLISHING_AGENTS_DEFAULT_MODEL=REPLACE_WITH_OPENROUTER_MODEL_ID
-PUBLISHING_AGENTS_DEFAULT_PROVIDER="REPLACE_WITH_EXACT_UPSTREAM_PROVIDER"
-PUBLISHING_AGENTS_DEFAULT_MAX_COMPLETION_TOKENS=REPLACE_WITH_POSITIVE_OUTPUT_TOKEN_LIMIT
-PUBLISHING_AGENTS_DEFAULT_CONTEXT_TOKENS=REPLACE_WITH_CONSERVATIVE_INPUT_TOKEN_BOUND
-PUBLISHING_AGENTS_DEFAULT_PROMPT_PRICE=REPLACE_WITH_USD_INPUT_PRICE_PER_MILLION
-PUBLISHING_AGENTS_DEFAULT_COMPLETION_PRICE=REPLACE_WITH_USD_OUTPUT_PRICE_PER_MILLION
-PUBLISHING_AGENTS_DEFAULT_PRICE_UNIT=per_million
-
-PUBLISHING_AGENTS_PREMIUM_MODEL=
-PUBLISHING_AGENTS_REVIEW_FACTS_ROUTE=premium
-PUBLISHING_AGENTS_ENABLED=false
 ```
 
-Keep the API key in gitignored `.env` or your local secret manager. It must not use a `VITE_` prefix or appear in browser code, screenshots, logs, or committed files. Publishing explicitly selects `ai.providers.openrouter`; `config/ai.php`'s generic default provider does not change this path.
+Keep the API key in gitignored `.env` or your local secret manager. It must not use a `VITE_` prefix or appear in browser code, screenshots, logs, or committed files. Publishing explicitly selects `ai.providers.openrouter`; `config/ai.php`'s generic default provider does not change this path. After editing `.env`, run `php artisan config:clear --no-interaction`.
 
-### Price and token bounds
+There are no publishing model, provider, price, token-limit, or timeout variables to set. Give the development key its own credit limit in OpenRouter: OpenRouter key and workspace limits are the spend controls. The application does not keep an allowance, reserve money before a call, or reconcile generation costs, and missing usage metadata never blocks otherwise valid output.
 
-- Prices are non-negative decimal **strings**, without currency signs, commas, or scientific notation. `per_million` means USD per million tokens. If taking prices from metadata quoted in USD **per token**, either convert them or set the unit to `token`; do not paste per-token prices while retaining `per_million`.
-- The output cap and conservative input allowance must fit the selected endpoint's limits and leave enough output capacity for structured documents/reviews. Input includes instructions, frozen manuscript/evidence, permitted voice samples, and conversation history on a continuation.
-- `CONTEXT_TOKENS` is the input bound used to reserve money, **not automatic input truncation or an average-token estimate**. Do not lower it merely to bypass a budget pause.
-- Each attempt starts with a **$5 application allowance**. A completion or paid continuation reserves against remaining funds before inference. Unknown billing outcomes retain their reservation; they are not treated as free requests.
+### Models
 
-For `per_million`, the reservation is approximately:
+Every agent role has a recommended model in its code, chosen from the curated list in `config/publishing_agents.php`: Gemini 3.8 Flash, DeepSeek V4 Pro, DeepSeek V4.1 Flash, and OpenRouter Auto Router. You do not need to choose anything to start.
 
-```text
-(input token bound × input price + output cap × output price) / 1,000,000
-+ any research-plugin allowance
-```
+To change a role, sign in and open **Admin → Publishing → Settings** (`/publishing/settings` on the Admin host). Each task shows its recommendation and a model selector:
 
-For illustration only, 65,536 input tokens at $1/million and 8,192 output tokens at $4/million reserve $0.098304 before plugin costs. These are arithmetic examples, not a recommended model, current quote, or settings to copy. Check your chosen route's real figures; a full-context reservation that exceeds the remaining allowance will block the call.
+- **Use recommended** removes the saved override, so the task follows the code recommendation, including future changes. **Reset … to recommended** does the same immediately for one task.
+- Choosing a model pins it, even when it matches today's recommendation.
+- **OpenRouter Auto Router** lets OpenRouter pick a model for each request, so the model can vary. Reasoning effort is not sent to Auto. A conversation waiting on your answer continues on the concrete model that asked the question.
 
-### Optional premium fact review and research
+Saved settings apply to work that has not started yet. They need no config rebuild or process restart, and they do not change the model recorded for work already started. The page shows only whether an OpenRouter key is configured; it never accepts or displays the key.
 
-With `PUBLISHING_AGENTS_PREMIUM_MODEL` blank, fact review selects the default route. For a separate premium model, configure **all** of:
+Research uses OpenRouter's web plugin with `engine=exa`, `mode=auto`, and at most five results, whichever model the Research challenge task uses. No separate `EXA_API_KEY` is used; plugin charges are billed by OpenRouter under the same key limits. Public source retrieval also needs outbound HTTPS. Internal/loopback URLs are deliberately blocked by source-fetch safety checks; do not weaken those checks for a local smoke test.
 
-```dotenv
-PUBLISHING_AGENTS_PREMIUM_MODEL=REPLACE_WITH_OPENROUTER_MODEL_ID
-PUBLISHING_AGENTS_PREMIUM_PROVIDER="REPLACE_WITH_EXACT_UPSTREAM_PROVIDER"
-PUBLISHING_AGENTS_PREMIUM_MAX_COMPLETION_TOKENS=REPLACE_WITH_POSITIVE_OUTPUT_TOKEN_LIMIT
-PUBLISHING_AGENTS_PREMIUM_CONTEXT_TOKENS=REPLACE_WITH_CONSERVATIVE_INPUT_TOKEN_BOUND
-PUBLISHING_AGENTS_PREMIUM_PROMPT_PRICE=REPLACE_WITH_USD_INPUT_PRICE_PER_MILLION
-PUBLISHING_AGENTS_PREMIUM_COMPLETION_PRICE=REPLACE_WITH_USD_OUTPUT_PRICE_PER_MILLION
-PUBLISHING_AGENTS_PREMIUM_PRICE_UNIT=per_million
-PUBLISHING_AGENTS_REVIEW_FACTS_ROUTE=premium
-```
+### Turn agent requests on deliberately
 
-There is no automatic upstream failover. Native approval continuations retain the saved model/provider snapshot, so changing `.env` does not silently reroute an already-paused conversation.
+Before turning requests on, check existing pending activities and scheduled publications in your local database. Running the worker and scheduler can resume previously queued work, not just the next idea you create. Sending draft, source, and voice context for AI processing is separate from having permission to publish it.
 
-Research uses OpenRouter's web plugin with `engine=exa`, `mode=auto`, and at most five results. No separate `EXA_API_KEY` is used. Verify current plugin charges against `limits.exa_web_search_nano_usd` in `config/publishing_agents.php`; the checked-in allowance is $0.007 per research request, not a guarantee of external prices. Public source retrieval also needs outbound HTTPS. Internal/loopback URLs are deliberately blocked by source-fetch safety checks; do not weaken those checks for a local smoke test.
-
-### Enable deliberately
-
-Before enabling, check existing pending activities and scheduled publications in your local database. Starting workers/scheduling can resume previously queued work, not just the next idea you create. Sending draft, source, and voice context for AI processing is separate from having permission to publish it.
-
-When the route, prices, key, and consent are ready, change:
-
-```dotenv
-PUBLISHING_AGENTS_ENABLED=true
-```
-
-Then clear cached configuration:
-
-```bash
-php artisan config:clear --no-interaction
-```
+When the key and consent are ready, open **Admin → Publishing → Settings**, turn off **Pause agent requests**, and choose **Save settings**. The saved state badge changes to **Saved: On**; an unsaved switch change is labeled as not saved and has no effect.
 
 A non-inference check that prints only booleans, not your key:
 
 ```bash
-php artisan tinker --execute 'dump(["agents_enabled" => (bool) config("publishing_agents.enabled"), "openrouter_key_configured" => filled(config("ai.providers.openrouter.key"))]);' --no-interaction
+php artisan tinker --execute 'dump(["agents_paused" => app(App\Settings\PublishingAgentSettings::class)->paused, "openrouter_key_configured" => filled(config("ai.providers.openrouter.key"))]);' --no-interaction
 ```
 
 This only checks local configuration, not key validity, credits, provider availability, or paid behavior. Do not dump the complete `ai` configuration to diagnose a missing key.
@@ -277,7 +230,7 @@ Horizon is installed but only processes Redis queues; it is not a replacement fo
 php artisan schedule:work --no-interaction
 ```
 
-It delivers due approved releases every minute and runs editorial recovery every five minutes. Recovery re-enqueues durable pending activities and examines running work older than 30 minutes; it can perform billing lookups. Neither the scheduler nor a recovery command is a read-only smoke check. To inspect registration without executing the scheduled commands:
+It delivers due approved releases every minute and runs editorial recovery every five minutes. While agent requests are on, recovery re-enqueues durable pending activities; it always pauses running work older than 30 minutes as uncertain so you can review it. It makes no billing lookups. Neither the scheduler nor a recovery command is a read-only smoke check. To inspect registration without executing the scheduled commands:
 
 ```bash
 php artisan schedule:list --no-interaction
@@ -291,7 +244,7 @@ bun run dev
 
 Use only one asset watcher. If live assets are unavailable or HTTPS/HMR is not configured for your manager, stop the watcher and use `bun run build` instead; do not start another PHP server. An existing managed Vite worker can provide the same asset service.
 
-After changing `.env` or PHP code, clear configuration and gracefully replace existing queue workers:
+After changing `.env` or PHP code, clear configuration and gracefully replace existing queue workers. Saving the publishing agent settings page is not a code or `.env` change and needs neither step:
 
 ```bash
 php artisan config:clear --no-interaction
@@ -302,16 +255,16 @@ php artisan queue:restart --no-interaction
 
 ## 8. Run a small, real-AI smoke test
 
-Use your local author account and a new, non-sensitive idea rather than modifying an imported essay. Keep the worker terminal and the workspace's budget/activity display visible.
+Use your local author account and a new, non-sensitive idea rather than modifying an imported essay. Keep the worker terminal and the workspace's activity display visible, and watch usage in OpenRouter.
 
 1. Open Admin → Publishing, enter an idea, and choose **Develop idea**. This creates the active attempt; use **Start interview** in **Brief & plan** to start the AI interview.
-2. Wait for the queued activity. Use **Refresh agent work** if needed; visible active work also polls. Check the available budget and activity status, not only the Home attention list.
-3. If the interviewer calls `AskAuthor`, the workspace shows **The agent needs your input**. Reload to confirm the questions persist, enter **Your answers**, and choose **Send answers and continue**. The queue resumes the same stored conversation with a separately reserved paid completion.
+2. Wait for the queued activity. Use **Refresh agent work** if needed; visible active work also polls. Check the activity status in the workspace, not only the Home attention list.
+3. If the interviewer calls `AskAuthor`, the workspace shows **The agent needs your input**. Reload to confirm the questions persist, enter **Your answers**, and choose **Send answers and continue**. The queue resumes the same stored conversation on the model that asked, with one more paid completion.
 4. **Decline request** instead stops that request without another model completion; it does not refund the initial call. A model may return a completed interview rather than ask a tool question, so absence of a pause alone is not proof of a configuration failure. The automated tool-approval tests exercise the pause/resume path deterministically.
 5. Review the proposed brief and angles. Native tool answers are not an angle/plan/release approval. **Save interview answers** elsewhere in the form is not the native request's **Send answers and continue** action.
-6. If deliberately testing the remaining paid stages, review and approve the angle, run research/planning, review and approve the plan, then test drafting and review. These steps can make additional calls; monitor the $5 allowance and provider spending. Do not click publication or scheduling actions as a harmless connectivity test: they change the locally visible public archive.
+6. If deliberately testing the remaining paid stages, review and approve the angle, run research/planning, review and approve the plan, then test drafting and review. These steps can make additional calls; monitor spending in OpenRouter. Do not click publication or scheduling actions as a harmless connectivity test: they change the locally visible public archive.
 
-Expected outcome: a recorded activity with either usable interview output or a durable author question, consistent budget settlement/holds, and no implicit publishing approval. This is not proof of the full editorial pilot, release quality, or production readiness.
+Expected outcome: a recorded activity with either usable interview output or a durable author question, its model recorded on the activity, and no implicit publishing approval. This is not proof of the full editorial pilot, release quality, or production readiness.
 
 ## 9. Automated checks without paid inference
 
@@ -326,6 +279,7 @@ vendor/bin/pest --compact \
   tests/Feature/Publishing/ArchiveMigrationTest.php \
   tests/Feature/Publishing/EditorialAgentsTest.php \
   tests/Feature/Publishing/EditorialToolApprovalTest.php \
+  tests/Feature/Publishing/PublishingAgentSettingsTest.php \
   tests/Feature/Publishing/AgentBudgetTest.php
 ```
 
@@ -345,13 +299,16 @@ git diff --exit-code 72f7d8ad8521573cb224022c902447f9ca4c4351 -- resources/writi
 - **Admin redirects to a production host, login loops, or missing pages:** confirm both local hosts point to this checkout, check `APP_URL`/`MARKETING_URL`/`ADMIN_URL`, scheme/ports, cookie settings, and clear configuration. Do not broadly share cookies across unrelated hosts to mask a domain mistake.
 - **Invitation refuses the mailer or never appears:** use the direct local SMTP catcher, not `log` or `failover` containing `log`; verify the reachable SMTP host/port and `MAIL_URL`. The account may already exist after failed delivery.
 - **Archive empty or Published tab missing essays:** confirm the database was imported and the signed-in author matches the import actor. Source files do not act as a fallback.
-- **Activity remains pending:** check agents are enabled, the configured database/queue matches the worker, and the worker was restarted after configuration changes. Work created while disabled may require the scheduled recovery pass. Inspect old pending work before allowing that pass to run.
-- **“Model and provider must be explicit,” missing pricing, or missing limits:** fill every required default-route field; complete every premium field if its model is set. Blank `.env` values do not supply a usable route.
-- **401/402 or no eligible provider/unsupported parameters:** check the key, credits/key cap, exact provider name, endpoint capability, and current pricing ceilings. Inspect the activity/budget outcome before retrying; do not enable arbitrary failover or remove structured-output requirements.
-- **Budget paused, unknown cost, timeout, or interrupted worker:** preserve activity, conversation, and reservation records. Inspect OpenRouter billing and the held reservation before a deliberate new attempt. Do not use `queue:retry all`, delete reservations, or manually reset statuses to make an uncertain call look free.
+- **Activity remains pending:** check the settings page shows **Saved: On**, the configured database/queue matches the worker, and the worker was restarted after `.env` or code changes. Work queued while paused waits for the next scheduled recovery pass (or a deliberate `php artisan publishing:recover-activities`); unpausing does not dispatch it. Inspect old pending work before allowing that pass to run.
+- **“OpenRouter credentials are not configured” or the settings page reports no key:** set `OPENROUTER_API_KEY`, clear configuration, and restart the worker. The activity pauses before any request; start or rerun it after fixing the key.
+- **“The saved model override for this agent role is not supported”:** the settings page marks that task **Reset required**. Reset it, or save the page, to return the task to its recommendation, then rerun the activity.
+- **HTTP 401/403 or 402:** 401/403 means OpenRouter rejected the key or its permissions; 402 means the key or workspace has no remaining credit or limit. Fix it in OpenRouter, then rerun the paused activity deliberately.
+- **Other HTTP 4xx, such as unsupported parameters:** the selected model could not accept the structured-output, tool, or reasoning parameters the task requires. Choose another model or reset the task on the settings page; do not enable arbitrary failover or remove structured-output requirements.
+- **HTTP 429 rate limit:** the activity is marked failed before generating output. The application does not retry it automatically; start the work again after the limit clears.
+- **Timeout, disconnect, or interrupted worker:** the activity pauses because the provider outcome is uncertain; recovery also pauses running work older than 30 minutes. Preserve the activity and conversation records, check OpenRouter's activity log, and deliberately rerun or start new work. Do not use `queue:retry all` or manually reset statuses; unpausing agents does not reset them either.
 - **Stale approval or changed manuscript:** reload the authoritative workspace. Ownership, revision, and input checks also apply on resume; do not force an old tool decision into a new conversation.
 - **Editor assets absent:** use the existing asset worker or `bun run build`; check the browser console and public font/build files. A successful PHP response alone does not establish that the editor booted.
 
 Known Home activity filtering/scan-bound findings, missing Fortify two-factor trait, and potential ignored-editor synchronization issues are documented in [production setup, section 8](production-setup.md#8-verify-before-reopening-traffic-or-enabling-live-editorial-use). Use the article workspace as authoritative; do not treat local UI screenshots or green tests as resolution of those findings.
 
-To stop local inference, set `PUBLISHING_AGENTS_ENABLED=false`, clear configuration, and use `queue:restart` to let the current job finish before leaving the worker stopped. Stop the scheduler and optional asset watcher as well when ending the session; if they are managed services, use their manager so they do not automatically restart. Disabling agents is not cancellation of a provider request already in flight, and scheduled publication is independent of that flag. Keep the database and `.env` for the next session rather than reseeding or regenerating keys.
+To stop local inference, turn on **Pause agent requests** in **Admin → Publishing → Settings** and save; no config clear or restart is needed. Queued work and author answers wait in place. To end the session, also use `queue:restart` to let the current job finish before leaving the worker stopped, and stop the scheduler and optional asset watcher; if they are managed services, use their manager so they do not automatically restart. Pausing does not cancel a provider request already in flight, and scheduled publication is independent of the pause. Keep the database and `.env` for the next session rather than reseeding or regenerating keys.

@@ -13,6 +13,9 @@ Route::prefix('publishing')
     ->group(function (): void {
         Route::livewire('/', 'admin.publishing.dashboard')->name('dashboard');
         Route::livewire('/published', 'admin.publishing.published')->name('published');
+        Route::livewire('/settings', 'admin.publishing.settings')
+            ->name('settings')
+            ->middleware(PermissionMiddleware::using(PublishingPermission::ConfigureAgents));
         Route::livewire('/articles/{article}', 'admin.publishing.article-workspace')->name('articles.show');
         Route::get('/articles/{article}/preview', PreviewArticleController::class)->name('articles.preview');
     });

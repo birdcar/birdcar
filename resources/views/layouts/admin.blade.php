@@ -44,7 +44,7 @@
 
     <flux:header sticky class="min-w-0 gap-3 border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
         <flux:sidebar.toggle icon="bars-2" class="lg:hidden" aria-label="Open Admin navigation" />
-        <span class="shrink-0 text-sm font-medium">{{ request()->routeIs('admin.publishing.*') ? 'Publishing' : 'Home' }}</span>
+        <span @class(['shrink-0 text-sm font-medium', 'max-sm:sr-only' => request()->routeIs('admin.publishing.*')])>{{ request()->routeIs('admin.publishing.*') ? 'Publishing' : 'Home' }}</span>
         <x-admin.navigation />
     </flux:header>
 

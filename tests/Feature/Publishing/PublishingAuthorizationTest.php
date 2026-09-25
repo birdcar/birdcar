@@ -4,6 +4,7 @@ use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Organizations\Role as OrganizationRole;
+use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -61,6 +62,29 @@ test('revoked actors fail closed at the mutation boundary', function (): void {
 
     expect(fn () => $advance->develop($actor, $article, $revision->id))
         ->toThrow(AuthorizationException::class);
+});
+
+test('agent configuration comes only from the publishing author role', function (): void {
+    $author = publishingAuthorizedUser();
+    $adminOnly = User::factory()->create();
+    $adminOnly->assignRole(AdminRole::Access->value);
+    $writer = User::factory()->create();
+    $writer->givePermissionTo(PublishingPermission::View->value, PublishingPermission::Write->value, PublishingPermission::Develop->value, PublishingPermission::Approve->value, PublishingPermission::Publish->value);
+    $member = User::factory()->create();
+    OrganizationMembership::factory()->create([
+        'organization_id' => Organization::factory()->create()->id,
+        'user_id' => $member->id,
+    ])->assignRole(OrganizationRole::Editor->value);
+
+    expect($author->can(PublishingPermission::ConfigureAgents->value))->toBeTrue()
+        ->and($adminOnly->can(PublishingPermission::ConfigureAgents->value))->toBeFalse()
+        ->and($writer->can(PublishingPermission::ConfigureAgents->value))->toBeFalse()
+        ->and($member->can(PublishingPermission::ConfigureAgents->value))->toBeFalse();
+
+    $author->removeRole(PublishingRole::Author->value);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    expect($author->fresh()->can(PublishingPermission::ConfigureAgents->value))->toBeFalse();
 });
 
 function publishingAuthorizedUser(): User

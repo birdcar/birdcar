@@ -153,6 +153,23 @@ test('published navigation identifies the active section', function (): void {
     expect($xpath->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing/published")]')->length)->toBe(1);
 });
 
+test('settings navigation appears only for users who can configure agents', function (): void {
+    $response = $this->actingAs(publishingUser())->get('http://admin.birdcar.test/publishing');
+    $response->assertOk();
+
+    $document = new DOMDocument;
+    @$document->loadHTML($response->getContent());
+    $settingsLinks = (new DOMXPath($document))->query('//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]');
+    expect($settingsLinks->length)->toBe(1)
+        ->and($settingsLinks->item(0)->hasAttribute('aria-current'))->toBeFalse();
+
+    $this->actingAs(publishingWriteOnlyUser())
+        ->get('http://admin.birdcar.test/publishing')
+        ->assertOk()
+        ->assertSee('aria-label="Publishing navigation"', false)
+        ->assertDontSee('href="http://admin.birdcar.test/publishing/settings"', false);
+});
+
 test('admission only users cannot open direct publishing urls', function (): void {
     $user = User::factory()->create();
     $user->assignRole(AdminRole::Access->value);

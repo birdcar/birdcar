@@ -133,6 +133,33 @@ test('pausing agents while the author answers keeps the decision durable without
     Bus::assertNotDispatched(RunEditorialActivity::class);
 });
 
+test('settings page saves while the author answers keep the started model and approve nothing', function (): void {
+    [$author, $activity] = pendingAuthorInterview();
+    Bus::fake([RunEditorialActivity::class]);
+    $settings = Livewire::actingAs($author)->test('admin.publishing.settings')
+        ->set('paused', true)
+        ->set('models.interview', 'deepseek/deepseek-v4.1-flash')
+        ->call('save')
+        ->assertHasNoErrors();
+    app()->forgetScopedInstances();
+
+    app(ResumeEditorialActivity::class)->handle($author, $activity, $activity->pendingApprovalHash(), 'Answer while paused');
+
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($activity->fresh()->tool_decisions)->not->toBeEmpty();
+
+    $settings->set('paused', false)->call('save')->assertHasNoErrors();
+    app()->forgetScopedInstances();
+    Bus::assertNotDispatched(RunEditorialActivity::class);
+    runApprovalActivity($activity);
+
+    $requests = Http::recorded();
+    expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed)
+        ->and($requests)->toHaveCount(2)
+        ->and($requests[1][0]['model'])->toBe('google/gemini-3.8-flash')
+        ->and($activity->attempt->fresh()->approvals()->count())->toBe(0);
+});
+
 test('auto router approvals continue on the concrete model that asked the question', function (): void {
     app(PublishingAgentSettings::class)->overrideModel(EditorialActivityKind::Interview, 'openrouter/auto')->save();
     [$author, $activity] = pendingAuthorInterview(returnedModel: 'deepseek/deepseek-v4.1-flash');
