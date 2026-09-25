@@ -1,0 +1,42 @@
+{
+  "title": "Essay pages: choose the reading structure",
+  "question": "Sustained reading, every essay's text and links unchanged. Lock one structure, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "contents-rail",
+      "label": "Chapters with a contents rail",
+      "kicker": "THE ROLL",
+      "thesis": "A sticky rail lists the essay's sections and a quiet dotted line tracks your progress beside the column.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["sticky section rail", "canary progress line in the margin", "white reading surface"],
+      "viewport": "Title block over the column; at left, 'In this essay' with the four sections, the current one ticked in canary.",
+      "risk": "One essay has no sections, so the rail must collapse cleanly; the progress line must never touch the text.",
+      "comp": ".impeccable/mocks/decision/wacbd-contents-rail.png"
+    },
+    {
+      "id": "quiet-column",
+      "label": "The quiet column",
+      "kicker": "DEALT",
+      "thesis": "Nothing but the essay: one centered column, the canary resting on the byline rule.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["one centered column", "white reading surface", "canary on the rule"],
+      "viewport": "Back link, a big two-line title, description, and byline centered; the essay begins on a white surface below.",
+      "risk": "Plainest option; its quality rests entirely on type scale, measure, and rhythm.",
+      "comp": ".impeccable/mocks/decision/wacbd-quiet-column.png"
+    },
+    {
+      "id": "opening-plate",
+      "label": "A small opening plate",
+      "kicker": "DEALT",
+      "thesis": "Each essay opens with its own quiet miniature beside the title, then the column takes over.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["one isometric vignette per essay", "title block", "white reading surface"],
+      "viewport": "Title, description, and byline left; a small vignette of the essay's idea right; the column below.",
+      "risk": "Ten new plates to art-direct, and spectacle creeping into a reading page if the vignettes get loud.",
+      "comp": ".impeccable/mocks/decision/wacbd-opening-plate.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}

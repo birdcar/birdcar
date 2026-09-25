@@ -1,0 +1,42 @@
+{
+  "title": "Writing index: choose the page structure",
+  "question": "A reading page for ten essays, titles, dates, and URLs unchanged. Lock one structure, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "notebook",
+      "label": "Notebook spread",
+      "kicker": "THE ROLL",
+      "thesis": "The archive as an open notebook on the desk: introduction on the left page, table of contents on the right.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#fbf8f1", "#5fb8bf"],
+      "materials": ["linen notebook plate", "crisp typeset pages", "canary and pen"],
+      "viewport": "A flat open notebook spans the page; Writing and the intro on the left page, years and essays on the right.",
+      "risk": "Skeuomorphic if the pages look like paper texture; the notebook must frame real web text, and later essays spill past the spread.",
+      "comp": ".impeccable/mocks/decision/w0a51-notebook.png"
+    },
+    {
+      "id": "cards",
+      "label": "Index cards",
+      "kicker": "DEALT",
+      "thesis": "Each essay is a card on the daylight ground, grouped under big year labels, like the field guide's card stock.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#efeeeb", "#5fb8bf"],
+      "materials": ["warm card stock", "two-column grid", "year labels"],
+      "viewport": "Title and intro across the top; 2026's four essays as cards in two columns, 2024 beginning below.",
+      "risk": "A card grid is the default listing pattern; it must read as a reading archive, not a blog template.",
+      "comp": ".impeccable/mocks/decision/w0a51-cards.png"
+    },
+    {
+      "id": "reading-list",
+      "label": "A reading list with a find field",
+      "kicker": "DEALT",
+      "thesis": "A big, calm table of contents with a single find field; dates on the right, years in the margin.",
+      "palette": ["#edf3f0", "#0b141a", "#f7c848", "#ffffff", "#5fb8bf"],
+      "materials": ["white list panel", "hairline rows", "one find field"],
+      "viewport": "Writing at left, intro and find field at right; below, a white panel of essay rows grouped by year.",
+      "risk": "Plainest of the three; the type scale and spacing have to carry it, and search is modest help for ten essays.",
+      "comp": ".impeccable/mocks/decision/w0a51-reading-list.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": true }
+}
