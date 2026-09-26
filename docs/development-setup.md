@@ -109,21 +109,21 @@ No default seeder is required. Avoid `migrate:fresh` on a database whose work yo
 
 ## 4. Capture invitation mail and create your local Admin
 
-The default `MAIL_MAILER=log` is **not sufficient**. Admin invitations deliberately reject log, array, null, and unsafe failover transports, including in local development. Use SMTP delivery into a local mail catcher instead of weakening that safeguard.
+Admin mail goes out on the mailer named by `BIRDCAR_ADMIN_MAIL_MAILER`, and its default, `log`, is **not sufficient**. Admin invitations deliberately reject log, array, null, and unsafe failover transports, including in local development. Point the admin surface at the `smtp` mailer and deliver into a local mail catcher instead of weakening that safeguard.
 
 Start your local catcher using its own service manager and note its SMTP host/port and inbox UI. For example, **if** it accepts unencrypted SMTP on the host's loopback port 1025:
 
 ```dotenv
-MAIL_MAILER=smtp
+BIRDCAR_ADMIN_MAIL_MAILER=smtp
 MAIL_SCHEME=smtp
 MAIL_URL=null
 MAIL_HOST=127.0.0.1
 MAIL_PORT=1025
 MAIL_USERNAME=null
 MAIL_PASSWORD=null
-MAIL_FROM_ADDRESS=developer@birdcar.test
-MAIL_FROM_NAME="Birdcar local"
 ```
+
+The `MAIL_*` values configure the `smtp` mailer itself. `MAIL_MAILER` and `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME` no longer route or sign application mail: admin mail is sent from the admin mail settings (seeded as `noreply@admin.birdcar.dev`), so expect that sender in the catcher. Set `BIRDCAR_MARKETING_MAIL_MAILER=smtp` as well only when you work on marketing mail. Any send that is not surface mail on its own surface mailer throws, locally as in production.
 
 Those are example catcher settings, not a claim that port 1025 is already running. Use the service's actual settings. From a container, `127.0.0.1` refers to the container, so use the manager-provided reachable mail host instead. A pre-existing `MAIL_URL` can override individual SMTP fields; clear it or deliberately configure it for the catcher. Verify that captured messages cannot be relayed to real recipients.
 
@@ -134,7 +134,7 @@ php artisan config:clear --no-interaction
 php artisan admin:invite developer@example.com --name="Local Developer" --no-interaction
 ```
 
-Replace the example email/name as appropriate. This command creates or reuses the account, grants the configured root bundle (`admin.access` and `publishing.author`), sends a password-setup invitation, and reports the user ID. Open the invitation in the catcher's inbox, verify it points to your **local Admin origin**, set a password, then sign in. No queue worker is needed for this synchronous invitation.
+Replace the example email/name as appropriate. This command creates or reuses the account, grants the configured root bundle (`admin.access` and `publishing.author`), sends a password-setup invitation, and reports the user ID. Open the invitation in the catcher's inbox, verify it points to your **local Admin origin**, set a password, then sign in. No queue worker is needed for this synchronous invitation, but Admin password-reset emails are queued and arrive only while the queue worker from section 7 runs.
 
 If you already have an authorized local account, sign in with it instead of creating a duplicate. Existing passwords, two-factor data, and unrelated roles are preserved by invitations. A mail failure may occur after account provisioning: fix the catcher and retry deliberately, allowing for password-broker throttling. Do not print reset tokens or reset existing credentials by hand.
 
@@ -296,7 +296,7 @@ git diff --exit-code 72f7d8ad8521573cb224022c902447f9ca4c4351 -- resources/writi
 ## 10. Troubleshooting and stopping
 
 - **Admin redirects to a production host, login loops, or missing pages:** confirm both local hosts point to this checkout, check `APP_URL`/`BIRDCAR_MARKETING_URL`/`BIRDCAR_ADMIN_URL`, scheme/ports, cookie settings, and clear configuration. Do not broadly share cookies across unrelated hosts to mask a domain mistake.
-- **Invitation refuses the mailer or never appears:** use the direct local SMTP catcher, not `log` or `failover` containing `log`; verify the reachable SMTP host/port and `MAIL_URL`. The account may already exist after failed delivery.
+- **Invitation refuses the mailer or never appears:** set `BIRDCAR_ADMIN_MAIL_MAILER` to the direct local SMTP catcher's `smtp` mailer, not `log` or `failover` containing `log`; verify the reachable SMTP host/port and `MAIL_URL`, then clear configuration. The account may already exist after failed delivery.
 - **Archive empty or Published tab missing essays:** confirm the database was imported and the signed-in author matches the import actor. Source files do not act as a fallback.
 - **Activity remains pending:** check the settings page shows **Saved: On**, the configured database/queue matches the worker, and the worker was restarted after `.env` or code changes. Work queued while paused waits for the next scheduled recovery pass (or a deliberate `php artisan publishing:recover-activities`); unpausing does not dispatch it. Inspect old pending work before allowing that pass to run.
 - **“OpenRouter credentials are not configured” or the settings page reports no key:** set `OPENROUTER_API_KEY`, clear configuration, and restart the worker. The activity pauses before any request; once the key is configured, the next recovery pass returns it to pending work.

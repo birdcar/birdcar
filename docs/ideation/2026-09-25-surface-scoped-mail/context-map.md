@@ -1,10 +1,22 @@
 # Context Map: Surface-Scoped Mail
 
-**Phase**: 1
+**Phase**: 2
 **Gates**: 5/5 ready
 **Verdict**: GO
 
 ## Gates
+
+### Phase 2 (current)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Scope clarity | ready | Every file in spec-phase-2.md is named, with a concrete change for each, and I found each target. **New:** `app/Listeners/RejectUnscopedMail.php` (`app/Listeners` doesn't exist yet), `tests/Feature/Mail/SurfaceMailGuardTest.php`, `tests/Arch/MailTest.php` (`tests/Arch` doesn't exist yet), and the Boost rule file. **Modified:** `phpunit.xml:8-15` (add the Arch suite after Feature), `docs/production-setup.md:58` (the single MAIL_* bullet), `docs/development-setup.md:112-125`. Two small gaps have concrete fixes. (1) Guard cases (b) and (f) need fixtures the New Files table omits: a `MailMessage` notification and a plain non-surface `Mailable`. Add them to `tests/Fixtures/Mail/`, which arch never scans. (2) With the spec's brace glob, Boost `record-rule` writes `.ai/rules/listeners.md`, not `mail.md`; see Risks. |
+| Pattern familiarity | ready | I read the Phase 1 code the guard keys on: `SurfaceMailable.php:19,26-39,44-59`, `AdminMailable.php:11-14`, `MarketingMailable.php:11-14`. I read the fixtures (`ExampleAdminMail`, `ExampleMarketingMail`, `ExampleSurfaceNotification`, `RecordingTransport`) and the Phase 1 test idioms (`SurfaceSenderSettingsTest.php:17-40`, `AdminPasswordResetTest.php:36-56`). I read the pest-plugin-arch 5.0.0 source for `not->toBeUsed`, `toOnlyBeUsedIn`, `toExtend`, `not->toImplement`, `classes()` and `implementing()`, the Boost `RecordRule`/`RuleRepository` source, and both doc blocks. Every vendor seam the spec cites matches Laravel v13.30.1. |
+| Dependency awareness | ready | The guard sits in front of every real send. Current senders: `InviteAdministrator.php:39-55`, which Throwable-wraps into `AdminInvitationDeliveryException` (caught at `InviteAdmin.php:37-41`), and `User.php:81` → queued `PasswordReset`, which becomes a failed job. The other `MessageSending` listener is Nightwatch (`NightwatchServiceProvider.php:359`); it returns void, so `until()` isn't short-circuited. Existing real-send tests all send surface mail on the matching mailer, so they stay green. `phpunit.xml` is consumed by `composer test`/`ci:check` and `.github/workflows/tests.yml`. No framework or package mail path is active today (see Dependencies). |
+| Edge case coverage | ready | The concrete list is under Risks (Phase 2). It covers `Mail::to()->send()` using the default mailer instance, vacuous passes when default and surface mailer names match, redeclared global Pest helpers, the `\Mail::` alias the arch rules can't see, non-PSR-4 code (routes, config, Blade, Livewire SFCs) the arch rules skip, the anonymous-class NUL byte in messages, the rule-file name, the same-address envelope-name gap to document, and the make:listener stub's empty constructor. |
+| Test strategy | ready | Inner loop: `vendor/bin/pest tests/Feature/Mail/SurfaceMailGuardTest.php`. Arch: `php artisan test --compact --testsuite=Arch` (`failOnEmptyTestSuite="true"` at `phpunit.xml:6` fails an empty or unregistered suite). Discovery: `php artisan event:list --event='Illuminate\Mail\Events\MessageSending'`, which today lists only the Nightwatch closure. Then `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` (app/ is in `phpstan.neon` paths; tests are not), and the full `php artisan test --compact`. The contract env grep passes today; re-run it after the doc and rule edits. CI is still red at composer install (Phase 1 note), so local runs are the only signal. |
+
+### Phase 1 (prior, for reference)
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -15,6 +27,61 @@
 | Test strategy | ready | Inner loop: `vendor/bin/pest tests/Feature/Mail tests/Feature/Auth/AdminInvitationTest.php`. Then `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`, `php artisan test --compact`, and the contract env grep. Settings migrations run under RefreshDatabase (Publishing test asserts seeded rows). The testing transaction manager runs after-commit callbacks at level 1, so a `ShouldQueueAfterCommit` notification on the sync queue delivers at once. CI is red at "Setup Application" (composer install) before tests run, so local runs are the only signal. |
 
 ## Key Patterns
+
+### Phase 2
+
+- **Runtime seam: `Illuminate\Mail\Mailer` (v13.30.1).**
+  - `send()` sets `$data['mailer'] = $this->name` at `Mailer.php:304`.
+  - It calls `shouldSendMessage()` at `:331`, before `sendSymfonyMessage()`.
+  - `shouldSendMessage()` at `:602-611` returns `events->until(new MessageSending($message, $data)) !== false`.
+  - A throwing listener aborts before the transport. A listener that returns `false` cancels silently, so the guard must return `void`.
+  - `raw()`/`html()`/`plain()` (`:210-238`) all go through `send()`, with no `__laravel_mailable` in `$data`.
+- **`Mailable::send()` at `Mailable.php:202-209`.**
+  - It calls `prepareMailableForDelivery()`, which runs the final `build()` and sets `$this->mailer = surfaceMailer()`.
+  - It passes that name on only if `$mailer instanceof MailFactory`.
+  - When it is handed a `Mailer` instance, it uses that instance as-is. `Mailer::sendMailable()` (`:350-355`) and `PendingMail` do exactly that.
+  - So `Mail::to()->send(new ExampleAdminMail)` runs on the default mailer, and `Mail::mailer('x')->send(...)` runs on `x`. That is precisely the misroute the guard catches (cases d and e).
+  - `additionalMessageData()` (`:397-402`) adds `__laravel_mailable => get_class($this)`.
+- **`MailChannel` (`Notifications/Channels/MailChannel.php`).**
+  - `:62-64`: a returned Mailable is sent with `$message->send($this->mailer)`, where `$this->mailer` is the MailManager factory. The surface mailer is kept, so the guard passes.
+  - `:66-70`: a `MailMessage` goes through `mailer($message->mailer ?? null)->send(...)`, and `:153-161` adds `__laravel_notification_id`, `__laravel_notification` and `__laravel_notification_queued`. There is no `__laravel_mailable`, so the guard rejects it. Use `__laravel_notification` to name the class in the message.
+- **Exceptions propagate.** `NotificationSender::sendToNotifiable()` (`:168-184`) dispatches `NotificationFailed`, then rethrows. The guard's `LogicException` reaches the caller or the queue job.
+- **Event discovery is on by default.**
+  - `Application::configure()` calls `->withEvents()` (`Application.php:248-252`).
+  - `EventServiceProvider::discoverEventsWithin()` defaults to `app/Listeners` (`:166-171`).
+  - `bootstrap/app.php` doesn't override it, and `bootstrap/cache` holds no `events.php`.
+  - Scaffold with `php artisan make:listener RejectUnscopedMail --event='Illuminate\Mail\Events\MessageSending' --no-interaction`.
+- **Other `MessageSending` listener.** `vendor/laravel/nightwatch/src/Hooks/MailListener.php:26` returns `void` and swallows its own errors, so it doesn't stop `until()` from reaching the guard.
+- **Guard contract from Phase 1.**
+  - `SurfaceMailable::surfaceMailer()` is abstract and static (`SurfaceMailable.php:19`).
+  - The concrete surfaces call `configuredMailer('admin.mail.mailer' | 'marketing.mail.mailer')` (`AdminMailable.php:13`, `MarketingMailable.php:13`), which trims and throws `LogicException` for a blank or undefined mailer (`SurfaceMailable.php:44-59`). That exception must propagate through the guard unchanged.
+  - Compare the event's `mailer` with `$mailable::surfaceMailer()` using `!==`.
+- **Phase 1 test idioms to copy.**
+  - `SurfaceSenderSettingsTest.php:17-24` sets distinct `mail.mailers.array_admin` / `array_marketing` in `beforeEach`.
+  - `:29-35` reads a transport with `app(MailManager::class)->mailer($name)->getSymfonyTransport()->messages()->map(fn (SentMessage $s): Email => $s->getOriginalMessage())`.
+  - `:37-40` does positive sends with `Notification::route('mail', 'owner@example.com')->notify(new ExampleSurfaceNotification($mailable))`.
+  - `:163-171` asserts the throw plus empty transports with `expect(fn () => …)->toThrow(LogicException::class, '…')->and(...)->toBeEmpty()` and a `->with([...])` dataset.
+  - Settings rows are seeded by RefreshDatabase (`tests/Pest.php:18-20` binds only `Feature`).
+- **Arch plugin semantics (pestphp/pest-plugin-arch 5.0.0, Pest 5.1.4)**, which settles the spec's open "check the exact semantics" item:
+  - `not->toBeUsed()` is `ToBeUsedInNothing`, which is `ToOnlyBeUsedIn` with `[]` (`OppositeExpectation.php:566-572`, `Expectations/ToBeUsedInNothing.php:20-23`). It iterates only `Composer::userNamespaces()` (`Blueprint.php:187-213`). That is non-vendor PSR-4 minus anything under `tests/` (`Support/Composer.php:30-39`), which here means `App`, `Database\Factories` and `Database\Seeders`. It doesn't reach into vendor, and tests and fixtures are excluded, so tests may keep using `Mail::`. The `->not->toBeUsedIn('App')` fallback isn't needed.
+  - Uses are matched by exact FQCN (`ta-tikoma/.../DependenciesAsserts.php:78`).
+  - A target layer is built from the file(s) its name maps to, then filtered by name prefix (`Factories/LayerFactory.php:63-65`, `Repositories/ObjectsRepository.php:144-178`). `Illuminate\Mail\Mailer` therefore doesn't sweep in `Mailable` or `Mailables\*`.
+  - `'mail'` resolves as a native function (`ObjectsRepository.php:79-83`).
+  - `toOnlyBeUsedIn(InviteAdministrator::class)` excludes objects whose names start with that FQCN (`Blueprint.php:194-196`). The co-located `AdminInvitation*Exception` classes (`InviteAdministrator.php:366-376`) have different names and don't use MailManager.
+  - `toExtend($c)` passes when the class *is* `$c` or a subclass (`Expectation.php:696-704`), so `->ignoring(SurfaceMailable::class)` is redundant but harmless. The abstract `AdminMailable` and `MarketingMailable` pass.
+  - `not->toImplement()` uses `implementsInterface` (`OppositeExpectation.php:497-510`), which is transitive, so `ShouldQueueAfterCommit` (it extends `ShouldQueue`) is also caught.
+  - `classes()` (`PendingArchExpectation.php:39-44`) and `implementing($iface)` (`:89-94`) both exist. A native alternative to the spec's Finder walk is `arch()->expect('App\Notifications')->classes()->implementing(ShouldQueue::class)->toImplement(ShouldQueueAfterCommit::class)`. Put `classes()` first, because exclude callbacks apply in order (`LayerFactory.php:71-73`) and that drops the trait `Admin\BuildsAdminPasswordLinks`. Violations report the file path. Either approach meets the spec; if you keep the Finder walk, use `__DIR__.'/../../app/Notifications'` and skip traits and abstract classes.
+- **Boost `record-rule`** (`vendor/laravel/boost/src/Mcp/Tools/RecordRule.php`, `src/Rules/RuleRepository.php`).
+  - `write()` (`:116-135`) resolves the target file, creates it with `paths:` frontmatter plus a `# Heading`, appends `## {title}` + note, then `writeIndex()` (`:137-159`) regenerates `index.md`.
+  - For a new area, the file name is the slug of the *last* glob segment that contains no `*` or `.` (`meaningfulSegments()` `:257-265`, `uniqueFilePath()` `:209-250`). Existing examples: `services.md` from `{routes/**,…,app/Services/MarketingSite.php,…}` and `models.md` from `app/Models/{…}.php`.
+  - Existing rule files use `paths:` YAML frontmatter plus `## Title` entries (`.ai/rules/general.md:1-4`, `settings.md:1-9`).
+- **Doc blocks to rewrite.**
+  - `docs/production-setup.md:58`: one bullet in "## 2. Configure production environment", after the dotenv block at `:36-50`. That block already lists `BIRDCAR_ADMIN_URL` etc. Keep the bullet style.
+  - `docs/development-setup.md:112-125`: an intro paragraph plus a dotenv block. `:128` (catcher caveats) and `:299` (troubleshooting: "use the direct local SMTP catcher, not `log` or `failover`…") sit next to it and still describe invite safety. Retarget `:299` to `BIRDCAR_ADMIN_MAIL_MAILER` if it reads stale.
+  - Env names to cite, from `config/mail.php:64-72`, `config/admin.php:17-20`, `config/marketing.php:9-12` and `.env.example:79-85`: `resend_admin` / `resend_marketing`, `BIRDCAR_{ADMIN,MARKETING}_MAIL_MAILER` (default `log`) and `BIRDCAR_{ADMIN,MARKETING}_RESEND_API_KEY`.
+  - Seeded senders: `noreply@admin.birdcar.dev` and `hello@birdcar.dev` (`SurfaceSenderSettingsTest.php:57-60`).
+
+### Phase 1
 
 - `config/admin.php:6-8` — reads env into a local, checks `is_string && !== ''`, falls back to `https://admin.birdcar.dev`, derives `host` with `parse_url`, and returns `'url' => rtrim($url, '/')`. The rename changes only `env('ADMIN_URL', …)` → `env('BIRDCAR_ADMIN_URL', …)`. The new `'mail' => [...]` key goes beside `bootstrap_roles`.
 - `config/marketing.php:4-5` — `env('MARKETING_URL', env('APP_URL', …))` and `env('MARKETING_INDEXABLE', env('APP_ENV') === 'production')`. Keep the nested fallbacks and change only the outer names. `.ai/rules/services.md` covers this file: canonical URLs use `marketing.url`, and indexing is on by default only in production. Keep those semantics.
@@ -36,6 +103,38 @@
 
 ## Dependencies
 
+### Phase 2
+
+- **`app/Listeners/RejectUnscopedMail.php` (new) applies to every non-faked send in every process** (web, queue worker, console, tests). Current producers:
+  - `app/Actions/Admin/InviteAdministrator.php:42-46` → `AdminInvitation` → `InvitationMail` on `admin.mail.mailer`. It passes the guard. Any guard throw is wrapped by the `catch (Throwable)` at `:50-55` into `AdminInvitationDeliveryException`, which `app/Console/Commands/InviteAdmin.php:37-41` reports, exiting with FAILURE.
+  - `app/Models/User.php:81` → `App\Notifications\Admin\PasswordReset` (`ShouldQueueAfterCommit`) → `PasswordResetMail`. It passes. On a worker, a throw fails the `SendQueuedNotifications` job.
+  - Nothing in `app/`, `config/`, `routes/`, `database/` or `bootstrap/` uses `Mail::`, `MailMessage`, `PendingMail`, `mail()` or the mail contracts (grep is clean). The only `MailManager` use is `InviteAdministrator.php:10,120,140,191`, which the spec allows.
+- **Dormant framework and package mail paths the guard would block if enabled.** None is active now, which confirms the failure mode's "future" premise.
+  - Email verification is off (`config/fortify.php:167` is commented out; `MustVerifyEmail` is commented out at `User.php:5`).
+  - Horizon mail notifications are commented out (`app/Providers/HorizonServiceProvider.php:19`).
+  - spatie/laravel-backup and spatie/laravel-health are installed but unpublished (no `config/backup.php` or `config/health.php`) and unscheduled (`routes/console.php:11-12` schedules only the publishing commands).
+  - Stock `Illuminate\Auth\Notifications\ResetPassword` is already replaced by `User::sendPasswordResetNotification`. No app code sets `ResetPassword::toMailUsing`/`createUrlUsing`, so case (c) exercises the stock `MailMessage`.
+- **Existing tests that really send** (not faked). All are surface-correct, so the full suite should stay green:
+  - `SurfaceSenderSettingsTest.php` (array_admin / array_marketing through `ExampleSurfaceNotification`);
+  - `AdminPasswordResetTest.php:36-56` (array_admin);
+  - `AdminInvitationTest.php:336-357` (`recording_admin`, with `mail.default=log`).
+  - The other `AdminInvitationTest` cases and `tests/Manual/PublishingModelTrialTest.php:114-115` use `Notification::fake()` / `Mail::fake()`, which never fire `MessageSending`. `tests/Manual` isn't in any testsuite.
+- **`tests/Fixtures/Mail/*` (reused).**
+  - `ExampleAdminMail(?Address $envelopeFrom = null)` and `ExampleMarketingMail` are the surface fixtures.
+  - `ExampleSurfaceNotification(SurfaceMailable $mailable)` sends the given Mailable `to` `routeNotificationFor('mail')`.
+  - Add, as new fixtures (not in the spec's New Files table): a `MailMessage` notification for case (b) and a plain `Illuminate\Mail\Mailable` subclass for case (f). Fixtures under `tests/` are outside the arch scan, so both are legal there.
+- **`phpunit.xml:8-15` (Arch suite added).**
+  - Consumers: `composer test` → `php artisan test` (`composer.json` scripts), `composer ci:check`, and `.github/workflows/tests.yml` "Run CI Checks". A default run executes every registered suite, so Arch then runs everywhere.
+  - `tests/Pest.php:18-20` binds `TestCase` + `RefreshDatabase` to `Feature` only. `tests/Arch` gets plain `PHPUnit\Framework\TestCase`: no container, no `app_path()`.
+- **`app/Mail/**` and `app/Notifications/**` are what the arch rules protect.**
+  - Today: `SurfaceMailable`, `Admin\{AdminMailable,InvitationMail,PasswordResetMail}` and `Marketing\MarketingMailable` all extend SurfaceMailable, and none implements ShouldQueue.
+  - `Notifications`: `AdminInvitation` (not queued), `Admin\PasswordReset` (`ShouldQueueAfterCommit`), and the trait `Admin\BuildsAdminPasswordLinks`. All rules should pass on first run.
+  - Phase 3 (`spec-phase-3.md`) adds a Livewire SFC and an authorization catalog but no mail classes or `MailManager` use, so the rules don't constrain it.
+- **`.ai/rules/**` (the new rule file).** `index.md` is regenerated by Boost and must not be hand-edited. Both `.ai/rules` and the two docs are inside the contract's env grep scope (`contract.md:34`).
+- **Docs.** `docs/production-setup.md:58` and `docs/development-setup.md:112-125` have no code consumers, only the contract grep. The `:137` line ("No queue worker is needed for this synchronous invitation") stays true: `AdminInvitation` isn't queued.
+
+### Phase 1
+
 - `config/admin.php` — the `admin.url` / `admin.host` / `admin.bootstrap_roles` keys don't change. Consumers: `config/fortify.php:76` (`home`) and `:91` (Fortify route `domain`), `routes/web.php:19` (`Route::domain(config('admin.host'))`), `app/Http/Responses/AdminLoginResponse.php:38,43`, `AdminLogoutResponse.php:19`, `AdminPasswordResetResponse.php:19`, `app/Actions/Admin/InviteAdministrator.php:74,237`. The new `admin.mail.mailer` / `admin.mail.sender_domains` keys will be read by `AdminMailable`, `AdminMailSettings` and `InviteAdministrator::assertSafeMailer()`.
 - `config/marketing.php` — the `marketing.url` / `marketing.indexable` keys don't change. Consumers: `app/Services/MarketingSite.php:22,27,38`; the booking keys in `resources/views/components/marketing/fit-card.blade.php:35-36` are untouched.
 - `config/mail.php:64-66` (the stock `resend` mailer) — no consumers. Nothing in app/, config/, routes/, tests/ or resources/ names the mailer `resend`.
@@ -50,6 +149,30 @@
 
 ## Conventions
 
+### Phase 2 additions
+
+- **Naming**:
+  - The listener class is `App\Listeners\RejectUnscopedMail` with `handle(MessageSending $event): void`. Discovery keys on the `handle` type-hint.
+  - The `make:listener` stub includes an empty `public function __construct() {}`. Delete it (Boost PHP rule: no empty zero-parameter constructors).
+  - Test files live in `tests/Feature/Mail`, use `test('…')` with sentence names (e.g. `'clean installs seed a sender…'`), and use `->with([...])` datasets for case lists. The rejected-path cases (a)–(f) fit one dataset of closures.
+  - Arch rules use `arch('…')->expect(...)`.
+- **Imports**: fully qualified `use` lines. Tests may `use Illuminate\Support\Facades\Mail` freely, because tests aren't scanned by arch.
+- **Error handling**:
+  - Throw a plain `LogicException` (as `SurfaceMailable::configuredMailer()` does). Bracket the class and config names in the message: `[{$mailable}] must be sent on mailer [{$expected}], not [{$mailer}].`
+  - Name the subject: the `__laravel_mailable` class, else the `__laravel_notification` class, else "a raw message".
+  - Never return `false`.
+  - Use PHPDoc blocks, not inline comments. The spec's inline comment inside `handle()` is a note for the builder, not code to keep.
+- **Types**: phpstan level 7 covers `app/`. `$event->data` is `array`, so narrow with `is_string()` before `is_subclass_of()`, then call `$mailable::surfaceMailer()`. phpstan may need a `/** @var class-string<SurfaceMailable> $mailable */` after the narrowing.
+- **Testing**:
+  - Assert "threw and every transport empty" across `array_default`, `array_admin` and `array_marketing`.
+  - Positive cases assert exactly one message on the surface's own transport and none on the other two.
+  - Force production with `app()->detectEnvironment(fn (): string => 'production')` (`Application.php:793`; the argv carries no `--env`, so the callback wins). Each test gets a fresh app, so this doesn't leak.
+  - Read `.claude/skills/testing-best-practices/SKILL.md` ("Judge an architecture test by the convention it protects") and `rules/naming.md`.
+- **Rules**: record via Boost `record-rule`. The fallback is a hand-written `.ai/rules/<name>.md` with `paths:` frontmatter plus `## Title` entries, then `php artisan boost:update`, then confirm `index.md` gained the row. Never hand-edit `index.md`.
+- **Formatting**: `vendor/bin/pint --dirty --format agent` after the PHP edits. CI runs `pint --parallel --test`.
+
+### Phase 1
+
 - **Naming**: PSR-4 `App\` → `app/`, `Tests\` → `tests/` (autoload-dev), so the fixtures are `Tests\Fixtures\Mail\RecordingTransport` etc. `tests/Fixtures/` has only data (`Publishing/archive`) today, so these are the first PHP fixtures. Settings groups use snake_case (`publishing_agents` → `admin_mail`, `marketing_mail`). Test names are sentence-style `test('...')`.
 - **Imports**: fully qualified `use` statements, one per line, no barrels. PHP attributes are used heavily (`#[Fillable]`, `#[Hidden]`, `#[\SensitiveParameter]`).
 - **Error handling**: domain exceptions are small classes co-located in the action file (`InviteAdministrator.php:348-361`). Messages cite config keys in brackets (`Configuration [mail.default] must …`), so the new text should say `[admin.mail.mailer]`. Settings throw `InvalidArgumentException` on bad values. Curly braces are always used, and methods have explicit return types.
@@ -59,6 +182,35 @@
 - **Rules**: `app/Settings/**` falls under `.ai/rules/settings.md` (settings are scoped; resolve them per request or job, never cache the object). So resolve settings inside `build()` and never store them on the Mailable. Leave `.ai/rules/index.md` untouched; it's Boost-generated.
 
 ## Risks
+
+### Phase 2
+
+- **Global Pest helpers collide.** `tests/Feature/Mail/SurfaceSenderSettingsTest.php:29,37,45` declares global `surfaceMessagesOn()`, `sendSurfaceMail()` and `surfaceSettingsGroups()`, and `tests/Pest.php:48` declares `setPublishingAgentsPaused()`. Pest loads every test file into one process.
+  - Redeclaring any of these in `SurfaceMailGuardTest.php` is a fatal error in the full suite, even though running the file alone passes.
+  - Calling them from the new file breaks the single-file inner loop, because they're undefined there.
+  - Use distinct names (e.g. `guardMessagesOn()`) or closures.
+- **Vacuous misroute tests.** `phpunit.xml:30-32` pins `MAIL_MAILER`, `BIRDCAR_ADMIN_MAIL_MAILER` and `BIRDCAR_MARKETING_MAIL_MAILER` all to `array`, so "default mailer" and "surface mailer" share one name and one transport. `beforeEach` must set `mail.default=array_default`, `admin.mail.mailer=array_admin` and `marketing.mail.mailer=array_marketing`, with all three defined in `mail.mailers`, before anything resolves a mailer. Otherwise case (d) passes the guard: name `array` === expected `array`.
+- **Case (d) and (e) mechanics.** `Mail::to()->send($surfaceMailable)` and `Mail::mailer('x')->send(...)` pass a `Mailer` instance into `Mailable::send()`, so the `build()`-chosen mailer is ignored (`Mailable.php:202-209`, `Mailer.php:350-355`). The guard sees the calling mailer's name. That is the intended catch; don't "fix" it in the base class.
+- **The Mail alias escapes the arch rules.** A global `\Mail::raw()` through Laravel's default class alias records the use as `Mail`, not `Illuminate\Support\Facades\Mail`. The arch rule (exact-FQCN match) misses it, and adding `'Mail'` as a target yields an empty layer (no PSR-4 prefix). Only the runtime guard catches it. State this in the rule note.
+- **The arch rules skip non-PSR-4 PHP.** `routes/*.php`, `config/*.php`, `bootstrap/app.php`, Blade and Folio pages, and Livewire single-file components under `resources/views` aren't in `App`, `Database\Factories` or `Database\Seeders`. The Phase 3 Admin page is an SFC. The runtime guard is the backstop there. Grep shows no mail use in those paths today.
+- **Rule file name.** With the spec's glob `{app/Mail/**,app/Notifications/**,app/Settings/*MailSettings.php,app/Listeners/RejectUnscopedMail.php,config/mail.php}`, Boost's segment logic (`RuleRepository.php:209-265`) picks the last `*`/`.`-free segment, `Listeners`, and writes `.ai/rules/listeners.md`. The spec's New Files row says `.ai/rules/mail.md`. To get `mail.md`, reorder the brace list so `app/Mail/**` comes last (e.g. `{app/Listeners/RejectUnscopedMail.php,app/Notifications/**,app/Settings/*MailSettings.php,config/mail.php,app/Mail/**}`, whose last clean segment is `Mail`). Alternatively accept `listeners.md` and note the deviation. No contract check depends on the file name.
+- **The rule note and docs must pass the contract env grep** (`contract.md:34`). `.ai/rules` and both docs are in scope, so never write a bare `ADMIN_URL`, `MARKETING_URL` or `MARKETING_INDEXABLE`; always use the `BIRDCAR_` prefix. The grep passes today; re-run it after editing.
+- **Carry the Phase 1 gap into the rule note** (`implementation-notes-phase-1.html`, "build() clears earlier From entries"). An `envelope()` `from` with the *same* address and a different name replaces the display name, because `setAddress()` de-duplicates by address. The domain can't change. The note should say "never set `from` in `envelope()`" and mention this.
+- **Anonymous-class fixtures.** If cases (b) or (f) use `new class extends …`, `get_class()` returns a name containing a NUL byte, and the guard message embeds it. Prefer named fixtures in `tests/Fixtures/Mail/`, and assert on a message substring such as `'surface Mailable'`.
+- **Stock ResetPassword case (c)** needs a persisted notifiable: `User::factory()->create()` then `$user->notify(new ResetPassword('t'))`. Its `toMail()` calls `url(route('password.reset', …, false))`, and that route exists (Fortify, admin host). Don't call `sendPasswordResetNotification()` for this case; that goes through the surface `PasswordReset`.
+- **Failure-message coverage for arch.** Spec step 3 says to break each rule once, then revert. Leave nothing behind. Check `git status` shows only the intended files before committing, because a stray `use Illuminate\Support\Facades\Mail;` in `AppServiceProvider` or a `Stray` class in `app/Mail` would ship.
+- **Queued-notification rule scope.** The spec walks only `app/Notifications`. A `Notification` subclass placed elsewhere in `App` would escape. `expect('App')->classes()->extending(Notification::class)->implementing(ShouldQueue::class)->toImplement(ShouldQueueAfterCommit::class)` is a broader native alternative. It's optional; follow the spec unless you choose to widen it.
+- **Event cache in production.** If a deploy runs `event:cache` / `optimize` from a stale build, the listener could be missing. Cloud rebuilds the caches on each deploy, and there's no local `bootstrap/cache/events.php`. The guard tests catch absence, because case (d) would send. The `event:list` manual check covers local.
+- **Octane.** The listener must stay stateless: no static caches of the resolved mailer. `surfaceMailer()` reads config per call, which is correct.
+- **Optional doc gap.** `PasswordReset` is now queued, and local `QUEUE_CONNECTION=database` (`docs/development-setup.md:55`) means forgot-password emails need a running worker. The spec doesn't ask for this; mention it only if it fits the rewritten block naturally.
+- **Decision log vs reality.** No contradictions.
+  - `phpunit.xml:8-15` registers only Unit and Feature, which matches the Arch-suite decision's premise.
+  - `MessageSending` fires through `until()` for every real send (`Mailer.php:331,602-611`), and the only other listener (Nightwatch) returns void, so the guard decision's premise holds.
+  - `MailChannel` keeps the Mailable's mailer (`:62-64`).
+  - The failure mode's "a *future* health or backup alert" holds: spatie/laravel-backup and spatie/laravel-health are installed but unpublished and unscheduled, and Horizon mail routing is commented out. Enabling any of them later will throw by design, and the rule note should say to wrap such alerts in a surface notification.
+- **Baseline not re-run by the scout.** Tests weren't executed (read-only). Phase 1 committed with review PASS; the builder should run the full suite once after adding the listener, because the spec's step 3 says a newly failing test reveals a missed send path.
+
+### Phase 1
 
 - **`.env` rename ordering breaks local tests.** Once `config/admin.php` reads `BIRDCAR_ADMIN_URL`, an un-renamed `.env` sends `admin.host` back to `admin.birdcar.dev`, and every test that posts to `http://admin.birdcar.test/...` fails (Fortify and `routes/web.php:19` bind the domain at boot). Rename the `.env` key in the same step as the config edit, then run `php artisan config:clear`. Use key-anchored `sed` only. Never `cat`, echo or print `.env` values; list key names only with `grep -oE '^[A-Z_]+=' .env`.
 - **Arrow-function capture bug in the spec's recording test.** `extend('recording', fn () => $transport = new RecordingTransport)` assigns to a by-value copy, so the outer `$transport` stays unset. Create `$transport = new RecordingTransport;` first, then `extend('recording', fn (): RecordingTransport => $transport)`. `assertSafeMailerNamed()` calls `$manager->purge()` and resolves again (`:142-145`), so the closure must return the same instance every time.
