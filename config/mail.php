@@ -61,8 +61,14 @@ return [
             // ],
         ],
 
-        'resend' => [
+        'resend_admin' => [
             'transport' => 'resend',
+            'key' => env('BIRDCAR_ADMIN_RESEND_API_KEY'),
+        ],
+
+        'resend_marketing' => [
+            'transport' => 'resend',
+            'key' => env('BIRDCAR_MARKETING_RESEND_API_KEY'),
         ],
 
         'sendmail' => [

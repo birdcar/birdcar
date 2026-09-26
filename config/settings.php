@@ -1,5 +1,7 @@
 <?php
 
+use App\Settings\AdminMailSettings;
+use App\Settings\MarketingMailSettings;
 use App\Settings\PublishingAgentSettings;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelSettings\SettingsCasts\DataCast;
@@ -15,6 +17,8 @@ return [
      * put them (manually) here.
      */
     'settings' => [
+        AdminMailSettings::class,
+        MarketingMailSettings::class,
         PublishingAgentSettings::class,
     ],
 

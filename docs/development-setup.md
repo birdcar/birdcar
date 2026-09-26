@@ -44,9 +44,9 @@ Edit the existing keys in `.env` rather than appending duplicates. For the HTTPS
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=https://birdcar.test
-MARKETING_URL=https://birdcar.test
-MARKETING_INDEXABLE=false
-ADMIN_URL=https://admin.birdcar.test
+BIRDCAR_MARKETING_URL=https://birdcar.test
+BIRDCAR_MARKETING_INDEXABLE=false
+BIRDCAR_ADMIN_URL=https://admin.birdcar.test
 POSTHOG_DISABLED=true
 
 SESSION_DRIVER=database
@@ -56,7 +56,7 @@ CACHE_STORE=database
 QUEUE_CONNECTION=database
 ```
 
-Do not leave `.env.example`'s production `ADMIN_URL` or localhost `APP_URL` in place: authentication, invitations, routing, and previews depend on the configured origins. If your registered local sites use different schemes/ports, use those exact origins; a secure-only session cookie will not work over plain HTTP. Keep the Admin and public hosts distinct.
+Do not leave `.env.example`'s production `BIRDCAR_ADMIN_URL` or localhost `APP_URL` in place: authentication, invitations, routing, and previews depend on the configured origins. If your registered local sites use different schemes/ports, use those exact origins; a secure-only session cookie will not work over plain HTTP. Keep the Admin and public hosts distinct.
 
 Do not copy production credentials into this environment. Leave optional integrations without credentials unless you are deliberately testing them. Disable any separately configured monitoring integrations you do not want sending local data.
 
@@ -295,7 +295,7 @@ git diff --exit-code 72f7d8ad8521573cb224022c902447f9ca4c4351 -- resources/writi
 
 ## 10. Troubleshooting and stopping
 
-- **Admin redirects to a production host, login loops, or missing pages:** confirm both local hosts point to this checkout, check `APP_URL`/`MARKETING_URL`/`ADMIN_URL`, scheme/ports, cookie settings, and clear configuration. Do not broadly share cookies across unrelated hosts to mask a domain mistake.
+- **Admin redirects to a production host, login loops, or missing pages:** confirm both local hosts point to this checkout, check `APP_URL`/`BIRDCAR_MARKETING_URL`/`BIRDCAR_ADMIN_URL`, scheme/ports, cookie settings, and clear configuration. Do not broadly share cookies across unrelated hosts to mask a domain mistake.
 - **Invitation refuses the mailer or never appears:** use the direct local SMTP catcher, not `log` or `failover` containing `log`; verify the reachable SMTP host/port and `MAIL_URL`. The account may already exist after failed delivery.
 - **Archive empty or Published tab missing essays:** confirm the database was imported and the signed-in author matches the import actor. Source files do not act as a fallback.
 - **Activity remains pending:** check the settings page shows **Saved: On**, the configured database/queue matches the worker, and the worker was restarted after `.env` or code changes. Work queued while paused waits for the next scheduled recovery pass (or a deliberate `php artisan publishing:recover-activities`); unpausing does not dispatch it. Inspect old pending work before allowing that pass to run.

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\Admin\PasswordReset;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -68,6 +69,16 @@ class User extends Authenticatable implements OAuthenticatable
         return $this->organizationMemberships()
             ->whereBelongsTo($organization)
             ->first();
+    }
+
+    /**
+     * Sends the queued admin-surface reset instead of Fortify's stock notification.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new PasswordReset($token));
     }
 
     /**

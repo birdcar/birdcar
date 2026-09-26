@@ -4,6 +4,7 @@ namespace App\Actions\Admin;
 
 use App\Models\User;
 use App\Notifications\AdminInvitation;
+use App\Settings\AdminMailSettings;
 use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Database\QueryException;
 use Illuminate\Mail\MailManager;
@@ -16,12 +17,14 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use Spatie\LaravelSettings\Exceptions\MissingSettings;
 use Spatie\Permission\Models\Role as RoleModel;
 use Symfony\Component\Mailer\Transport\FailoverTransport;
 use Symfony\Component\Mailer\Transport\NullTransport;
 use Symfony\Component\Mailer\Transport\RoundRobinTransport;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Throwable;
+use TypeError;
 
 class InviteAdministrator
 {
@@ -30,6 +33,7 @@ class InviteAdministrator
         $normalizedEmail = $this->normalizedEmail($email);
         $adminUrl = $this->validatedAdminUrl();
         $this->assertSafeMailer();
+        $this->assertValidSender();
         $roles = $this->configuredBootstrapRoles();
         $this->assertRolesExist($roles);
 
@@ -107,13 +111,27 @@ class InviteAdministrator
 
     private function assertSafeMailer(): void
     {
-        $defaultMailer = config('mail.default');
+        $surfaceMailer = config('admin.mail.mailer');
 
-        if (! is_string($defaultMailer) || trim($defaultMailer) === '') {
-            throw new AdminInvitationException('Configuration [mail.default] must name a delivery-capable mailer.');
+        if (! is_string($surfaceMailer) || trim($surfaceMailer) === '') {
+            throw new AdminInvitationException('Configuration [admin.mail.mailer] must name a delivery-capable mailer.');
         }
 
-        $this->assertSafeMailerNamed(trim($defaultMailer), [], app(MailManager::class));
+        $this->assertSafeMailerNamed(trim($surfaceMailer), [], app(MailManager::class));
+    }
+
+    /**
+     * Resolves the sender the invitation will use, so a bad or missing settings row fails before an account is provisioned.
+     */
+    private function assertValidSender(): void
+    {
+        try {
+            $settings = app(AdminMailSettings::class);
+            $settings->sender();
+            $settings->replyToAddress();
+        } catch (InvalidArgumentException|MissingSettings|TypeError $exception) {
+            throw new AdminInvitationException('Admin mail sender settings are invalid; fix them before inviting.', previous: $exception);
+        }
     }
 
     /**

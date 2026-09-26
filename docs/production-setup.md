@@ -38,9 +38,9 @@ Core settings:
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://birdcar.dev
-MARKETING_URL=https://birdcar.dev
-MARKETING_INDEXABLE=true
-ADMIN_URL=https://admin.birdcar.dev
+BIRDCAR_MARKETING_URL=https://birdcar.dev
+BIRDCAR_MARKETING_INDEXABLE=true
+BIRDCAR_ADMIN_URL=https://admin.birdcar.dev
 
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true

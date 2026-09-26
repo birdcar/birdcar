@@ -19,6 +19,7 @@ use Spatie\Permission\Models\Role as RoleModel;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Mailer\Transport\NullTransport;
 use Symfony\Component\Mailer\Transport\SendmailTransport;
+use Tests\Fixtures\Mail\RecordingTransport;
 
 beforeEach(function (): void {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -27,7 +28,7 @@ beforeEach(function (): void {
     config([
         'admin.url' => 'http://admin.birdcar.test',
         'admin.host' => 'admin.birdcar.test',
-        'mail.default' => 'smtp',
+        'admin.mail.mailer' => 'smtp',
         'mail.mailers.smtp.transport' => 'smtp',
         'mail.mailers.smtp.host' => '127.0.0.1',
         'mail.mailers.smtp.port' => 2525,
@@ -46,13 +47,12 @@ test('inviting a new admin provisions root roles and sends an admin-origin setup
     $user = User::query()->where('email', 'root.admin@example.com')->firstOrFail();
     $capturedUrl = null;
     Notification::assertSentTo($user, AdminInvitation::class, function (AdminInvitation $notification) use ($user, &$capturedUrl): bool {
-        $message = $notification->toMail($user);
-        $capturedUrl = $message->actionUrl;
+        $mail = $notification->toMail($user);
+        $capturedUrl = $mail->setupUrl;
 
-        expect($message->introLines)->toContain('An operator invited this account to the root Admin role bundle, including Admin access and publishing author capabilities.');
+        $mail->assertSeeInText('An operator invited this account to the root Admin role bundle, including Admin access and publishing author capabilities.');
 
-        return is_string($capturedUrl)
-            && str_starts_with($capturedUrl, 'http://admin.birdcar.test/reset-password/')
+        return str_starts_with($capturedUrl, 'http://admin.birdcar.test/reset-password/')
             && str_contains($capturedUrl, 'email=root.admin%40example.com');
     });
 
@@ -80,11 +80,12 @@ test('notification setup URL preserves a nondefault admin port and custom broker
 
     $user = User::query()->where('email', 'port-expiry@example.com')->firstOrFail();
     Notification::assertSentTo($user, AdminInvitation::class, function (AdminInvitation $notification) use ($user): bool {
-        $message = $notification->toMail($user);
+        $mail = $notification->toMail($user);
 
-        return is_string($message->actionUrl)
-            && str_starts_with($message->actionUrl, 'http://admin.birdcar.test:8088/reset-password/')
-            && in_array('This password setup link will expire in 17 minutes.', $message->outroLines, true);
+        $mail->assertSeeInText('This password setup link will expire in 17 minutes.');
+
+        return str_starts_with($mail->setupUrl, 'http://admin.birdcar.test:8088/reset-password/')
+            && $mail->expiresInMinutes === 17;
     });
 
     expect($exitCode)->toBe(0);
@@ -162,7 +163,7 @@ test('direct unsafe mail transports fail before provisioning an account', functi
 
     foreach (['array', 'log'] as $transport) {
         config([
-            'mail.default' => $transport,
+            'admin.mail.mailer' => $transport,
             "mail.mailers.{$transport}.transport" => $transport,
         ]);
 
@@ -183,7 +184,7 @@ test('custom delivery transports are resolved through the mail manager', functio
     Notification::fake();
     app(MailManager::class)->extend('custom-safe', fn (array $config): SendmailTransport => new SendmailTransport('/usr/sbin/sendmail -bs'));
     config([
-        'mail.default' => 'custom_safe',
+        'admin.mail.mailer' => 'custom_safe',
         'mail.mailers.custom_safe' => ['transport' => 'custom-safe'],
     ]);
 
@@ -209,7 +210,7 @@ test('unsafe custom mail transport aliases fail before provisioning an account',
 
     foreach ($cases as $mailer => $case) {
         config([
-            'mail.default' => $mailer,
+            'admin.mail.mailer' => $mailer,
             "mail.mailers.{$mailer}" => ['transport' => $case['transport']],
         ]);
 
@@ -231,7 +232,7 @@ test('unsafe URL mail transport overrides fail before provisioning an account', 
 
     foreach (['log', 'array'] as $transport) {
         config([
-            'mail.default' => 'smtp',
+            'admin.mail.mailer' => 'smtp',
             'mail.mailers.smtp' => [
                 'transport' => 'smtp',
                 'url' => "{$transport}://default",
@@ -263,7 +264,7 @@ test('unsupported mail transports fail before provisioning an account', function
 
     foreach ($cases as $mailer => $config) {
         config([
-            'mail.default' => $mailer,
+            'admin.mail.mailer' => $mailer,
             "mail.mailers.{$mailer}" => $config,
         ]);
 
@@ -283,7 +284,7 @@ test('unsupported mail transports fail before provisioning an account', function
 test('cyclic aggregate mail transports fail before provisioning an account', function (): void {
     Notification::fake();
     config([
-        'mail.default' => 'cycle_a',
+        'admin.mail.mailer' => 'cycle_a',
         'mail.mailers.cycle_a' => ['transport' => 'failover', 'mailers' => ['cycle_b']],
         'mail.mailers.cycle_b' => ['transport' => 'roundrobin', 'mailers' => ['cycle_a']],
     ]);
@@ -304,12 +305,12 @@ test('nested unsafe failover and round-robin mail transports fail before provisi
 
     $cases = [
         'failover' => [
-            'mail.default' => 'outer_failover',
+            'admin.mail.mailer' => 'outer_failover',
             'mail.mailers.outer_failover' => ['transport' => 'failover', 'mailers' => ['smtp', 'inner_roundrobin']],
             'mail.mailers.inner_roundrobin' => ['transport' => 'roundrobin', 'mailers' => ['array']],
         ],
         'roundrobin' => [
-            'mail.default' => 'outer_roundrobin',
+            'admin.mail.mailer' => 'outer_roundrobin',
             'mail.mailers.outer_roundrobin' => ['transport' => 'roundrobin', 'mailers' => ['smtp', 'inner_failover']],
             'mail.mailers.inner_failover' => ['transport' => 'failover', 'mailers' => ['log']],
         ],
@@ -330,6 +331,49 @@ test('nested unsafe failover and round-robin mail transports fail before provisi
 
     Notification::assertNothingSent();
 });
+
+test('invitations are delivered on the admin surface mailer from the admin sender', function (): void {
+    $transport = new RecordingTransport;
+    app(MailManager::class)->extend('recording', fn (): RecordingTransport => $transport);
+    config([
+        'mail.default' => 'log',
+        'mail.mailers.recording_admin' => ['transport' => 'recording'],
+        'admin.mail.mailer' => 'recording_admin',
+    ]);
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'delivered@example.com',
+        '--no-interaction' => true,
+    ]);
+
+    expect($exitCode)->toBe(0)
+        ->and($transport->messages)->toHaveCount(1);
+    $email = $transport->messages[0]->getOriginalMessage();
+    expect($email->getFrom()[0]->getAddress())->toBe('noreply@admin.birdcar.dev')
+        ->and($email->getTo()[0]->getAddress())->toBe('delivered@example.com')
+        ->and($email->getSubject())->toBe('Set up your Birdcar Admin access')
+        ->and($email->getTextBody())->toContain('http://admin.birdcar.test/reset-password/')
+        ->and($email->getTextBody())->toContain('email=delivered%40example.com');
+});
+
+test('invalid admin sender settings fail before provisioning an account', function (Closure $corruptSettings): void {
+    Notification::fake();
+    $corruptSettings();
+    app()->forgetScopedInstances();
+
+    $exitCode = Artisan::call('admin:invite', [
+        'email' => 'invalid-sender@example.com',
+        '--no-interaction' => true,
+    ]);
+
+    Notification::assertNothingSent();
+    expect($exitCode)->toBe(1)
+        ->and(User::query()->where('email', 'invalid-sender@example.com')->exists())->toBeFalse()
+        ->and(Artisan::output())->toContain('Admin mail sender settings are invalid');
+})->with([
+    'an off-domain stored address' => [fn (): int => DB::table('settings')->where('group', 'admin_mail')->where('name', 'from_address')->update(['payload' => json_encode('owner@example.com')])],
+    'a missing settings row' => [fn (): int => DB::table('settings')->where('group', 'admin_mail')->where('name', 'from_name')->delete()],
+]);
 
 test('invalid admin origins fail before provisioning an account', function (): void {
     Notification::fake();
@@ -432,9 +476,9 @@ test('the emailed setup link uses the real broker token and resets the password 
     $user = User::query()->where('email', 'setup@example.com')->firstOrFail();
     $setupUrl = null;
     Notification::assertSentTo($user, AdminInvitation::class, function (AdminInvitation $notification) use ($user, &$setupUrl): bool {
-        $setupUrl = $notification->toMail($user)->actionUrl;
+        $setupUrl = $notification->toMail($user)->setupUrl;
 
-        return is_string($setupUrl);
+        return true;
     });
 
     $path = parse_url((string) $setupUrl, PHP_URL_PATH);

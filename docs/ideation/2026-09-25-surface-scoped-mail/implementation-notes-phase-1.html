@@ -1,0 +1,133 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 1 (phase number, twice), Surface-Scoped Mail, 2026-09-25, Surface mail foundation —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 1</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 1</h1>
+      <p class="doc-meta">Surface-Scoped Mail · 2026-09-25 · Surface mail foundation</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Admin invitation / Queued reset — shared link trait (new file)</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec lets <code>AdminInvitation</code> keep its <code>resetUrl()</code> / <code>expiresInMinutes()</code> logic, and has <code>PasswordReset::toMail()</code> build the same admin-origin link. It lists no shared file.</dd>
+          <dt>Decision</dt>
+          <dd>I added <code>app/Notifications/Admin/BuildsAdminPasswordLinks.php</code>, a trait used by both notifications. It holds the link builder (admin origin + <code>route(..., false)</code>, never <code>url()</code>), the broker expiry, and the guarded <code>routeNotificationFor('mail')</code> recipient. Both notifications keep <code>toMail(object $notifiable)</code>, as the spec shows.</dd>
+          <dt>Alternative</dt>
+          <dd>Copying the ~20 lines into <code>PasswordReset</code>, or typing <code>toMail(User $notifiable)</code> to drop the <code>method_exists</code> guards. I rejected the second because it changes the existing signature.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Surface Mailables — build() clears earlier From entries</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec snippet calls <code>$this->from(...)</code> in <code>build()</code> and relies on <code>from[0]</code> winning. A subclass constructor that called <code>->from('spoof@…')</code> would still hold <code>from[0]</code>, because <code>build()</code> runs later and appends.</dd>
+          <dt>Decision</dt>
+          <dd><code>build()</code> sets <code>$this->from = []</code> before it adds the settings sender, so settings always hold <code>from[0]</code>, whatever a constructor or earlier <code>render()</code> did. There is a known gap left: an <code>envelope()</code> <code>from</code> with the <em>same</em> address and a different name replaces the display name, because Laravel's <code>setAddress()</code> de-duplicates by address and keeps the last entry. The domain can't change, so I accepted this. Phase 2's rule should say so.</dd>
+          <dt>Alternative</dt>
+          <dd>Overriding <code>buildFrom()</code> to re-apply the sender. That goes beyond the documented <code>build()</code> seam.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Admin invitation — the sender pre-flight catches more than InvalidArgumentException</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec converts <code>InvalidArgumentException</code> from <code>sender()</code> into <code>AdminInvitationException</code>. A missing row throws <code>Spatie\LaravelSettings\Exceptions\MissingSettings</code>, and a null or array payload throws <code>TypeError</code> on a typed property. <code>InviteAdmin</code> catches neither.</dd>
+          <dt>Decision</dt>
+          <dd><code>assertValidSender()</code> catches <code>InvalidArgumentException|MissingSettings|TypeError</code> and also resolves <code>replyToAddress()</code>, because <code>build()</code> resolves it too. That makes the Failure Modes row ("the invite pre-flight fails before provisioning") hold. A dataset test covers both the off-domain and the missing-row cases.</dd>
+          <dt>Alternative</dt>
+          <dd>Catching <code>Throwable</code>. That would misreport a database outage as "invalid sender settings".</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Surface Mailables — generated stubs trimmed; mail views keep the stock layout</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>make:mail</code> adds <code>Queueable</code>, <code>SerializesModels</code> and an empty <code>attachments()</code>. The spec says the invitation copy moves "unchanged from the MailMessage".</dd>
+          <dt>Decision</dt>
+          <dd>I removed the unused traits and <code>attachments()</code>, because the Mailables are never queued (the notification is). The markdown views reproduce Laravel's notification template: heading, lines, button, <code>Regards,</code> salutation and the "trouble clicking" subcopy with the raw URL. The rendered email therefore matches what <code>MailMessage</code> produced.</dd>
+          <dt>Alternative</dt>
+          <dd>A shorter custom layout without the salutation and subcopy. That would change the copy the spec said to keep.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Queued reset — the token is plaintext in the queue payload (owner decision)</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Queuing <code>PasswordReset</code> serializes the reset token into the queue store. The spec doesn't mention encrypting it.</dd>
+          <dt>Decision</dt>
+          <dd>I didn't add <code>ShouldBeEncrypted</code>, following the spec. The owner should decide: implementing <code>Illuminate\Contracts\Queue\ShouldBeEncrypted</code> on <code>PasswordReset</code> is a one-line native hardening.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding it quietly. That is a behavior change nobody specified.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Local environment — settings rows need a migrate</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The local <code>.env</code> keys were renamed with key-anchored <code>sed</code>, and <code>BIRDCAR_{ADMIN,MARKETING}_MAIL_MAILER=smtp</code> were appended. No values were read or printed.</dd>
+          <dt>Decision</dt>
+          <dd>I didn't run <code>php artisan migrate</code> on the local database. Until the owner runs it, the new <code>admin_mail</code> / <code>marketing_mail</code> rows don't exist, and a local <code>admin:invite</code> stops with "Admin mail sender settings are invalid". That is the intended pre-flight. Tests seed the rows through RefreshDatabase.</dd>
+          <dt>Alternative</dt>
+          <dd>Migrating the owner's local database without asking.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>
