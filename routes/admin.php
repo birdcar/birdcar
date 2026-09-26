@@ -1,11 +1,16 @@
 <?php
 
+use App\Authorization\Mail\Permission as MailPermission;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Http\Controllers\Admin\PreviewArticleController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
 Route::livewire('/', 'admin.index')->name('index');
+
+Route::livewire('/mail', 'admin.mail.settings')
+    ->name('mail.settings')
+    ->middleware(PermissionMiddleware::using(MailPermission::ConfigureSenders));
 
 Route::prefix('publishing')
     ->name('publishing.')

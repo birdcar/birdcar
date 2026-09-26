@@ -2,6 +2,7 @@
 
 use App\Authorization\Admin\Permission as AdminPermission;
 use App\Authorization\Admin\Role as AdminRole;
+use App\Authorization\Mail\Role as MailRole;
 use App\Authorization\Organizations\Role as OrganizationRole;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Authorization\Publishing\Role as PublishingRole;
@@ -50,7 +51,7 @@ test('inviting a new admin provisions root roles and sends an admin-origin setup
         $mail = $notification->toMail($user);
         $capturedUrl = $mail->setupUrl;
 
-        $mail->assertSeeInText('An operator invited this account to the root Admin role bundle, including Admin access and publishing author capabilities.');
+        $mail->assertSeeInText('An operator invited this account to the root Admin role bundle, including Admin access, publishing author, and mail sender configuration capabilities.');
 
         return str_starts_with($capturedUrl, 'http://admin.birdcar.test/reset-password/')
             && str_contains($capturedUrl, 'email=root.admin%40example.com');
@@ -60,6 +61,7 @@ test('inviting a new admin provisions root roles and sends an admin-origin setup
         ->and($user->name)->toBe('Root Admin')
         ->and($user->hasRole(AdminRole::Access->value))->toBeTrue()
         ->and($user->hasRole(PublishingRole::Author->value))->toBeTrue()
+        ->and($user->hasRole(MailRole::Operator->value))->toBeTrue()
         ->and($user->can(AdminPermission::View->value))->toBeTrue()
         ->and($user->can(PublishingPermission::Write->value))->toBeTrue()
         ->and($user->getDirectPermissions()->count())->toBe(0)
@@ -123,7 +125,8 @@ test('inviting an existing admin preserves credentials profile two factor and un
         ->and($user->two_factor_confirmed_at)->not->toBeNull()
         ->and($user->hasRole(OrganizationRole::Viewer->value))->toBeTrue()
         ->and($user->hasRole(AdminRole::Access->value))->toBeTrue()
-        ->and($user->hasRole(PublishingRole::Author->value))->toBeTrue();
+        ->and($user->hasRole(PublishingRole::Author->value))->toBeTrue()
+        ->and($user->hasRole(MailRole::Operator->value))->toBeTrue();
 });
 
 test('missing bootstrap roles fail before provisioning an account', function (): void {
@@ -426,6 +429,7 @@ test('delivery failure happens after safe provisioning and a later retry sends o
     expect($firstExitCode)->toBe(1)
         ->and($user->hasRole(AdminRole::Access->value))->toBeTrue()
         ->and($user->hasRole(PublishingRole::Author->value))->toBeTrue()
+        ->and($user->hasRole(MailRole::Operator->value))->toBeTrue()
         ->and(Artisan::output())->toContain('Invitation delivery failed after account provisioning')
         ->and(Artisan::output())->not->toContain('provider detail')
         ->and(Artisan::output())->not->toContain('/reset-password/');

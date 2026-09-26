@@ -392,7 +392,7 @@ A monochrome inline SVG mark beside its company's name, in `studio-employer-mark
 
 ## Admin operational extension
 
-Admin uses Flux Pro and Inter rather than the marketing typography and page composition. Native Brand components pair the existing `public/favicon.svg` B mark with "Admin"; Alkaline remains exclusive to the marketing wordmark. The shell has one collapsible module sidebar, a contextual header, and module workspaces. Only Home and authorized Publishing are present.
+Admin uses Flux Pro and Inter rather than the marketing typography and page composition. Native Brand components pair the existing `public/favicon.svg` B mark with "Admin"; Alkaline remains exclusive to the marketing wordmark. The shell has one collapsible module sidebar, a contextual header, and module workspaces. Only Home, authorized Publishing and authorized Mail are present.
 
 The approved Attention ledger Home answers "What needs me?" before "Where was I?" Blocked work and human decisions occupy the wide column; Continue working is narrower and follows the ledger on mobile. Links lead to authoritative workspaces, not Home-level approval or publishing actions. Empty, unauthorized, unavailable, and loaded states remain distinct.
 

@@ -1,5 +1,12 @@
 @php
+    use App\Authorization\Mail\Permission as MailPermission;
     use App\Authorization\Publishing\Permission as PublishingPermission;
+
+    $currentModule = match (true) {
+        request()->routeIs('admin.publishing.*') => 'Publishing',
+        request()->routeIs('admin.mail.*') => 'Mail',
+        default => 'Home',
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -27,6 +34,9 @@
             @can(PublishingPermission::View->value)
                 <flux:sidebar.item :href="route('admin.publishing.dashboard')" :current="request()->routeIs('admin.publishing.*')" :aria-current="request()->routeIs('admin.publishing.*') ? 'page' : null" aria-label="Publishing" icon="document-text">Publishing</flux:sidebar.item>
             @endcan
+            @can(MailPermission::ConfigureSenders->value)
+                <flux:sidebar.item :href="route('admin.mail.settings')" :current="request()->routeIs('admin.mail.*')" :aria-current="request()->routeIs('admin.mail.*') ? 'page' : null" aria-label="Mail" icon="envelope">Mail</flux:sidebar.item>
+            @endcan
         </flux:sidebar.nav>
         <flux:sidebar.spacer />
         <flux:dropdown position="top" align="start">
@@ -44,7 +54,7 @@
 
     <flux:header sticky class="min-w-0 gap-3 border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
         <flux:sidebar.toggle icon="bars-2" class="lg:hidden" aria-label="Open Admin navigation" />
-        <span @class(['shrink-0 text-sm font-medium', 'max-sm:sr-only' => request()->routeIs('admin.publishing.*')])>{{ request()->routeIs('admin.publishing.*') ? 'Publishing' : 'Home' }}</span>
+        <span @class(['shrink-0 text-sm font-medium', 'max-sm:sr-only' => request()->routeIs('admin.publishing.*')])>{{ $currentModule }}</span>
         <x-admin.navigation />
     </flux:header>
 

@@ -1,0 +1,122 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 3 (phase number, twice), Surface-Scoped Mail, 2026-09-25, Admin mail settings page —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 3</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 3</h1>
+      <p class="doc-meta">Surface-Scoped Mail · 2026-09-25 · Admin mail settings page</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Mail settings page — validation rules tightened to match the settings class</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec listed <code>from_address: required|email</code>, <code>reply_to: nullable|email|max:254</code> and <code>from_name: required|string|max:100</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Used <code>email:filter</code> for both addresses, added <code>bail|string</code> to the From address, <code>string</code> to reply-to, and <code>not_regex:/[\r\n]/</code> to the name. Bare <code>email</code> is RFC validation and accepts <code>owner@localhost</code>, and the name rule accepts CR/LF; <code>updateSender()</code> rejects both, so those inputs would have passed validation, thrown in the save, been reported, and shown the misleading &ldquo;Reload the page&rdquo; message instead of a field error. A dataset row covers each.</dd>
+          <dt>Alternative</dt>
+          <dd>Keep the spec's rules literally and let <code>updateSender()</code> throw into the catch branch.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Mail settings page — key status treats an unset key as missing</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's sketch says <code>keyConfigured</code> is <code>mail.mailers.resend_{surface}.key !== ''</code>, but the key config has no default, so an unset key is <code>null</code> and would read as configured.</dd>
+          <dt>Decision</dt>
+          <dd><code>is_string($key) &amp;&amp; $key !== ''</code>. The missing-key test runs for both <code>null</code> and <code>''</code>. The <code>beforeEach</code> pins both keys to <code>''</code> because the local <code>.env</code> holds real keys.</dd>
+          <dt>Alternative</dt>
+          <dd>The literal <code>!== ''</code> comparison.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Mail settings page — feedback, errors and saved values scoped per surface</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec gives one Save per surface but a single <code>?string $feedback</code> / <code>$saveError</code>, and Livewire's <code>validate()</code> replaces the whole error bag, so saving one surface would wipe the other surface's field errors while its invalid draft stayed on screen (and <code>wire:dirty</code> clears after any request).</dd>
+          <dt>Decision</dt>
+          <dd>Kept the spec's two string properties and added <code>?string $feedbackSurface</code> so the success line, the &ldquo;Nothing was saved&rdquo; alert and the danger callout render in the section that was saved. <code>save()</code> validates only <code>senders.{surface}.*</code>, reads input from the validated subtree, and re-attaches the other surface's existing errors on both success and failure. Each section also shows a server-rendered &ldquo;Saved:&rdquo; line with the stored sender, so an unsaved draft can't be mistaken for the stored value.</dd>
+          <dt>Alternative</dt>
+          <dd>Keyed arrays for feedback and errors (changes the spec's property shapes), or accepting that one surface's save clears the other's errors.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Records — stale bundle and navigation text reconciled beyond the spec's file list</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec lists <code>.ai/rules/authorization.md</code> but not <code>docs/development-setup.md:137</code>, <code>docs/production-setup.md:91</code> (both name the two-role bundle), <code>DESIGN.md:395</code> (&ldquo;Only Home and authorized Publishing are present&rdquo;) or the layout header label, which would have read &ldquo;Home&rdquo; on <code>/mail</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Added <code>mail.operator</code> to both setup docs, Mail to the DESIGN.md sentence, and a <code>$currentModule</code> match in the layout so the header reads &ldquo;Mail&rdquo;. The rule sentence was edited in place because Boost <code>record-rule</code> only appends (the spec's own fallback); <code>index.md</code> is untouched. The <code>.impeccable</code> surface brief is a design-review record and was left alone. The contract env grep still passes.</dd>
+          <dt>Alternative</dt>
+          <dd>Leave the docs stale until a later phase.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Verification — authenticated browser check not run</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks for a Herd check of <code>admin.birdcar.test/mail</code> in light and dark after <code>bun run build</code>, and says to give the local account the new role via <code>admin:invite</code> or tinker.</dd>
+          <dt>Decision</dt>
+          <dd>Ran <code>authorization:sync</code> locally, built assets, and confirmed Herd serves the route (a guest gets 302 to <code>/login</code>). Did not change the owner's local account or send a real invitation from an unattended run, and a signed-in visual check needs the owner's credentials. Owner step: assign the role (e.g. <code>php artisan tinker --execute 'App\Models\User::where("email", "YOU")-&gt;firstOrFail()-&gt;assignRole("mail.operator");'</code>), then check the page in both themes.</dd>
+          <dt>Alternative</dt>
+          <dd>Re-run <code>admin:invite</code> for the owner's account, which sends real mail through the local catcher and issues a new reset token.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

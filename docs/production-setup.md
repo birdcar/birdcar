@@ -88,7 +88,7 @@ For a new operator, or an existing account that needs the root Admin role bundle
 php artisan admin:invite CONFIRMED_EMAIL --name="DISPLAY_NAME" --no-interaction
 ```
 
-This is a privileged, email-sending operation, not an automatic deploy hook. Replace the placeholders. The command creates or reuses the account, assigns `admin.access` and `publishing.author`, and prints the user ID for the next step. It preserves an existing password, two-factor data, and unrelated roles. Mail transport acceptance is not proof of inbox delivery. If mail fails, the account and roles may already exist; correct the mail configuration before retrying, respecting broker throttling.
+This is a privileged, email-sending operation, not an automatic deploy hook. Replace the placeholders. The command creates or reuses the account, assigns `admin.access`, `publishing.author` and `mail.operator`, and prints the user ID for the next step. It preserves an existing password, two-factor data, and unrelated roles. Mail transport acceptance is not proof of inbox delivery. If mail fails, the account and roles may already exist; correct the mail configuration before retrying, respecting broker throttling.
 
 If the account already has the required roles, do not resend an invitation just to discover its ID. Use an approved read-only database lookup, or the following read-only command with the confirmed email:
 

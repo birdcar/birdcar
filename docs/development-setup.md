@@ -134,7 +134,7 @@ php artisan config:clear --no-interaction
 php artisan admin:invite developer@example.com --name="Local Developer" --no-interaction
 ```
 
-Replace the example email/name as appropriate. This command creates or reuses the account, grants the configured root bundle (`admin.access` and `publishing.author`), sends a password-setup invitation, and reports the user ID. Open the invitation in the catcher's inbox, verify it points to your **local Admin origin**, set a password, then sign in. No queue worker is needed for this synchronous invitation, but Admin password-reset emails are queued and arrive only while the queue worker from section 7 runs.
+Replace the example email/name as appropriate. This command creates or reuses the account, grants the configured root bundle (`admin.access`, `publishing.author` and `mail.operator`), sends a password-setup invitation, and reports the user ID. Open the invitation in the catcher's inbox, verify it points to your **local Admin origin**, set a password, then sign in. No queue worker is needed for this synchronous invitation, but Admin password-reset emails are queued and arrive only while the queue worker from section 7 runs.
 
 If you already have an authorized local account, sign in with it instead of creating a duplicate. Existing passwords, two-factor data, and unrelated roles are preserved by invitations. A mail failure may occur after account provisioning: fix the catcher and retry deliberately, allowing for password-broker throttling. Do not print reset tokens or reset existing credentials by hand.
 

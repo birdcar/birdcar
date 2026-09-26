@@ -1,6 +1,7 @@
 <?php
 
 use App\Authorization\Admin\Role as AdminRole;
+use App\Authorization\Mail\Role as MailRole;
 use App\Authorization\Publishing\Role as PublishingRole;
 
 $configuredUrl = env('BIRDCAR_ADMIN_URL', 'https://admin.birdcar.dev');
@@ -13,6 +14,7 @@ return [
     'bootstrap_roles' => [
         AdminRole::Access->value,
         PublishingRole::Author->value,
+        MailRole::Operator->value,
     ],
     'mail' => [
         'mailer' => env('BIRDCAR_ADMIN_MAIL_MAILER', 'log'),

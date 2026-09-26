@@ -1,7 +1,7 @@
 <x-mail::message>
 # You have been invited to Birdcar Admin
 
-An operator invited this account to the root Admin role bundle, including Admin access and publishing author capabilities.
+An operator invited this account to the root Admin role bundle, including Admin access, publishing author, and mail sender configuration capabilities.
 
 Use the secure setup link below to set a password for this account.
 

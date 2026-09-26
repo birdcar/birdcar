@@ -2,6 +2,7 @@
 
 use App\Authorization\Admin\Catalog as AdminCatalog;
 use App\Authorization\Contracts\AuthorizationCatalog;
+use App\Authorization\Mail\Catalog as MailCatalog;
 use App\Authorization\Organizations\Catalog as OrganizationsCatalog;
 use App\Authorization\Publishing\Catalog as PublishingCatalog;
 use App\Models\User;
@@ -16,6 +17,7 @@ beforeEach(function (): void {
 test('registered catalogs create enum-backed permissions roles and exact mappings', function (): void {
     config()->set('authorization.catalogs', [
         AdminCatalog::class,
+        MailCatalog::class,
         OrganizationsCatalog::class,
         PublishingCatalog::class,
     ]);
@@ -26,6 +28,7 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
         ->assertSuccessful();
 
     $this->assertDatabaseHas('permissions', ['name' => 'admin.view', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('permissions', ['name' => 'mail.configure-senders', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'organizations.view', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'organizations.update', 'guard_name' => 'web']);
     $this->assertDatabaseHas('permissions', ['name' => 'publishing.view', 'guard_name' => 'web']);
@@ -36,11 +39,13 @@ test('registered catalogs create enum-backed permissions roles and exact mapping
     $this->assertDatabaseHas('permissions', ['name' => 'publishing.configure-agents', 'guard_name' => 'web']);
     $this->assertDatabaseMissing('permissions', ['name' => 'publishing.budget', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'admin.access', 'guard_name' => 'web']);
+    $this->assertDatabaseHas('roles', ['name' => 'mail.operator', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.viewer', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'organizations.editor', 'guard_name' => 'web']);
     $this->assertDatabaseHas('roles', ['name' => 'publishing.author', 'guard_name' => 'web']);
 
     expect(permissionNamesForRole('admin.access'))->toBe(['admin.view'])
+        ->and(permissionNamesForRole('mail.operator'))->toBe(['mail.configure-senders'])
         ->and(permissionNamesForRole('organizations.viewer'))->toBe(['organizations.view'])
         ->and(permissionNamesForRole('organizations.editor'))->toBe(['organizations.update'])
         ->and(permissionNamesForRole('publishing.author'))->toBe([

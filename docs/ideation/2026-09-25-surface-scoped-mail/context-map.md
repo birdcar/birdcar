@@ -1,12 +1,22 @@
 # Context Map: Surface-Scoped Mail
 
-**Phase**: 2
+**Phase**: 3
 **Gates**: 5/5 ready
 **Verdict**: GO
 
 ## Gates
 
-### Phase 2 (current)
+### Phase 3 (current)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Scope clarity | ready | Every file in spec-phase-3.md is named with a concrete change, and I found each target. **New:** `app/Authorization/Mail/{Permission,Role,Catalog}.php` (the directory doesn't exist yet), `resources/views/components/admin/mail/⚡settings.blade.php` (a new `mail/` directory beside `publishing/`), and `tests/Feature/Mail/AdminMailSettingsPageTest.php`. **Modified:** `config/authorization.php:3-14`, `config/admin.php:3-16`, `routes/admin.php:1-8`, `resources/views/layouts/admin.blade.php:1-3,27-29`, `resources/views/mail/admin/invitation.blade.php:4`, `tests/Feature/Auth/AdminInvitationTest.php:53,62,126,428`, `tests/Feature/Authorization/AuthorizationSyncCommandTest.php:16-54` and `.ai/rules/authorization.md:9`. The spec misses four stale records, each with a concrete fix (see Risks, Phase 3): `docs/development-setup.md:137` and `docs/production-setup.md:91` both name the two-role bundle; `layouts/admin.blade.php:47` would label the Mail page's header "Home"; and `DESIGN.md:395` says only Home and Publishing appear in the sidebar. |
+| Pattern familiarity | ready | I read the domain pattern (`app/Authorization/Publishing/*`, `Admin/*`, `Contracts/AuthorizationCatalog.php:7-21`). I read the whole Publishing settings SFC (`⚡settings.blade.php:1-305`) and its tests (`PublishingAgentSettingsTest.php:23-57` for setup and helpers, `:239-480` for page tests). I read the Phase 1 settings API (`SurfaceMailSettings.php:31-88`), the seeds (`2026_09_25_120000_create_surface_mail_settings.php:9-14`) and the sidebar item (`layouts/admin.blade.php:27-29`). Vendor behaviour is confirmed for Livewire 4.4.4 `validate()`, the TrimStrings skip, Laravel `email` (RFC by default), spatie/laravel-permission 8.3 `PermissionMiddleware::using(BackedEnum)`, spatie/laravel-settings 3.9 `refresh()`, Boost 2.7.1 `appendEntry()` and the Flux 2.19 `envelope` icon. |
+| Dependency awareness | ready | Blast radius: the new catalog is picked up by `authorization:sync` (`app/Console/Commands/SyncAuthorization.php`), which runs in every relevant test `beforeEach`, the Cloud deploy and `docs/production-setup.md:78`. `bootstrap_roles` is read by `InviteAdministrator.php:37-38,255-290,333` and printed at `InviteAdmin.php:55`. `routes/admin.php` is mounted by `routes/web.php:19-25`. The layout wraps every Admin page. The invitation view is consumed by `InvitationMail.php:26` and asserted at `AdminInvitationTest.php:53`. A settings save is read by `AdminMailable.php:18`, `MarketingMailable.php:18` and `InviteAdministrator.php:129`. The arch rules (`tests/Arch/MailTest.php:25-33`) match the `App\Mail` name prefix, so `App\Authorization\Mail\*` isn't swept in. No existing test counts sidebar items or real-config roles. |
+| Edge case coverage | ready | The concrete list is under Risks (Phase 3). It covers: a null key misreported as configured; a real local Resend key in tests; RFC `email` versus the settings class's `filter_var`; CR/LF in `from_name`; Livewire skipping TrimStrings; blank reply-to becoming null; `resetErrorBag()` clearing both surfaces; subtree-only validation and tampered payloads; the ordering of authorization and the unknown-surface check; a corrupt stored payload on mount; `record-rule` appending instead of replacing; the pinned catalog list in the sync test; global test-helper name collisions; and the local `admin:invite` re-run sending real mail. |
+| Test strategy | ready | Inner loop: `vendor/bin/pest tests/Feature/Mail/AdminMailSettingsPageTest.php`. Then `vendor/bin/pest tests/Feature/Auth/AdminInvitationTest.php tests/Feature/Authorization`. Then `php artisan authorization:sync --no-interaction` plus `php artisan route:list --name=admin.mail`, which should show `admin.birdcar.test/mail` as `admin.mail.settings`. Then `vendor/bin/pint --dirty --format agent` and `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`, which covers app/, config/ and routes/ but not the SFC. Then the full `php artisan test --compact` (Unit, Feature, Arch), and the contract env grep (`contract.md:34`) again after the rule and doc edits. Finally `bun run build` and a Herd check at the URL from Boost `get-absolute-url`, in light and dark. |
+
+### Phase 2 (prior, for reference)
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -27,6 +37,61 @@
 | Test strategy | ready | Inner loop: `vendor/bin/pest tests/Feature/Mail tests/Feature/Auth/AdminInvitationTest.php`. Then `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`, `php artisan test --compact`, and the contract env grep. Settings migrations run under RefreshDatabase (Publishing test asserts seeded rows). The testing transaction manager runs after-commit callbacks at level 1, so a `ShouldQueueAfterCommit` notification on the sync queue delivers at once. CI is red at "Setup Application" (composer install) before tests run, so local runs are the only signal. |
 
 ## Key Patterns
+
+### Phase 3
+
+- **Authorization domain: `app/Authorization/Publishing/{Permission,Role,Catalog}.php`, plus the single-permission `Admin/*`.**
+  - The enums are string-backed and named `Permission` and `Role` in `App\Authorization\{Domain}`, with values `{domain}.{kebab-action}` and `{domain}.{role}`. Existing examples: `publishing.configure-agents` (`Publishing/Permission.php:12`), `publishing.author` and `admin.access`.
+  - `final class Catalog implements AuthorizationCatalog` has `permissions(): array`, which returns a list of cases, and `roles(): array`, which returns `[['role' => Role::X, 'permissions' => [...]]]`. The methods carry no PHPDoc; the interface holds the shapes (`AuthorizationCatalog.php:9-20`).
+  - `Admin/Catalog.php:9-26` is the exact one-permission, one-role shape Mail needs.
+- **Config wiring.**
+  - `config/authorization.php:3-5` has aliased `use …\Catalog as {Domain}Catalog;` imports, and `:10-14` lists them alphabetically (Admin, Organizations, Publishing). Insert `MailCatalog` between Admin and Organizations in both places.
+  - `config/admin.php:3-4` has `use …\Role as {Domain}Role;`, and `:13-16` lists `->value` entries. Append `MailRole::Operator->value`.
+- **Route: `routes/admin.php:8,16-18`.**
+  - Pattern: `Route::livewire('/path', 'dotted.component')->name('x')->middleware(PermissionMiddleware::using(Enum))`. `using()` accepts `array|string|BackedEnum` (`PermissionMiddleware.php:48`).
+  - `routes/web.php:19-25` wraps the file with the admin domain, `auth` and `PermissionMiddleware::using(AdminPermission::View)`, plus the name prefix `admin.`. So `->name('mail.settings')` becomes `admin.mail.settings`.
+  - Put `/mail` at the top level, not inside the `publishing` group.
+  - Livewire 4.4.4 has no `config/livewire.php`, so the default component location resolves `components/admin/mail/⚡settings.blade.php` as `admin.mail.settings`, the same way `admin.publishing.settings` resolves.
+- **Settings SFC: `resources/views/components/admin/publishing/⚡settings.blade.php`.**
+  - `:15`: `new #[Layout('layouts.admin'), Title('…')] class extends Component`. PHP code sits above `?>`, then the markup.
+  - `:17-28`: public state is scalars and arrays only, plus `?string $feedback` and `?string $saveError`. The PHPDoc sits on the array property.
+  - `:30-34`: `mount()` calls `authorizeConfiguration()`, then `fillFromSaved(app(Settings::class))`.
+  - `:36-78`: `save()` authorizes, clears feedback and saveError, runs `$this->validate(rules, messages)`, then does `try { app(X)->refresh(); mutate; ->save(); } catch (Throwable $e) { report($e); $this->saveError = 'Reload the page to see the saved settings, then try again.'; return; }`, then refills from the saved values and sets feedback.
+  - `:80-96`: an action taking an untrusted string argument authorizes first, then `throw ValidationException::withMessages([...])` on an unknown value.
+  - `:98-125`: `with()` resolves settings fresh on each render. The key boolean is `(string) config('ai.providers.openrouter.key', '') !== ''`.
+  - `:127-131`: `Gate::authorize(AdminPermission::View->value); Gate::authorize(DomainPermission::X->value);`.
+  - Markup:
+    - `<section data-publishing-settings class="space-y-8">` with a `flux:heading level="1" size="xl"` and a `flux:text` intro.
+    - Each section is `<section aria-labelledby=… class="max-w-3xl border-t border-zinc-200 pt-6 dark:border-white/10">`.
+    - The key status shows a `flux:icon.check-circle` line (`data-credentials-status="configured"`) or a `flux:callout variant="warning"` (`data-credentials-status="missing"`) that names the env var and says keys are never entered or shown (`:222-234`).
+    - Fields use `flux:field` / `flux:label` / `flux:error name=…`, and a `wire:dirty` "Not saved yet" hint.
+    - The footer has the submit button with `wire:loading.attr="disabled"`, a `role="status"` feedback line, a `role="alert"` "Nothing was saved" line, and a `flux:callout variant="danger"` for `saveError` (`:289-303`).
+- **Phase 1 settings API the page must reuse (`app/Settings/SurfaceMailSettings.php`).**
+  - Public props `from_name`, `from_address` and `?reply_to` (`:15-19`).
+  - `static allowsSenderAddress(string): bool` (`:31-38`) combines `filter_var` with an exact, lowercased domain match.
+  - `static allowedSenderDomains(): list<string>` is per surface (`AdminMailSettings.php:15-18` reads `admin.mail.sender_domains` = `['admin.birdcar.dev','birdcar.dev']`; `MarketingMailSettings.php:15-18` reads `['birdcar.dev']`).
+  - `updateSender($name, $address, ?$replyTo): static` (`:70-88`) trims all three and maps a blank reply-to to null. It throws `InvalidArgumentException` for an empty or CR/LF name (`:114-119`), an off-domain or malformed address, or a reply-to that fails `filter_var` (`:128-133`).
+  - `sender()` and `replyToAddress()` re-validate and throw on a bad stored payload, so don't call them in `mount`.
+  - Groups are `admin_mail` and `marketing_mail`. Seeds: `Birdcar` / `noreply@admin.birdcar.dev` / null and `Birdcar` / `hello@birdcar.dev` / null.
+  - `Settings::refresh()` returns `self` (`vendor/spatie/laravel-settings/src/Settings.php:257`).
+- **Page tests: `tests/Feature/Publishing/PublishingAgentSettingsTest.php`.**
+  - `beforeEach` (`:23-28`): `forgetCachedPermissions()`, then `artisan('authorization:sync')->assertSuccessful()`, then pin the key config.
+  - Helpers (`:41-57`): an owner gets `assignRole([AdminRole::Access->value, DomainRole::X->value])`, and stored payloads are read with `DB::table('settings')->where('group', …)->pluck('payload','name')->map(json_decode)`.
+  - Guest (`:239-241`): `get('http://admin.birdcar.test/publishing/settings')->assertRedirect('/login')`.
+  - Forbidden dataset (`:243-258`): HTTP `assertForbidden()` plus `Livewire::actingAs($u)->test('admin.publishing.settings')->assertForbidden()`, run for "admin access only" and "has another domain's capabilities but not this one".
+  - Current navigation via DOMXPath (`:260-273`).
+  - Tampered-input dataset (`:314-329`): `assertHasErrors(key)`, `assertSee(message)`, and the stored value unchanged.
+  - Revoked role (`:399-417`): build the page, `removeRole()`, `forgetCachedPermissions()`, `call()->assertForbidden()`, run for both the domain role and `admin.access`.
+  - Forged action (`:419-442`): build as the owner, switch with `Livewire::actingAs($intruder)`, then `call()->assertForbidden()`.
+  - Secret hygiene (`:444-467`): HTTP `assertDontSee`, plus `json_encode([$page->snapshot, $page->effects])` not containing the secret.
+  - Missing-key notice (`:469-480`).
+  - Reload between steps with `app()->forgetScopedInstances()`.
+- **Sidebar: `resources/views/layouts/admin.blade.php:1-3` and `:27-29`.**
+  - The `@php use App\Authorization\Publishing\Permission as PublishingPermission; @endphp` block sits at the top.
+  - The item is `@can(PublishingPermission::View->value) <flux:sidebar.item :href="route('admin.publishing.dashboard')" :current="request()->routeIs('admin.publishing.*')" :aria-current="request()->routeIs('admin.publishing.*') ? 'page' : null" aria-label="Publishing" icon="document-text">Publishing</flux:sidebar.item> @endcan`.
+  - Add the Mail import to the same `@php` block, and put the Mail item after Publishing. `flux/icon/envelope.blade.php` exists in Flux 2.19.
+- **Invitation copy.** `resources/views/mail/admin/invitation.blade.php:4` is one Markdown sentence, and `AdminInvitationTest.php:53` asserts it word for word through `assertSeeInText`.
+- **Boost `record-rule` can't replace an entry.** `RuleRepository::write()` (`:116-135`) always calls `appendEntry()` (`:307-312`), which appends `## {title}` plus the note. Recording with the same title would create a duplicate `## Root Admin bootstrap roles`, so use the spec's fallback: edit `.ai/rules/authorization.md:9` in place and leave `index.md` alone (the glob doesn't change).
 
 ### Phase 2
 
@@ -103,6 +168,32 @@
 
 ## Dependencies
 
+### Phase 3
+
+- **`app/Authorization/Mail/*` (new) and `config/authorization.php:10-14`.**
+  - `authorization:sync` (`app/Console/Commands/SyncAuthorization.php`) reads the catalog list. It runs in the `beforeEach` of `AdminInvitationTest.php:26`, `PublishingAgentSettingsTest.php:25`, `AdminAuthorizationTest.php:11`, `AdminPublishingWorkspaceTest.php:22` and others, in the Cloud deploy, and in `docs/production-setup.md:78`.
+  - Adding a catalog adds one permission and one role, and no test counts the real-config totals.
+  - `AuthorizationSyncCommandTest.php:17-21` pins its own catalog list, so it passes unchanged. The update is additive (see Risks).
+  - The collision checks (`:98-121`) require that `mail.*` names don't clash; nothing else uses the `mail.` prefix.
+- **`config/admin.php:13-16` (`bootstrap_roles`).**
+  - `InviteAdministrator.php:37-38,255-290` validates the list and asserts that every role exists. A missing `mail.operator` row makes it fail with "run [php artisan authorization:sync …]", so sync must run before any invite.
+  - `InviteAdministrator.php:333` calls `assignRole($roles)`, which is additive and keeps unrelated roles.
+  - `InviteAdmin.php:55` prints "Assigned bootstrap roles: …". No test asserts that line.
+  - `AdminInvitationTest.php:62,126,428` asserts `hasRole` for each bundle role; add `MailRole::Operator` beside `PublishingRole::Author`. `:129-143` deletes `admin.access` to test missing roles. It's optional to add a dataset row for a missing `mail.operator`.
+- **`routes/admin.php`** is mounted only through `routes/web.php:19-25` (the admin host plus `auth` plus `admin.view`). `bootstrap/cache` holds only `packages.php` and `services.php`, with no route or config cache, so the new route is live at once.
+- **`resources/views/layouts/admin.blade.php`** is the `#[Layout]` of every Admin page (`⚡index`, publishing `⚡dashboard`, `⚡published`, `⚡settings`, `⚡article-workspace`, and the new mail page).
+  - Shell tests `AdminPublishingWorkspaceTest.php:98-143` assert the `Admin modules` nav exists but count no items.
+  - The users in those tests lack `mail.operator`, so the new `@can` item is invisible there and the tests stay green.
+  - `<x-admin.navigation />` (`components/admin/navigation.blade.php:4`) renders only on `admin.publishing.*`, so it's unaffected.
+- **`resources/views/mail/admin/invitation.blade.php:4`** ← `InvitationMail.php:26` ← `AdminInvitation::toMail()` ← the exact-sentence assertion at `AdminInvitationTest.php:53`. No other test matches that copy.
+- **Settings the page writes (`admin_mail.*`, `marketing_mail.*`).**
+  - They're read at send time by `AdminMailable.php:18` and `MarketingMailable.php:18` (inside the final `build()`), and in the invite pre-flight at `InviteAdministrator.php:129`.
+  - Settings are bound `scoped()`, so the next request or job sees a save without a restart.
+  - Queued `PasswordReset` resolves the settings on the worker at send time.
+- **`.ai/rules/authorization.md:9`** has index row `.ai/rules/index.md:9`, which doesn't change. `AuthorizationGuidelineTest.php:5-27` composes `.ai/guidelines/authorization.md` through Boost `GuidelineComposer`, not the rule file, so the rule edit can't break it.
+- **Setup docs** have no code consumers; only the contract env grep (`contract.md:34`) reads them: `docs/development-setup.md:137` and `docs/production-setup.md:91`.
+- **Arch rules** (`tests/Arch/MailTest.php:25-33`) target the `App\Mail` name prefix, and `App\Authorization\Mail\*` doesn't start with it. The SFC isn't PSR-4 and sends no mail.
+
 ### Phase 2
 
 - **`app/Listeners/RejectUnscopedMail.php` (new) applies to every non-faked send in every process** (web, queue worker, console, tests). Current producers:
@@ -149,6 +240,33 @@
 
 ## Conventions
 
+### Phase 3 additions
+
+- **Naming**:
+  - `enum Permission: string { case ConfigureSenders = 'mail.configure-senders'; }` and `enum Role: string { case Operator = 'mail.operator'; }` in `App\Authorization\Mail`.
+  - Import them aliased as `MailPermission`, `MailRole` and `MailCatalog`, matching `AdminPermission` and `PublishingRole` elsewhere.
+  - The route name is `admin.mail.settings` and the component name is `admin.mail.settings`; the same string for both is fine, just as with publishing.
+  - Use `data-*` hooks as test anchors, for example `data-mail-settings` on the root section and a per-surface `data-key-status` with the values "configured" and "missing", mirroring `data-credentials-status`.
+- **Global test-helper names are shared across the suite** (Pest loads every file into one process). Names already taken: `settingsPageOwner`, `storedAgentSettings`, `settingsAttempt`, `interviewResponse`, `surfaceMessagesOn`, `sendSurfaceMail`, `surfaceSettingsGroups`, `guardedTransportCounts`, `adminHomeUser`, `publishingUser`, `permissionNamesForRole`, `cachedRoleNamesForPermission`. Use distinct names such as `mailSettingsOperator()` and `storedMailSender(string $group)`.
+- **Imports**: fully qualified `use` lines at the top of the SFC (`App\Authorization\Admin\Permission as AdminPermission`, `App\Authorization\Mail\Permission as MailPermission`, `App\Settings\{AdminMailSettings,MarketingMailSettings}`, `Illuminate\Support\Facades\Gate`, `Illuminate\Validation\ValidationException`, and `Livewire\Attributes\{Layout,Title}`). Blade layouts import through a leading `@php use … @endphp` block.
+- **Error handling**:
+  - Call `Gate::authorize(...->value)` first in `mount` and `save`. Throw `ValidationException::withMessages(['senders' => '…'])` for an unknown surface.
+  - Wrap the save in `try { … } catch (Throwable $exception) { report($exception); $this->saveError = 'Reload the page to see the saved settings, then try again.'; return; }`.
+  - Always use curly braces. Prefer PHPDoc blocks over inline comments.
+- **Types**:
+  - phpstan level 7 covers `app/` (the new enums and catalog), `config/` and `routes/`, but not `resources/views`, so the SFC isn't analysed. Still type everything explicitly: `save(string $surface): void`, `with(): array`, and an array-shape PHPDoc on `$senders`.
+  - `Settings::refresh()` is declared `: self`. That's fine at runtime; call `updateSender()` on the result.
+- **Copy**:
+  - Plain and operator-facing (spec example: "Admin mail is sent from this address. It must be at admin.birdcar.dev or birdcar.dev.").
+  - The missing-key notice names `BIRDCAR_ADMIN_RESEND_API_KEY` or `BIRDCAR_MARKETING_RESEND_API_KEY` and says keys are never entered or shown here, mirroring `⚡settings.blade.php:229-232`.
+  - Show the configured mailer name (`config('admin.mail.mailer')` / `config('marketing.mail.mailer')`) as text only. The page never edits it.
+- **Testing**:
+  - Use sentence names with `test('…')` and `->with([...])` datasets for the forbidden users and the invalid inputs.
+  - HTTP requests go to `http://admin.birdcar.test/mail`, and Livewire tests use `Livewire::actingAs($u)->test('admin.mail.settings')`. Check sidebar `aria-current` with DOMXPath.
+  - Read `.claude/skills/testing-best-practices/SKILL.md`. Activate the `livewire-development`, `fluxui-development` and `laravel-permission-development` skills.
+- **Rules and docs**: hand-edit `.ai/rules/authorization.md:9` in place (see Risks) and never edit `index.md`. Any `.ai/rules` or docs text must keep the `BIRDCAR_` prefix to pass the contract env grep.
+- **Formatting**: `vendor/bin/pint --dirty --format agent`.
+
 ### Phase 2 additions
 
 - **Naming**:
@@ -182,6 +300,51 @@
 - **Rules**: `app/Settings/**` falls under `.ai/rules/settings.md` (settings are scoped; resolve them per request or job, never cache the object). So resolve settings inside `build()` and never store them on the Mailable. Leave `.ai/rules/index.md` untouched; it's Boost-generated.
 
 ## Risks
+
+### Phase 3
+
+- **A null key reads as "configured".** `config/mail.php:30-38` defines `resend_admin.key` and `resend_marketing.key` as `env('BIRDCAR_*_RESEND_API_KEY')` with no default, so an unset key is `null`. The spec's literal `mail.mailers.resend_{surface}.key !== ''` gives `true` for `null`. Use the Publishing cast, `(string) config("mail.mailers.resend_{$surface}.key", '') !== ''` (`⚡settings.blade.php:121`), and cover both `null` and `''` in the missing-key test.
+- **Local tests see a real Resend key.**
+  - The local `.env` has non-empty `BIRDCAR_ADMIN_RESEND_API_KEY` and `BIRDCAR_MARKETING_RESEND_API_KEY`. There's no `.env.testing`, and phpunit.xml doesn't override them. CI copies `.env.example`, where they're empty.
+  - So in `beforeEach`, pin both keys explicitly (e.g. `config(['mail.mailers.resend_admin.key' => '', 'mail.mailers.resend_marketing.key' => ''])`), and set the fake `re_test_secret` inside the hygiene test.
+  - Never print or `cat` `.env` values; list key names only.
+- **The `email` rule and the settings class disagree.**
+  - Bare `email` is `RFCValidation` (`ValidatesAttributes.php:991-999`). It accepts `user@localhost` and `"a b"@birdcar.dev`, which `filter_var` rejects. I checked this locally.
+  - A reply-to like that would pass the page's validation, then `updateSender()` would throw `InvalidArgumentException` (`SurfaceMailSettings.php:128-133`). That lands in the catch branch: a spurious `report()` and the misleading "Reload the page…" instead of a field error.
+  - Use `email:filter` (FilterEmailValidation, i.e. `filter_var`) for both `from_address` and `reply_to`. The `allowsSenderAddress()` closure still enforces the domain.
+  - Add `string` to `reply_to` so an array payload fails cleanly.
+- **A CR/LF sender name passes `required|string|max:100`.** `updateSender()` rejects `\r`/`\n` (`:114-119`), which leads to the same misleading catch path. Add `not_regex:/[\r\n]/` with a field message. A whitespace-only name is already caught, because `required` trims.
+- **Livewire skips TrimStrings and ConvertEmptyStringsToNull** for update requests (`HandleRequests.php:84-88`), so values arrive raw.
+  - `updateSender()` trims them. After a successful save, refill `senders.{surface}` from the saved settings so the form shows what was stored.
+  - A reply-to of `''` or whitespace passes `nullable|email:filter`, because non-implicit rules skip blank strings (`Validator.php:844-852`). It's then stored as `null` through `?: null` and `updateSender()`'s own blank check. This covers the spec experiment "reply-to `''` stores `null`".
+- **The error bag is shared by both Save buttons.** On success, `validate()` calls `resetErrorBag()` (`HandlesValidation.php:275`), which clears the other surface's errors too; a failure replaces the whole bag.
+  - Validate only the saved surface's subtree (`senders.{$surface}.from_name`, `.from_address`, `.reply_to`), never `senders` as a whole. Otherwise an invalid marketing value blocks an admin save, contradicting the spec's key decision.
+  - Scope the "Nothing was saved" alert and the success feedback to each surface (`$errors->has('senders.admin.*')` works, because MessageBag supports wildcard keys).
+  - Read input from `$validated['senders'][$surface]`, not from raw `$this->senders`, so tampered extra keys are ignored.
+- **Order of checks in `save()`.** Call `authorizeConfiguration()` first, so a forged `save('customer')` gets 403, not 422. Then check the surface against a strict map `['admin' => AdminMailSettings::class, 'marketing' => MarketingMailSettings::class]` and throw a `ValidationException` on `senders` for anything else. Only then validate.
+- **`mount()` must not call `sender()` or `replyToAddress()`.** They throw on a corrupt stored payload, which would 500 the page the owner needs to fix it. Fill from the raw props (`from_name`, `from_address`, `reply_to ?? ''`). A missing settings row still throws `MissingSettings`. Publishing has the same exposure, so that's acceptable.
+- **The header label goes stale.** `layouts/admin.blade.php:47` renders `request()->routeIs('admin.publishing.*') ? 'Publishing' : 'Home'`, so `/mail` would show "Home". Extend it so `admin.mail.*` shows "Mail", and keep the `max-sm:sr-only` condition consistent.
+- **Stale records the spec doesn't list.** The contract's recorded learning (`contract.md:52`) is to reconcile the authoritative records a change touches.
+  - `docs/development-setup.md:137` ("grants the configured root bundle (`admin.access` and `publishing.author`)") and `docs/production-setup.md:91` ("assigns `admin.access` and `publishing.author`") need `mail.operator` added. Both are in the contract env grep scope; the edit adds no env names.
+  - `DESIGN.md:395` ("Only Home and authorized Publishing are present") needs "and authorized Mail".
+  - `.impeccable/surfaces/resources-views-layouts-admin-blade-php.md` Boundaries ("Initially show only Home and authorized Publishing") is a design-review record. Leave it, or add a one-line note; don't regenerate it.
+- **`record-rule` can't replace an entry** (`RuleRepository.php:116-135,307-312`). Using it with the same title would append a duplicate `## Root Admin bootstrap roles`. Edit `.ai/rules/authorization.md:9` in place ("admin.access, publishing.author and mail.operator currently") and leave `index.md` untouched. Keep the rest of the sentence: no Teams, no direct permissions, no `Gate::before` bypass, and no bypass of tenant checks.
+- **The sync test update is additive.** `AuthorizationSyncCommandTest.php:17-21` pins Admin, Organizations and Publishing, so it passes unchanged and wouldn't catch a broken Mail catalog. Add `MailCatalog::class` to that list, `assertDatabaseHas` for the permission `mail.configure-senders` and the role `mail.operator`, and `permissionNamesForRole('mail.operator') === ['mail.configure-senders']`.
+- **`AuthorizationGuidelineTest` reads `.ai/guidelines/authorization.md`**, not `.ai/rules/authorization.md`. Don't edit the guideline file for this phase; the test stays green.
+- **The local account step sends real mail.**
+  - Re-running `php artisan admin:invite <email>` sends a real invitation through the local admin mailer. The pre-flight rejects `log`, `array` and `failover`, so it must be the SMTP catcher. It also issues a new reset token, and the broker throttles repeats for 60s.
+  - The no-mail alternative is to assign `mail.operator` in tinker.
+  - Either way, run `php artisan authorization:sync --no-interaction` first, or the invite fails on the missing role.
+- **Existing admins lack the new role.** The spec's failure mode covers this. "Production has no admins yet" can't be checked from the repo; the Phase 4 rollout should confirm it.
+- **A Mail-only operator sees an ambiguous Home.** With `admin.access` + `mail.operator` but no publishing role, Home shows "You have Admin access. Work appears here when you have access to a business module." (`⚡index.blade.php:49-53`), which is ambiguous but harmless. It's out of scope; the spec doesn't ask for it.
+- **An empty sender-domain list** would render "Use an address at ." The domains are hard-coded in config, so the risk is low; a guarded fallback message is cheap.
+- **Octane.** Keep only scalars and arrays in public state (`$senders`, `$feedback`, `$saveError`). Resolve settings with `app(...)` inside each method, and never store the Settings object or mailer config on the component (`.ai/rules/settings.md:9`).
+- **Decision log vs reality.** No contradictions.
+  - The settings hold exactly `from_name`, `from_address` and `reply_to` (`SurfaceMailSettings.php:15-19`).
+  - Mailer choice and keys live only in env and config (`config/admin.php:17-20`, `config/marketing.php:9-12`, `config/mail.php:30-38`), so the page must show the mailer name and a key boolean only, never edit them.
+  - "Rejected: an Admin settings page in the MVP" (`contract.md:77`) is consistent with this phase being the Full tier.
+  - The guard and the arch rules don't constrain a page that sends no mail.
+- **Baseline not re-run by the scout.** I ran nothing that writes. Phase 2 committed as `a2d3dce` with review PASS. Run the full suite once after the bundle change, because every `admin:invite` test now assigns three roles.
 
 ### Phase 2
 
