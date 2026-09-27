@@ -6,6 +6,7 @@ use App\Notifications\Admin\PasswordReset;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Mail\MailManager;
 use Illuminate\Notifications\SendQueuedNotifications;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Symfony\Component\Mailer\SentMessage;
@@ -31,6 +32,15 @@ test('password resets are queued to send after the surrounding transaction commi
     Queue::assertPushed(SendQueuedNotifications::class, fn (SendQueuedNotifications $job): bool => $job->notification instanceof PasswordReset
         && $job->notification->token === 'reset-token'
         && $job->afterCommit === true);
+});
+
+test('queued password resets keep the reset token out of the stored queue payload', function (): void {
+    config(['queue.default' => 'database']);
+    $user = User::factory()->create();
+
+    $user->sendPasswordResetNotification('plaintext-reset-token');
+
+    expect(DB::table('jobs')->sole()->payload)->not->toContain('plaintext-reset-token');
 });
 
 test('queued password resets link to the admin origin and send on the admin mailer from the admin sender', function (): void {
