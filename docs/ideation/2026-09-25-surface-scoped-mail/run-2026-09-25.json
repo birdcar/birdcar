@@ -1,0 +1,68 @@
+{
+  "projectName": "Surface-Scoped Mail",
+  "slug": "2026-09-25-surface-scoped-mail",
+  "date": "2026-09-25",
+  "branch": null,
+  "baseBranch": null,
+  "strict": true,
+  "summary": {
+    "completed": [
+      "Surface mail foundation",
+      "Guard rails",
+      "Admin mail settings page"
+    ],
+    "noops": [],
+    "failed": [],
+    "skipped": [],
+    "results": [
+      {
+        "title": "Surface mail foundation",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "07ac8aa9387d47d77e37a69f9fca1540531cfff4",
+        "summary": "Built Phase 1 of surface-scoped mail. The resend_admin and resend_marketing mailers each carry their own key, and every surface env var is renamed to BIRDCAR_*. Sender identity lives in per-surface settings (seeded, and validated on both save and load). SurfaceMailable, AdminMailable and MarketingMailable set the surface's mailer and sender in a final build(). AdminInvitation now sends through InvitationMail, and admin:invite checks admin.mail.mailer and the sender settings before it creates any account. Password resets go out as a queued PasswordReset notification, overridden in User, with the link built from admin.url. All validation passed: pint, phpstan, the 55 phase tests, the full suite of 502, and the env grep. Decisions the spec didn't settle are in implementation-notes-phase-1.html: a shared link trait, build() clearing earlier From entries, the pre-flight also catching MissingSettings and TypeError, an open owner question on ShouldBeEncrypted for the queued token, and the local database still needing php artisan migrate. — Phase 1 matches the spec closely, so the verdict is PASS with 0 blocking findings. The surface Mailable hierarchy with `final build()` relies on the framework's real call order: `build()` runs before the mailer is resolved (Mailable.php:205-208), and `buildFrom` uses `from[0]`. The settings follow the PublishingAgentSettings pattern of re-checking stored values on every read, the env rename is complete across config, docs, `.ai/rules` and `.env.example`, and each spec experiment has a test, including the one proving the invite ignores `mail.default`. The one worthwhile follow-up is encrypting the queued reset notification so the plaintext reset token isn't stored in the queue payload. I only read the code; I didn't run the test suite.",
+        "findings": [
+          "medium/security app/Notifications/Admin/PasswordReset.php:14 — The raw reset token is a public property of a queued notification, so it is stored in plaintext in the queue payload (the database `jobs`/`failed_jobs` tables locally, and Cloud's managed queue in production) for the whole token lifetime. `#[\\SensitiveParameter]` only hides it from stack traces. SendQueuedNotifications supports encryption (SendQueuedNotifications.php:111). → Implement `Illuminate\\Contracts\\Queue\\ShouldBeEncrypted` on PasswordReset, and add `&& $job->shouldBeEncrypted === true` to the Queue::assertPushed callback in tests/Feature/Mail/AdminPasswordResetTest.php.",
+          "low/logic app/Mail/SurfaceMailable.php:260 — `final build()` pins from[0] against envelope `from`, which the test proves. But `Envelope(using: [...])` and `withSymfonyMessage()` callbacks run in `runCallbacks()` after `buildFrom()` (Mailable.php:212-217), so a subclass can still call `$message->from(...)` and override the sender. The guarantee 'the surface, not the subclass, chooses the sender' is not absolute in Phase 1. → No change needed now. Make sure the Phase 2 MessageSending guard validates the final From against the surface's allowed domains, and add a fixture test that tries the `using:` override.",
+          "low/spec-deviation app/Notifications/Admin/BuildsAdminPasswordLinks.php:1 — This trait is a new file not listed in the spec's File Changes. It is a reasonable DRY extraction of the former `AdminInvitation::resetUrl()`/`expiresInMinutes()` logic, which the spec allowed to stay in the notification ('or keep it here and pass values in'), and it is shared with PasswordReset. → Keep it, and record it as a deviation in implementation-notes-phase-1 so later phases know it is the shared link builder."
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      },
+      {
+        "title": "Guard rails",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "a2d3dce54d4a655776f5539581a60110efa39ed2",
+        "summary": "Added the RejectUnscopedMail MessageSending listener, which Laravel discovers automatically and which throws a LogicException in every environment unless a SurfaceMailable is sent on its own surfaceMailer(). Covered it with SurfaceMailGuardTest (6 blocked paths that leave all three array transports empty, 2 surface sends that land on their own mailer, 1 forced-production case) and added a registered Arch suite with 5 rules. I broke each rule once on purpose to confirm it fails, then reverted. Recorded the mail rule via Boost record-rule; I put app/Mail/** last in the glob so the file is .ai/rules/mail.md and index.md was regenerated. Rewrote the mail guidance in both setup docs. Deviations: the queued-notification rule uses the native arch()->expect('App')->classes()->extending(Notification)->implementing(ShouldQueue)->toImplement(ShouldQueueAfterCommit) instead of the spec's Finder walk over app/Notifications, so it is wider. Two new fixtures were needed for cases (b) and (f): ExamplePlainMail and ExampleUnscopedNotification. Validation passed: Pint, PHPStan, guard test, Arch suite, full suite (516 tests), the contract env grep, event:list, and the tinker Mail::raw check. — The phase matches the spec. RejectUnscopedMail follows the spec's snippet: it returns void, names the rejected mailable, notification or raw message, and has no environment branch. The guard test covers all six rejected paths, both accepted surfaces and the forced-production case, using distinct array_default/array_admin/array_marketing mailers so misroute tests can't pass vacuously. The Arch suite is registered in phpunit.xml, the mail rule file and index row match Boost's layout (the glob was reordered so the file is named mail.md), and both docs describe the surface model accurately. There are no blocking findings, and the working tree holds no leftover temporary arch violations, so it is ready to commit once the validation commands pass.",
+        "findings": [
+          "low/spec-deviation tests/Arch/MailTest.php:407 — The after-commit rule uses the native arch chain expect('App')->classes()->extending(Notification::class)->implementing(ShouldQueue::class) instead of the spec's Symfony Finder walk over app/Notifications. It covers more (every Notification in App, not just app/Notifications), and the context map cleared it as an acceptable alternative. Arch violations report file paths, not the custom class-naming message the spec described → Keep it, and mention the change in the phase implementation notes so the deviation is on record.",
+          "low/testing tests/Feature/Mail/SurfaceMailGuardTest.php — The Error Handling table says a misconfigured surfaceMailer() LogicException passes through the guard unchanged. No guard test covers this (for example admin.mail.mailer set to an undefined name, then an ExampleSurfaceNotification send). Testing Requirements don't demand it, so it isn't blocking → Optionally add one dataset case that asserts the Phase 1 configuredMailer() message surfaces from inside the guard."
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      },
+      {
+        "title": "Admin mail settings page",
+        "result": "PASS",
+        "reviewStatus": "passed",
+        "commitHash": "c27fff7ee795f6a07b111eb9edd996d481385a86",
+        "summary": "Added a Mail authorization domain: permission mail.configure-senders, granted by role mail.operator, which is registered, synced and added to the root bootstrap bundle. The gated Admin page at /mail (admin.mail.settings) edits each surface's sender. It checks the Admin and Mail permissions in mount and save, and each surface validates and saves separately. Validation matches SurfaceMailSettings (email:filter, and CR/LF is rejected in the sender name). The page shows the mailer name and whether each Resend key is set, never the key itself. The Mail sidebar item and header label are in, and the invitation copy, invitation and sync tests, the authorization rule, both setup docs and DESIGN.md now reflect the new role. Every validation command passes: pint, phpstan, authorization:sync, the targeted pest run (103 tests), the full suite (544 tests) and bun build; the contract env grep also passes. The signed-in light/dark check on Herd was not run, because the owner's local account lacks mail.operator and signing in needs their password. A guest request to the Herd URL redirects to /login as expected. implementation-notes-phase-3.html records the steps for the owner. — The implementation matches spec-phase-3 closely and passes with no blocking findings. It adds the Mail authorization domain following the exact shape of the Publishing/Admin catalogs, registers the catalog in alphabetical order, extends the bootstrap bundle, adds the route and sidebar item, updates the invitation copy and fixes the auth rule text in place. The settings page follows the Publishing pattern: it authorizes in mount and save before the surface check, keeps only scalar and array state, reads settings fresh in with(), shows keys only as booleans, and uses refresh→updateSender→save inside try/catch with report(). It also handles two edge cases the spec didn't mention: it keeps the other surface's validation errors, and it blocks CR/LF in the sender name. The tests cover every case the spec requires: guest redirect, forbidden over HTTP and Livewire, per-surface saves, off-domain and malformed input, an unknown surface, a revoked role, a forged save, and keys never appearing in the page or payloads. The only findings are two low notes about justified deviations.",
+        "findings": [
+          "low/spec-deviation DESIGN.md:395 — DESIGN.md, docs/development-setup.md:137 and docs/production-setup.md:91 are changed but not listed in the spec's File Changes. The edits only fix references that would otherwise be stale (the two-role bundle and the sidebar contents), and context-map.md records the reason for each. → Keep them, and say in the commit message that they reconcile docs made stale by the bundle change.",
+          "low/spec-deviation resources/views/components/admin/mail/⚡settings.blade.php:275 — from_address and reply_to use `email:filter`, not the spec's plain `email` (RFC). This departs from the spec's letter but serves its stated goal: the page and SurfaceMailSettings::allowsSenderAddress() now apply the same filter_var check and cannot disagree. → No change needed. Optionally add a one-line note to the spec or implementation notes so later phases don't switch back to `email`."
+        ],
+        "warnings": [],
+        "reviewCycles": 1
+      }
+    ]
+  },
+  "verify": {
+    "line": "VERIFY 2026-09-25-surface-scoped-mail: commits=3/3 pass=9 fail=0 judgment=1",
+    "exitCode": 0
+  },
+  "notesFiles": [
+    "implementation-notes-phase-1.html",
+    "implementation-notes-phase-3.html"
+  ]
+}
