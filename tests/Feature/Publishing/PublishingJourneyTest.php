@@ -236,6 +236,7 @@ function journeyFirstEvidenceId(): int
         ->value('id');
 }
 
+/** @return array<string, mixed> */
 function journeyDocument(string $text, string $id): array
 {
     return ['version' => 1, 'type' => 'doc', 'content' => [[

@@ -18,6 +18,18 @@ beforeEach(function (): void {
     $this->artisan('authorization:sync')->assertSuccessful();
 });
 
+/**
+ * Every Laravel migration file returns an anonymous class with these methods, but the abstract
+ * base class does not declare them.
+ */
+interface RunnableMigration
+{
+    public function up(): void;
+
+    public function down(): void;
+}
+
+/** @return Migration&RunnableMigration */
 function budgetRemovalMigration(): Migration
 {
     return require database_path('migrations/2026_09_24_230100_remove_publishing_budget_storage.php');
@@ -35,6 +47,7 @@ function legacyBudgetAttempt(): array
     return [$author, $attempt];
 }
 
+/** @param array<string, mixed> $attributes */
 function legacyActivity(PublishingAttempt $attempt, User $author, array $attributes): EditorialActivity
 {
     return EditorialActivity::factory()->create(array_merge([

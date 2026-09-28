@@ -5,10 +5,12 @@ use App\Models\User;
 use App\Notifications\Admin\PasswordReset;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Mail\MailManager;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Assert;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mime\Email;
 
@@ -54,8 +56,22 @@ test('queued password resets link to the admin origin and send on the admin mail
 
     $user->sendPasswordResetNotification('reset-token');
 
-    $messages = app(MailManager::class)->mailer('array_admin')->getSymfonyTransport()->messages()
-        ->map(fn (SentMessage $sent): Email => $sent->getOriginalMessage())
+    $transport = app(MailManager::class)->mailer('array_admin')->getSymfonyTransport();
+
+    if (! $transport instanceof ArrayTransport) {
+        Assert::fail(sprintf('Expected mailer [array_admin] to use the array transport, got [%s].', $transport::class));
+    }
+
+    $messages = $transport->messages()
+        ->map(function (SentMessage $sent): Email {
+            $original = $sent->getOriginalMessage();
+
+            if (! $original instanceof Email) {
+                Assert::fail('Expected a Symfony Email message.');
+            }
+
+            return $original;
+        })
         ->values();
     expect($messages)->toHaveCount(1)
         ->and($messages[0]->getFrom()[0]->getAddress())->toBe('noreply@admin.birdcar.dev')

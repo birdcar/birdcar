@@ -28,6 +28,7 @@ function sessionAuthor(): User
     return $user;
 }
 
+/** @return array<string, mixed> */
 function sessionDocument(string $text = 'The work stays yours.'): array
 {
     return ['version' => 1, 'type' => 'doc', 'content' => [

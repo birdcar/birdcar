@@ -9,5 +9,18 @@ parameters:
         - config/
         - database/
         - routes/
+        - tests/
 
     level: 7
+
+    parseModelCastsMethod: true
+
+services:
+    -
+        class: Tests\PHPStan\PestClosureThisExtension
+        tags:
+            - phpstan.functionParameterClosureThisExtension
+    -
+        class: Tests\PHPStan\ArtisanPendingCommandExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension

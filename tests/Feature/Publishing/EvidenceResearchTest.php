@@ -90,10 +90,16 @@ test('long retrieved pages are kept as evidence without tripping the output size
     $activity = app(StartEditorialActivity::class)->start($actor, evidenceAttempt($actor), EditorialActivityKind::ResearchChallenge, [], 'long-research');
     app(RunEditorialActivity::class, ['activityId' => $activity->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
 
+    $sourceReferences = $activity->fresh()->response['sourceReferences'];
+
+    if (! is_array($sourceReferences)) {
+        throw new RuntimeException('Expected sourceReferences to be an array.');
+    }
+
     expect($pages->sum(fn (string $content): int => strlen($content)))->toBeGreaterThan(32768)
         ->and($activity->fresh()->status->value)->toBe('completed')
         ->and(EvidenceSource::query()->where('activity_id', $activity->id)->count())->toBe(5)
-        ->and(collect($activity->fresh()->response['sourceReferences'])->every(fn (array $reference): bool => ! array_key_exists('retrieved_content', $reference)))->toBeTrue();
+        ->and(collect($sourceReferences)->every(fn (array $reference): bool => ! array_key_exists('retrieved_content', $reference)))->toBeTrue();
 });
 
 test('research records unresolved source when public fetch is denied', function (): void {

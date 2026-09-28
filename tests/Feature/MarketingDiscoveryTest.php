@@ -5,8 +5,11 @@ use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\User;
 use App\Services\MarketingSite;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-13');
@@ -37,6 +40,10 @@ test('marketing pages declare current browser and home screen branding', functio
 test('the marketing icon draws the canary on the studio ink ground', function () {
     $icon = simplexml_load_file(public_path('marketing-icon.svg'));
 
+    if ($icon === false) {
+        throw new RuntimeException('Unable to parse marketing-icon.svg.');
+    }
+
     expect((string) $icon->rect['fill'])->toBe('#0b141a');
     expect((string) $icon->path[0]['fill'])->toBe('#f7c948');
     expect(getimagesize(public_path('marketing-touch-icon.png')))
@@ -49,10 +56,9 @@ test('structured article data identifies its real author and original publicatio
     marketingDiscoveryImportArchive($this);
 
     $response = $this->get('/writing/just-build-it-twice/?ref=reader')->assertOk();
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $scripts = (new DOMXPath($document))->query('//script[@type="application/ld+json"]');
-    $graph = collect(iterator_to_array($scripts))->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR))->keyBy('@type');
+    $xpath = marketingDiscoveryXpath($response);
+    $scripts = marketingDiscoveryElements($xpath, '//script[@type="application/ld+json"]');
+    $graph = collect($scripts)->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR))->keyBy('@type');
 
     expect($scripts)->toHaveCount(3);
     expect($graph['Person'])->toMatchArray(['name' => 'Birdcar', '@id' => 'https://birdcar.dev/#person']);
@@ -61,15 +67,15 @@ test('structured article data identifies its real author and original publicatio
         'url' => 'https://birdcar.dev/writing/just-build-it-twice/',
         'datePublished' => '2026-05-26T00:00:00+00:00',
         'author' => ['@id' => 'https://birdcar.dev/#person'],
-    ])->not->toHaveKey('dateModified');
+    ]);
+    expect($graph['BlogPosting'])->not->toHaveKey('dateModified');
 });
 
 test('the walkthrough exposes the service described in its visible offer', function () {
     $response = $this->get('/walkthrough')->assertOk();
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $scripts = (new DOMXPath($document))->query('//script[@type="application/ld+json"]');
-    $graph = collect(iterator_to_array($scripts))->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR))->keyBy('@type');
+    $xpath = marketingDiscoveryXpath($response);
+    $scripts = marketingDiscoveryElements($xpath, '//script[@type="application/ld+json"]');
+    $graph = collect($scripts)->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR))->keyBy('@type');
 
     expect($graph['Service'])->toMatchArray(['name' => 'The Walkthrough', 'serviceType' => 'Business process assessment']);
     expect($graph['Service']['provider']['@id'])->toBe($graph['Person']['@id']);
@@ -122,7 +128,7 @@ test('the sitemap contains the public pages and original archive with canonical 
     marketingDiscoveryImportArchive($this);
 
     $response = $this->get('/sitemap.xml')->assertOk();
-    $xml = simplexml_load_string($response->getContent());
+    $xml = marketingDiscoverySimplexml($response);
     $urls = array_map(fn ($url): string => (string) $url->loc, iterator_to_array($xml->url, false));
 
     expect($xml->url)->toHaveCount(15);
@@ -149,14 +155,14 @@ test('cms-mode imported archive preserves canonical sitemap and feed discovery',
         ->assertSee('datePublished":"2026-05-26T00:00:00+00:00', false);
 
     $sitemap = $this->get('/sitemap.xml')->assertOk();
-    $xml = simplexml_load_string($sitemap->getContent());
+    $xml = marketingDiscoverySimplexml($sitemap);
     expect($xml->url)->toHaveCount(15);
     $sitemap->assertSee('https://birdcar.dev/writing/just-build-it-twice/')
         ->assertDontSee('admin.')
         ->assertDontSee('customer.');
 
     $feed = $this->get('/rss.xml')->assertOk()->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
-    $rss = simplexml_load_string($feed->getContent());
+    $rss = marketingDiscoverySimplexml($feed);
     expect($rss->channel->item)->toHaveCount(10)
         ->and((string) $rss->channel->item[0]->title)->toBe('Just build it twice');
 });
@@ -183,7 +189,7 @@ test('a marketing url without a host fails loudly instead of binding routes to n
         ->toThrow(RuntimeException::class, 'marketing.url must be an absolute URL with a host');
 })->with(['/relative/path', 'birdcar.dev', 'http:///missing-host']);
 
-function marketingDiscoveryImportArchive($test): void
+function marketingDiscoveryImportArchive(TestCase $test): void
 {
     config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -192,4 +198,65 @@ function marketingDiscoveryImportArchive($test): void
     $operator->assignRole(PublishingRole::Author->value);
 
     app(ImportWritingArchive::class)->write('resources/writing', '72f7d8ad8521573cb224022c902447f9ca4c4351', $operator);
+}
+
+/**
+ * @param  TestResponse<Response>  $response
+ */
+function marketingDiscoveryXpath(TestResponse $response): DOMXPath
+{
+    $content = $response->getContent();
+
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    $document = new DOMDocument;
+    @$document->loadHTML($content);
+
+    return new DOMXPath($document);
+}
+
+/**
+ * @return list<DOMElement>
+ */
+function marketingDiscoveryElements(DOMXPath $xpath, string $expression): array
+{
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false) {
+        throw new RuntimeException("XPath query failed: {$expression}");
+    }
+
+    $elements = [];
+
+    foreach ($nodes as $node) {
+        if (! $node instanceof DOMElement) {
+            throw new RuntimeException("XPath query returned a non-element node: {$expression}");
+        }
+
+        $elements[] = $node;
+    }
+
+    return $elements;
+}
+
+/**
+ * @param  TestResponse<Response>  $response
+ */
+function marketingDiscoverySimplexml(TestResponse $response): SimpleXMLElement
+{
+    $content = $response->getContent();
+
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    $xml = simplexml_load_string($content);
+
+    if ($xml === false) {
+        throw new RuntimeException('Unable to parse response content as XML.');
+    }
+
+    return $xml;
 }

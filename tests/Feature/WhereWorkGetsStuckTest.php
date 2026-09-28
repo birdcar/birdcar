@@ -1,6 +1,7 @@
 <?php
 
 use Carbon\CarbonImmutable;
+use Tests\TestCase;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-24');
@@ -21,18 +22,60 @@ $patterns = [
     'the-workaround-became-the-process' => 'The workaround became the process',
 ];
 
-function stuckPageXPath($test): DOMXPath
+function stuckPageDocument(string|false $html): DOMDocument
 {
-    $document = new DOMDocument;
-    @$document->loadHTML($test->get('/tools/where-work-gets-stuck')->assertOk()->getContent());
+    if ($html === false) {
+        throw new RuntimeException('Expected string response content.');
+    }
 
-    return new DOMXPath($document);
+    $document = new DOMDocument;
+    @$document->loadHTML($html);
+
+    return $document;
+}
+
+function stuckPageXPath(TestCase $test): DOMXPath
+{
+    return new DOMXPath(stuckPageDocument($test->get('/tools/where-work-gets-stuck')->assertOk()->getContent()));
+}
+
+/**
+ * @return list<DOMElement>
+ */
+function stuckPageElements(DOMXPath $xpath, string $expression, ?DOMNode $context = null): array
+{
+    $nodes = $xpath->query($expression, $context);
+
+    if ($nodes === false) {
+        throw new RuntimeException("XPath query failed: {$expression}");
+    }
+
+    $elements = [];
+
+    foreach ($nodes as $node) {
+        if ($node instanceof DOMElement) {
+            $elements[] = $node;
+        }
+    }
+
+    return $elements;
+}
+
+function stuckPageElement(DOMXPath $xpath, string $expression, ?DOMNode $context = null): DOMElement
+{
+    $elements = stuckPageElements($xpath, $expression, $context);
+
+    if ($elements === []) {
+        throw new RuntimeException("XPath query matched no element: {$expression}");
+    }
+
+    return $elements[0];
 }
 
 test('the map links each of the eight patterns to its permanent anchor in order', function () use ($patterns) {
-    $links = stuckPageXPath($this)->query('//nav[@id="map"]//ol/li/a');
+    $links = stuckPageElements(stuckPageXPath($this), '//nav[@id="map"]//ol/li/a');
 
-    expect(collect(iterator_to_array($links))->map(fn (DOMElement $link): array => [
+    expect(collect($links)->map(fn (DOMElement $link): array => [
         ltrim($link->getAttribute('href'), '#'),
         trim($link->getElementsByTagName('span')->item(1)->textContent),
     ])->all())->toBe(collect($patterns)->map(fn (string $name, string $slug): array => [$slug, $name])->values()->all());
@@ -42,21 +85,24 @@ test('every pattern entry is present at its anchor with its definition, signals,
     $xpath = stuckPageXPath($this);
 
     foreach ($patterns as $slug => $name) {
-        $entry = $xpath->query('//article[@id="'.$slug.'"]');
+        $entries = stuckPageElements($xpath, '//article[@id="'.$slug.'"]');
 
-        expect($entry)->toHaveCount(1);
-        expect(trim($xpath->query('.//h2', $entry->item(0))->item(0)->textContent))->toBe($name);
-        expect($xpath->query('.//p[@class="stuck-definition"]', $entry->item(0)))->toHaveCount(1);
-        expect($xpath->query('.//ul/li', $entry->item(0))->length)->toBeGreaterThanOrEqual(3);
-        expect($xpath->query('.//a[@href="#map"]', $entry->item(0)))->toHaveCount(1);
+        expect($entries)->toHaveCount(1);
+
+        $entry = $entries[0];
+
+        expect(trim(stuckPageElement($xpath, './/h2', $entry)->textContent))->toBe($name);
+        expect(stuckPageElements($xpath, './/p[@class="stuck-definition"]', $entry))->toHaveCount(1);
+        expect(count(stuckPageElements($xpath, './/ul/li', $entry)))->toBeGreaterThanOrEqual(3);
+        expect(stuckPageElements($xpath, './/a[@href="#map"]', $entry))->toHaveCount(1);
     }
 });
 
 test('structured data describes the patterns as a defined term set', function () use ($patterns) {
     config(['marketing.url' => 'https://birdcar.dev']);
 
-    $scripts = stuckPageXPath($this)->query('//script[@type="application/ld+json"]');
-    $entities = collect(iterator_to_array($scripts))->map(fn ($script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR));
+    $scripts = stuckPageElements(stuckPageXPath($this), '//script[@type="application/ld+json"]');
+    $entities = collect($scripts)->map(fn (DOMElement $script): array => json_decode($script->textContent, true, flags: JSON_THROW_ON_ERROR));
     $page = 'https://birdcar.dev/tools/where-work-gets-stuck';
 
     expect($entities->firstWhere('@type', 'WebPage')['mainEntity'])->toBe(['@id' => $page.'#patterns']);
@@ -76,16 +122,16 @@ test('the page offers the walkthrough without claims the site has not approved',
 });
 
 test('the homepage, walkthrough, and footer link to the patterns', function (string $path) {
-    $xpath = new DOMXPath(tap(new DOMDocument, fn (DOMDocument $document) => @$document->loadHTML($this->get($path)->assertOk()->getContent())));
+    $xpath = new DOMXPath(stuckPageDocument($this->get($path)->assertOk()->getContent()));
     $href = route('public.where-work-gets-stuck');
 
-    expect($xpath->query('//main//a[@href="'.$href.'"]')->length)->toBeGreaterThanOrEqual(1);
-    expect($xpath->query('//footer//a[@href="'.$href.'"]'))->toHaveCount(1);
+    expect(count(stuckPageElements($xpath, '//main//a[@href="'.$href.'"]')))->toBeGreaterThanOrEqual(1);
+    expect(stuckPageElements($xpath, '//footer//a[@href="'.$href.'"]'))->toHaveCount(1);
 })->with(['/', '/walkthrough']);
 
 test('the footer marks the patterns page as current', function () {
-    $current = stuckPageXPath($this)->query('//footer/nav/a[@aria-current="page"]');
+    $current = stuckPageElements(stuckPageXPath($this), '//footer/nav/a[@aria-current="page"]');
 
     expect($current)->toHaveCount(1);
-    expect(trim($current->item(0)->textContent))->toBe('Where work gets stuck');
+    expect(trim($current[0]->textContent))->toBe('Where work gets stuck');
 });

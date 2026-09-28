@@ -68,6 +68,31 @@ function activeArticleFor(User $user, string $idea, EditorialStage $stage = Edit
     return $article->fresh();
 }
 
+/**
+ * @return DOMNodeList<DOMNameSpaceNode|DOMNode>
+ */
+function workspaceXpathNodes(DOMXPath $xpath, string $expression): DOMNodeList
+{
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false) {
+        throw new RuntimeException("Invalid XPath expression: {$expression}");
+    }
+
+    return $nodes;
+}
+
+function workspaceXpathElement(DOMXPath $xpath, string $expression): DOMElement
+{
+    $node = workspaceXpathNodes($xpath, $expression)->item(0);
+
+    if (! $node instanceof DOMElement) {
+        throw new RuntimeException("No element found for XPath expression: {$expression}");
+    }
+
+    return $node;
+}
+
 function publishedArticleFor(User $user, string $idea, string $title = 'Live title', ?EditorialStage $activeStage = null): Article
 {
     $article = Article::factory()->create(['author_id' => $user->id, 'idea' => $idea, 'slug' => Str::slug($idea)]);
@@ -133,14 +158,14 @@ test('admin navigation separates modules from publishing sections', function ():
         ->assertSee("window.localStorage.getItem('flux.appearance') || 'system'", false);
 
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
+    @$document->loadHTML($response->content());
     $xpath = new DOMXPath($document);
-    expect($xpath->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing")]')->length)->toBe(1);
-    expect($xpath->query('//nav[@aria-label="Admin modules"]')->length)->toBe(1);
-    expect($xpath->query('//main')->length)->toBe(1);
-    expect($xpath->query('//a[@data-flux-sidebar-brand and @aria-label="Admin home"]')->item(0)->getAttribute('href'))->toBe(route('admin.index'));
-    expect($xpath->query('//a[@data-flux-sidebar-brand]//img[@src="/favicon.svg"]')->length)->toBe(1);
-    expect(trim($xpath->query('//a[@data-flux-sidebar-brand]')->item(0)->textContent))->toBe('Admin');
+    expect(workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing")]')->length)->toBe(1);
+    expect(workspaceXpathNodes($xpath, '//nav[@aria-label="Admin modules"]')->length)->toBe(1);
+    expect(workspaceXpathNodes($xpath, '//main')->length)->toBe(1);
+    expect(workspaceXpathElement($xpath, '//a[@data-flux-sidebar-brand and @aria-label="Admin home"]')->getAttribute('href'))->toBe(route('admin.index'));
+    expect(workspaceXpathNodes($xpath, '//a[@data-flux-sidebar-brand]//img[@src="/favicon.svg"]')->length)->toBe(1);
+    expect(trim(workspaceXpathElement($xpath, '//a[@data-flux-sidebar-brand]')->textContent))->toBe('Admin');
 });
 
 test('published navigation identifies the active section', function (): void {
@@ -148,9 +173,9 @@ test('published navigation identifies the active section', function (): void {
     $response->assertOk();
 
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
+    @$document->loadHTML($response->content());
     $xpath = new DOMXPath($document);
-    expect($xpath->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing/published")]')->length)->toBe(1);
+    expect(workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing/published")]')->length)->toBe(1);
 });
 
 test('settings navigation appears only for users who can configure agents', function (): void {
@@ -158,10 +183,11 @@ test('settings navigation appears only for users who can configure agents', func
     $response->assertOk();
 
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $settingsLinks = (new DOMXPath($document))->query('//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]');
+    @$document->loadHTML($response->content());
+    $xpath = new DOMXPath($document);
+    $settingsLinks = workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]');
     expect($settingsLinks->length)->toBe(1)
-        ->and($settingsLinks->item(0)->hasAttribute('aria-current'))->toBeFalse();
+        ->and(workspaceXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]')->hasAttribute('aria-current'))->toBeFalse();
 
     $this->actingAs(publishingWriteOnlyUser())
         ->get('http://admin.birdcar.test/publishing')

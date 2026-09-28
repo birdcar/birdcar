@@ -55,9 +55,9 @@ test('revision and release package snapshots reject direct mutation', function (
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'immutable-snapshots');
 
-    expect(fn () => tap($revision->fresh(), fn (ArticleRevision $revision) => $revision->forceFill(['document' => releaseDocument('Changed')])->save()))
+    expect(fn () => tap($revision->refresh(), fn (ArticleRevision $revision) => $revision->forceFill(['document' => releaseDocument('Changed')])->save()))
         ->toThrow(RuntimeException::class, 'append-only');
-    expect(fn () => tap($release->fresh(), fn (ArticleRelease $release) => $release->forceFill(['payload' => ['changed' => true]])->save()))
+    expect(fn () => tap($release->refresh(), fn (ArticleRelease $release) => $release->forceFill(['payload' => ['changed' => true]])->save()))
         ->toThrow(RuntimeException::class, 'immutable');
 });
 
@@ -789,6 +789,7 @@ function releaseMetadata(string $title): array
     ];
 }
 
+/** @return array<string, mixed> */
 function releaseDocument(string $text): array
 {
     return [

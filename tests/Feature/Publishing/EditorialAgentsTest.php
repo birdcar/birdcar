@@ -20,6 +20,7 @@ use Laravel\Ai\Approvals\Approval;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Laravel\Ai\Tools\Request;
 
+/** @param  array<string, mixed>  $input */
 function editorialActivity(EditorialActivityKind $kind, array $input = []): EditorialActivity
 {
     return new EditorialActivity([
@@ -49,6 +50,10 @@ test('it prompts the native SDK with frozen context and returns structured outpu
     $agent = new Planner(editorialActivity(EditorialActivityKind::Plan));
 
     $response = $agent->prompt($agent->promptText());
+
+    if (! $response instanceof StructuredAgentResponse) {
+        throw new RuntimeException('Agent response did not include structured output.');
+    }
 
     expect($response)->toBeInstanceOf(StructuredAgentResponse::class)
         ->and($response['argument'])->toBe('The editorial argument.')

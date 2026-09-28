@@ -61,7 +61,8 @@ test('safe article packages include a current readiness hash and stale findings 
         'supporting_source_ids' => [],
     ]);
 
-    expect($release->payload['readiness_check']['input_hash'])->toBeString()->not->toBe('');
+    expect($release->payload['readiness_check']['input_hash'])->toBeString()
+        ->and($release->payload['readiness_check']['input_hash'])->not->toBe('');
 
     expect(fn () => app(ManageArticleRelease::class)->approve($actor, $release, $release->release_hash))
         ->toThrow(RuntimeException::class, 'readiness check is stale');
@@ -271,7 +272,7 @@ test('malformed public metadata dates are structured blocking readiness findings
 
     expect($check['blocking'])->toBeTrue()
         ->and(array_column($check['findings'], 'code'))->toContain('metadata.date.invalid')
-        ->not->toContain('metadata.date.required');
+        ->and(array_column($check['findings'], 'code'))->not->toContain('metadata.date.required');
 });
 
 test('first publication packages and delivery use the validated metadata public date', function (): void {
@@ -463,7 +464,10 @@ function readinessInvalidAssetDocument(): array
     ];
 }
 
-/** @param array<string, mixed> $metadata */
+/**
+ * @param  array<string, mixed>  $document
+ * @param  array<string, mixed>  $metadata
+ */
 function readinessRevisionBypassingSave(User $actor, string $slug, array $document, array $metadata): ArticleRevision
 {
     $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => $slug, 'idea' => $metadata['title'] ?? $slug]);

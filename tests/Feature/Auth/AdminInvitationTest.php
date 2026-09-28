@@ -16,10 +16,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use PHPUnit\Framework\Assert;
 use Spatie\Permission\Models\Role as RoleModel;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Mailer\Transport\NullTransport;
 use Symfony\Component\Mailer\Transport\SendmailTransport;
+use Symfony\Component\Mime\Email;
 use Tests\Fixtures\Mail\RecordingTransport;
 
 beforeEach(function (): void {
@@ -352,6 +354,11 @@ test('invitations are delivered on the admin surface mailer from the admin sende
     expect($exitCode)->toBe(0)
         ->and($transport->messages)->toHaveCount(1);
     $email = $transport->messages[0]->getOriginalMessage();
+
+    if (! $email instanceof Email) {
+        Assert::fail('Expected a Symfony Email message.');
+    }
+
     expect($email->getFrom()[0]->getAddress())->toBe('noreply@admin.birdcar.dev')
         ->and($email->getTo()[0]->getAddress())->toBe('delivered@example.com')
         ->and($email->getSubject())->toBe('Set up your Birdcar Admin access')
@@ -412,6 +419,9 @@ test('delivery failure happens after safe provisioning and a later retry sends o
             throw new RuntimeException('deterministic notification transport failure with provider detail');
         }
 
+        /**
+         * @param  array<int, string>|null  $channels
+         */
         public function sendNow($notifiables, $notification, ?array $channels = null): void
         {
             throw new RuntimeException('deterministic notification transport failure with provider detail');

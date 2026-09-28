@@ -12,6 +12,7 @@ use App\Models\EditorialActivity;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\Bus;
@@ -27,6 +28,7 @@ beforeEach(function (): void {
     Http::preventStrayRequests();
 });
 
+/** @return array{0: User, 1: PublishingAttempt} */
 function settingsAttempt(): array
 {
     $author = User::factory()->create();
@@ -46,6 +48,31 @@ function settingsPageOwner(): User
     return $owner;
 }
 
+/**
+ * @return DOMNodeList<DOMNameSpaceNode|DOMNode>
+ */
+function settingsXpathNodes(DOMXPath $xpath, string $expression): DOMNodeList
+{
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false) {
+        throw new RuntimeException("Invalid XPath expression: {$expression}");
+    }
+
+    return $nodes;
+}
+
+function settingsXpathElement(DOMXPath $xpath, string $expression): DOMElement
+{
+    $node = settingsXpathNodes($xpath, $expression)->item(0);
+
+    if (! $node instanceof DOMElement) {
+        throw new RuntimeException("No element found for XPath expression: {$expression}");
+    }
+
+    return $node;
+}
+
 /** @return array<string, mixed> */
 function storedAgentSettings(): array
 {
@@ -56,6 +83,7 @@ function storedAgentSettings(): array
         ->all();
 }
 
+/** @return array{id: string, model: string, choices: array<int, array{finish_reason: string, message: array{role: string, content: string|false}}>} */
 function interviewResponse(string $model = 'google/gemini-3.8-flash'): array
 {
     return [
@@ -130,7 +158,9 @@ test('recovery releases an override pause only after the override is reset', fun
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Paused);
     Bus::assertNotDispatched(RunEditorialActivity::class);
 
-    app(PublishingAgentSettings::class)->refresh()->resetModel(EditorialActivityKind::Interview)->save();
+    $settings = app(PublishingAgentSettings::class);
+    $settings->refresh();
+    $settings->resetModel(EditorialActivityKind::Interview)->save();
     app()->forgetScopedInstances();
     $this->artisan('publishing:recover-activities')->expectsOutputToContain('Released 1 configuration pauses')->assertSuccessful();
 
@@ -167,7 +197,9 @@ test('a malformed stored override falls back to the recommendation instead of cr
         ->and($settings->modelOverrideFor(EditorialActivityKind::Draft))->toBeNull();
 
     $settings->resetModel(EditorialActivityKind::Draft)->save();
-    expect(app(PublishingAgentSettings::class)->refresh()->model_overrides)->toBe(['plan' => 'deepseek/deepseek-v4.1-flash']);
+    $reloaded = app(PublishingAgentSettings::class);
+    $reloaded->refresh();
+    expect($reloaded->model_overrides)->toBe(['plan' => 'deepseek/deepseek-v4.1-flash']);
 });
 
 test('each job resolves settings fresh so a warm worker sees a save made in another scope', function (): void {
@@ -266,10 +298,11 @@ test('agent configurers reach the settings page with its navigation current', fu
         ->assertSee('Models by task');
 
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $current = (new DOMXPath($document))->query('//nav[@aria-label="Publishing navigation"]//a[@aria-current="page"]');
+    @$document->loadHTML($response->content());
+    $xpath = new DOMXPath($document);
+    $current = settingsXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page"]');
     expect($current->length)->toBe(1)
-        ->and($current->item(0)->getAttribute('href'))->toBe('http://admin.birdcar.test/publishing/settings');
+        ->and(settingsXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page"]')->getAttribute('href'))->toBe('http://admin.birdcar.test/publishing/settings');
 });
 
 test('saving an override persists it and reset returns the task to its recommendation', function (): void {
@@ -459,7 +492,7 @@ test('the page and its livewire payloads never expose the provider key or url', 
     $page = Livewire::actingAs($owner)->test('admin.publishing.settings')
         ->set('models.draft', 'openrouter/auto')
         ->call('save');
-    $payloads = json_encode([$page->snapshot, $page->effects]);
+    $payloads = json_encode([$page->__get('snapshot'), $page->__get('effects')]);
 
     expect($payloads)->not->toContain('sk-or')
         ->and($payloads)->not->toContain('7f3a9c')

@@ -296,9 +296,12 @@ test('home escapes user supplied titles', function (): void {
 test('a publishing query failure is unavailable rather than an empty queue', function (): void {
     $user = adminHomeUser();
     Exceptions::fake();
-    $failQuery = true;
-    DB::connection()->beforeExecuting(function (string $query, array $bindings) use (&$failQuery): void {
-        if ($failQuery && str_contains($query, 'from "articles"')) {
+    $queryFailure = new class
+    {
+        public bool $active = true;
+    };
+    DB::connection()->beforeExecuting(function (string $query, array $bindings) use ($queryFailure): void {
+        if ($queryFailure->active && str_contains($query, 'from "articles"')) {
             throw new QueryException('testing', $query, $bindings, new RuntimeException('Simulated read failure'));
         }
     });
@@ -306,7 +309,7 @@ test('a publishing query failure is unavailable rather than an empty queue', fun
     try {
         $response = $this->actingAs($user)->get('http://admin.birdcar.test/');
     } finally {
-        $failQuery = false;
+        $queryFailure->active = false;
     }
 
     $response->assertSee('Publishing work couldn’t be loaded')->assertDontSee('Nothing needs your attention')->assertDontSee('Simulated read failure');

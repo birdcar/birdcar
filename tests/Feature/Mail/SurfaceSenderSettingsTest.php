@@ -6,8 +6,10 @@ use App\Settings\MarketingMailSettings;
 use App\Settings\SurfaceMailSettings;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\MailManager;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Assert;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mime\Email;
 use Tests\Fixtures\Mail\ExampleAdminMail;
@@ -24,12 +26,26 @@ beforeEach(function (): void {
 });
 
 /**
- * @return list<Email>
+ * @return array<int, Email>
  */
 function surfaceMessagesOn(string $mailer): array
 {
-    return app(MailManager::class)->mailer($mailer)->getSymfonyTransport()->messages()
-        ->map(fn (SentMessage $sent): Email => $sent->getOriginalMessage())
+    $transport = app(MailManager::class)->mailer($mailer)->getSymfonyTransport();
+
+    if (! $transport instanceof ArrayTransport) {
+        Assert::fail(sprintf('Expected mailer [%s] to use the array transport, got [%s].', $mailer, $transport::class));
+    }
+
+    return $transport->messages()
+        ->map(function (SentMessage $sent): Email {
+            $original = $sent->getOriginalMessage();
+
+            if (! $original instanceof Email) {
+                Assert::fail('Expected a Symfony Email message.');
+            }
+
+            return $original;
+        })
         ->values()
         ->all();
 }
@@ -60,8 +76,17 @@ test('clean installs seed a sender for each surface without a reply-to', functio
         ->and($marketing->replyToAddress())->toBeNull();
 });
 
+function surfaceSenderAddressAllowed(string $settingsClass, string $address): bool
+{
+    if (! is_a($settingsClass, SurfaceMailSettings::class, true)) {
+        Assert::fail("Expected [{$settingsClass}] to extend ".SurfaceMailSettings::class.'.');
+    }
+
+    return $settingsClass::allowsSenderAddress($address);
+}
+
 test('sender addresses are accepted only on the exact domains of their surface', function (string $settingsClass, string $address, bool $accepted): void {
-    expect($settingsClass::allowsSenderAddress($address))->toBe($accepted);
+    expect(surfaceSenderAddressAllowed($settingsClass, $address))->toBe($accepted);
 })->with([
     'admin on the admin domain' => [AdminMailSettings::class, 'noreply@admin.birdcar.dev', true],
     'admin on the apex domain' => [AdminMailSettings::class, 'ops@birdcar.dev', true],

@@ -32,7 +32,10 @@ beforeEach(function (): void {
     Http::preventStrayRequests();
 });
 
-/** @return array<string, mixed> */
+/**
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
 function agentInterviewCompletion(array $extra = []): array
 {
     return array_merge([

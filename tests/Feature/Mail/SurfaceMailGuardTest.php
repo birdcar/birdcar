@@ -1,12 +1,15 @@
 <?php
 
+use App\Mail\SurfaceMailable;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Mail\MailManager;
 use Illuminate\Mail\Message;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use PHPUnit\Framework\Assert;
 use Tests\Fixtures\Mail\ExampleAdminMail;
 use Tests\Fixtures\Mail\ExampleMarketingMail;
 use Tests\Fixtures\Mail\ExamplePlainMail;
@@ -29,7 +32,15 @@ beforeEach(function (): void {
  */
 function guardedTransportCounts(): array
 {
-    $count = fn (string $mailer): int => app(MailManager::class)->mailer($mailer)->getSymfonyTransport()->messages()->count();
+    $count = function (string $mailer): int {
+        $transport = app(MailManager::class)->mailer($mailer)->getSymfonyTransport();
+
+        if (! $transport instanceof ArrayTransport) {
+            Assert::fail(sprintf('Expected mailer [%s] to use the array transport, got [%s].', $mailer, $transport::class));
+        }
+
+        return $transport->messages()->count();
+    };
 
     return [
         'array_default' => $count('array_default'),
@@ -68,8 +79,17 @@ test('mail that is not a surface Mailable on its own mailer is blocked before an
     ],
 ]);
 
+function instantiateSurfaceMailable(string $mailableClass): SurfaceMailable
+{
+    if (! is_a($mailableClass, SurfaceMailable::class, true)) {
+        Assert::fail("Expected [{$mailableClass}] to extend ".SurfaceMailable::class.'.');
+    }
+
+    return new $mailableClass;
+}
+
 test('surface mail returned from a notification is delivered on its own surface mailer only', function (string $mailableClass, array $expectedCounts): void {
-    Notification::route('mail', 'owner@example.com')->notify(new ExampleSurfaceNotification(new $mailableClass));
+    Notification::route('mail', 'owner@example.com')->notify(new ExampleSurfaceNotification(instantiateSurfaceMailable($mailableClass)));
 
     expect(guardedTransportCounts())->toBe($expectedCounts);
 })->with([

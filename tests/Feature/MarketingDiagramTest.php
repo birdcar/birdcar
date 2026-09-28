@@ -8,12 +8,13 @@ use App\Services\Publishing\ArticleDocument;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
 
 test('curated diagrams keep their complete explanation between adjacent markdown', function (string $name, array $meaning) {
     $html = app(ReadWriting::class)->render("Before **the figure**.\n\n@figure kind=diagram name={$name} caption=\"A reading figure.\"\n@endfigure\n\nAfter *the figure*.");
 
     expect($html)->toContain('<strong>the figure</strong>', '<em>the figure</em>', 'A reading figure.', ...$meaning)
-        ->not->toContain('@figure', 'BIRDCARBLOCK', 'data-walkthrough-diagram');
+        ->and($html)->not->toContain('@figure', 'BIRDCARBLOCK', 'data-walkthrough-diagram');
 })->with([
     'walkthrough' => ['walkthrough', ['Show me the work', 'Keep the report', 'Choose what happens next', 'three business days', 'Where I’d start', 'separate implementation', 'No purchase obligation']],
     'reporting' => ['reporting', ['Finding the numbers by hand', 'Performance data', 'Client management', 'Part of the agency’s service', 'not a product screenshot or measured results']],
@@ -43,7 +44,7 @@ MARKDOWN);
 
     expect($xpath->query('//figcaption'))->toHaveCount(1);
     expect($xpath->query('//figcaption/script'))->toHaveCount(0);
-    expect($xpath->query('//figcaption')->item(0)->textContent)->toContain('A "quoted" <script>alert(\'x\')</script> & {{ 7 * 7 }} caption.');
+    expect(marketingDiagramFirstElement($xpath->query('//figcaption'))->textContent)->toContain('A "quoted" <script>alert(\'x\')</script> & {{ 7 * 7 }} caption.');
 });
 
 test('unknown and malformed diagrams remain inert text', function (string $directive) {
@@ -87,7 +88,7 @@ After.
 MARKDOWN);
 
     expect($html)->toContain('Before.', 'After.', 'About this post', 'href="/authors/birdcar"', 'Key takeaway', '<strong>the meaning</strong>', '<td>20</td>', '<td>15</td>', '<td>10</td>', '<td>7</td>', 'The process.', 'The reporting.')
-        ->not->toContain('<script', 'href="javascript:', '@figure', '@aside', '@callout', 'BIRDCARBLOCK');
+        ->and($html)->not->toContain('<script', 'href="javascript:', '@figure', '@aside', '@callout', 'BIRDCARBLOCK');
 });
 
 test('cms-mode imported archive preserves figures charts and accessible data tables', function () {
@@ -152,9 +153,10 @@ test('truthful charts render zero and one row without false divisions', function
         'chart' => ['x' => 'month', 'series' => [['key' => 'prompts', 'label' => 'Prompts']], 'data' => [['month' => 'Now', 'prompts' => 0]]],
     ])->render();
 
-    expect($zeroChart)->toContain('width: 0%')
-        ->and($lineChart)->toContain('320')
-        ->not->toContain('NAN', 'INF', 'nan', 'inf');
+    expect($zeroChart)->toContain('width: 0%');
+
+    expect($lineChart)->toContain('320')
+        ->and($lineChart)->not->toContain('NAN', 'INF', 'nan', 'inf');
 });
 
 test('server validated source svg diagrams keep safe static meaning only', function () {
@@ -175,7 +177,7 @@ test('server validated source svg diagrams keep safe static meaning only', funct
     $html = app(ArticleDocument::class)->renderHtml($document);
 
     expect($html)->toContain('<svg', '<title>Safe</title>', 'Safe diagram.')
-        ->not->toContain('onload', '<script', 'foreignObject', 'href=');
+        ->and($html)->not->toContain('onload', '<script', 'foreignObject', 'href=');
 
     $document['content'][0]['attrs']['source'] = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
     expect(fn () => app(ArticleDocument::class)->validate($document))->toThrow(InvalidArgumentException::class);
@@ -185,7 +187,25 @@ test('the specimen is not reachable on application or arbitrary hosts', function
     $this->get('https://'.$host.'/__design/figures')->assertNotFound();
 })->with(['admin.birdcar.dev', 'customer.birdcar.dev', 'unrelated.example']);
 
-function marketingDiagramImportArchive($test): void
+/**
+ * @param  DOMNodeList<DOMNode|DOMNameSpaceNode>|false  $nodes
+ */
+function marketingDiagramFirstElement(DOMNodeList|false $nodes): DOMElement
+{
+    if ($nodes === false) {
+        throw new RuntimeException('Expected a queryable node list.');
+    }
+
+    $node = $nodes->item(0);
+
+    if (! $node instanceof DOMElement) {
+        throw new RuntimeException('Expected the first node to be an element.');
+    }
+
+    return $node;
+}
+
+function marketingDiagramImportArchive(TestCase $test): void
 {
     config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();

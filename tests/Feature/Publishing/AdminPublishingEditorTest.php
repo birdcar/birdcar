@@ -44,6 +44,7 @@ function makePublishingViewOnly(User $user): User
     return $user->refresh();
 }
 
+/** @return array{version: int, type: string, content: array<int, array{type: string, attrs: array{id: string}, content: array<int, array{type: string, text: string}>}>} */
 function simpleDocument(string $text = 'Hello'): array
 {
     return ['version' => 1, 'type' => 'doc', 'content' => [
@@ -51,6 +52,7 @@ function simpleDocument(string $text = 'Hello'): array
     ]];
 }
 
+/** @return array{title: string, description: string, date: string, tags: array<int, string>} */
 function adminReleaseMetadata(string $title): array
 {
     return [
@@ -92,11 +94,29 @@ function adminCompletedActivity(User $actor, PublishingAttempt $attempt, Editori
     ]);
 }
 
+/** @param array{outline: array<int, string>, visualPlan: array<int, string>} $plan */
 function adminAttemptWithReviewedPlan(User $actor, PublishingAttempt $attempt, array $plan = ['outline' => ['intro', 'body'], 'visualPlan' => ['hero image']]): PublishingAttempt
 {
     adminCompletedActivity($actor, $attempt, EditorialActivityKind::ResearchChallenge);
 
     return app(AdvancePublishingAttempt::class)->rethink($actor, $attempt, plan: $plan);
+}
+
+function editorXpathElement(DOMXPath $xpath, string $expression): DOMElement
+{
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false) {
+        throw new RuntimeException("Invalid XPath expression: {$expression}");
+    }
+
+    $node = $nodes->item(0);
+
+    if (! $node instanceof DOMElement) {
+        throw new RuntimeException("No element found for XPath expression: {$expression}");
+    }
+
+    return $node;
 }
 
 function adminAttemptWithCompletedReviews(User $actor, PublishingAttempt $attempt): void
@@ -124,8 +144,8 @@ test('article workspace authorizes and renders preview iframe after a revision e
         ->assertSee('window.livewireScriptConfig', false)
         ->assertSee('sandbox="allow-same-origin"', false);
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $editor = (new DOMXPath($document))->query('//*[@data-admin-editor]')->item(0);
+    @$document->loadHTML($response->content());
+    $editor = editorXpathElement(new DOMXPath($document), '//*[@data-admin-editor]');
 
     expect(json_decode($editor->getAttribute('data-document'), true))->toBe($revision->document)
         ->and(json_decode($editor->getAttribute('data-metadata'), true))->toBe($revision->metadata);

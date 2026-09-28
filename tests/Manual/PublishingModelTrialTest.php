@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Responses\Data\FinishReason;
 use Laravel\Ai\Responses\StructuredAgentResponse;
+use Livewire\Component;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
@@ -317,7 +318,13 @@ function liveTrialStandalone(EditorialActivity $activity, string $scenario, ?str
             return $trial;
         }
 
-        $evidence = collect($activity->input['evidence_sources'] ?? [])
+        $evidenceSources = $activity->input['evidence_sources'] ?? [];
+
+        if (! is_array($evidenceSources)) {
+            throw new RuntimeException('Expected evidence_sources to be an array.');
+        }
+
+        $evidence = collect($evidenceSources)
             ->filter(fn (mixed $source): bool => is_array($source) && is_int($source['id'] ?? null))
             ->mapWithKeys(fn (array $source): array => [$source['id'] => is_string($source['extracted_text'] ?? null) ? $source['extracted_text'] : null])
             ->all();
@@ -355,7 +362,18 @@ function liveTrialStandalone(EditorialActivity $activity, string $scenario, ?str
 function liveTrialRecordedActivity(string $evidencePath, string $agent, EditorialActivityKind $kind): EditorialActivity
 {
     $evidence = json_decode((string) file_get_contents($evidencePath), true, flags: JSON_THROW_ON_ERROR);
-    $recorded = collect($evidence['live_trials'] ?? [])->last(fn (array $trial): bool => ($trial['scenario'] ?? null) === 'initial'
+
+    if (! is_array($evidence)) {
+        throw new RuntimeException("Refusing the replay: {$evidencePath} did not decode to an array.");
+    }
+
+    $liveTrials = $evidence['live_trials'] ?? [];
+
+    if (! is_array($liveTrials)) {
+        throw new RuntimeException("Refusing the replay: {$evidencePath} live_trials was not an array.");
+    }
+
+    $recorded = collect($liveTrials)->last(fn (array $trial): bool => ($trial['scenario'] ?? null) === 'initial'
         && ($trial['agent'] ?? null) === $agent
         && ($trial['status'] ?? null) === 'completed'
         && is_array($trial['input']['activity_input'] ?? null));
@@ -383,12 +401,17 @@ function liveTrialUnassessedFindings(EditorialActivity $recheck, array $payload)
 {
     $assessed = collect([...($payload['resolved'] ?? []), ...($payload['unresolved'] ?? [])]);
 
-    return collect($recheck->input['review_findings'] ?? [])
+    $reviewFindings = $recheck->input['review_findings'] ?? [];
+
+    if (! is_array($reviewFindings)) {
+        throw new RuntimeException('Expected review_findings to be an array.');
+    }
+
+    return array_values(collect($reviewFindings)
         ->reject(fn (array $finding): bool => $assessed->contains(fn (array $item): bool => ($item['finding_id'] ?? null) === $finding['id']
             || (($finding['block_id'] ?? null) !== null && ($item['block_id'] ?? null) === $finding['block_id'])))
-        ->pluck('id')
-        ->values()
-        ->all();
+        ->map(fn (array $finding): int => (int) $finding['id'])
+        ->all());
 }
 
 /**
@@ -417,6 +440,7 @@ function liveTrialPendingActivity(PublishingAttempt $attempt, EditorialActivityK
         ->first();
 }
 
+/** @return Testable<Component> */
 function liveTrialWorkspace(User $owner, Article $article): Testable
 {
     return Livewire::actingAs($owner)->test('admin.publishing.article-workspace', ['article' => $article->fresh()]);
@@ -471,7 +495,7 @@ function liveTrialNewProviderExchanges(): array
     $new = $responses->slice($consumed)->values();
     $consumed = $responses->count();
 
-    return $new->map(function (mixed $response): array {
+    return array_values($new->map(function (mixed $response): array {
         $json = $response instanceof Response ? $response->json() : null;
         $content = data_get($json, 'choices.0.message.content');
         $decoded = is_string($content) ? json_decode($content, true) : null;
@@ -486,7 +510,7 @@ function liveTrialNewProviderExchanges(): array
             'annotations' => data_get($json, 'choices.0.message.annotations'),
             'tool_calls' => data_get($json, 'choices.0.message.tool_calls'),
         ];
-    })->all();
+    })->all());
 }
 
 /** @return array<string, mixed> */

@@ -181,7 +181,7 @@ test('failed user deletion rolls back the parent membership and all authorizatio
 });
 
 /**
- * @param  list<array{query: string, bindings: array<int, mixed>, time: float|null}>  $queries
+ * @param  array<int, array{query: string, bindings: array<array-key, mixed>, time: float|null}>  $queries
  */
 function membershipAssignmentDeleteQueryCount(array $queries): int
 {

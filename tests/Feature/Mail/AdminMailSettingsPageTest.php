@@ -9,8 +9,37 @@ use App\Settings\MarketingMailSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use Livewire\Livewire;
+use PHPUnit\Framework\Assert;
 use Spatie\LaravelSettings\Exceptions\MissingSettings;
 use Spatie\Permission\PermissionRegistrar;
+
+/**
+ * @return DOMNodeList<DOMNameSpaceNode|DOMNode>
+ */
+function mailSettingsNodes(DOMXPath $xpath, string $expression): DOMNodeList
+{
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false) {
+        Assert::fail("The XPath expression [{$expression}] is invalid.");
+    }
+
+    return $nodes;
+}
+
+/**
+ * @param  DOMNodeList<DOMNameSpaceNode|DOMNode>  $nodes
+ */
+function mailSettingsFirstElement(DOMNodeList $nodes): DOMElement
+{
+    $node = $nodes->item(0);
+
+    if (! $node instanceof DOMElement) {
+        Assert::fail('Expected at least one matching element.');
+    }
+
+    return $node;
+}
 
 beforeEach(function (): void {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -68,14 +97,20 @@ test('operators see both surfaces with their saved senders and the mail navigati
         ->assertSee('resend_admin')
         ->assertSee('resend_marketing');
 
+    $content = $response->getContent();
+
+    if ($content === false) {
+        Assert::fail('Response has no content.');
+    }
+
     $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
+    @$document->loadHTML($content);
     $xpath = new DOMXPath($document);
-    $current = $xpath->query('//nav[@aria-label="Admin modules"]//a[@aria-current="page"]');
-    $savedSender = fn (string $surface): string => preg_replace('/\s+/', ' ', trim($xpath->query("//*[@data-mail-surface=\"{$surface}\"]//*[@data-saved-sender]")->item(0)->textContent));
+    $current = mailSettingsNodes($xpath, '//nav[@aria-label="Admin modules"]//a[@aria-current="page"]');
+    $savedSender = fn (string $surface): string => preg_replace('/\s+/', ' ', trim(mailSettingsFirstElement(mailSettingsNodes($xpath, "//*[@data-mail-surface=\"{$surface}\"]//*[@data-saved-sender]"))->textContent));
 
     expect($current->length)->toBe(1)
-        ->and($current->item(0)->getAttribute('href'))->toBe('http://admin.birdcar.test/mail')
+        ->and(mailSettingsFirstElement($current)->getAttribute('href'))->toBe('http://admin.birdcar.test/mail')
         ->and($savedSender('admin'))->toBe('Saved: Birdcar, from noreply@admin.birdcar.dev. Replies go to the From address.')
         ->and($savedSender('marketing'))->toBe('Saved: Birdcar, from hello@birdcar.dev. Replies go to the From address.');
 });
@@ -188,9 +223,9 @@ test('a stored sender the settings class now rejects still loads so it can be co
         ->update(['payload' => json_encode('noreply@retired.example.com')]);
     app()->forgetScopedInstances();
 
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
-        ->assertOk()
-        ->assertSet('senders.admin.from_address', 'noreply@retired.example.com')
+    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings');
+    $page->assertOk();
+    $page->assertSet('senders.admin.from_address', 'noreply@retired.example.com')
         ->set('senders.admin.from_address', 'noreply@admin.birdcar.dev')
         ->call('save', 'admin')
         ->assertHasNoErrors();
@@ -257,7 +292,7 @@ test('the page and its livewire payloads never expose resend keys', function ():
         ->assertDontSee('re_marketing_secret');
 
     $page = Livewire::actingAs($operator)->test('admin.mail.settings')->call('save', 'admin');
-    $payloads = json_encode([$page->snapshot, $page->effects]);
+    $payloads = json_encode([$page->__get('snapshot'), $page->__get('effects')]);
 
     expect($payloads)->not->toContain('re_test_secret')
         ->and($payloads)->not->toContain('re_marketing_secret');

@@ -256,6 +256,9 @@ test('cache-backed permission reads see synchronized mappings after the command 
     expect(Role::findByName('test.viewer', 'web')->hasPermissionTo('test.view'))->toBeTrue();
 });
 
+/**
+ * @return array<int, mixed>
+ */
 function permissionNamesForRole(string $roleName): array
 {
     return Role::findByName($roleName, 'web')
@@ -265,6 +268,9 @@ function permissionNamesForRole(string $roleName): array
         ->all();
 }
 
+/**
+ * @return array<int, mixed>
+ */
 function cachedRoleNamesForPermission(string $permissionName): array
 {
     return Permission::findByName($permissionName, 'web')
@@ -444,6 +450,9 @@ final class IgnoredCatalog implements AuthorizationCatalog
 
 final class PlainPermissionValueCatalog implements AuthorizationCatalog
 {
+    /**
+     * @return list<mixed>
+     */
     public function permissions(): array
     {
         return ['test.view'];
@@ -475,6 +484,9 @@ final class PlainRoleValueCatalog implements AuthorizationCatalog
         return [TestPermission::View];
     }
 
+    /**
+     * @return list<array{role: mixed, permissions: list<BackedEnum>}>
+     */
     public function roles(): array
     {
         return [
@@ -542,6 +554,9 @@ final class PlainMappedPermissionValueCatalog implements AuthorizationCatalog
         return [TestPermission::View];
     }
 
+    /**
+     * @return list<array{role: BackedEnum, permissions: list<mixed>}>
+     */
     public function roles(): array
     {
         return [

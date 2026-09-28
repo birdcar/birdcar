@@ -514,6 +514,7 @@ function approvedEditorialAttempt(User $actor, string $idea, string $slug): Publ
     return $attempt->fresh();
 }
 
+/** @param  array<string, mixed>  $plan */
 function publishingAttemptWithReviewedPlan(AdvancePublishingAttempt $advance, User $actor, PublishingAttempt $attempt, array $plan = ['outline' => ['intro', 'body'], 'visualPlan' => ['hero image']]): PublishingAttempt
 {
     EditorialActivity::create([
@@ -589,6 +590,7 @@ function editorialMetadata(string $title): array
     ];
 }
 
+/** @return array<string, mixed> */
 function editorialDocument(string $text): array
 {
     return [

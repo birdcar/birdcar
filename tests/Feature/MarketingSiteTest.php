@@ -6,8 +6,11 @@ use App\Actions\ReadWriting;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow('2026-09-12');
@@ -134,7 +137,7 @@ test('conversion pages make the readers independent next steps visible without o
     $xpath = new DOMXPath($document);
     $visible = '';
 
-    foreach ($xpath->query('//main//text()[not(ancestor::details or ancestor::*[@hidden or @aria-hidden="true"])]') as $text) {
+    foreach (marketingSiteNodes($xpath, '//main//text()[not(ancestor::details or ancestor::*[@hidden or @aria-hidden="true"])]') as $text) {
         $visible .= $text->textContent.' ';
     }
 
@@ -175,8 +178,16 @@ test('no page still calls the offer a free assessment', function (string $path) 
     }
 
     $response = $this->get($path)->assertOk();
+    $content = $response->getContent();
 
-    expect(mb_strtolower($response->getContent()))->not->toContain('free assessment')->not->toContain('free-assessment');
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    $lowercase = mb_strtolower($content);
+
+    expect($lowercase)->not->toContain('free assessment');
+    expect($lowercase)->not->toContain('free-assessment');
 })->with(['/', '/walkthrough', '/work', '/writing/']);
 
 test('the archive lists all essays in chronological order under the business introduction', function () {
@@ -254,11 +265,12 @@ test('source chart labels and values remain complete in reading order', function
     marketingSiteImportArchive($this);
 
     $response = $this->get('/writing/'.$slug.'/')->assertOk();
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $xpath = new DOMXPath($document);
-    $headers = array_map(fn ($cell): string => trim($cell->textContent), iterator_to_array($xpath->query('//details/table/thead/tr/th')));
-    $actualRows = array_map(fn ($row): array => array_map(fn ($cell): string => trim($cell->textContent), iterator_to_array($xpath->query('./th|./td', $row))), iterator_to_array($xpath->query('//details/table/tbody/tr')));
+    $xpath = marketingSiteXpath($response);
+    $headers = array_map(fn ($cell): string => trim($cell->textContent), marketingSiteElements($xpath, '//details/table/thead/tr/th'));
+    $actualRows = array_map(
+        fn ($row): array => array_map(fn ($cell): string => trim($cell->textContent), marketingSiteElements($xpath, './th|./td', $row)),
+        marketingSiteElements($xpath, '//details/table/tbody/tr')
+    );
 
     expect($headers)->toBe($columns);
     expect($actualRows)->toBe($rows);
@@ -271,13 +283,11 @@ test('the line chart retains its zero based axis and a keyboard accessible full 
     marketingSiteImportArchive($this);
 
     $response = $this->get('/writing/six-months-talking-to-a-machine/')->assertSee('Scroll for the full chart, or view the data below.');
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $xpath = new DOMXPath($document);
+    $xpath = marketingSiteXpath($response);
 
     expect($xpath->query('//div[@class="chart-scroll" and @tabindex="0" and @role="region"]'))->toHaveCount(1);
     expect($xpath->query('//svg[@class="line-chart"]/circle'))->toHaveCount(6);
-    expect(array_map(fn ($tick): string => $tick->textContent, iterator_to_array($xpath->query('//svg[@class="line-chart"]/text[@text-anchor="end"]'))))->toBe(['0', '400', '800']);
+    expect(array_map(fn ($tick): string => $tick->textContent, marketingSiteElements($xpath, '//svg[@class="line-chart"]/text[@text-anchor="end"]')))->toBe(['0', '400', '800']);
 });
 
 test('the complete archive preserves metadata and feed access in the reading layout', function () {
@@ -322,8 +332,19 @@ test('the feed includes all original posts with XML-safe text', function () {
     marketingSiteImportArchive($this);
 
     $response = $this->get('/rss.xml')->assertOk()->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
-    $feed = simplexml_load_string($response->getContent());
+    $content = $response->getContent();
+
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    $feed = simplexml_load_string($content);
     expect($feed)->not->toBeFalse();
+
+    if ($feed === false) {
+        throw new RuntimeException('Unable to parse RSS feed.');
+    }
+
     expect($feed->channel->item)->toHaveCount(10);
     expect((string) $feed->channel->item[0]->title)->toBe('Just build it twice');
 });
@@ -343,19 +364,17 @@ test('mobile and footer navigation identify the current destination without rely
     }
 
     $response = $this->get($path)->assertOk();
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $xpath = new DOMXPath($document);
+    $xpath = marketingSiteXpath($response);
 
-    $currentLinks = $xpath->query('//details[@class="mobile-menu"]/nav/a[@aria-current="page"]');
+    $currentLinks = marketingSiteElements($xpath, '//details[@class="mobile-menu"]/nav/a[@aria-current="page"]');
 
     expect($currentLinks)->toHaveCount(1);
-    expect(trim($currentLinks->item(0)->textContent))->toBe($label);
+    expect(trim($currentLinks[0]->textContent))->toBe($label);
 
-    $footerLinks = $xpath->query('//footer/nav/a[@aria-current="page"]');
+    $footerLinks = marketingSiteElements($xpath, '//footer/nav/a[@aria-current="page"]');
 
     expect($footerLinks)->toHaveCount(1);
-    expect(trim($footerLinks->item(0)->textContent))->toBe($path === '/walkthrough' ? 'The Walkthrough' : $label);
+    expect(trim($footerLinks[0]->textContent))->toBe($path === '/walkthrough' ? 'The Walkthrough' : $label);
 })->with([
     ['/work', 'Selected work'],
     ['/writing/', 'Writing'],
@@ -365,9 +384,7 @@ test('mobile and footer navigation identify the current destination without rely
 
 test('the approach navigation resolves to a real section and the logo appears only in the header', function () {
     $response = $this->get('/')->assertOk();
-    $document = new DOMDocument;
-    @$document->loadHTML($response->getContent());
-    $xpath = new DOMXPath($document);
+    $xpath = marketingSiteXpath($response);
 
     expect($xpath->query('//*[@id="how-i-work"]'))->toHaveCount(1);
     expect($xpath->query('//header/a[@class="wordmark"]'))->toHaveCount(1);
@@ -409,12 +426,17 @@ test('repeated reporting figures preserve their full explanation without identif
 
 test('the deeper paid discovery week is mentioned once without a price', function () {
     $response = $this->get('/walkthrough');
+    $content = $response->getContent();
 
-    expect(substr_count($response->getContent(), 'paid discovery week'))->toBe(1);
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    expect(substr_count($content, 'paid discovery week'))->toBe(1);
     $response->assertDontSee('$')->assertDontSee('£')->assertDontSee('€');
 });
 
-function marketingSiteImportArchive($test): void
+function marketingSiteImportArchive(TestCase $test): void
 {
     config(['marketing.url' => 'https://birdcar.dev']);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -423,4 +445,59 @@ function marketingSiteImportArchive($test): void
     $operator->assignRole(PublishingRole::Author->value);
 
     app(ImportWritingArchive::class)->write('resources/writing', '72f7d8ad8521573cb224022c902447f9ca4c4351', $operator);
+}
+
+/**
+ * @param  TestResponse<Response>  $response
+ */
+function marketingSiteXpath(TestResponse $response): DOMXPath
+{
+    $content = $response->getContent();
+
+    if ($content === false) {
+        throw new RuntimeException('Response has no content.');
+    }
+
+    $document = new DOMDocument;
+    @$document->loadHTML($content);
+
+    return new DOMXPath($document);
+}
+
+/**
+ * @return list<DOMNode>
+ */
+function marketingSiteNodes(DOMXPath $xpath, string $expression, ?DOMNode $context = null): array
+{
+    $nodes = $context ? $xpath->query($expression, $context) : $xpath->query($expression);
+
+    if ($nodes === false) {
+        throw new RuntimeException("XPath query failed: {$expression}");
+    }
+
+    $result = [];
+
+    foreach ($nodes as $node) {
+        if ($node instanceof DOMNameSpaceNode) {
+            throw new RuntimeException("XPath query returned a namespace node: {$expression}");
+        }
+
+        $result[] = $node;
+    }
+
+    return $result;
+}
+
+/**
+ * @return list<DOMElement>
+ */
+function marketingSiteElements(DOMXPath $xpath, string $expression, ?DOMNode $context = null): array
+{
+    return array_map(function (DOMNode $node) use ($expression): DOMElement {
+        if (! $node instanceof DOMElement) {
+            throw new RuntimeException("XPath query returned a non-element node: {$expression}");
+        }
+
+        return $node;
+    }, marketingSiteNodes($xpath, $expression, $context));
 }

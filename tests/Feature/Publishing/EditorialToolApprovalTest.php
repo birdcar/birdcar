@@ -54,7 +54,11 @@ test('native SDK tool approval pauses durably and resumes with the author answer
         ->and($activity->attempt->fresh()->interview_context['answers'])->toBe('Support leaders who need a practical example.')
         ->and($activity->attempt->fresh()->approvals()->count())->toBe(0)
         ->and($activity->generation_id)->toBe('gen-brief');
-    Http::assertSent(fn ($request): bool => str_contains(json_encode($request['messages']), 'Support leaders who need a practical example.'));
+    Http::assertSent(function ($request): bool {
+        $body = json_encode($request['messages']);
+
+        return $body !== false && str_contains($body, 'Support leaders who need a practical example.');
+    });
     runApprovalActivity($activity);
     Http::assertSentCount(2);
 });
@@ -117,7 +121,7 @@ test('saving a different model while the author is answering keeps the started m
 
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed);
     $requests = Http::recorded();
-    expect($requests)->toHaveCount(2)
+    expect($requests->count())->toBe(2)
         ->and($requests[1][0]['model'])->toBe('google/gemini-3.8-flash')
         ->and($requests[1][0]['reasoning'])->toBe(['effort' => 'low']);
 });
@@ -156,7 +160,7 @@ test('settings page saves while the author answers keep the started model and ap
 
     $requests = Http::recorded();
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Completed)
-        ->and($requests)->toHaveCount(2)
+        ->and($requests->count())->toBe(2)
         ->and($requests[1][0]['model'])->toBe('google/gemini-3.8-flash')
         ->and($activity->attempt->fresh()->approvals()->count())->toBe(0);
 });
@@ -233,7 +237,10 @@ test('workspace displays escaped pending questions and queues human answers', fu
     Http::assertSentCount(1);
 });
 
-/** @return array{User, EditorialActivity} */
+/**
+ * @param  array<string, mixed>|null  $secondResponse
+ * @return array{User, EditorialActivity}
+ */
 function pendingAuthorInterview(string $question = 'Who is the reader?', string $returnedModel = 'google/gemini-3.8-flash', ?array $secondResponse = null, int $secondStatus = 200): array
 {
     Http::fake([

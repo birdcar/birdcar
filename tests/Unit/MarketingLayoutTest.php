@@ -1,21 +1,28 @@
 <?php
 
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Str;
+
 test('writing subscriptions keep a touch sized target without enlarging the label', function () {
-    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/writing.css');
+    $stylesheet = (new Filesystem)->get(__DIR__.'/../../resources/css/writing.css');
+    $subscription = Str::match('/\\.wr-rss\\s*\\{([^}]+)\\}/', $stylesheet);
 
-    preg_match('/\\.wr-rss\\s*\\{([^}]+)\\}/', $stylesheet, $subscription);
+    expect($subscription)->not->toBe('');
 
-    expect($subscription[1])
+    expect($subscription)
         ->toContain('min-height: 44px', 'align-items: center')
-        ->not->toContain('font-size:');
+        ->and($subscription)->not->toContain('font-size:');
 });
 
 test('essay titles keep a shrinkable reading column beside their dates', function () {
-    $stylesheet = file_get_contents(__DIR__.'/../../resources/css/writing.css');
+    $stylesheet = (new Filesystem)->get(__DIR__.'/../../resources/css/writing.css');
 
-    preg_match('/\\.wr-essay\\s*\\{([^}]+)\\}/', $stylesheet, $row);
-    preg_match('/\\.wr-essay h3\\s*\\{([^}]+)\\}/', $stylesheet, $title);
+    $row = Str::match('/\\.wr-essay\\s*\\{([^}]+)\\}/', $stylesheet);
+    $title = Str::match('/\\.wr-essay h3\\s*\\{([^}]+)\\}/', $stylesheet);
 
-    expect($row[1])->toContain('display: grid', 'grid-template-columns: minmax(0, 1fr) auto');
-    expect($title[1])->toContain('min-width: 0');
+    expect($row)->not->toBe('')
+        ->and($title)->not->toBe('');
+
+    expect($row)->toContain('display: grid', 'grid-template-columns: minmax(0, 1fr) auto');
+    expect($title)->toContain('min-width: 0');
 });
