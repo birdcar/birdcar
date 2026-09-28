@@ -25,25 +25,25 @@
 
     <flux:sidebar sticky collapsible class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.header>
-            <flux:sidebar.brand :href="route('admin.index')" logo="/favicon.svg" name="Admin" aria-label="Admin home" />
+            <flux:sidebar.brand :href="route('admin.index')" wire:navigate logo="/favicon.svg" name="Admin" aria-label="Admin home" />
             <flux:sidebar.collapse tooltip="Toggle Admin navigation" />
         </flux:sidebar.header>
         <flux:sidebar.nav aria-label="Admin modules">
-            <flux:sidebar.item :href="route('admin.index')" :current="request()->routeIs('admin.index')" :aria-current="request()->routeIs('admin.index') ? 'page' : null" aria-label="Home" icon="home">Home</flux:sidebar.item>
+            <flux:sidebar.item :href="route('admin.index')" wire:navigate :current="request()->routeIs('admin.index')" :aria-current="request()->routeIs('admin.index') ? 'page' : null" aria-label="Home" icon="home">Home</flux:sidebar.item>
             @can(PublishingPermission::View->value)
-                <flux:sidebar.item :href="route('admin.publishing.dashboard')" :current="request()->routeIs('admin.publishing.*')" :aria-current="request()->routeIs('admin.publishing.*') ? 'page' : null" aria-label="Publishing" icon="document-text">Publishing</flux:sidebar.item>
+                <flux:sidebar.item :href="route('admin.publishing.dashboard')" wire:navigate :current="request()->routeIs('admin.publishing.*')" :aria-current="request()->routeIs('admin.publishing.*') ? 'page' : null" aria-label="Publishing" icon="document-text">Publishing</flux:sidebar.item>
             @endcan
         </flux:sidebar.nav>
         <flux:sidebar.spacer />
         <flux:sidebar.nav aria-label="Admin settings">
-            <flux:sidebar.item :href="route('admin.settings.index')" :current="request()->routeIs('admin.settings.*')" :aria-current="request()->routeIs('admin.settings.*') ? 'page' : null" aria-label="Settings" icon="cog-6-tooth">Settings</flux:sidebar.item>
+            <flux:sidebar.item :href="route('admin.settings.index')" wire:navigate :current="request()->routeIs('admin.settings.*')" :aria-current="request()->routeIs('admin.settings.*') ? 'page' : null" aria-label="Settings" icon="cog-6-tooth">Settings</flux:sidebar.item>
         </flux:sidebar.nav>
         <flux:dropdown position="top" align="start">
             <flux:sidebar.profile :initials="auth()->user()->initials()" :name="auth()->user()->name" aria-label="Account menu" />
             <flux:menu>
                 <flux:menu.heading>{{ auth()->user()->name }}</flux:menu.heading>
                 <flux:menu.separator />
-                <flux:menu.item :href="route('admin.settings.account.profile')" icon="user">Your account</flux:menu.item>
+                <flux:menu.item :href="route('admin.settings.account.profile')" wire:navigate icon="user">Your account</flux:menu.item>
                 <flux:menu.separator />
                 <form method="POST" action="{{ route('logout') }}" data-admin-logout data-user-id="{{ auth()->id() }}">
                     @csrf

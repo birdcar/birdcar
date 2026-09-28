@@ -175,11 +175,22 @@ window.addEventListener('publishing-document-updated', (event) => {
     publishEditorState(editorElement, queue);
 });
 
+function hasUnsavedManuscript() {
+    return Array.from(queues.values()).some((queue) => shouldWarnBeforeUnload(queue.state));
+}
+
 window.addEventListener('beforeunload', (event) => {
-    const dirty = Array.from(queues.values()).some((queue) => shouldWarnBeforeUnload(queue.state));
-    if (!dirty) return;
+    if (!hasUnsavedManuscript()) return;
     event.preventDefault();
     event.returnValue = '';
+});
+
+document.addEventListener('livewire:navigate', (event) => {
+    if (hasUnsavedManuscript() && !window.confirm('Your manuscript has unsaved changes. Leave this page anyway?')) event.preventDefault();
+});
+
+document.addEventListener('livewire:navigated', () => {
+    queues.forEach((_, element) => { if (!element.isConnected) queues.delete(element); });
 });
 
 installPublishingMotion(Alpine ?? window.Alpine);

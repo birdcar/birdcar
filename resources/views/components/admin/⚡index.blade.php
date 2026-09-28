@@ -56,7 +56,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
             <flux:callout.heading>Publishing work couldn’t be loaded</flux:callout.heading>
             <flux:callout.text>Your attention list is unavailable, not empty. Refresh to try again, or open Publishing.</flux:callout.text>
             <x-slot:actions>
-                <flux:button :href="route('admin.publishing.dashboard')">Open Publishing</flux:button>
+                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate>Open Publishing</flux:button>
             </x-slot:actions>
         </flux:callout>
     @else
@@ -67,7 +67,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                         <flux:icon.check-circle class="mb-4 size-6 text-accent-content" />
                         <flux:heading id="attention-empty" level="2" size="lg">Nothing needs your attention</flux:heading>
                         <flux:text class="mt-2 max-w-prose">Your current publishing work has no flagged blockers or decisions. Pick up an active piece, or open Publishing to start something new.</flux:text>
-                        <flux:button :href="route('admin.publishing.dashboard')" variant="primary" class="mt-5">Open Publishing</flux:button>
+                        <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="primary" class="mt-5">Open Publishing</flux:button>
                     </section>
                 @endif
 
@@ -87,7 +87,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                                                 <flux:heading level="3" class="wrap-anywhere">{{ data_get($item['article']->workingRevision?->metadata, 'title') ?: $item['article']->idea }}</flux:heading>
                                                 <flux:text>{{ $item['reason'] }}</flux:text>
                                             </div>
-                                            <flux:button :href="route('admin.publishing.articles.show', $item['article'])" size="sm" icon:trailing="arrow-up-right" class="shrink-0" :aria-label="$item['action'].': '.$item['article']->idea">{{ $item['action'] }}</flux:button>
+                                            <flux:button :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate size="sm" icon:trailing="arrow-up-right" class="shrink-0" :aria-label="$item['action'].': '.$item['article']->idea">{{ $item['action'] }}</flux:button>
                                         </div>
                                     </li>
                                 @endforeach
@@ -97,7 +97,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                 @endforeach
 
                 @if ($blocked !== [] || $decisions !== [])
-                    <flux:text size="sm">Up to five items per section. <flux:link :href="route('admin.publishing.dashboard')">Open Publishing for all active writing.</flux:link></flux:text>
+                    <flux:text size="sm">Up to five items per section. <flux:link :href="route('admin.publishing.dashboard')" wire:navigate>Open Publishing for all active writing.</flux:link></flux:text>
                 @endif
             </div>
 
@@ -107,7 +107,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                 <ul class="mt-3 divide-y divide-zinc-200 dark:divide-zinc-700">
                     @forelse ($continuing as $item)
                         <li wire:key="home-continue-{{ $item['article']->id }}" class="py-4">
-                            <flux:link :href="route('admin.publishing.articles.show', $item['article'])" class="block font-medium wrap-anywhere">{{ data_get($item['article']->workingRevision?->metadata, 'title') ?: $item['article']->idea }}</flux:link>
+                            <flux:link :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate class="block font-medium wrap-anywhere">{{ data_get($item['article']->workingRevision?->metadata, 'title') ?: $item['article']->idea }}</flux:link>
                             <flux:text class="mt-1" size="sm">{{ $item['reason'] }}</flux:text>
                             <flux:text class="mt-2" size="sm">Publishing · <time datetime="{{ $item['updated_at']->toIso8601String() }}">{{ $item['updated_at']->diffForHumans() }}</time></flux:text>
                         </li>
@@ -115,7 +115,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                         <li class="py-4"><flux:text size="sm">No other active work. Your saved ideas are in Publishing.</flux:text></li>
                     @endforelse
                 </ul>
-                <flux:button :href="route('admin.publishing.dashboard')" variant="ghost" icon:trailing="arrow-right" class="mt-3">Open Publishing</flux:button>
+                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="ghost" icon:trailing="arrow-right" class="mt-3">Open Publishing</flux:button>
             </aside>
         </div>
     @endif

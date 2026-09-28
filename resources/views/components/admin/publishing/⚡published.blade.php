@@ -121,7 +121,7 @@ new #[Layout('layouts.admin')] class extends Component
                         @endif
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">
-                        <flux:button :href="route('admin.publishing.articles.show', $article)" size="sm">Open workspace</flux:button>
+                        <flux:button :href="route('admin.publishing.articles.show', $article)" wire:navigate size="sm">Open workspace</flux:button>
                         @if ($this->publicUrlFor($article))
                             <flux:button :href="$this->publicUrlFor($article)" size="sm" variant="ghost" target="_blank" rel="noopener">Public link</flux:button>
                         @endif

@@ -16,7 +16,7 @@
                     <flux:navlist>
                         @foreach ($entry['sections'] as $section)
                             @php $sectionRoute = $sections->routeName($section); @endphp
-                            <flux:navlist.item :href="route($sectionRoute)" :icon="$section->icon()" icon:trailing="chevron-right" :current="$sectionRoute === $currentSectionRoute" :aria-current="$sectionRoute === $currentSectionRoute ? 'page' : null" data-settings-section="{{ $sections->path($section) }}">{{ $section->label() }}</flux:navlist.item>
+                            <flux:navlist.item :href="route($sectionRoute)" wire:navigate :icon="$section->icon()" icon:trailing="chevron-right" :current="$sectionRoute === $currentSectionRoute" :aria-current="$sectionRoute === $currentSectionRoute ? 'page' : null" data-settings-section="{{ $sections->path($section) }}">{{ $section->label() }}</flux:navlist.item>
                         @endforeach
                     </flux:navlist>
                 </div>
@@ -24,7 +24,7 @@
         </nav>
 
         <div class="settings-content">
-            <a href="{{ route(SettingsSections::IndexRoute) }}" class="settings-back">
+            <a href="{{ route(SettingsSections::IndexRoute) }}" wire:navigate class="settings-back">
                 <flux:icon.chevron-left variant="micro" />
                 Settings
             </a>

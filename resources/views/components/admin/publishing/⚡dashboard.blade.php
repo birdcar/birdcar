@@ -212,7 +212,7 @@ new #[Layout('layouts.admin')] class extends Component
                                     </details>
                                 @endif
                             </div>
-                            <flux:button :href="route('admin.publishing.articles.show', $article)" size="sm" class="shrink-0">Open workspace</flux:button>
+                            <flux:button :href="route('admin.publishing.articles.show', $article)" wire:navigate size="sm" class="shrink-0">Open workspace</flux:button>
                         </div>
                     </article>
                 @empty
@@ -253,7 +253,7 @@ new #[Layout('layouts.admin')] class extends Component
                                     @endif
                                 </div>
                             </div>
-                            <flux:button :href="route('admin.publishing.articles.show', $article)" size="sm" class="shrink-0">Open workspace</flux:button>
+                            <flux:button :href="route('admin.publishing.articles.show', $article)" wire:navigate size="sm" class="shrink-0">Open workspace</flux:button>
                         </div>
                     </article>
                 @empty

@@ -57,3 +57,27 @@ test('installing registers the group component and a leave guard', () => {
     expect(registered.settingsGroup).toBe(createSettingsGroup);
     expect(typeof events.beforeunload).toBe('function');
 });
+
+test('in-app navigation away from unsaved settings asks before leaving', () => {
+    let dirty = true;
+    let answer = false;
+    const prompts = [];
+    const events = {};
+    const root = {
+        querySelector: (selector) => (dirty && selector.includes('data-dirty="true"') ? {} : null),
+        addEventListener: (event, handler) => { events[event] = handler; },
+    };
+    installSettings(undefined, { addEventListener: () => {}, confirm: (message) => { prompts.push(message); return answer; } }, root);
+    const navigate = () => {
+        const event = { prevented: false, preventDefault() { this.prevented = true; } };
+        events['livewire:navigate'](event);
+        return event.prevented;
+    };
+
+    expect(navigate()).toBe(true);
+    answer = true;
+    expect(navigate()).toBe(false);
+    dirty = false;
+    expect(navigate()).toBe(false);
+    expect(prompts).toHaveLength(2);
+});

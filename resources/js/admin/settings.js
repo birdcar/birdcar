@@ -32,11 +32,14 @@ export function hasUnsavedSettings(root = globalThis.document) {
     return root?.querySelector?.('[data-settings-save-bar][data-dirty="true"]') != null;
 }
 
-export function installSettings(Alpine = globalThis.Alpine, target = globalThis.window) {
+export function installSettings(Alpine = globalThis.Alpine, target = globalThis.window, root = globalThis.document) {
     Alpine?.data?.('settingsGroup', createSettingsGroup);
     target?.addEventListener?.('beforeunload', (event) => {
-        if (!hasUnsavedSettings()) return;
+        if (!hasUnsavedSettings(root)) return;
         event.preventDefault();
         event.returnValue = '';
+    });
+    root?.addEventListener?.('livewire:navigate', (event) => {
+        if (hasUnsavedSettings(root) && !target?.confirm?.('You have unsaved settings. Leave this page anyway?')) event.preventDefault();
     });
 }
