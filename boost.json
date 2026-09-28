@@ -21,6 +21,7 @@
     "sail": false,
     "skills": [
         "infer-conventions",
+        "deploying-to-cloud",
         "ai-sdk-development",
         "folio-routing",
         "fortify-development",
