@@ -211,7 +211,13 @@ This only checks local configuration, not key validity, credits, provider availa
 
 ## 7. Run the local processes
 
-Keep the existing site manager serving PHP. Use separate terminals for the following processes unless equivalent managed workers are already running; do not duplicate them.
+Keep the existing site manager serving PHP. On Herd (macOS), run everything below in one terminal with:
+
+```bash
+composer dev
+```
+
+In the `local` environment it starts the queue worker, scheduler, log tail and Vite, but no PHP server and no Reverb, because Herd provides both (`AppServiceProvider::configureDevCommands()`). On lerd (Linux), use the managed `queue`, `schedule` and `vite` workers from `.lerd.yaml` instead of `composer dev`, and set the queue worker to listen on `publishing-agents,default`. Never run both, and use the separate commands below only when neither option fits.
 
 **Queue worker — required for AI:**
 
@@ -219,7 +225,7 @@ Keep the existing site manager serving PHP. Use separate terminals for the follo
 php artisan queue:work database --queue=publishing-agents,default --sleep=3 --tries=1 --timeout=900 --no-interaction
 ```
 
-This mirrors production, where Laravel Cloud runs a dedicated `publishing-agents` managed queue beside the default one. The worker must list `publishing-agents`, or agent jobs wait unprocessed. Keep `QUEUE_CONNECTION=database` and leave `DB_QUEUE_RETRY_AFTER` unset (960 seconds) or above 900. Use the actual default queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow, and do not use `composer dev`/`php artisan dev` for agent work: it starts a competing Octane server and a `queue:listen --timeout=0` worker for the default queue only.
+This mirrors production, where Laravel Cloud runs a dedicated `publishing-agents` managed queue beside the default one. The worker must list `publishing-agents`, or agent jobs wait unprocessed. Keep `QUEUE_CONNECTION=database` and leave `DB_QUEUE_RETRY_AFTER` unset (960 seconds) or above 900. Use the actual default queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow.
 
 **Scheduler — for full publishing/recovery behavior:**
 

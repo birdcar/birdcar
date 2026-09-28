@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\Publishing\RunEditorialActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\LazyLoadingViolationException;
@@ -29,10 +30,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
         if (app()->environment('local')) {
-            // Use the Reverb process Herd provides
-            DevCommands::except('reverb');
+            $this->configureDevCommands();
         }
+    }
+
+    /**
+     * Run only the local processes the site manager lacks: Herd (macOS) and lerd (Linux) already serve PHP and Reverb.
+     */
+    protected function configureDevCommands(): void
+    {
+        DevCommands::except('server', 'reverb');
+
+        $defaultQueue = config()->string('queue.connections.'.config()->string('queue.default').'.queue', 'default');
+
+        DevCommands::artisan('queue:listen --queue='.RunEditorialActivity::QUEUE.','.$defaultQueue.' --tries=1 --timeout=0', 'queue');
+        DevCommands::artisan('schedule:work', 'schedule');
     }
 
     /**
