@@ -23,8 +23,6 @@ export default defineConfig({
             ignored: [
                 '**/.agents/**',
                 '**/.claude/**',
-                '**/.cursor/**',
-                '**/.junie/**',
                 '**/storage/framework/views/**',
                 '**/vendor/**',
             ],

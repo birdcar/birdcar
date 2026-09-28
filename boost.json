@@ -1,16 +1,13 @@
 {
     "agents": [
         "claude_code",
-        "codex",
-        "cursor"
+        "codex"
     ],
     "cloud": true,
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
     "packages": [
-        "spatie/laravel-activitylog",
-        "spatie/laravel-medialibrary",
         "livewire/blaze",
         "spatie/laravel-backup",
         "spatie/laravel-pdf",
@@ -41,11 +38,9 @@
         "tailwindcss-development",
         "blaze-optimize",
         "laravel-backup",
-        "medialibrary-development",
         "laravel-pdf",
         "laravel-permission-development",
         "laravel-query-builder",
-        "sluggable-development",
-        "deploying-laravel-cloud"
+        "sluggable-development"
     ]
 }

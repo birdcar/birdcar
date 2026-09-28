@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "es-views-components-admin-settings-shell-blade-php"
-primary_target: "resources/views/components/admin/settings/shell.blade.php"
-related_targets: ["routes/admin.php","resources/views/layouts/admin.blade.php","resources/views/components/admin/mail/⚡settings.blade.php","resources/views/components/admin/publishing/⚡settings.blade.php","resources/css/admin.css"]
+primary_target: "resources/views/layouts/settings.blade.php"
+related_targets: ["routes/admin.php","config/admin.php","resources/views/layouts/admin.blade.php","resources/views/components/admin/settings/⚡index.blade.php","resources/views/components/admin/settings/⚡mail.blade.php","resources/views/components/admin/settings/⚡publishing.blade.php","resources/views/components/admin/settings/group.blade.php","resources/views/components/admin/settings/row.blade.php","resources/css/admin.css"]
 ---
 
 # Admin — Settings shell
