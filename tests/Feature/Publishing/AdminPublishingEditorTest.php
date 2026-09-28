@@ -331,6 +331,19 @@ test('workspace prepares scheduled releases with an explicit timezone confirmati
         ->and($release->payload['delivery_intent']['utc_offset'])->toBe('-04:00');
 });
 
+test('scheduling defaults to the author\'s saved timezone', function (?string $timezone, string $expected): void {
+    $user = editorUser();
+    $user->forceFill(['timezone' => $timezone])->save();
+    $article = app(WriteArticle::class)->capture($user, 'Timezone default', 'timezone-default');
+
+    Livewire\Livewire::actingAs($user)
+        ->test('admin.publishing.article-workspace', ['article' => $article])
+        ->assertSet('releaseScheduledTimezone', $expected);
+})->with([
+    'saved timezone' => ['America/Chicago', 'America/Chicago'],
+    'no saved timezone' => [null, 'UTC'],
+]);
+
 test('imported published articles show historical published release readiness without a current attempt', function (): void {
     $user = editorUser();
     $article = app(WriteArticle::class)->capture($user, 'Imported published idea');

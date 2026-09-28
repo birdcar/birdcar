@@ -1,10 +1,9 @@
 @php
-    use App\Authorization\Mail\Permission as MailPermission;
     use App\Authorization\Publishing\Permission as PublishingPermission;
 
     $currentModule = match (true) {
         request()->routeIs('admin.publishing.*') => 'Publishing',
-        request()->routeIs('admin.mail.*') => 'Mail',
+        request()->routeIs('admin.settings.*') => 'Settings',
         default => 'Home',
     };
 @endphp
@@ -34,15 +33,17 @@
             @can(PublishingPermission::View->value)
                 <flux:sidebar.item :href="route('admin.publishing.dashboard')" :current="request()->routeIs('admin.publishing.*')" :aria-current="request()->routeIs('admin.publishing.*') ? 'page' : null" aria-label="Publishing" icon="document-text">Publishing</flux:sidebar.item>
             @endcan
-            @can(MailPermission::ConfigureSenders->value)
-                <flux:sidebar.item :href="route('admin.mail.settings')" :current="request()->routeIs('admin.mail.*')" :aria-current="request()->routeIs('admin.mail.*') ? 'page' : null" aria-label="Mail" icon="envelope">Mail</flux:sidebar.item>
-            @endcan
         </flux:sidebar.nav>
         <flux:sidebar.spacer />
+        <flux:sidebar.nav aria-label="Admin settings">
+            <flux:sidebar.item :href="route('admin.settings.index')" :current="request()->routeIs('admin.settings.*')" :aria-current="request()->routeIs('admin.settings.*') ? 'page' : null" aria-label="Settings" icon="cog-6-tooth">Settings</flux:sidebar.item>
+        </flux:sidebar.nav>
         <flux:dropdown position="top" align="start">
             <flux:sidebar.profile :initials="auth()->user()->initials()" :name="auth()->user()->name" aria-label="Account menu" />
             <flux:menu>
                 <flux:menu.heading>{{ auth()->user()->name }}</flux:menu.heading>
+                <flux:menu.separator />
+                <flux:menu.item :href="route('admin.settings.account.profile')" icon="user">Your account</flux:menu.item>
                 <flux:menu.separator />
                 <form method="POST" action="{{ route('logout') }}" data-admin-logout data-user-id="{{ auth()->id() }}">
                     @csrf
@@ -58,8 +59,8 @@
         <x-admin.navigation />
     </flux:header>
 
-    <flux:main class="min-w-0">
-        <main id="admin-main" class="mx-auto w-full min-w-0 max-w-[100rem]" tabindex="-1">
+    <flux:main :class="($flush ?? false) ? 'min-w-0 p-0!' : 'min-w-0'">
+        <main id="admin-main" @class(["mx-auto w-full min-w-0", "max-w-[100rem]" => ! ($flush ?? false)]) tabindex="-1">
             @if (session('status'))
                 <flux:callout variant="success" class="mb-6" role="status" :text="session('status')" />
             @endif

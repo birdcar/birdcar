@@ -71,31 +71,31 @@ function storedMailSender(string $group): array
 }
 
 test('guests are sent to sign in before the mail settings page', function (): void {
-    $this->get('http://admin.birdcar.test/mail')->assertRedirect('/login');
+    $this->get('http://admin.birdcar.test/settings/mail')->assertRedirect('/login');
 });
 
 test('the mail settings page is forbidden without the sender configuration capability', function (User $user): void {
     $this->actingAs($user)
-        ->get('http://admin.birdcar.test/mail')
+        ->get('http://admin.birdcar.test/settings/mail')
         ->assertForbidden();
 
-    Livewire::actingAs($user)->test('admin.mail.settings')->assertForbidden();
+    Livewire::actingAs($user)->test('admin.settings.mail')->assertForbidden();
 })->with([
     'admin access only' => fn (): User => tap(User::factory()->create())->assignRole(AdminRole::Access->value),
     'another module\'s capabilities but not mail' => fn (): User => tap(User::factory()->create())->assignRole([AdminRole::Access->value, PublishingRole::Author->value]),
 ]);
 
-test('operators see both surfaces with their saved senders and the mail navigation current', function (): void {
+test('operators see both surfaces with their domain rules and mail current in the settings rail', function (): void {
     $response = $this->actingAs(mailSettingsOperator())
-        ->get('http://admin.birdcar.test/mail')
+        ->get('http://admin.birdcar.test/settings/mail')
         ->assertOk()
         ->assertSee('Mail settings')
         ->assertSee('Admin mail')
         ->assertSee('Marketing mail')
-        ->assertSee('Admin mail is sent from this address. It must be at admin.birdcar.dev or birdcar.dev.')
-        ->assertSee('Marketing mail is sent from this address. It must be at birdcar.dev.')
-        ->assertSee('resend_admin')
-        ->assertSee('resend_marketing');
+        ->assertSee('Must be at admin.birdcar.dev or birdcar.dev.')
+        ->assertSee('Must be at birdcar.dev.')
+        ->assertSee('resend_admin · BIRDCAR_ADMIN_MAIL_MAILER')
+        ->assertSee('resend_marketing · BIRDCAR_MARKETING_MAIL_MAILER');
 
     $content = $response->getContent();
 
@@ -106,48 +106,48 @@ test('operators see both surfaces with their saved senders and the mail navigati
     $document = new DOMDocument;
     @$document->loadHTML($content);
     $xpath = new DOMXPath($document);
-    $current = mailSettingsNodes($xpath, '//nav[@aria-label="Admin modules"]//a[@aria-current="page"]');
-    $savedSender = fn (string $surface): string => preg_replace('/\s+/', ' ', trim(mailSettingsFirstElement(mailSettingsNodes($xpath, "//*[@data-mail-surface=\"{$surface}\"]//*[@data-saved-sender]"))->textContent));
+    $railCurrent = mailSettingsNodes($xpath, '//nav[@aria-label="Settings sections"]//a[@aria-current="page"]');
+    $sidebarCurrent = mailSettingsNodes($xpath, '//nav[@aria-label="Admin settings"]//a[@aria-current="page"]');
 
-    expect($current->length)->toBe(1)
-        ->and(mailSettingsFirstElement($current)->getAttribute('href'))->toBe('http://admin.birdcar.test/mail')
-        ->and($savedSender('admin'))->toBe('Saved: Birdcar, from noreply@admin.birdcar.dev. Replies go to the From address.')
-        ->and($savedSender('marketing'))->toBe('Saved: Birdcar, from hello@birdcar.dev. Replies go to the From address.');
+    expect($railCurrent->length)->toBe(1)
+        ->and(mailSettingsFirstElement($railCurrent)->getAttribute('href'))->toBe('http://admin.birdcar.test/settings/mail')
+        ->and($sidebarCurrent->length)->toBe(1)
+        ->and(mailSettingsFirstElement($sidebarCurrent)->getAttribute('href'))->toBe('http://admin.birdcar.test/settings');
 });
 
 test('the form starts from each surface\'s saved sender', function (): void {
     app(MarketingMailSettings::class)->updateSender('Birdcar News', 'news@birdcar.dev', 'replies@example.com')->save();
 
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->assertSet('senders', [
             'admin' => ['from_name' => 'Birdcar', 'from_address' => 'noreply@admin.birdcar.dev', 'reply_to' => ''],
             'marketing' => ['from_name' => 'Birdcar News', 'from_address' => 'news@birdcar.dev', 'reply_to' => 'replies@example.com'],
         ]);
 });
 
-test('the admin sidebar links to mail only for sender configurers', function (): void {
+test('the settings rail lists mail only for sender configurers', function (): void {
     $withoutMail = tap(User::factory()->create())->assignRole([AdminRole::Access->value, PublishingRole::Author->value]);
 
     $this->actingAs($withoutMail)
-        ->get('http://admin.birdcar.test/')
+        ->get('http://admin.birdcar.test/settings/account/profile')
         ->assertOk()
-        ->assertDontSee('http://admin.birdcar.test/mail');
+        ->assertDontSee('http://admin.birdcar.test/settings/mail');
 
     $this->actingAs(mailSettingsOperator())
-        ->get('http://admin.birdcar.test/')
+        ->get('http://admin.birdcar.test/settings/account/profile')
         ->assertOk()
-        ->assertSee('http://admin.birdcar.test/mail');
+        ->assertSee('http://admin.birdcar.test/settings/mail');
 });
 
 test('saving the admin sender stores it for the next send and leaves marketing unchanged', function (): void {
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.admin.from_name', '  Birdcar Ops ')
         ->set('senders.admin.from_address', 'ops@birdcar.dev')
         ->set('senders.admin.reply_to', 'owner@example.com')
         ->call('save', 'admin')
         ->assertHasNoErrors()
         ->assertSet('senders.admin.from_name', 'Birdcar Ops')
-        ->assertSee('Admin sender saved.');
+        ->assertDispatched('settings-saved', group: 'admin');
 
     expect(storedMailSender('admin_mail'))->toEqual(['from_name' => 'Birdcar Ops', 'from_address' => 'ops@birdcar.dev', 'reply_to' => 'owner@example.com'])
         ->and(storedMailSender('marketing_mail'))->toEqual(['from_name' => 'Birdcar', 'from_address' => 'hello@birdcar.dev', 'reply_to' => null]);
@@ -159,23 +159,24 @@ test('saving the admin sender stores it for the next send and leaves marketing u
 test('saving the marketing sender with a blank reply-to stores no reply-to', function (): void {
     app(MarketingMailSettings::class)->updateSender('Birdcar', 'hello@birdcar.dev', 'replies@example.com')->save();
 
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.marketing.from_address', 'news@birdcar.dev')
         ->set('senders.marketing.reply_to', '')
         ->call('save', 'marketing')
         ->assertHasNoErrors()
-        ->assertSee('Marketing sender saved.');
+        ->assertDispatched('settings-saved', group: 'marketing');
 
     expect(storedMailSender('marketing_mail'))->toEqual(['from_name' => 'Birdcar', 'from_address' => 'news@birdcar.dev', 'reply_to' => null]);
 });
 
 test('invalid sender input is rejected with a field message and nothing is saved', function (string $surface, string $field, mixed $value, string $message): void {
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set("senders.{$surface}.{$field}", $value)
         ->call('save', $surface)
         ->assertHasErrors("senders.{$surface}.{$field}")
         ->assertSee($message)
-        ->assertSee('Nothing was saved.');
+        ->assertSee('Fix 1 field to save')
+        ->assertNotDispatched('settings-saved');
 
     expect(storedMailSender('admin_mail'))->toEqual(['from_name' => 'Birdcar', 'from_address' => 'noreply@admin.birdcar.dev', 'reply_to' => null])
         ->and(storedMailSender('marketing_mail'))->toEqual(['from_name' => 'Birdcar', 'from_address' => 'hello@birdcar.dev', 'reply_to' => null]);
@@ -192,7 +193,7 @@ test('invalid sender input is rejected with a field message and nothing is saved
 ]);
 
 test('an invalid marketing draft keeps its error and does not block saving the admin sender', function (): void {
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.marketing.from_address', 'news@admin.birdcar.dev')
         ->call('save', 'marketing')
         ->assertHasErrors('senders.marketing.from_address')
@@ -203,14 +204,14 @@ test('an invalid marketing draft keeps its error and does not block saving the a
         ->call('save', 'admin')
         ->assertHasNoErrors('senders.admin.from_address')
         ->assertHasErrors('senders.marketing.from_address')
-        ->assertSee('Admin sender saved.');
+        ->assertDispatched('settings-saved', group: 'admin');
 
     expect(storedMailSender('admin_mail')['from_address'])->toBe('ops@birdcar.dev')
         ->and(storedMailSender('marketing_mail')['from_address'])->toBe('hello@birdcar.dev');
 });
 
 test('saving an unknown surface is rejected without saving anything', function (): void {
-    Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.admin.from_address', 'ops@birdcar.dev')
         ->call('save', 'customer')
         ->assertHasErrors('senders');
@@ -223,7 +224,7 @@ test('a stored sender the settings class now rejects still loads so it can be co
         ->update(['payload' => json_encode('noreply@retired.example.com')]);
     app()->forgetScopedInstances();
 
-    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings');
+    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail');
     $page->assertOk();
     $page->assertSet('senders.admin.from_address', 'noreply@retired.example.com')
         ->set('senders.admin.from_address', 'noreply@admin.birdcar.dev')
@@ -234,16 +235,17 @@ test('a stored sender the settings class now rejects still loads so it can be co
     expect(app(AdminMailSettings::class)->sender()->address)->toBe('noreply@admin.birdcar.dev');
 });
 
-test('a save that fails after validation is reported and asks the operator to reload', function (): void {
+test('a save that fails after validation is reported and keeps the draft', function (): void {
     Exceptions::fake();
-    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.admin.from_address', 'ops@birdcar.dev');
     DB::table('settings')->where('group', 'admin_mail')->where('name', 'from_name')->delete();
 
     $page->call('save', 'admin')
         ->assertHasNoErrors()
-        ->assertSee('Reload the page to see the saved settings, then try again.')
-        ->assertDontSee('Admin sender saved.');
+        ->assertSee("Couldn't save. Your changes are still here.")
+        ->assertSet('senders.admin.from_address', 'ops@birdcar.dev')
+        ->assertNotDispatched('settings-saved');
 
     Exceptions::assertReported(MissingSettings::class);
     expect(storedMailSender('admin_mail')['from_address'])->toBe('noreply@admin.birdcar.dev');
@@ -251,7 +253,7 @@ test('a save that fails after validation is reported and asks the operator to re
 
 test('revoked sender configuration access cannot save', function (string $revokedRole): void {
     $operator = mailSettingsOperator();
-    $page = Livewire::actingAs($operator)->test('admin.mail.settings')
+    $page = Livewire::actingAs($operator)->test('admin.settings.mail')
         ->set('senders.admin.from_address', 'ops@birdcar.dev');
 
     $operator->removeRole($revokedRole);
@@ -266,7 +268,7 @@ test('revoked sender configuration access cannot save', function (string $revoke
 ]);
 
 test('forged saves from users without the capability are forbidden before the surface is checked', function (string $surface): void {
-    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.mail.settings')
+    $page = Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
         ->set('senders.admin.from_address', 'ops@birdcar.dev');
 
     Livewire::actingAs(tap(User::factory()->create())->assignRole(AdminRole::Access->value));
@@ -284,34 +286,48 @@ test('the page and its livewire payloads never expose resend keys', function ():
     $operator = mailSettingsOperator();
 
     $this->actingAs($operator)
-        ->get('http://admin.birdcar.test/mail')
+        ->get('http://admin.birdcar.test/settings/mail')
         ->assertOk()
         ->assertSeeHtml('data-key-status="configured"')
         ->assertDontSeeHtml('data-key-status="missing"')
         ->assertDontSee('re_test_secret')
         ->assertDontSee('re_marketing_secret');
 
-    $page = Livewire::actingAs($operator)->test('admin.mail.settings')->call('save', 'admin');
+    $page = Livewire::actingAs($operator)->test('admin.settings.mail')->call('save', 'admin');
     $payloads = json_encode([$page->__get('snapshot'), $page->__get('effects')]);
 
     expect($payloads)->not->toContain('re_test_secret')
         ->and($payloads)->not->toContain('re_marketing_secret');
 });
 
-test('a missing resend key shows a notice naming its environment variable', function (mixed $missingKey): void {
+test('a missing resend key names its environment variable without offering an input', function (mixed $missingKey): void {
     config([
         'mail.mailers.resend_admin.key' => 're_test_secret',
         'mail.mailers.resend_marketing.key' => $missingKey,
     ]);
 
     $this->actingAs(mailSettingsOperator())
-        ->get('http://admin.birdcar.test/mail')
+        ->get('http://admin.birdcar.test/settings/mail')
         ->assertOk()
-        ->assertSee('No Resend API key is configured for marketing mail')
-        ->assertSee('BIRDCAR_MARKETING_RESEND_API_KEY')
-        ->assertDontSee('No Resend API key is configured for admin mail')
+        ->assertSeeHtml('data-key-status="configured"')
+        ->assertSeeHtml('data-key-status="missing"')
+        ->assertSee('Set BIRDCAR_MARKETING_RESEND_API_KEY in the deployment environment. Keys are never shown here.')
         ->assertDontSee('BIRDCAR_ADMIN_RESEND_API_KEY');
 })->with([
     'unset' => [null],
     'empty' => [''],
 ]);
+
+test('discarding one surface restores its saved sender and keeps the other draft', function (): void {
+    Livewire::actingAs(mailSettingsOperator())->test('admin.settings.mail')
+        ->set('senders.admin.from_address', 'not-an-email')
+        ->call('save', 'admin')
+        ->assertHasErrors('senders.admin.from_address')
+        ->set('senders.marketing.from_name', 'Birdcar News')
+        ->call('discard', 'admin')
+        ->assertHasNoErrors('senders.admin.from_address')
+        ->assertSet('senders.admin.from_address', 'noreply@admin.birdcar.dev')
+        ->assertSet('senders.marketing.from_name', 'Birdcar News');
+
+    expect(storedMailSender('marketing_mail')['from_name'])->toBe('Birdcar');
+});

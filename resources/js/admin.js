@@ -3,6 +3,7 @@ import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.e
 import { createAutosaveQueue, restoreRecovery, saveRecovery, shouldWarnBeforeUnload } from './admin/publishing/autosave.js';
 import { clearPublishingRecoveryNamespace, editorToDocumentJson } from './admin/publishing/document-helpers.js';
 import { installPublishingMotion } from './admin/publishing/motion.js';
+import { installSettings } from './admin/settings.js';
 
 const queues = new Map();
 
@@ -182,4 +183,5 @@ window.addEventListener('beforeunload', (event) => {
 });
 
 installPublishingMotion(Alpine ?? window.Alpine);
+installSettings(Alpine ?? window.Alpine);
 Livewire.start();

@@ -141,10 +141,11 @@ test('pausing agents while the author answers keeps the decision durable without
 test('settings page saves while the author answers keep the started model and approve nothing', function (): void {
     [$author, $activity] = pendingAuthorInterview();
     Bus::fake([RunEditorialActivity::class]);
-    $settings = Livewire::actingAs($author)->test('admin.publishing.settings')
+    $settings = Livewire::actingAs($author)->test('admin.settings.publishing')
         ->set('paused', true)
+        ->call('saveRequests')
         ->set('models.interview', 'deepseek/deepseek-v4.1-flash')
-        ->call('save')
+        ->call('saveModels')
         ->assertHasNoErrors();
     app()->forgetScopedInstances();
 
@@ -153,7 +154,7 @@ test('settings page saves while the author answers keep the started model and ap
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
         ->and($activity->fresh()->tool_decisions)->not->toBeEmpty();
 
-    $settings->set('paused', false)->call('save')->assertHasNoErrors();
+    $settings->set('paused', false)->call('saveRequests')->assertHasNoErrors();
     app()->forgetScopedInstances();
     Bus::assertNotDispatched(RunEditorialActivity::class);
     runApprovalActivity($activity);

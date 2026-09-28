@@ -269,15 +269,15 @@ test('approval while paused does not create follow-up agent work', function (): 
 });
 
 test('guests are sent to sign in before the settings page', function (): void {
-    $this->get('http://admin.birdcar.test/publishing/settings')->assertRedirect('/login');
+    $this->get('http://admin.birdcar.test/settings/publishing')->assertRedirect('/login');
 });
 
 test('the settings page is forbidden without the agent configuration capability', function (User $user): void {
     $this->actingAs($user)
-        ->get('http://admin.birdcar.test/publishing/settings')
+        ->get('http://admin.birdcar.test/settings/publishing')
         ->assertForbidden();
 
-    Livewire::actingAs($user)->test('admin.publishing.settings')->assertForbidden();
+    Livewire::actingAs($user)->test('admin.settings.publishing')->assertForbidden();
 })->with([
     'admin access only' => fn (): User => tap(User::factory()->create())->assignRole(AdminRole::Access->value),
     'publishing access without configuration' => function (): User {
@@ -289,36 +289,36 @@ test('the settings page is forbidden without the agent configuration capability'
     },
 ]);
 
-test('agent configurers reach the settings page with its navigation current', function (): void {
+test('agent configurers reach the settings page with publishing current in the settings rail', function (): void {
     $response = $this->actingAs(settingsPageOwner())
-        ->get('http://admin.birdcar.test/publishing/settings')
+        ->get('http://admin.birdcar.test/settings/publishing')
         ->assertOk()
-        ->assertSee('Publishing agent settings')
+        ->assertSee('Publishing settings')
         ->assertSee('Agent requests')
         ->assertSee('Models by task');
 
     $document = new DOMDocument;
     @$document->loadHTML($response->content());
     $xpath = new DOMXPath($document);
-    $current = settingsXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page"]');
+    $current = settingsXpathNodes($xpath, '//nav[@aria-label="Settings sections"]//a[@aria-current="page"]');
     expect($current->length)->toBe(1)
-        ->and(settingsXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page"]')->getAttribute('href'))->toBe('http://admin.birdcar.test/publishing/settings');
+        ->and(settingsXpathElement($xpath, '//nav[@aria-label="Settings sections"]//a[@aria-current="page"]')->getAttribute('href'))->toBe('http://admin.birdcar.test/settings/publishing');
 });
 
 test('saving an override persists it and reset returns the task to its recommendation', function (): void {
     $owner = settingsPageOwner();
 
-    Livewire::actingAs($owner)->test('admin.publishing.settings')
+    Livewire::actingAs($owner)->test('admin.settings.publishing')
         ->assertSet('models.draft', '')
         ->set('models.draft', 'deepseek/deepseek-v4-pro-0813')
-        ->call('save')
+        ->call('saveModels')
         ->assertHasNoErrors()
-        ->assertSee('Settings saved. Agent requests are paused.');
+        ->assertDispatched('settings-saved', group: 'models');
 
     expect(storedAgentSettings())->toEqual(['paused' => true, 'model_overrides' => ['draft' => 'deepseek/deepseek-v4-pro-0813']]);
 
     app()->forgetScopedInstances();
-    Livewire::actingAs($owner)->test('admin.publishing.settings')
+    Livewire::actingAs($owner)->test('admin.settings.publishing')
         ->assertSet('models.draft', 'deepseek/deepseek-v4-pro-0813')
         ->assertSee('Saved: DeepSeek V4 Pro')
         ->call('resetRole', 'draft')
@@ -330,28 +330,29 @@ test('saving an override persists it and reset returns the task to its recommend
 });
 
 test('pinning the current recommendation is stored separately from following it', function (): void {
-    $page = Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    $page = Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->assertSet('models.interview', '')
         ->set('models.interview', 'google/gemini-3.8-flash')
-        ->call('save')
+        ->call('saveModels')
         ->assertHasNoErrors()
         ->assertSeeHtml('data-override-state="pinned"');
 
     expect(storedAgentSettings()['model_overrides'])->toBe(['interview' => 'google/gemini-3.8-flash']);
 
-    $page->set('models.interview', '')->call('save')->assertHasNoErrors();
+    $page->set('models.interview', '')->call('saveModels')->assertHasNoErrors();
 
     expect(storedAgentSettings()['model_overrides'])->toBe([]);
 });
 
 test('tampered settings are rejected without saving anything', function (string $property, mixed $value, string $error, string $message): void {
-    Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->set('paused', false)
         ->set($property, $value)
-        ->call('save')
+        ->call('saveModels')
         ->assertHasErrors($error)
         ->assertSee($message)
-        ->assertSee('Nothing was saved.');
+        ->assertSee('Fix 1 field to save')
+        ->assertNotDispatched('settings-saved');
 
     expect(storedAgentSettings())->toEqual(['paused' => true, 'model_overrides' => []]);
 })->with([
@@ -364,7 +365,7 @@ test('tampered settings are rejected without saving anything', function (string 
 test('resetting an unknown role is rejected without saving', function (): void {
     app(PublishingAgentSettings::class)->overrideModel(EditorialActivityKind::Draft, 'openrouter/auto')->save();
 
-    Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->call('resetRole', 'not_a_role')
         ->assertHasErrors('models');
 
@@ -376,7 +377,7 @@ test('an unsupported stored override is shown as reset required and reset remove
         ->update(['payload' => json_encode(['interview' => 'openai/gpt-retired', 'draft' => 'openrouter/auto'])]);
     app()->forgetScopedInstances();
 
-    Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->assertSet('models.interview', '')
         ->assertSet('models.draft', 'openrouter/auto')
         ->assertSeeHtml('data-override-state="unsupported"')
@@ -388,17 +389,17 @@ test('an unsupported stored override is shown as reset required and reset remove
 });
 
 test('the pause switch changes nothing until saved', function (): void {
-    $page = Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    $page = Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->assertSet('paused', true)
         ->set('paused', false)
-        ->assertSee('Saved: Paused');
+        ->assertSee('Saved: paused.');
 
     app()->forgetScopedInstances();
     expect(app(PublishingAgentSettings::class)->paused)->toBeTrue();
 
-    $page->call('save')
-        ->assertSee('Saved: On')
-        ->assertSee('Settings saved. Agent requests are on.');
+    $page->call('saveRequests')
+        ->assertSee('Saved: not paused.')
+        ->assertDispatched('settings-saved', group: 'requests');
 
     app()->forgetScopedInstances();
     expect(app(PublishingAgentSettings::class)->paused)->toBeFalse();
@@ -412,13 +413,14 @@ test('saving settings never dispatches jobs or sends requests for existing work'
     $pending = EditorialActivity::factory()->create([...$work, 'status' => EditorialActivityStatus::Pending]);
     $awaiting = EditorialActivity::factory()->create([...$work, 'status' => EditorialActivityStatus::AwaitingApproval, 'model_snapshot' => $snapshot]);
 
-    Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings')
+    Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
         ->set('paused', false)
+        ->call('saveRequests')
         ->set('models.interview', 'deepseek/deepseek-v4.1-flash')
-        ->call('save')
+        ->call('saveModels')
         ->assertHasNoErrors()
         ->set('paused', true)
-        ->call('save')
+        ->call('saveRequests')
         ->call('resetRole', 'interview')
         ->assertHasNoErrors();
 
@@ -432,15 +434,15 @@ test('saving settings never dispatches jobs or sends requests for existing work'
 test('revoked configuration access cannot save pause or reset settings', function (string $revokedRole): void {
     $owner = settingsPageOwner();
     app(PublishingAgentSettings::class)->overrideModel(EditorialActivityKind::Draft, 'openrouter/auto')->save();
-    $savePage = Livewire::actingAs($owner)->test('admin.publishing.settings')
-        ->set('paused', false)
-        ->set('models.plan', 'deepseek/deepseek-v4.1-flash');
-    $resetPage = Livewire::actingAs($owner)->test('admin.publishing.settings');
+    $requestsPage = Livewire::actingAs($owner)->test('admin.settings.publishing')->set('paused', false);
+    $modelsPage = Livewire::actingAs($owner)->test('admin.settings.publishing')->set('models.plan', 'deepseek/deepseek-v4.1-flash');
+    $resetPage = Livewire::actingAs($owner)->test('admin.settings.publishing');
 
     $owner->removeRole($revokedRole);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-    $savePage->call('save')->assertForbidden();
+    $requestsPage->call('saveRequests')->assertForbidden();
+    $modelsPage->call('saveModels')->assertForbidden();
     $resetPage->call('resetRole', 'draft')->assertForbidden();
 
     expect(storedAgentSettings())->toEqual(['paused' => true, 'model_overrides' => ['draft' => 'openrouter/auto']]);
@@ -452,14 +454,14 @@ test('revoked configuration access cannot save pause or reset settings', functio
 test('forged settings actions from users without the capability are forbidden', function (User $intruder): void {
     app(PublishingAgentSettings::class)->overrideModel(EditorialActivityKind::Draft, 'openrouter/auto')->save();
     $owner = settingsPageOwner();
-    $savePage = Livewire::actingAs($owner)->test('admin.publishing.settings')
-        ->set('paused', false)
-        ->set('models.plan', 'deepseek/deepseek-v4.1-flash');
-    $resetPage = Livewire::actingAs($owner)->test('admin.publishing.settings');
+    $requestsPage = Livewire::actingAs($owner)->test('admin.settings.publishing')->set('paused', false);
+    $modelsPage = Livewire::actingAs($owner)->test('admin.settings.publishing')->set('models.plan', 'deepseek/deepseek-v4.1-flash');
+    $resetPage = Livewire::actingAs($owner)->test('admin.settings.publishing');
 
     Livewire::actingAs($intruder);
 
-    $savePage->call('save')->assertForbidden();
+    $requestsPage->call('saveRequests')->assertForbidden();
+    $modelsPage->call('saveModels')->assertForbidden();
     $resetPage->call('resetRole', 'draft')->assertForbidden();
 
     expect(storedAgentSettings())->toEqual(['paused' => true, 'model_overrides' => ['draft' => 'openrouter/auto']]);
@@ -482,16 +484,16 @@ test('the page and its livewire payloads never expose the provider key or url', 
     $owner = settingsPageOwner();
 
     $this->actingAs($owner)
-        ->get('http://admin.birdcar.test/publishing/settings')
+        ->get('http://admin.birdcar.test/settings/publishing')
         ->assertOk()
-        ->assertSee('An OpenRouter API key is configured for this deployment.')
+        ->assertSeeHtml('data-credentials-status="configured"')
         ->assertDontSee('sk-or')
         ->assertDontSee('7f3a9c')
         ->assertDontSee($privateUrl);
 
-    $page = Livewire::actingAs($owner)->test('admin.publishing.settings')
+    $page = Livewire::actingAs($owner)->test('admin.settings.publishing')
         ->set('models.draft', 'openrouter/auto')
-        ->call('save');
+        ->call('saveModels');
     $payloads = json_encode([$page->__get('snapshot'), $page->__get('effects')]);
 
     expect($payloads)->not->toContain('sk-or')
@@ -504,11 +506,11 @@ test('a missing provider key shows a configuration notice without provider detai
     config()->set('ai.providers.openrouter.url', 'https://openrouter.example.test/private-route');
 
     $this->actingAs(settingsPageOwner())
-        ->get('http://admin.birdcar.test/publishing/settings')
+        ->get('http://admin.birdcar.test/settings/publishing')
         ->assertOk()
-        ->assertSee('No OpenRouter API key is configured')
-        ->assertSee('OPENROUTER_API_KEY')
-        ->assertDontSee('An OpenRouter API key is configured for this deployment.')
+        ->assertSeeHtml('data-credentials-status="missing"')
+        ->assertSee('Set OPENROUTER_API_KEY in the deployment environment')
+        ->assertDontSeeHtml('data-credentials-status="configured"')
         ->assertDontSee('openrouter.example.test');
 });
 
@@ -517,9 +519,9 @@ test('page saves reach queued work in the next job scope without a restart', fun
     Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response(interviewResponse('deepseek/deepseek-v4.1-flash'))]);
     [$author, $attempt] = settingsAttempt();
     $queuedWhilePaused = app(StartEditorialActivity::class)->start($author, $attempt, EditorialActivityKind::Interview, [], 'queued-while-paused');
-    $page = Livewire::actingAs(settingsPageOwner())->test('admin.publishing.settings');
+    $page = Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing');
 
-    $page->set('paused', false)->set('models.interview', 'deepseek/deepseek-v4.1-flash')->call('save')->assertHasNoErrors();
+    $page->set('paused', false)->call('saveRequests')->set('models.interview', 'deepseek/deepseek-v4.1-flash')->call('saveModels')->assertHasNoErrors();
     app()->forgetScopedInstances();
     app()->call([new RunEditorialActivity($queuedWhilePaused->id), 'handle']);
 
@@ -527,11 +529,24 @@ test('page saves reach queued work in the next job scope without a restart', fun
     Http::assertSent(fn ($request): bool => $request['model'] === 'deepseek/deepseek-v4.1-flash');
 
     $queuedBeforePause = app(StartEditorialActivity::class)->start($author, $attempt, EditorialActivityKind::Interview, ['note' => 'second'], 'queued-before-pause');
-    $page->set('paused', true)->call('save')->assertHasNoErrors();
+    $page->set('paused', true)->call('saveRequests')->assertHasNoErrors();
     app()->forgetScopedInstances();
     app()->call([new RunEditorialActivity($queuedBeforePause->id), 'handle']);
 
     expect($queuedBeforePause->fresh()->status)->toBe(EditorialActivityStatus::Pending)
         ->and($queuedBeforePause->fresh()->run_count)->toBe(0);
     Http::assertSentCount(1);
+});
+
+test('saving agent requests leaves an unsaved model draft untouched', function (): void {
+    Livewire::actingAs(settingsPageOwner())->test('admin.settings.publishing')
+        ->set('models.draft', 'openrouter/auto')
+        ->set('paused', false)
+        ->call('saveRequests')
+        ->assertHasNoErrors()
+        ->assertSet('models.draft', 'openrouter/auto')
+        ->call('discardModels')
+        ->assertSet('models.draft', '');
+
+    expect(storedAgentSettings())->toEqual(['paused' => false, 'model_overrides' => []]);
 });

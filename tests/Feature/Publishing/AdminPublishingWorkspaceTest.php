@@ -185,15 +185,15 @@ test('settings navigation appears only for users who can configure agents', func
     $document = new DOMDocument;
     @$document->loadHTML($response->content());
     $xpath = new DOMXPath($document);
-    $settingsLinks = workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]');
+    $settingsLinks = workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/settings/publishing"]');
     expect($settingsLinks->length)->toBe(1)
-        ->and(workspaceXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/publishing/settings"]')->hasAttribute('aria-current'))->toBeFalse();
+        ->and(workspaceXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/settings/publishing"]')->hasAttribute('aria-current'))->toBeFalse();
 
     $this->actingAs(publishingWriteOnlyUser())
         ->get('http://admin.birdcar.test/publishing')
         ->assertOk()
         ->assertSee('aria-label="Publishing navigation"', false)
-        ->assertDontSee('href="http://admin.birdcar.test/publishing/settings"', false);
+        ->assertDontSee('href="http://admin.birdcar.test/settings/publishing"', false);
 });
 
 test('admission only users cannot open direct publishing urls', function (): void {

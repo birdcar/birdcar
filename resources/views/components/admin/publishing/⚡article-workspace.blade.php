@@ -80,7 +80,7 @@ new #[Layout('layouts.admin')] class extends Component
         $this->article = $article->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
         $this->currentRevisionId = $article->working_revision_id;
         $this->releaseSlug = (string) $article->slug;
-        $this->releaseScheduledTimezone = (string) config('app.timezone', 'UTC');
+        $this->releaseScheduledTimezone = (string) (auth()->user()?->timezone ?? config('app.timezone', 'UTC'));
         $revision = $article->workingRevision;
         if ($revision instanceof ArticleRevision) {
             $this->document = $revision->document ?? $this->document;
