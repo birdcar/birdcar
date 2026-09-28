@@ -33,7 +33,7 @@ class WriteArticle
         return Article::create([
             'author_id' => $actor->id,
             'idea' => $idea,
-            'slug' => $this->availableSlug($slug ?: 'idea-'.Str::lower(Str::random(12))),
+            'slug' => Str::slug($slug ?: 'idea-'.Str::lower(Str::random(12))) ?: 'article',
         ]);
     }
 
@@ -178,20 +178,6 @@ class WriteArticle
         if (! $actor->can($permission)) {
             throw new AuthorizationException('This user is not allowed to mutate publishing records.');
         }
-    }
-
-    private function availableSlug(string $slug): string
-    {
-        $base = Str::slug($slug) ?: 'article';
-        $candidate = $base;
-        $suffix = 2;
-
-        while (Article::query()->where('slug', $candidate)->exists()) {
-            $candidate = $base.'-'.$suffix;
-            $suffix++;
-        }
-
-        return $candidate;
     }
 
     /**

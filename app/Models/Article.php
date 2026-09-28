@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Sluggable\Attributes\Sluggable;
 
 #[RouteKey('slug')]
+#[Sluggable(from: 'idea', to: 'slug', onUpdate: false)]
 #[Fillable(['slug', 'author_id', 'idea', 'working_revision_id', 'published_release_id', 'current_attempt_id', 'first_published_at'])]
 class Article extends Model
 {
