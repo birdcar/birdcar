@@ -10,27 +10,40 @@ mock.module('motion', () => ({
 
 const { createPublishingSession, installPublishingMotion } = await import('./motion.js');
 
-test('publishing session exposes mode controls and tactile tab focus', async () => {
-    const focused = [];
-    const tabs = new Map(['develop', 'write', 'release'].map((mode) => [mode, { dataset: { sessionTab: mode }, focus: () => focused.push(mode) }]));
+test('publishing session animates the selected tab and panel whenever the mode changes', async () => {
+    const tabs = new Map(['develop', 'write', 'release'].map((mode) => [mode, { dataset: { sessionTab: mode } }]));
+    const panel = { dataset: { sessionPanel: 'release' } };
     const root = {
         querySelector: (selector) => {
             const match = selector.match(/data-session-tab="(.*?)"/);
             return match ? tabs.get(match[1]) : null;
         },
-        querySelectorAll: (selector) => (selector === '[data-session-panel]' ? [{ dataset: { sessionPanel: 'release' } }] : []),
+        querySelectorAll: (selector) => (selector === '[data-session-panel]' ? [panel] : []),
     };
     globalThis.document = { querySelector: () => root };
     globalThis.matchMedia = () => ({ matches: false });
 
     const session = createPublishingSession('develop');
+    const watchers = {};
     session.$root = root;
-    session.focusMode('release');
+    session.$watch = (key, callback) => { watchers[key] = callback; };
+    session.init();
+    animated.length = 0;
+
+    session.selectMode('release');
+    watchers.mode(session.mode);
     await Promise.resolve();
 
     expect(session.mode).toBe('release');
-    expect(focused).toEqual(['release']);
-    expect(animated.length).toBeGreaterThanOrEqual(2);
+    expect(animated.map((entry) => entry.element)).toEqual([tabs.get('release'), panel]);
+});
+
+test('publishing session ignores unknown modes', () => {
+    const session = createPublishingSession('write');
+
+    session.selectMode('settings');
+
+    expect(session.mode).toBe('write');
 });
 
 test('reduced motion keeps publishing session content state available without animating', async () => {

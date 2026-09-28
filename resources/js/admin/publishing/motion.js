@@ -151,21 +151,11 @@ export function createPublishingSession(initialMode = 'write') {
         editorState: 'saved',
         editorActionMessage: '',
         init() {
+            this.$watch('mode', (mode) => queueMicrotask(() => animateMode(rootFor(this), mode)));
             queueMicrotask(() => { animateArrivals(rootFor(this)); arrive(rootFor(this)); });
         },
         selectMode(mode) {
-            if (!MODES.includes(mode)) return;
-            this.mode = mode;
-            queueMicrotask(() => animateMode(rootFor(this), mode));
-        },
-        moveMode(offset) {
-            const index = MODES.indexOf(this.mode);
-            this.focusMode(MODES[(index + offset + MODES.length) % MODES.length]);
-        },
-        focusMode(mode) {
-            if (!MODES.includes(mode)) return;
-            this.selectMode(mode);
-            queueMicrotask(() => rootFor(this)?.querySelector?.(`[data-session-tab="${mode}"]`)?.focus?.());
+            if (MODES.includes(mode)) this.mode = mode;
         },
         selectContext(context) {
             if (CONTEXTS.includes(context)) this.context = context;

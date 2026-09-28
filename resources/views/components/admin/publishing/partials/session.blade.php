@@ -26,14 +26,6 @@
         <flux:callout variant="danger" heading="This needs a look" :text="$saveError" role="alert" />
     @endif
 
-    <div class="publishing-session-tabs" role="tablist" aria-label="Article working mode" @keydown.right.prevent="moveMode(1)" @keydown.left.prevent="moveMode(-1)" @keydown.home.prevent="focusMode('develop')" @keydown.end.prevent="focusMode('release')">
-        @foreach (['develop' => 'Develop', 'write' => 'Write & review', 'release' => 'Release'] as $modeKey => $modeLabel)
-            <button type="button" role="tab" id="session-tab-{{ $modeKey }}" aria-controls="session-panel-{{ $modeKey }}" :aria-selected="mode === '{{ $modeKey }}'" :tabindex="mode === '{{ $modeKey }}' ? 0 : -1" @click="selectMode('{{ $modeKey }}')" data-session-tab="{{ $modeKey }}" class="publishing-session-tab">
-                {{ $modeLabel }}
-            </button>
-        @endforeach
-    </div>
-
     <div class="publishing-agent-status" @if ($working) wire:poll.5s.visible="refreshAgentWork" @endif>
         @if ($attempt?->paused_at || $attempt?->parked_at || $attempt?->abandoned_at)
             <flux:callout variant="warning" heading="Work is paused" :text="$attempt->pause_reason ?? $attempt->parked_reason ?? $attempt->abandoned_reason ?? 'This attempt has been set aside.'" />
@@ -56,32 +48,40 @@
         @endif
     </div>
 
-    <section id="session-panel-develop" role="tabpanel" aria-labelledby="session-tab-develop" tabindex="0" data-session-panel="develop" x-show="mode === 'develop'" x-cloak>
-        @include('components.admin.publishing.partials.develop')
-    </section>
-    <section id="session-panel-write" role="tabpanel" aria-labelledby="session-tab-write" tabindex="0" data-session-panel="write" x-show="mode === 'write'" x-cloak>
-        @include('components.admin.publishing.partials.write')
-    </section>
-    <section id="session-panel-release" role="tabpanel" aria-labelledby="session-tab-release" tabindex="0" data-session-panel="release" x-show="mode === 'release'" x-cloak>
-        <div class="publishing-release-grid">
-            <div class="min-w-0">
-                <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <flux:heading level="2" size="lg">{{ $release ? 'This exact release' : 'Before it goes out' }}</flux:heading>
-                    @if ($release)<flux:badge size="sm">Release #{{ $release->id }}</flux:badge>@endif
+    <flux:tab.group>
+        <flux:tabs x-model="mode" aria-label="Article working mode">
+            @foreach (['develop' => 'Develop', 'write' => 'Write & review', 'release' => 'Release'] as $modeKey => $modeLabel)
+                <flux:tab :name="$modeKey" :selected="$sessionMode === $modeKey" data-session-tab="{{ $modeKey }}">{{ $modeLabel }}</flux:tab>
+            @endforeach
+        </flux:tabs>
+
+        <flux:tab.panel name="develop" :selected="$sessionMode === 'develop'" data-session-panel="develop" class="pt-0">
+            @include('components.admin.publishing.partials.develop')
+        </flux:tab.panel>
+        <flux:tab.panel name="write" :selected="$sessionMode === 'write'" data-session-panel="write" class="pt-0">
+            @include('components.admin.publishing.partials.write')
+        </flux:tab.panel>
+        <flux:tab.panel name="release" :selected="$sessionMode === 'release'" data-session-panel="release" class="pt-0">
+            <div class="publishing-release-grid">
+                <div class="min-w-0">
+                    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                        <flux:heading level="2" size="lg">{{ $release ? 'This exact release' : 'Before it goes out' }}</flux:heading>
+                        @if ($release)<flux:badge size="sm">Release #{{ $release->id }}</flux:badge>@endif
+                    </div>
+                    @if ($releasePreviewUrl || $previewUrl)
+                        <p class="mb-4 text-sm text-zinc-600 dark:text-zinc-300">{{ $release ? 'A frozen preview of the release below—not the latest draft.' : 'Working preview. Prepare a release to freeze the version you will approve.' }}</p>
+                        <iframe class="publishing-preview" src="{{ $releasePreviewUrl ?? $previewUrl }}" sandbox="allow-same-origin" loading="lazy" title="{{ $release ? 'Exact release preview' : 'Working article preview' }}"></iframe>
+                    @else
+                        <div class="publishing-empty"><flux:heading level="3">An article worth sending.</flux:heading><flux:text class="mt-3">Your preview will appear here once there is a saved manuscript.</flux:text><flux:button class="mt-6" @click="selectMode('write')">Open the manuscript</flux:button></div>
+                    @endif
                 </div>
-                @if ($releasePreviewUrl || $previewUrl)
-                    <p class="mb-4 text-sm text-zinc-600 dark:text-zinc-300">{{ $release ? 'A frozen preview of the release below—not the latest draft.' : 'Working preview. Prepare a release to freeze the version you will approve.' }}</p>
-                    <iframe class="publishing-preview" src="{{ $releasePreviewUrl ?? $previewUrl }}" sandbox="allow-same-origin" loading="lazy" title="{{ $release ? 'Exact release preview' : 'Working article preview' }}"></iframe>
-                @else
-                    <div class="publishing-empty"><flux:heading level="3">An article worth sending.</flux:heading><flux:text class="mt-3">Your preview will appear here once there is a saved manuscript.</flux:text><flux:button class="mt-6" @click="selectMode('write')">Open the manuscript</flux:button></div>
-                @endif
+                <aside class="space-y-8">
+                    @include('components.admin.publishing.partials.details')
+                    <x-admin.publishing.partials.release-checklist :article="$article" :attempt="$attempt" :release="$release" />
+                </aside>
             </div>
-            <aside class="space-y-8">
-                @include('components.admin.publishing.partials.details')
-                <x-admin.publishing.partials.release-checklist :article="$article" :attempt="$attempt" :release="$release" />
-            </aside>
-        </div>
-    </section>
+        </flux:tab.panel>
+    </flux:tab.group>
 
     @include('components.admin.publishing.partials.activity')
     <noscript><p>Enable JavaScript to interview, edit, and approve work. Your saved articles remain unchanged.</p></noscript>
