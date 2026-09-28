@@ -6,6 +6,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/Actions/** | .ai/rules/actions.md |
 | app/Ai/** | .ai/rules/ai.md |
+| app/** | .ai/rules/app.md |
 | app/Authorization/** | .ai/rules/authorization.md |
 | ** | .ai/rules/general.md |
 | resources/js/** | .ai/rules/js.md |
@@ -14,4 +15,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/** | .ai/rules/resources.md |
 | {routes/**,app/Providers/FolioServiceProvider.php,app/Services/MarketingSite.php,config/marketing.php} | .ai/rules/services.md |
 | app/Settings/** | .ai/rules/settings.md |
+| tests/** | .ai/rules/tests.md |
 | resources/writing/** | .ai/rules/writing.md |
