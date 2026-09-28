@@ -66,6 +66,7 @@ new #[Layout('layouts.admin')] class extends Component
             ->whereNull('current_attempt_id')
             ->whereNull('published_release_id')
             ->latest()
+            ->latest('id')
             ->paginate(perPage: 12, pageName: 'ideasPage');
 
         $active = Article::query()
@@ -77,6 +78,7 @@ new #[Layout('layouts.admin')] class extends Component
                     ->whereNotIn('stage', [EditorialStage::Published->value, EditorialStage::Abandoned->value]);
             })
             ->latest()
+            ->latest('id')
             ->paginate(perPage: 12, pageName: 'activePage');
 
         return ['ideas' => $ideas, 'active' => $active];

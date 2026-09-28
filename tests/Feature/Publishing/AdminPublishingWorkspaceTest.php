@@ -342,7 +342,7 @@ test('dashboard paginates ideas and active writing independently', function (): 
             'idea' => sprintf('Backlog idea %02d', $index),
             'created_at' => now()->subMinutes($index),
         ]);
-        activeArticleFor($user, sprintf('Active writing %02d', $index));
+        $this->travelTo(now()->subMinutes($index), fn (): Article => activeArticleFor($user, sprintf('Active writing %02d', $index)));
     }
 
     $this->actingAs($user)
@@ -354,6 +354,29 @@ test('dashboard paginates ideas and active writing independently', function (): 
         ->assertDontSee('Active writing 13')
         ->assertSee('paginator-ideasPage-page2', false)
         ->assertSee('paginator-activePage-page2', false);
+});
+
+test('dashboard pages break created_at ties by newest id so no article repeats or goes missing', function (): void {
+    $this->freezeTime();
+    $user = publishingUser();
+    foreach (range(1, 13) as $index) {
+        Article::factory()->create(['author_id' => $user->id, 'idea' => sprintf('Backlog idea %02d', $index)]);
+        activeArticleFor($user, sprintf('Active writing %02d', $index));
+    }
+
+    $firstPage = $this->actingAs($user)->get('http://admin.birdcar.test/publishing');
+    $secondPage = $this->actingAs($user)->get('http://admin.birdcar.test/publishing?ideasPage=2&activePage=2');
+
+    $firstPage->assertOk()
+        ->assertSee('Backlog idea 13')
+        ->assertDontSee('Backlog idea 01')
+        ->assertSee('Active writing 13')
+        ->assertDontSee('Active writing 01');
+    $secondPage->assertOk()
+        ->assertSee('Backlog idea 01')
+        ->assertDontSee('Backlog idea 13')
+        ->assertSee('Active writing 01')
+        ->assertDontSee('Active writing 13');
 });
 
 test('published work is listed separately from active writing', function (): void {
