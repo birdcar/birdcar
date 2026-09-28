@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('publishing:recover-activities')->everyFiveMinutes()->withoutOverlapping();
-Schedule::command('publishing:publish-due')->everyMinute()->withoutOverlapping();
+Schedule::command('publishing:recover-activities')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('publishing:publish-due')->everyMinute()->withoutOverlapping(5);
