@@ -219,9 +219,7 @@ Keep the existing site manager serving PHP. Use separate terminals for the follo
 php artisan queue:work database --queue=publishing-agents,default --sleep=3 --tries=1 --timeout=900 --no-interaction
 ```
 
-This mirrors production, where Laravel Cloud runs a dedicated `publishing-agents` managed queue beside the default one. The worker must list `publishing-agents`, or agent jobs wait unprocessed. Keep `QUEUE_CONNECTION=database` and leave `DB_QUEUE_RETRY_AFTER` unset (960 seconds) or above 900. Use the actual default queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow, and do not use `composer dev`/`php artisan dev` for agent work: it starts a competing Octane server, Horizon, and a `queue:listen --timeout=0` worker for the default queue only.
-
-Horizon is installed but only processes Redis queues; it is not a replacement for this database worker. Switching to it requires deliberate Redis/supervisor configuration, including timeouts and retry windows. Do not launch it alongside this guide's worker expecting it to process database jobs.
+This mirrors production, where Laravel Cloud runs a dedicated `publishing-agents` managed queue beside the default one. The worker must list `publishing-agents`, or agent jobs wait unprocessed. Keep `QUEUE_CONNECTION=database` and leave `DB_QUEUE_RETRY_AFTER` unset (960 seconds) or above 900. Use the actual default queue name if you intentionally changed `DB_QUEUE`. Do not use `sync` for the interactive AI flow, and do not use `composer dev`/`php artisan dev` for agent work: it starts a competing Octane server and a `queue:listen --timeout=0` worker for the default queue only.
 
 **Scheduler — for full publishing/recovery behavior:**
 

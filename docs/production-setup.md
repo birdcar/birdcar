@@ -139,7 +139,6 @@ Self-hosted alternative: with `QUEUE_CONNECTION=database`, run a supervised work
 php artisan queue:work database --queue=publishing-agents,default --sleep=3 --tries=1 --timeout=900 --max-time=3600 --no-interaction
 ```
 
-Horizon is installed but is not used for either setup. If deliberately choosing Redis/Horizon, configure a supervisor for both queues in `config/horizon.php`: the checked-in supervisor's 60-second timeout cannot run agent jobs, and its retry window must exceed the job timeout.
 
 Enable the platform's Laravel scheduler, or configure one cron invocation every minute:
 
@@ -166,7 +165,7 @@ After code/configuration updates, gracefully restart workers through the platfor
 
 Publishing uses Laravel AI SDK agents with an explicitly selected native OpenRouter provider. It does not use the SDK's default OpenAI provider, so an `OPENAI_API_KEY` is not required for this flow. Installing `laravel/mcp` does not add a publishing MCP endpoint or require another service.
 
-Set `OPENROUTER_API_KEY` through the secret manager. The normal endpoint is `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`. These credentials are the only publishing environment configuration: there is no model, provider, price, token-limit, or timeout matrix to supply. The provider HTTP timeout is code-owned (540 seconds). Agent work is queued, so it is only a guard against a hung request, not a latency target: high-effort roles have exceeded 80 seconds in the live model trial. It must stay below the job's 900-second timeout (section 6), with room for research source fetches, and a timeout pauses the activity as uncertain after the provider may already have billed it. A Redis/Horizon supervisor would need a timeout above it; the checked-in 60-second supervisor is not suitable. Agent requests also ask OpenRouter to prefer higher-throughput upstream providers and to exclude 4-bit, 6-bit and integer quantizations, so a request can cost more per token than OpenRouter's price-first default; the key's OpenRouter limit still bounds spend.
+Set `OPENROUTER_API_KEY` through the secret manager. The normal endpoint is `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`. These credentials are the only publishing environment configuration: there is no model, provider, price, token-limit, or timeout matrix to supply. The provider HTTP timeout is code-owned (540 seconds). Agent work is queued, so it is only a guard against a hung request, not a latency target: high-effort roles have exceeded 80 seconds in the live model trial. It must stay below the job's 900-second timeout (section 6), with room for research source fetches, and a timeout pauses the activity as uncertain after the provider may already have billed it. Agent requests also ask OpenRouter to prefer higher-throughput upstream providers and to exclude 4-bit, 6-bit and integer quantizations, so a request can cost more per token than OpenRouter's price-first default; the key's OpenRouter limit still bounds spend.
 
 Spending is controlled in OpenRouter, not by the application. Set the key's credit limit and any workspace limits there before enabling requests. The application keeps no allowance, makes no reservation before a call, and does not reconcile generation costs; missing usage metadata never blocks otherwise valid output.
 

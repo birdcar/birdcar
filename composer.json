@@ -16,7 +16,6 @@
         "laravel/fortify": "^1.39",
         "laravel/framework": "^13.17",
         "laravel/head": "^0.2.2",
-        "laravel/horizon": "^5.48",
         "laravel/mcp": "^1.0",
         "laravel/nightwatch": "^1.30",
         "laravel/octane": "^2.19",

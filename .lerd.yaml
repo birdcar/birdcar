@@ -14,7 +14,7 @@ services:
   - valkey:
       preset: valkey
 workers:
-  - horizon
+  - queue
   - reverb
   - schedule
   - vite
