@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\LazyLoadingViolationException;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +42,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
+        $this->configureModelStrictness();
+
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
         );
@@ -57,5 +61,25 @@ class AppServiceProvider extends ServiceProvider
         Livewire::addPersistentMiddleware([
             PermissionMiddleware::class,
         ]);
+    }
+
+    /**
+     * Fail on N+1 lazy loading and silently dropped attributes outside production; in production, report N+1s to Nightwatch and keep serving.
+     */
+    protected function configureModelStrictness(): void
+    {
+        Model::preventLazyLoading();
+        Model::preventSilentlyDiscardingAttributes(! app()->isProduction());
+        Model::preventAccessingMissingAttributes(! app()->isProduction());
+
+        Model::handleLazyLoadingViolationUsing(function (Model $model, string $relation): void {
+            $violation = new LazyLoadingViolationException($model, $relation);
+
+            if (! app()->isProduction()) {
+                throw $violation;
+            }
+
+            report($violation);
+        });
     }
 }
