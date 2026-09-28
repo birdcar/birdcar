@@ -243,7 +243,7 @@ test('attention is bounded without overlooking blockers beyond the first batch',
     $this->freezeTime();
     $user = adminHomeUser();
     $blocked = adminHomeAttempt($user, 'An older blocker', ['paused_at' => now()]);
-    $blocked->article->update(['updated_at' => now()->subMonth()]);
+    $blocked->article->forceFill(['updated_at' => now()->subMonth()])->save();
     for ($index = 0; $index < 51; $index++) {
         adminHomeAttempt($user, 'Active piece '.$index);
     }
