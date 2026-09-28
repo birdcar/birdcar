@@ -4,7 +4,8 @@ namespace App\Http\Responses;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Uri;
+use InvalidArgumentException;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 
@@ -16,46 +17,41 @@ class AdminLoginResponse implements LoginResponse, TwoFactorLoginResponse
             return new JsonResponse('', 204);
         }
 
-        $intended = $request->session()->get('url.intended');
+        $intended = $request->session()->pull('url.intended');
 
-        if (is_string($intended) && $this->safeAdminUrl($intended, $request)) {
-            $request->session()->forget('url.intended');
-
+        if (is_string($intended) && $this->isAdminUrl($intended)) {
             return redirect()->to($intended);
         }
 
-        $request->session()->forget('url.intended');
-
-        return redirect()->to($this->adminUrl('/'));
+        return redirect()->to(Uri::of(config()->string('admin.url'))->withPath('/')->value());
     }
 
-    private function safeAdminUrl(string $url, Request $request): bool
+    private function isAdminUrl(string $url): bool
     {
         if (str_starts_with($url, '/')) {
             return ! str_starts_with($url, '//');
         }
 
-        return $this->origin($url) !== null && $this->origin($url) === $this->origin((string) config('admin.url'));
+        $origin = $this->origin($url);
+
+        return $origin !== null && $origin === $this->origin(config()->string('admin.url'));
     }
 
-    private function adminUrl(string $path): string
-    {
-        return rtrim((string) config('admin.url'), '/').'/'.ltrim($path, '/');
-    }
-
+    /**
+     * Normalized scheme://host[:port], or null for anything that is not an absolute http(s) URL.
+     */
     private function origin(string $url): ?string
     {
-        $scheme = parse_url($url, PHP_URL_SCHEME);
-        $host = parse_url($url, PHP_URL_HOST);
-
-        if (! is_string($scheme) || ! in_array($scheme, ['http', 'https'], true) || ! is_string($host) || $host === '') {
+        try {
+            $uri = Uri::of($url);
+        } catch (InvalidArgumentException) {
             return null;
         }
 
-        $port = parse_url($url, PHP_URL_PORT);
-        $defaultPort = $scheme === 'https' ? 443 : 80;
-        $portSuffix = is_int($port) && $port !== $defaultPort ? ':'.$port : '';
+        if (! in_array($uri->scheme(), ['http', 'https'], true) || blank($uri->host())) {
+            return null;
+        }
 
-        return strtolower($scheme).'://'.strtolower($host).$portSuffix;
+        return $uri->scheme().'://'.$uri->host().($uri->port() === null ? '' : ':'.$uri->port());
     }
 }

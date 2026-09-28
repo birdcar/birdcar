@@ -109,6 +109,20 @@ test('unsafe intended login redirects fall back to admin index', function (): vo
         ->assertRedirect('http://admin.birdcar.test/');
 });
 
+test('intended login redirects reject protocol-relative, non-http and malformed urls', function (string $intended): void {
+    $user = User::factory()->create(['password' => Hash::make('secret-password')]);
+    $user->assignRole(AdminRole::Access->value);
+
+    $this->withSession(['url.intended' => $intended])
+        ->post('http://admin.birdcar.test/login', ['email' => $user->email, 'password' => 'secret-password'])
+        ->assertRedirect('http://admin.birdcar.test/');
+})->with([
+    'protocol relative' => ['//evil.example/phish'],
+    'javascript scheme' => ['javascript:alert(1)'],
+    'missing host' => ['https://'],
+    'unterminated ipv6 host' => ['http://[::1'],
+]);
+
 test('intended login redirects reject mismatched admin origin scheme or port', function (): void {
     $user = User::factory()->create(['password' => Hash::make('secret-password')]);
     $user->assignRole(AdminRole::Access->value);
