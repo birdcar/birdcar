@@ -17,7 +17,9 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Enums\MessageStatus;
 use Laravel\Ai\Models\Conversation;
+use Laravel\Ai\Models\ConversationMessage;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -36,7 +38,7 @@ test('native SDK tool approval pauses durably and resumes with the author answer
     expect($activity->status)->toBe(EditorialActivityStatus::AwaitingApproval)
         ->and($activity->pending_tool_approvals[0]['tool'])->toBe('AskAuthor')
         ->and($activity->attempt->brief)->toBe(['goal' => 'Explain support operations'])
-        ->and(Conversation::findOrFail($conversationId)->messages()->whereNotNull('approval_state')->count())->toBe(1)
+        ->and(Conversation::findOrFail($conversationId)->messages()->where('status', MessageStatus::Paused)->count())->toBe(1)
         ->and($activity->model_snapshot['model'])->toBe('google/gemini-3.8-flash');
 
     $this->actingAs($author)->get(route('admin.index'))->assertSee('Answer interview');
@@ -70,7 +72,9 @@ test('declining a native tool request resolves it without another paid completio
 
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Declined)
         ->and($activity->fresh()->pending_tool_approvals)->toBeNull()
-        ->and(Conversation::findOrFail($activity->ai_conversation_id)->messages()->where('tool_results', '!=', '[]')->count())->toBeGreaterThan(0);
+        ->and(Conversation::findOrFail($activity->ai_conversation_id)->messages()->get()
+            ->flatMap(fn (ConversationMessage $message): array => $message->tool_results)
+            ->where('name', 'AskAuthor')->where('denied', true)->count())->toBe(1);
     Http::assertSentCount(1);
 });
 

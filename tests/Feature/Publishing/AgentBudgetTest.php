@@ -16,7 +16,6 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -337,12 +336,16 @@ test('the workspace offers a retry for failed work and rejects another article\'
     $elsewhere = app(StartEditorialActivity::class)->start($actor, agentBudgetAttempt($actor), EditorialActivityKind::Interview, [], 'workspace-retry-elsewhere');
     runAgentJob($elsewhere);
 
-    $workspace = Livewire::actingAs($actor)->test('admin.publishing.article-workspace', ['article' => $attempt->article()->firstOrFail()])
-        ->assertSeeHtml('data-retry-agent="'.$activity->id.'"');
+    $article = $attempt->article()->firstOrFail();
 
-    expect(fn () => $workspace->call('retryAgent', $elsewhere->id))->toThrow(ModelNotFoundException::class);
+    Livewire::actingAs($actor)->test('admin.publishing.article-workspace', ['article' => $article])
+        ->assertSeeHtml('data-retry-agent="'.$activity->id.'"')
+        ->call('retryAgent', $elsewhere->id)
+        ->assertNotFound();
 
-    $workspace->call('retryAgent', $activity->id)->assertSet('saveError', null);
+    Livewire::actingAs($actor)->test('admin.publishing.article-workspace', ['article' => $article])
+        ->call('retryAgent', $activity->id)
+        ->assertSet('saveError', null);
     expect($activity->fresh()->status)->toBe(EditorialActivityStatus::Pending)
         ->and($elsewhere->fresh()->status)->toBe(EditorialActivityStatus::Failed);
 });
