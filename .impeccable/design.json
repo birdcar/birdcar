@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-25T23:10:00-05:00",
+  "generatedAt": "2026-09-27T22:45:00-05:00",
   "title": "Design System: Birdcar",
   "extensions": {
     "colorMeta": {
@@ -198,7 +198,7 @@
       },
       "admin-operational": {
         "displayName": "Admin operational text",
-        "purpose": "Inter, unchanged; Admin and the customer project surface only."
+        "purpose": "Inter, unchanged; Admin and the customer project surface only. In the Settings shell: section titles 1.75rem 500 (1.5rem under 640px), group headings 1.1875rem 500, row labels .9375rem 500 with .9375rem muted help, and environment values in mono .8125rem."
       },
       "studio-card-title": {
         "displayName": "Card title",
@@ -359,6 +359,21 @@
         "name": "studio-fit-card-swap",
         "value": "document.startViewTransition; 300ms out, 520ms 80ms-delay in, studio-ease",
         "purpose": "The fit card's check-to-calendar face swap in resources/js/fit-check.js: the old face slides back (fit-card-out), the new face rises (fit-card-in), the desk plate glides under view-transition-name wt-desk, and the canary hops (canary-hop/canary-hop-back, 720ms, 120ms delay). Disabled entirely under prefers-reduced-motion."
+      },
+      {
+        "name": "admin-settings-save-bar",
+        "value": "enter: opacity 180ms + translateY(.5rem) 220ms cubic-bezier(.16, 1, .3, 1); leave: 140ms ease-in; reduced motion: opacity only, 120ms linear",
+        "purpose": "A setting group's save bar arriving when the group turns dirty and leaving after save or discard (resources/css/admin.css .settings-save-bar-*)."
+      },
+      {
+        "name": "admin-settings-saved-hold",
+        "value": "2400ms",
+        "purpose": "How long a save bar holds its teal/cyan Saved confirmation before leaving (SAVED_DURATION in resources/js/admin/settings.js)."
+      },
+      {
+        "name": "admin-settings-disclosure",
+        "value": "rotate(90deg), 160ms cubic-bezier(.16, 1, .3, 1); none under reduced motion",
+        "purpose": "The micro chevron on a settings row's accent disclosure."
       }
     ],
     "breakpoints": [
@@ -381,6 +396,14 @@
       {
         "name": "studio-compact",
         "value": "560px"
+      },
+      {
+        "name": "admin-settings-stack",
+        "value": "1023px"
+      },
+      {
+        "name": "admin-settings-row-stack",
+        "value": "639px"
       }
     ]
   },
@@ -496,6 +519,30 @@
       "description": "The essay's white 14px reading panel holding the article prose, with a daylight-ground note callout and inline Commit Mono code -- the same vocabulary the admin publishing preview and the local figure specimen render with.",
       "html": "<div class=\"ds-article-prose\"><p>A report rebuilt by hand shapes a business more than anyone admits.</p><div class=\"ds-article-note\"><p><strong>Key takeaway.</strong> The report itself was never the deliverable.</p></div><p>Run <code>artisan queue:work</code> and watch the backlog clear.</p></div>",
       "css": ".ds-article-prose{padding:3.1rem 4.2rem 3.5rem;border-radius:14px;background:#fff;color:#323945;font-family:'Mona Sans',ui-sans-serif,system-ui,sans-serif;font-size:1.4375rem;line-height:1.45;letter-spacing:-.012em;box-shadow:0 1px 2px rgba(11,20,26,.04),0 24px 60px -34px rgba(11,20,26,.28);}.ds-article-prose p{margin:0 0 1.15em;}.ds-article-note{margin-block:2rem;padding:1.4rem 1.6rem;border-radius:10px;background:#edf3f0;color:#323945;font-size:.92em;line-height:1.55;}.ds-article-note p{margin:0;}.ds-article-prose code{padding:.12em .32em;border-radius:4px;background:#edf3f0;color:#0b141a;font-family:'Commit Mono',ui-monospace,monospace;font-size:.82em;}"
+    },
+    {
+      "name": "Admin settings rail",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "The Settings shell's 16rem white rail: muted group labels (Application above Your account) split by a hairline, 2.25rem items, and the current item in the module sidebar's accent treatment (10% tint plus a 2px inset bar). Below lg it becomes the full-width /settings list with trailing drill-in chevrons.",
+      "html": "<nav class=\"ds-set-rail\" aria-label=\"Settings sections\"><div class=\"ds-set-rail-group\"><h2>Application</h2><a href=\"#\" aria-current=\"page\">Mail</a><a href=\"#\">Publishing</a></div><div class=\"ds-set-rail-group\"><h2>Your account</h2><a href=\"#\">Profile</a><a href=\"#\">Security</a><a href=\"#\">Preferences</a></div></nav>",
+      "css": ".ds-set-rail{width:16rem;padding:1.3125rem .75rem 2rem;border-right:1px solid #e4e4e7;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;}.ds-set-rail-group+.ds-set-rail-group{margin-top:1.375rem;padding-top:1.375rem;border-top:1px solid #e4e4e7;}.ds-set-rail h2{padding:.1875rem .375rem .6875rem;font-size:.9375rem;line-height:1.25rem;font-weight:400;letter-spacing:-.01em;color:#71717a;}.ds-set-rail a{display:flex;align-items:center;height:2.25rem;padding:0 .75rem;border-radius:.5rem;color:#52525b;font-size:.9375rem;text-decoration:none;transition:background-color 160ms ease;}.ds-set-rail a:hover{background:rgba(24,24,27,.05);color:#27272a;}.ds-set-rail a[aria-current=page]{color:#27272a;background:color-mix(in srgb,var(--color-accent,#214b57) 10%,transparent);box-shadow:inset 2px 0 0 var(--color-accent,#214b57);}.ds-set-rail a:focus-visible{outline:2px solid var(--color-accent,#214b57);outline-offset:3px;}"
+    },
+    {
+      "name": "Admin settings row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The one row anatomy: label and help left (2fr), control right (3fr), hairline below; stacks under 640px. Shown here as an editable row, an environment fact (mono value plus a neutral Environment badge), and a configured credential.",
+      "html": "<div class=\"ds-set-rows\"><div class=\"ds-set-row\"><div><label class=\"ds-set-label\" for=\"ds-from\">From name</label><p class=\"ds-set-help\">Shown as the sender.</p></div><div class=\"ds-set-control\"><input id=\"ds-from\" class=\"ds-set-input\" value=\"Birdcar\"></div></div><div class=\"ds-set-row\"><div><p class=\"ds-set-label\">Mailer</p><p class=\"ds-set-help\">Set by the deployment.</p></div><div class=\"ds-set-control\"><code class=\"ds-set-env\">smtp &middot; BIRDCAR_ADMIN_MAIL_MAILER</code><span class=\"ds-set-badge\">Environment</span></div></div><div class=\"ds-set-row\"><div><p class=\"ds-set-label\">Resend API key</p><p class=\"ds-set-help\">Set by the deployment.</p></div><div class=\"ds-set-control\"><span class=\"ds-set-credential\"><svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z\" clip-rule=\"evenodd\"/></svg>Configured</span><span class=\"ds-set-badge\">Environment</span></div></div></div>",
+      "css": ".ds-set-rows{max-width:54rem;font-family:Inter,ui-sans-serif,system-ui,sans-serif;}.ds-set-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);align-items:start;padding-block:1.5rem;border-bottom:1px solid #e4e4e7;}.ds-set-row>div:first-child{padding-right:1.5rem;}.ds-set-label{font-size:.9375rem;line-height:1.375rem;font-weight:500;letter-spacing:-.01em;color:#27272a;}.ds-set-help{margin-top:.125rem;font-size:.9375rem;line-height:1.375rem;letter-spacing:-.01em;color:#71717a;}.ds-set-control{display:flex;align-items:start;gap:1rem;min-width:0;}.ds-set-input{flex:1;min-width:0;height:2.5rem;padding:0 .75rem;border:1px solid #e4e4e7;border-bottom-color:rgba(212,212,216,.8);border-radius:.5rem;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05);color:#27272a;font:inherit;font-size:.875rem;}.ds-set-input:focus-visible{outline:2px solid var(--color-accent,#214b57);outline-offset:3px;}.ds-set-env{flex:1;padding-top:.5625rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8125rem;line-height:1.25rem;color:#52525b;overflow-wrap:anywhere;}.ds-set-credential{flex:1;display:inline-flex;align-items:center;gap:.5rem;padding-top:.5625rem;font-size:.9375rem;line-height:1.375rem;color:#3f3f46;}.ds-set-credential svg{width:1.25rem;height:1.25rem;color:#00786f;}.ds-set-badge{flex:none;padding:.2rem .4rem;border-radius:.375rem;background:rgba(161,161,170,.15);color:#3f3f46;font-size:.75rem;line-height:1rem;font-weight:500;}@media (max-width:639px){.ds-set-row{grid-template-columns:minmax(0,1fr);row-gap:.75rem;padding-block:1.125rem;}.ds-set-row>div:first-child{padding-right:0;}}"
+    },
+    {
+      "name": "Admin settings save bar",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "One setting group's sticky save bar, teleported to the bottom of the Settings shell: appears only while its group is dirty or just saved, names the group, and offers Discard beside the deep-teal primary Save changes. States: dirty, saving (Saving..., both disabled), saved (teal-700/cyan-300 check for 2.4s), error (rose).",
+      "html": "<div class=\"ds-set-bar\" role=\"region\" aria-label=\"Admin mail changes\"><p class=\"ds-set-bar-status\" role=\"status\"><span class=\"ds-set-bar-group\">Admin mail &middot; </span>1 unsaved change</p><div class=\"ds-set-bar-actions\"><button type=\"button\" class=\"ds-set-btn\">Discard</button><button type=\"button\" class=\"ds-set-btn ds-set-btn-primary\">Save changes</button></div></div>",
+      "css": ".ds-set-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;min-height:4.75rem;padding:1.125rem 1.8125rem 1.125rem 1.5rem;border-top:1px solid #e4e4e7;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;animation:ds-set-bar-in 220ms cubic-bezier(.16,1,.3,1);}.ds-set-bar-status{display:flex;align-items:center;gap:.5rem;font-size:.9375rem;line-height:1.375rem;letter-spacing:-.01em;color:#52525b;}.ds-set-bar-group{font-weight:500;color:#27272a;}.ds-set-bar-actions{display:flex;gap:.75rem;margin-left:auto;}.ds-set-btn{height:2.5rem;padding:0 1rem;border:1px solid #e4e4e7;border-bottom-color:rgba(212,212,216,.8);border-radius:.5rem;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05);color:#27272a;font:inherit;font-size:.875rem;font-weight:500;cursor:pointer;transition:background-color 160ms ease;}.ds-set-btn:hover{background:#fafafa;}.ds-set-btn-primary{border-color:transparent;background:var(--color-accent,#214b57);color:var(--color-accent-foreground,#fff);}.ds-set-btn-primary:hover{background:color-mix(in srgb,var(--color-accent,#214b57) 90%,black);}.ds-set-btn:focus-visible{outline:2px solid var(--color-accent,#214b57);outline-offset:3px;}@keyframes ds-set-bar-in{from{opacity:0;transform:translateY(.5rem);}}@media (prefers-reduced-motion:reduce){.ds-set-bar{animation-duration:120ms;animation-name:ds-set-bar-fade;}@keyframes ds-set-bar-fade{from{opacity:0;}}}"
     }
   ],
   "narrative": {
@@ -559,6 +606,21 @@
         "name": "The Progressive Find Rule",
         "body": "A find control that depends on JavaScript to filter must never be the only way to reach the list it filters; it starts hidden and the complete, unfiltered list is always the fallback.",
         "section": "components"
+      },
+      {
+        "name": "The One Shell Rule",
+        "body": "A new Admin configuration area is one section class in config/admin.php, one Livewire component under components/admin/settings/, and one permission; it never adds a module-local settings page, tab, or sidebar entry, and never edits the shell.",
+        "section": "components"
+      },
+      {
+        "name": "The Group Save Rule",
+        "body": "Save per setting group, never per page: each group owns its dirty state and its named bar, and one group's error never blocks another.",
+        "section": "components"
+      },
+      {
+        "name": "The Environment Fact Rule",
+        "body": "A value the deployment owns is shown, not edited: its mono value or Configured/Not configured, an Environment badge, and the variable's name when it is missing; never an input, and never the secret itself.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -568,6 +630,7 @@
       "Do self-host Mona Sans via bunny() rather than a system sans fallback becoming the de facto display face.",
       "Do describe the past-employer row as work history in monochrome marks, never as clients or endorsements.",
       "Do keep Admin Publishing within Flux Pro/Inter neutral surfaces with teal/cyan accents, useful bounded motion, explicit approvals, separate draft/live states, and save/conflict guards.",
+      "Do add Admin configuration as a registered Settings section (settings.sections in config/admin.php) built from hairline label-left/control-right rows, a named save bar per setting group, flux:select variant=\"listbox\" for pickers, and the Environment badge on every deployment-owned value or credential.",
       "Do treat the header, footer, desktop nav, canary booking pill, mobile menu, skip link, and shared studio components (.studio-button, .studio-link, .studio-terms, .studio-section-intro, .studio-close) as shared foundation available to every marketing page and the admin article preview, not homepage-scoped.",
       "Do gate the inline Cal embed behind an explicit visitor action (the fit card's Show me times, dispatching booking:open); never auto-load Cal on page view, and never point a booking link anywhere but /walkthrough or #choose-a-time.",
       "Do keep packets rare and staggered sitewide (usually one in flight, never more than two, never the same desk twice) and keep dotted routes marching slowly to show direction; keep every animated route and packet inside the art, breaking a route into per-figure segments and hiding its packet rather than letting either cross story text at a narrow viewport.",
@@ -580,7 +643,8 @@
       "Don't carry the retired system's cyan fields, Barlow display type, square report shapes, or flat line-diagram figures into new marketing work; they're recorded above only so a future agent can recognize them as legacy, not build with them.",
       "Don't literalize the approved comp's invented signage, van-panel copy, poster, doormat slogans, or the \"Waikthrough\" misspelling; the built plates and copy are the source of truth, not the comp's placeholder text.",
       "Don't treat the model shelf's three-column render/heading/text grid as a general-purpose listing pattern for unrelated content; it earns its place here because the isometric renders are themselves the world's bespoke material, not because \"grid of same-size cards\" is a reusable page scaffold.",
-      "Don't assume Admin's accent colors are the same tokens as the retired marketing palette: resources/css/admin.css defines its own literal #214b57/#b7edf1 values in its own @theme, independent of resources/css/app.css and resources/css/marketing.css, neither of which defines ink, cyan, emphasis, or deep-teal any more."
+      "Don't assume Admin's accent colors are the same tokens as the retired marketing palette: resources/css/admin.css defines its own literal #214b57/#b7edf1 values in its own @theme, independent of resources/css/app.css and resources/css/marketing.css, neither of which defines ink, cyan, emphasis, or deep-teal any more.",
+      "Don't give Admin configuration a module-local settings page or tab, a card-stacked form, or one page-bottom Save, and don't render a deployment-owned value or credential as an editable input."
     ]
   }
 }
