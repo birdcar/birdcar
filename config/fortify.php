@@ -146,7 +146,7 @@ return [
 
     'passkeys' => [
         'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),
-        'allowed_origins' => [config('app.url')],
+        'allowed_origins' => array_values(array_unique(array_filter([config('app.url'), config('admin.url')]))),
         'timeout' => 60000,
     ],
 

@@ -13,6 +13,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -21,18 +24,22 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $timezone
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
+ * @property string|null $two_factor_secret
+ * @property string|null $two_factor_recovery_codes
+ * @property Carbon|null $two_factor_confirmed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements OAuthenticatable
+#[Fillable(['name', 'email', 'password', 'timezone'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
+class User extends Authenticatable implements OAuthenticatable, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     protected static function booted(): void
     {
@@ -53,6 +60,7 @@ class User extends Authenticatable implements OAuthenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
