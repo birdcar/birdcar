@@ -92,7 +92,7 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<section data-publishing-studio class="space-y-6">
+<section data-publishing-studio class="space-y-6" x-data="publishingArrivals">
     <div data-publishing-enter>
         <flux:heading level="1" size="xl">Published</flux:heading>
         <flux:text class="mt-2 max-w-3xl">The live library stays separate from new ideas and active writing. Drafts in progress are marked without hiding the published article.</flux:text>

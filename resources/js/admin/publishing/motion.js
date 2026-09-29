@@ -29,18 +29,19 @@ function motion(element, keyframes, options) {
     return controls;
 }
 
-function animateMode(root, mode) {
+function animateMode(root, mode, previousMode) {
     if (!root || reduceMotion()) return;
     const tab = root.querySelector(`[data-session-tab="${mode}"]`);
     if (tab) {
-        motion(tab, { transform: ['translateY(2px) scale(.96)', 'translateY(0) scale(1)'] }, {
+        motion(tab, { transform: ['scale(.96)', 'scale(1)'] }, {
             type: 'spring', stiffness: 520, damping: 25, mass: 0.7,
         });
     }
 
+    const direction = Math.sign(MODES.indexOf(mode) - MODES.indexOf(previousMode)) || 1;
     root.querySelectorAll('[data-session-panel]').forEach((panel) => {
         if (panel.dataset.sessionPanel !== mode) return;
-        motion(panel, { opacity: [0.72, 1], transform: ['translateY(10px)', 'translateY(0)'] }, {
+        motion(panel, { opacity: [0.72, 1], transform: [`translateX(${direction * 16}px)`, 'translateX(0)'] }, {
             type: 'spring', stiffness: 360, damping: 34, mass: 0.8,
         });
     });
@@ -151,7 +152,7 @@ export function createPublishingSession(initialMode = 'write') {
         editorState: 'saved',
         editorActionMessage: '',
         init() {
-            this.$watch('mode', (mode) => queueMicrotask(() => animateMode(rootFor(this), mode)));
+            this.$watch('mode', (mode, previousMode) => queueMicrotask(() => animateMode(rootFor(this), mode, previousMode)));
             queueMicrotask(() => { animateArrivals(rootFor(this)); arrive(rootFor(this)); });
         },
         selectMode(mode) {
@@ -170,8 +171,17 @@ export function createPublishingSession(initialMode = 'write') {
     };
 }
 
+export function createPublishingArrivals() {
+    return {
+        init() {
+            queueMicrotask(() => animateArrivals(rootFor(this)));
+        },
+    };
+}
+
 export function installPublishingMotion(Alpine = globalThis.Alpine) {
     Alpine?.data?.('publishingSession', createPublishingSession);
+    Alpine?.data?.('publishingArrivals', createPublishingArrivals);
     window.addEventListener('publishing-milestone', (event) => {
         const root = document.querySelector(`[data-publishing-studio][data-article-id="${event.detail?.articleId}"]`) ?? document.querySelector('[data-publishing-studio]');
         celebratePublished(root, event.detail ?? {});

@@ -160,7 +160,7 @@ new #[Layout('layouts.admin')] class extends Component
 };
 ?>
 
-<section data-publishing-studio class="publishing-studio space-y-3" x-data="publishingSession('develop')">
+<section data-publishing-studio class="publishing-studio space-y-3" x-data="publishingArrivals">
     <div data-publishing-enter>
         <flux:heading level="1" size="xl">Publishing workspace</flux:heading>
         <flux:text class="mt-2 max-w-3xl">A rough thought is enough. Let’s find the article in it.</flux:text>

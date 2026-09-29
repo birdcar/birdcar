@@ -8,34 +8,64 @@ mock.module('motion', () => ({
     },
 }));
 
-const { createPublishingSession, installPublishingMotion } = await import('./motion.js');
+const { createPublishingArrivals, createPublishingSession, installPublishingMotion } = await import('./motion.js');
 
-test('publishing session animates the selected tab and panel whenever the mode changes', async () => {
+function publishingModeRoot() {
     const tabs = new Map(['develop', 'write', 'release'].map((mode) => [mode, { dataset: { sessionTab: mode } }]));
-    const panel = { dataset: { sessionPanel: 'release' } };
-    const root = {
+    const panels = ['develop', 'write', 'release'].map((mode) => ({ dataset: { sessionPanel: mode } }));
+    return {
+        tabs,
+        panels,
         querySelector: (selector) => {
             const match = selector.match(/data-session-tab="(.*?)"/);
             return match ? tabs.get(match[1]) : null;
         },
-        querySelectorAll: (selector) => (selector === '[data-session-panel]' ? [panel] : []),
+        querySelectorAll: (selector) => (selector === '[data-session-panel]' ? panels : []),
     };
+}
+
+test('mode changes slide the new panel in from the side the tab sits on', async () => {
+    const root = publishingModeRoot();
     globalThis.document = { querySelector: () => root };
     globalThis.matchMedia = () => ({ matches: false });
 
-    const session = createPublishingSession('develop');
+    const session = createPublishingSession('write');
     const watchers = {};
     session.$root = root;
     session.$watch = (key, callback) => { watchers[key] = callback; };
     session.init();
-    animated.length = 0;
-
-    session.selectMode('release');
-    watchers.mode(session.mode);
     await Promise.resolve();
 
-    expect(session.mode).toBe('release');
-    expect(animated.map((entry) => entry.element)).toEqual([tabs.get('release'), panel]);
+    const panelMotion = async (from, to) => {
+        animated.length = 0;
+        session.selectMode(to);
+        watchers.mode(to, from);
+        await Promise.resolve();
+        return animated.find((entry) => entry.element.dataset.sessionPanel === to);
+    };
+
+    const forward = await panelMotion('write', 'release');
+    const backward = await panelMotion('release', 'develop');
+
+    expect(session.mode).toBe('develop');
+    expect(forward?.keyframes.transform).toEqual(['translateX(16px)', 'translateX(0)']);
+    expect(backward?.keyframes.transform).toEqual(['translateX(-16px)', 'translateX(0)']);
+    expect(animated.some((entry) => entry.keyframes.transform?.some((frame) => frame.includes('translateY')))).toBe(false);
+});
+
+test('list pages animate their arrivals without session state', async () => {
+    animated.length = 0;
+    const entries = [{ id: 'heading' }, { id: 'item' }];
+    const root = { querySelectorAll: (selector) => (selector === '[data-publishing-enter]' ? entries : []) };
+    globalThis.matchMedia = () => ({ matches: false });
+
+    const arrivals = createPublishingArrivals();
+    arrivals.$root = { closest: () => root };
+    arrivals.init();
+    await Promise.resolve();
+
+    expect(arrivals).not.toHaveProperty('mode');
+    expect(animated.map((entry) => entry.element)).toEqual(entries);
 });
 
 test('publishing session ignores unknown modes', () => {
