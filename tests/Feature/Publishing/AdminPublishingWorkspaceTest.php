@@ -178,22 +178,16 @@ test('published navigation identifies the active section', function (): void {
     expect(workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@aria-current="page" and contains(@href, "/publishing/published")]')->length)->toBe(1);
 });
 
-test('settings navigation appears only for users who can configure agents', function (): void {
+test('publishing navigation leaves settings to the admin sidebar even for users who can configure agents', function (): void {
     $response = $this->actingAs(publishingUser())->get('http://admin.birdcar.test/publishing');
     $response->assertOk();
 
     $document = new DOMDocument;
     @$document->loadHTML($response->content());
     $xpath = new DOMXPath($document);
-    $settingsLinks = workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/settings/publishing"]');
-    expect($settingsLinks->length)->toBe(1)
-        ->and(workspaceXpathElement($xpath, '//nav[@aria-label="Publishing navigation"]//a[@href="http://admin.birdcar.test/settings/publishing"]')->hasAttribute('aria-current'))->toBeFalse();
 
-    $this->actingAs(publishingWriteOnlyUser())
-        ->get('http://admin.birdcar.test/publishing')
-        ->assertOk()
-        ->assertSee('aria-label="Publishing navigation"', false)
-        ->assertDontSee('href="http://admin.birdcar.test/settings/publishing"', false);
+    expect(workspaceXpathNodes($xpath, '//nav[@aria-label="Publishing navigation"]//a[contains(@href, "/settings")]')->length)->toBe(0)
+        ->and(workspaceXpathNodes($xpath, '//nav[@aria-label="Admin settings"]//a[@href="http://admin.birdcar.test/settings"]')->length)->toBe(1);
 });
 
 test('admission only users cannot open direct publishing urls', function (): void {

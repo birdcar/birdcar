@@ -26,7 +26,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 ## Placement
 
 - Sidebar: Home, Publishing, spacer, Settings (gear) pinned above the account button. Mail leaves the sidebar. Account menu adds "Your account" → Profile, above Log out.
-- `/settings/{section}` (Application), `/settings/account/{section}` (Your account); `/settings` opens the first permitted section. `/mail` → `/settings/mail` and `/publishing/settings` → `/settings/publishing` redirect permanently. Publishing's header keeps a trailing Settings link for users who can configure agents.
+- `/settings/{section}` (Application), `/settings/account/{section}` (Your account); `/settings` opens the first permitted section. `/mail` → `/settings/mail` and `/publishing/settings` → `/settings/publishing` redirect permanently. Publishing's header carries no Settings link (owner decision, 2026-09-28); Settings is reached only from the Admin sidebar.
 - Grouped rail (~232px): Application, then Your account; current item uses the teal pill; a group with no permitted items is not rendered.
 
 ## Extension contract
