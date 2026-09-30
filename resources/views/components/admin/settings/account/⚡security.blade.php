@@ -395,18 +395,18 @@ new #[Layout('layouts.settings'), Title('Security settings')] class extends Comp
 
             <x-admin.settings.row label="Recovery codes" help="Each code signs you in once if you lose your device. Keep them somewhere safe.">
                 @if ($recoveryCodes !== [])
-                    <div class="settings-recovery" x-data="{ copied: false }" data-recovery-codes>
+                    <div class="settings-recovery" x-data="recoveryCodes(@js($recoveryCodes))" data-recovery-codes>
                         <ul class="settings-recovery-codes">
                             @foreach ($recoveryCodes as $recoveryCode)
                                 <li>{{ $recoveryCode }}</li>
                             @endforeach
                         </ul>
                         <div class="settings-recovery-actions">
-                            <flux:button type="button" size="sm" icon="clipboard" x-on:click="navigator.clipboard.writeText(@js(implode("\n", $recoveryCodes))).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+                            <flux:button type="button" size="sm" icon="clipboard" x-on:click="copy">
                                 <span x-show="! copied">Copy</span>
                                 <span x-show="copied" x-cloak>Copied</span>
                             </flux:button>
-                            <flux:button type="button" size="sm" icon="arrow-down-tray" x-on:click="const url = URL.createObjectURL(new Blob([@js(implode("\n", $recoveryCodes)."\n")], { type: 'text/plain' })); const link = Object.assign(document.createElement('a'), { href: url, download: 'birdcar-admin-recovery-codes.txt' }); link.click(); URL.revokeObjectURL(url)">Download</flux:button>
+                            <flux:button type="button" size="sm" icon="arrow-down-tray" x-on:click="download">Download</flux:button>
                             <flux:button type="button" size="sm" variant="ghost" icon="arrow-path" wire:click="regenerateRecoveryCodes">Make new codes</flux:button>
                         </div>
                     </div>

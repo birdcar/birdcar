@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createSettingsGroup, hasUnsavedSettings, installSettings } from './settings.js';
+import { createRecoveryCodes, createSettingsGroup, hasUnsavedSettings, installSettings } from './settings.js';
 
 function groupWith(dirtyFields, fields = ['senders.admin.from_name', 'senders.admin.reply_to'], name = 'admin') {
     const listeners = {};
@@ -55,6 +55,7 @@ test('installing registers the group component and a leave guard', () => {
     );
 
     expect(registered.settingsGroup).toBe(createSettingsGroup);
+    expect(registered.recoveryCodes).toBe(createRecoveryCodes);
     expect(typeof events.beforeunload).toBe('function');
 });
 
@@ -80,4 +81,49 @@ test('in-app navigation away from unsaved settings asks before leaving', () => {
     dirty = false;
     expect(navigate()).toBe(false);
     expect(prompts).toHaveLength(2);
+});
+
+test('copying recovery codes puts one code per line on the clipboard and confirms it', async () => {
+    const written = [];
+    const recovery = createRecoveryCodes(['AbCdE-12345', 'FgHiJ-67890'], { clipboard: { writeText: async (text) => { written.push(text); } } });
+
+    await recovery.copy();
+
+    expect(written).toEqual(['AbCdE-12345\nFgHiJ-67890']);
+    expect(recovery.copied).toBe(true);
+    recovery.destroy();
+});
+
+test('a failed copy does not claim the codes were copied', async () => {
+    const recovery = createRecoveryCodes(['AbCdE-12345'], { clipboard: { writeText: async () => { throw new Error('denied'); } } });
+
+    await expect(recovery.copy()).rejects.toThrow('denied');
+    expect(recovery.copied).toBe(false);
+});
+
+test('downloading recovery codes saves a text file from an attached link and releases it afterwards', async () => {
+    const blobs = [];
+    const revoked = [];
+    const events = [];
+    const link = { click: () => events.push('click'), remove: () => events.push('remove') };
+    const root = {
+        createElement: (tag) => (tag === 'a' ? link : null),
+        body: { append: (element) => events.push(element === link ? 'append' : 'append-other') },
+    };
+    const urls = {
+        createObjectURL: (blob) => { blobs.push(blob); return 'blob:recovery'; },
+        revokeObjectURL: (url) => revoked.push(url),
+    };
+    const recovery = createRecoveryCodes(['AbCdE-12345', 'FgHiJ-67890'], { root, urls });
+
+    recovery.download();
+
+    expect(events).toEqual(['append', 'click', 'remove']);
+    expect(link.href).toBe('blob:recovery');
+    expect(link.download).toBe('birdcar-admin-recovery-codes.txt');
+    expect(await blobs[0].text()).toBe('AbCdE-12345\nFgHiJ-67890\n');
+    expect(blobs[0].type).toStartWith('text/plain');
+    expect(revoked).toEqual([]);
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(revoked).toEqual(['blob:recovery']);
 });

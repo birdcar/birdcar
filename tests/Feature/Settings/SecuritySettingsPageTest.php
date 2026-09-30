@@ -115,7 +115,10 @@ test('an authenticator code finishes setup and shows recovery codes once', funct
         ->call('confirmTwoFactor')
         ->assertHasNoErrors()
         ->assertSeeHtml('data-two-factor-state="enabled"')
-        ->assertSeeHtml('data-recovery-codes');
+        ->assertSeeHtml('data-recovery-codes')
+        ->assertSeeHtml('x-data="recoveryCodes(')
+        ->assertSeeHtml('x-on:click="copy"')
+        ->assertSeeHtml('x-on:click="download"');
 
     $codes = $user->fresh()?->recoveryCodes() ?? [];
     expect($user->fresh()?->two_factor_confirmed_at)->not->toBeNull()
