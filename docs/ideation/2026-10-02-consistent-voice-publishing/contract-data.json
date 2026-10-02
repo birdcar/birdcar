@@ -1,0 +1,510 @@
+{
+  "projectName": "Consistent Voice Publishing",
+  "slug": "2026-10-02-consistent-voice-publishing",
+  "date": "2026-10-02",
+  "status": "Approved",
+  "supersedes": null,
+  "gates": {
+    "dimensions": [
+      {
+        "key": "problem",
+        "label": "Problem Clarity",
+        "status": "ready",
+        "evidence": "The workflow scout traced that voice samples reach agents as 220-character excerpts only when hand-picked, never on the dashboard path, and that no style, register, channel, framework or PRODUCT.md material reaches any prompt, while Article.slug and labels derive from the raw idea."
+      },
+      {
+        "key": "goals",
+        "label": "Goal Definition",
+        "status": "ready",
+        "evidence": "Eight pass/fail goals (frozen canon in every input, one lint rule per tagged mechanical rule, framework selection, golden-set drift thresholds, one idea yielding a flagship, kit and siblings, Admin canon editing, owner acceptance of three real ideas, an edit-distance baseline) were proposed and accepted with explicit thresholds."
+      },
+      {
+        "key": "criteria",
+        "label": "Success Criteria",
+        "status": "ready",
+        "evidence": "Every goal maps to a named Pest file on the Postgres suite, a grep, or a jq recomputation over recorded evidence; owner voice acceptance, the PRODUCT.md reconciliation and the rendered board review remain explicit judgment calls with mechanical twins where evidence is recorded."
+      },
+      {
+        "key": "scope",
+        "label": "Scope Boundaries",
+        "status": "ready",
+        "evidence": "The owner set the MVP line (data model, canon, frameworks, lint, sharper reviewers, packaging), placed the board, kit, siblings, retrieval, canon editor and drift trial in Full, and excluded automated posting, idea feeds, canon serving other tools and learning from edits."
+      },
+      {
+        "key": "consistency",
+        "label": "Consistency",
+        "status": "ready",
+        "evidence": "Six tensions with earlier contracts (self-repair vs protected prose, retrieval vs frozen inputs, archive exemplars vs the no-archive-anecdote rule, kit claims, Vale vs native PHP, sibling gates) were resolved in writing, lint blocking and drag semantics were decided explicitly, and critic blockers on SQLite vectors and canon propagation were fixed and recorded."
+      }
+    ]
+  },
+  "problem": [
+    "The owner wants every Birdcar post to sound like him and to serve the same business goals: owners of established service businesses as the reader, one plain Walkthrough invitation, the outcome chain, and the claims and exclusion rules. Today the publishing workflow asks him to tick voice samples from previous posts for each article, and that mechanism barely works. Excerpts are cut to about 220 characters before the 1,200-character cap applies. The dashboard Develop path starts the interview with only the idea, so research, plan, draft and the automatic reviews receive an empty voice_context. No agent instruction tells a role how to use the samples. None of his style guide, public register, blog channel rules, narrative frameworks or PRODUCT.md positioning reaches any prompt, and BuyerReviewer is told not to invent buyer facts without being told who the buyer is.",
+    "The result is that voice and goals vary per post and the owner catches drift by hand. The pipeline also has structural gaps for producing marketable output: the raw idea becomes the article's slug and fallback title instead of a working summary with the real title set later as metadata; one idea can produce exactly one manuscript, with no distribution kit or sibling posts; the Planner has no notion of post type or narrative framework; mechanical rules such as the em dash ban, banned vocabulary, title and meta lengths and the single /walkthrough link are left to LLM attention; and there is no board showing where each piece sits across stages.",
+    "The owner's voice profile already exists in unusual detail (bat-kol style.md, registers/public.md, channels/blog.md, the new-post framework library and the marketingskills and Hormozi distillations), and the ten-agent pipeline with human angle, plan and release gates already exists. The work is to decompose that profile into what each role needs, freeze it into every activity, enforce what is mechanical deterministically, and refine the existing pipeline's stages so one idea reliably becomes several on-voice, on-goal pieces."
+  ],
+  "goals": [
+    "G1 Inputs: every editorial activity kind freezes the active canon's version id and content hash, its own role rubric and the shared goals block into its input; Drafter and VoiceReviewer also receive the fixed exemplar canon labeled voice-only, and for blog pieces 2-4 retrieved exemplar sections; the per-post voice sample checklist no longer exists.",
+    "G2 Mechanical rules: every mechanical rule tagged in the canon has exactly one deterministic lint rule with a seeded-violation fixture that fires and a clean fixture that does not, every lint rule is tagged in the canon and stated in the Drafter's instructions, and title, SEO title, meta and slug rules are enforced once and shared by packaging and release.",
+    "G3 Drift detection: on a golden set of 10 real canon or site-copy passages and 10 slopped variants of the same passages, lint plus VoiceReviewer flag at least 9 of 10 distinct slopped passages at the injected span and raise a drift finding on no more than 2 of 10 distinct real ones, measured against the current canon hash.",
+    "G4 Pieces: one idea yields a flagship blog post plus LinkedIn, Bluesky and email pieces and any number of owner-requested sibling posts, each its own card with its own stage; the idea's summary title never becomes a piece's title or slug, and the real title and slug are set at packaging.",
+    "G5 Owner acceptance: the owner runs three real ideas end to end and judges each flagship and its kit publishable with light edits.",
+    "G6 Baseline: the edit distance between each agent-authored revision and the owner's next saved revision is recorded per piece, as a measured baseline with no target.",
+    "G7 Structure: every plan records a post type, a primary narrative framework from the blog channel's allowed list for that type and a runner-up with reasons, and the Drafter receives the chosen framework file in full.",
+    "G8 Canon ownership: the owner can change the canon in Admin without a deploy, the next activity freezes the new version, and a downloaded export committed to the repo keeps fresh environments and tests in step."
+  ],
+  "successCriteria": [
+    {
+      "criterion": "The whole test suite runs on Postgres (birdcar_test on Herd, same host and port as development) locally and on a pgvector-enabled Postgres service in CI, with no SQLite configuration left in phpunit.xml or the CI workflow.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/ContentIdeaTest.php && ! grep -nE 'sqlite|:memory:' phpunit.xml .github/workflows/tests.yml",
+        "expect": "exits 0; the suite switch lands at the start of Phase 1, before any model change"
+      }
+    },
+    {
+      "criterion": "Capturing an idea creates a ContentIdea with a summary title and a flagship blog-post piece with a provisional slug; no piece title, label or slug is ever derived from the idea's summary; every imported archive essay keeps its published title, slug and URL. Phase 4 adds the case where packaging sets the real title and slug.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/ContentIdeaTest.php tests/Feature/Publishing/ArticleSlugTest.php tests/Feature/Publishing/ArchiveMigrationTest.php",
+        "expect": "exits 0; ContentIdeaTest is created in Phase 1 and extended in Phase 4"
+      }
+    },
+    {
+      "criterion": "For every case of EditorialActivityKind, the outbound request body contains the active canon version id and content hash, that role's rubric and the shared goals block; Drafter and VoiceReviewer requests also contain the fixed exemplar canon labeled voice-only.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/EditorialInputContractTest.php",
+        "expect": "exits 0; the dataset is built from EditorialActivityKind::cases(), so a new kind without a contract fails; created in Phase 2"
+      }
+    },
+    {
+      "criterion": "The per-post voice sample checklist, its state and its mentions in agent instructions and the manual model trial are gone.",
+      "check": {
+        "cmd": "! grep -rniE 'voice[_ ]?samples?' app resources tests/Manual",
+        "expect": "exits 0 (no matches)"
+      }
+    },
+    {
+      "criterion": "Canon version 1 is the repo rubric files plus a sha256 manifest; its hash is the version id frozen into inputs; no frozen input or canon file references a ~/.config path; approved homepage and Walkthrough copy are a dated snapshot inside the canon.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/VoiceCanonTest.php",
+        "expect": "exits 0; created in Phase 2"
+      }
+    },
+    {
+      "criterion": "The brief records a post type and target query; the plan records a primary framework from the blog channel's allowed list for that type, a runner-up with reasons and an optional single-section secondary; disallowed or length-excluded frameworks fail validation; changing the framework at the plan gate re-runs planning; the Drafter receives the chosen framework file in full.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/NarrativeFrameworkTest.php",
+        "expect": "exits 0; created in Phase 4"
+      }
+    },
+    {
+      "criterion": "The set of mechanical rule ids tagged in the canon equals the set of registered lint rule ids in both directions; each rule has a seeded-violation fixture that fires and a clean fixture that passes; every lint rule id is stated in the Drafter's instructions and schema description.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/VoiceLintTest.php",
+        "expect": "exits 0; created in Phase 3"
+      }
+    },
+    {
+      "criterion": "After drafting, lint runs automatically and at most two self-repair passes touch only agent-authored blocks; owner-edited or protected blocks receive findings with proposed patches that are never auto-applied; release approval is blocked while unresolved lint findings remain unless each is overridden with a recorded reason.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/VoiceLintWorkflowTest.php tests/Feature/Publishing/ReleaseReadinessTest.php",
+        "expect": "exits 0; repair cap, protected-prose, override-with-reason and release-block cases covered"
+      }
+    },
+    {
+      "criterion": "FactReviewer, VoiceReviewer and BuyerReviewer each freeze a distinct canon rubric file, pairwise different by hash, carrying its lens's section markers (claims and exclusions; voice, craft and framework adherence; buyer, commercial structure and discovery); reconciliation and recheck receive the findings and reviewed text they judge.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/ReviewRubricTest.php tests/Feature/Publishing/EditorialReviewTest.php",
+        "expect": "exits 0; ReviewRubricTest is created in Phase 4"
+      }
+    },
+    {
+      "criterion": "The Packager activity proposes ten title options plus an H1, a 50-60 character SEO title, a 150-160 character meta description, a 4-6 word slug and a greatest-hits tag through the existing metadata proposal-acceptance path; the shared metadata lint rules (including archive-slug reuse) block release through CheckArticleRelease findings.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/PackagingTest.php",
+        "expect": "exits 0; created in Phase 4"
+      }
+    },
+    {
+      "criterion": "Exemplar indexing chunks non-canon archive essays and pipeline-published blog pieces by section, embeds them with a request to OpenRouter's /api/v1/embeddings using openai/text-embedding-3-small at 1536 dimensions through the dedicated openai-compatible provider, and freezes 2-4 retrieved sections into Drafter and VoiceReviewer inputs for blog pieces; canon essays and site copy are never indexed; vector queries never receive raw strings.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/ExemplarRetrievalTest.php",
+        "expect": "exits 0 on the Postgres suite; asserts the outbound embeddings request with Http::fake and Http::assertSent; created in Phase 5"
+      }
+    },
+    {
+      "criterion": "The vector migration enables pgvector and creates the vector column and HNSW index, and whereVectorSimilarTo returns the expected nearest sections.",
+      "check": {
+        "cmd": "php artisan test --compact --fail-on-skipped tests/Feature/Publishing/ExemplarVectorSearchTest.php",
+        "expect": "exits 0 with no skipped tests against birdcar_test on Herd Postgres; CI runs the same suite against a pgvector service; created in Phase 5"
+      }
+    },
+    {
+      "criterion": "Approving a flagship release freezes its approved claim manifest and spawns LinkedIn, Bluesky and email kit pieces drafted from the approved post; kit lint enforces channel limits; kit checks reject claims outside the flagship's claim manifest; a kit piece can be marked Posted only after its flagship is Published; sibling posts created from an idea run the full post path including their own angle gate.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/DistributionKitTest.php tests/Feature/Publishing/SiblingPieceTest.php",
+        "expect": "exits 0; created in Phase 6"
+      }
+    },
+    {
+      "criterion": "The publishing board shows columns derived from each piece's stage, allows only the single-action drags (Ideas to Shaping starts development, Ready to Scheduled opens the release dialog, any column to Parked or Killed with a reason), refuses drags across angle, plan or release gates, nests kit cards under their flagship, and shows each card's live agent status.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/PublishingBoardTest.php",
+        "expect": "exits 0; created in Phase 7"
+      }
+    },
+    {
+      "criterion": "The board renders and behaves correctly in the browser at desktop and mobile widths in light and dark mode, including drag feedback, refused gate drags and status chips.",
+      "check": {
+        "judgment": "The owner reviews the board at admin.birdcar.test in desktop and mobile widths, light and dark, after Phase 7; source and Livewire assertions do not count as this check."
+      }
+    },
+    {
+      "criterion": "Canon versions in the database are immutable; saving an Admin edit creates and activates a new version and re-activating an older one is the rollback; activities keep the version they froze; the deploy-time sync creates a version only when the repo hash is new, and auto-activates it only when the active version is the previous repo-sourced one; the editor rejects a save that drops a tagged lint rule id from the Drafter rubric; the Admin download reproduces the active version as the repo file tree.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/CanonEditorTest.php",
+        "expect": "exits 0; created in Phase 8"
+      }
+    },
+    {
+      "criterion": "Each agent-authored revision followed by an owner-saved revision records a word-level edit distance on the piece.",
+      "check": {
+        "cmd": "php artisan test --compact tests/Feature/Publishing/EditDistanceTest.php",
+        "expect": "exits 0; created in Phase 9"
+      }
+    },
+    {
+      "criterion": "The paid golden-set drift trial, run against the current canon, meets G3's thresholds computed from its recorded attempts.",
+      "check": {
+        "cmd": "jq -e --arg h \"$(php artisan publishing:canon-hash)\" '.canon_hash == $h and ([.attempts[].passage_id] | unique | length) == 20 and ([.attempts[] | select(.variant == \"slopped\" and .caught_at_injected_span) | .passage_id] | unique | length) >= 9 and ([.attempts[] | select(.variant == \"real\" and .drift_flagged) | .passage_id] | unique | length) <= 2' docs/ideation/2026-10-02-consistent-voice-publishing/drift-validation.json",
+        "expect": "exits 0; the file is written only by DRIFT_TRIAL=1 vendor/bin/pest tests/Manual/VoiceDriftTrialTest.php against the local Postgres test database, run by the owner at the acceptance gate"
+      }
+    },
+    {
+      "criterion": "Three real ideas each produced a flagship and full kit that the owner recorded as publishable, with an edit distance captured for every piece.",
+      "check": {
+        "cmd": "jq -e '(.ideas | length) >= 3 and all(.ideas[]; .verdict == \"publishable\" and ([.pieces[].kind] | sort) == [\"blog_post\",\"bluesky_thread\",\"email_blurb\",\"linkedin_post\"] and all(.pieces[]; .edit_distance != null))' docs/ideation/2026-10-02-consistent-voice-publishing/acceptance.json",
+        "expect": "exits 0 once the owner records acceptance.json at the gate"
+      }
+    },
+    {
+      "criterion": "The flagships and kits read as the owner's voice and serve the stated goals.",
+      "check": {
+        "judgment": "The owner reads all three flagships and their kits in Admin and records the verdict and notes in acceptance.json at the acceptance gate."
+      }
+    },
+    {
+      "criterion": "PRODUCT.md's Written Voice section defers to or matches the canon and no longer contradicts it.",
+      "check": {
+        "judgment": "The owner reads PRODUCT.md § Written Voice against the canon after Phase 2."
+      }
+    },
+    {
+      "criterion": "The test suite, Pint and static analysis pass.",
+      "check": {
+        "cmd": "composer test",
+        "expect": "exits 0"
+      }
+    }
+  ],
+  "scope": {
+    "mvp": [
+      {
+        "item": "ContentIdea model owning pieces: an idea has a summary title and notes; Article becomes the piece with a kind and optional parent; pieces use a provisional slug until packaging; no title or slug derives from the idea",
+        "reason": "Fixes the idea-becomes-title bug, and doing the data model now means existing articles migrate once instead of again when kit and sibling pieces arrive"
+      },
+      {
+        "item": "Voice-and-goals canon version 1: style, public register, blog channel, allowed narrative frameworks and framework guide, humanizer and editor passes, marketingskills sweeps, Hormozi structure, PRODUCT.md positioning and the goals block decomposed into per-role rubric files in the repo with mechanical rules tagged by id, frozen into every activity by sha256 manifest hash",
+        "reason": "The core ask: the same voice and goals reach every role on every post"
+      },
+      {
+        "item": "Fixed exemplar canon of four essays (Just build it twice, Your AI wrote a bug, Six months of talking to a machine, The tools that build the tools) plus a dated snapshot of approved homepage and Walkthrough copy, labeled voice-only",
+        "reason": "Replaces per-post sample picking with a stable reference set; research shows few-shot gains saturate after a handful"
+      },
+      {
+        "item": "Remove the voice sample checklist and its state, update the manual model trial, and reconcile PRODUCT.md's Written Voice section with the canon",
+        "reason": "The checklist is the mechanism being replaced, and contradictory voice records mislead future work"
+      },
+      {
+        "item": "Post type and narrative framework selection: brief records post type and target query; Planner proposes a primary framework from the channel's allowed list plus a runner-up; owner chooses at the plan gate; Drafter receives the framework file",
+        "reason": "G7; post-type templates and frameworks are bat-kol's structural lever for consistent essays"
+      },
+      {
+        "item": "Deterministic PHP voice linter with at most two agent self-repair passes and a release block with per-finding override",
+        "reason": "G2; self-repair is what keeps G5's light edits light, since the owner otherwise fixes every mechanical hit by hand"
+      },
+      {
+        "item": "Sharper three-lens review with distinct rubrics, plus a Packager activity that proposes titles, SEO title, meta, slug and greatest-hits tag through the existing metadata acceptance path, with the approved claim manifest frozen at release",
+        "reason": "Keeps the agreed three-lens batch while giving each reviewer a rubric it can apply consistently, and sets the real title late as metadata (G4); the greatest-hits tag is deliberately packaging metadata"
+      }
+    ],
+    "full": [
+      {
+        "item": "Retrieved exemplars: 2-4 sections per blog brief from non-canon archive essays and pipeline-published pieces, through the SDK's Embeddings, a dedicated OpenRouter openai-compatible provider and pgvector, with an owner-run backfill command",
+        "reason": "G1; the owner chose canon plus retrieval and wants the SDK's built-in embeddings used rather than avoided"
+      },
+      {
+        "item": "Distribution kit pieces (LinkedIn, Bluesky, email blurb) drafted from the approved flagship by a KitDrafter role using the fixed canon's short-form examples, plus sibling posts from the same idea",
+        "reason": "G4; the end goal is one idea becoming several marketable pieces"
+      },
+      {
+        "item": "Kanban publishing board with stage-derived columns, single-action drags, Parked and Killed lanes, nested kit cards and live status chips",
+        "reason": "Owner asked to rethink the flow around phases on a board; blogbot's users repeatedly complained when work looked hung"
+      },
+      {
+        "item": "Admin canon editor with immutable database versions, save-activates and rollback, a hash-deduplicated deploy-time sync from repo files, and a download of the active version for committing",
+        "reason": "G8; the owner chose Admin-edited versions winning over repo files"
+      },
+      {
+        "item": "Golden-set drift trial (manual, paid, owner-run against local Postgres) and edit-distance capture",
+        "reason": "G3 and G6"
+      }
+    ],
+    "stretch": [
+      {
+        "item": "Canon version diff view in Admin",
+        "reason": "Useful when editing the canon, not needed to edit it"
+      },
+      {
+        "item": "Edit-distance trend per piece kind on the board",
+        "reason": "Only meaningful once several pieces have accumulated"
+      },
+      {
+        "item": "Retrieved short-form exemplars for kit pieces",
+        "reason": "No published kit pieces exist to retrieve until the kit has been used for a while"
+      }
+    ],
+    "outOfScope": [
+      {
+        "item": "Automated posting to LinkedIn, Bluesky or an email service",
+        "reason": "Owner choice; the app drafts kit pieces and the owner copies them out and marks them Posted"
+      },
+      {
+        "item": "Idea-generation feeds such as daily proposals or source sweeps",
+        "reason": "Owner choice; ideas come from the owner"
+      },
+      {
+        "item": "Serving the canon to other tools (bat-kol Slack, email or GitHub drafting, MCP exposure)",
+        "reason": "Owner choice for now; the canon replacing bat-kol is the stated long-term direction"
+      },
+      {
+        "item": "Learning rules from the owner's edits or automatic canon updates",
+        "reason": "Owner choice; edit distance is measured only, and earlier contracts rejected silent voice learning"
+      },
+      {
+        "item": "Vale or any external prose-linting binary",
+        "reason": "Adds a binary to Laravel Cloud and a dependency; PHP rules run in the existing queue job and get Pest fixtures"
+      },
+      {
+        "item": "Fine-tuning a model on the owner's corpus",
+        "reason": "Corpus is small and fine-tuning adds model lock-in; exemplars plus rubrics come first"
+      },
+      {
+        "item": "Changing archived essays' titles, slugs, dates, URLs or text",
+        "reason": "The blog channel and PRODUCT.md require the archive to stay exactly as published"
+      },
+      {
+        "item": "Closing the 2026-09-22 three-piece pilot",
+        "reason": "Its criteria (piece-type mix, archive fidelity, spend) differ from G5; close or supersede it separately"
+      }
+    ],
+    "future": [
+      "The canon replaces bat-kol as the source of truth for every channel and is exposed to other tools over MCP",
+      "Cluster agent-to-owner correction pairs into owner-approved canon rule proposals",
+      "Rank ideas by search and AI-visibility gap signals",
+      "Automated distribution once kit quality is proven"
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "One idea owns many pieces: a flagship blog post, LinkedIn, Bluesky and email kit pieces, and owner-requested sibling blog posts, each with its own stage",
+      "rejected": "A flagship plus kit only, or sibling posts only; and the 2026-09-22 contract's exclusion of derivative generation",
+      "reason": "The owner's end goal is one idea becoming potentially several marketable pieces"
+    },
+    {
+      "decision": "Keep Article as the piece model with a kind and parent link, and add a ContentIdea model that owns the summary title",
+      "rejected": "Renaming Article to a new Piece model",
+      "reason": "Reuses revisions, releases, attempts and their tests; the rename would churn every publishing file for no behavior change"
+    },
+    {
+      "decision": "Decompose bat-kol into repo-owned per-role rubric files as canon version 1; Admin-edited database versions win once the editor exists; a download of the active version is committed back to the repo",
+      "rejected": "Syncing from bat-kol by heading manifest, the repo always winning, or Admin-only storage after import",
+      "reason": "Production cannot read ~/.config, role decomposition is the point, and the owner wants the app's canon to eventually replace bat-kol"
+    },
+    {
+      "decision": "A fixed exemplar canon of four 2026 essays plus approved site copy, with 2-4 sections retrieved per blog brief by the SDK's built-in embeddings from non-canon archive essays and pipeline-published pieces",
+      "rejected": "A fixed canon only; per-post picking; the 2026-09-22 contract's rejection of an embeddings index; and indexing the canon essays and site copy already frozen in full",
+      "reason": "The owner chose canon plus retrieval and noted the earlier avoidance of built-in embeddings had to be fixed afterward; the over-engineering critic showed indexing frozen material retrieves what every input already holds"
+    },
+    {
+      "decision": "Embeddings use a dedicated openai-compatible provider entry keyed to the OpenRouter key and base URL, with openai/text-embedding-3-small at 1536 dimensions, set as the embeddings default; vector queries always receive precomputed embeddings",
+      "rejected": "OpenAI direct or Gemini embeddings, and the shipped default_for_embeddings of openai",
+      "reason": "Keeps OpenRouter as the only key and spending authority, as the 2026-09-24 contract decided; passing raw strings would silently embed through the default provider"
+    },
+    {
+      "decision": "Several reviewers: keep the three lenses with sharper, distinct role rubrics, plus deterministic lint ahead of them",
+      "rejected": "One general reviewer, or blogbot's single agent with one advisory critic",
+      "reason": "Mechanical, judgment and reconciliation checks fail differently; research supports decomposed criteria and external grounding over one holistic critic"
+    },
+    {
+      "decision": "Refine the existing stages: add an Ideas column, lint with at most two self-repair passes, a packaging step and kit pieces spawned at release approval; keep every current stage and gate",
+      "rejected": "Merging research into planning, or dropping the angle gate",
+      "reason": "The owner wants the pipeline refined into a seamless workflow, not replaced"
+    },
+    {
+      "decision": "Packaging runs as a Packager activity whose metadata goes through the existing proposal-acceptance path, with metadata rules implemented once as lint rules that CheckArticleRelease enforces",
+      "rejected": "A separate accepted-package gate and a new EditorialStage value, with the length rules validated twice (the pre-critic plan)",
+      "reason": "The over-engineering critic showed CheckArticleRelease and metadata proposal acceptance already guard these fields; the owner's Package step survives as an activity on the board"
+    },
+    {
+      "decision": "Deterministic lint findings block release unless each is overridden with a recorded reason; LLM style findings stay advisory",
+      "rejected": "Lint as advisory only, matching the 2026-09-22 decision exactly, or a hard block with no override",
+      "reason": "Mechanical rules like the em dash ban are absolute in the voice profile, but quoted sources can legitimately contain a banned word"
+    },
+    {
+      "decision": "Implement the linter as native PHP rules, with every mechanical canon rule tagged by id and checked against registered lint rules in both directions",
+      "rejected": "Vale, and a lint dataset that only lists implemented rules",
+      "reason": "No external binary or dependency; the two-way id check means a canon rule cannot silently lack enforcement"
+    },
+    {
+      "decision": "Self-repair rewrites only agent-authored blocks; owner-edited blocks get findings with proposed patches that are never auto-applied",
+      "reason": "Preserves the 2026-09-22 rule that agents never silently change the owner's prose"
+    },
+    {
+      "decision": "Release approval freezes the flagship's approved claim manifest; kit pieces are drafted from the approved flagship, may not add claims outside that manifest, and can be marked Posted only after the flagship is Published",
+      "reason": "Keeps facts tied to checked claims and follows the blog channel rule against linking a post before it is published; the hidden-dependency critic found no claim-set artifact existed"
+    },
+    {
+      "decision": "The Planner selects a primary narrative framework and a runner-up from the blog channel's allowed list for the post type; the owner chooses at the plan gate; PHP validates the allowed list and length exclusions",
+      "rejected": "Leaving structure implicit in the outline, or scoring with framework-guide's topic tables as written",
+      "reason": "Mirrors bat-kol's top-two selection; the topic tables were tuned for the old practitioner audience and the channel's per-type list supersedes them"
+    },
+    {
+      "decision": "Board columns follow stage; drags are allowed only for single human actions; crossing a gate opens the workspace",
+      "rejected": "Dragging across a gate approves it, or a read-only board",
+      "reason": "The owner should approve the angle, plan and exact release text where he can read them"
+    },
+    {
+      "decision": "Measure drift with 10 real and 10 slopped passages, passing at 9 of 10 caught and at most 2 of 10 real flagged, recomputed from recorded attempts and pinned to the current canon hash",
+      "rejected": "A pairwise which-is-Nick judge, owner acceptance alone, or trusting the harness's own summary fields",
+      "reason": "Tests the pipeline's own checks and goes stale automatically when the canon changes"
+    },
+    {
+      "decision": "The MVP is the data model, canon, frameworks, lint, sharper reviewers and packaging; the board, kit, siblings, retrieval, canon editor and drift trial are Full",
+      "rejected": "Everything as MVP, or the board first",
+      "reason": "Owner choice; voice and goals consistency is the core and the board is a view over stages that must exist first"
+    },
+    {
+      "decision": "The whole test suite moves from SQLite in memory to Postgres: birdcar_test on Herd locally (same host and port as development) and a pgvector-enabled Postgres service in CI; the vector migration calls Schema::ensureVectorExtensionExists() with no driver guard; the drift trial uses the same database",
+      "rejected": "One retrieval test on the SQLite suite with embeddings faked (the pre-critic plan), a pgsql-guarded vector migration with only the vector tests on Postgres (the critic-fix plan), or a PHP-side similarity fallback",
+      "reason": "Both the hidden-dependency and success-criteria critics showed SQLite throws on vector columns; the owner chose production parity over keeping the suite on SQLite"
+    },
+    {
+      "decision": "Canon version 1 in Phases 2-7 is the repo files frozen by sha256 manifest hash; database versions, the Admin editor and a deploy-time sync arrive in Phase 8 after every rubric exists, deduplicating by hash and auto-activating a repo version only when the active version is the previous repo-sourced one",
+      "rejected": "Seeding immutable database versions in Phase 2 (the pre-critic plan), which would strand the Phase 4 and Phase 6 rubrics outside already-seeded environments",
+      "reason": "The hidden-dependency critic showed no path carried later rubrics into existing environments, and the over-engineering critic showed a versions table with one unchangeable row does no work before the editor exists"
+    }
+  ],
+  "execution": {
+    "strategy": "Hybrid (artifacts generated; execution waits for the owner): a sequential spine (pieces, canon, lint, frameworks with reviewers and packaging) followed by Full-tier phases that branch off it, then a human acceptance gate. Commits go directly on main with linear history and no isolation branch; push only when the owner asks. Agent work stays queued and quality beats latency, so token limits and timeouts are runaway guards. Every phase that adds or changes an agent role runs a validator-to-schema audit and keeps EditorialInputContractTest green over EditorialActivityKind::cases(). The paid drift trial and the exemplar backfill never run automatically.",
+    "phases": [
+      {
+        "title": "Content ideas and pieces",
+        "risk": "high",
+        "blocking": true,
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-1.md",
+        "notes": "First, switch the suite to Postgres: phpunit.xml points at birdcar_test on Herd (same host and port as development), CI gets a pgvector-enabled Postgres service, and the existing suite is green on Postgres before any model change. Then the ContentIdea model and migration, Article kind and parent link, idea capture on dashboard and workspace, provisional piece slugs from the existing idea- plus random fallback in WriteArticle, route binding unaffected, labels from metadata or the idea summary shown as the idea (never as the piece title), existing articles and archive migrated without changing published slugs."
+      },
+      {
+        "title": "Voice and goals canon in every prompt",
+        "risk": "high",
+        "blocking": true,
+        "prereqs": [
+          "Content ideas and pieces"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-2.md",
+        "notes": "Sources: ~/.config/bat-kol style.md, registers/public.md, channels/blog.md, new-post-skill framework-guide.md, humanizer-rules.md, writer-editor-prompt.md and the blog-allowed frameworks/*.md, plus marketingskills-distilled.md, hormozi-content-principles.md and the repo's PRODUCT.md; rewrite every ~/.config path to repo paths. Per-role rubric files with tagged mechanical rule ids, goals block, fixed exemplar canon with a dated site-copy snapshot from site-copy-raw.md, sha256 manifest hash as version id, php artisan publishing:canon-hash, rubric injection into instructions, checklist removal including tests/Manual/PublishingModelTrialTest.php, PRODUCT.md reconciliation, EditorialInputContractTest and VoiceCanonTest."
+      },
+      {
+        "title": "Deterministic voice lint",
+        "risk": "medium",
+        "blocking": true,
+        "prereqs": [
+          "Voice and goals canon in every prompt"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-3.md",
+        "notes": "PHP lint rules keyed to the canon's tagged ids with fixtures, two-way id check, Drafter instruction audit, automatic lint after drafting, at most two self-repair passes on agent blocks using existing protected attrs and proposed_patch, release block with per-finding override through EditorialFinding disposition and reason."
+      },
+      {
+        "title": "Frameworks, sharper reviewers and packaging",
+        "risk": "high",
+        "blocking": true,
+        "prereqs": [
+          "Deterministic voice lint"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-4.md",
+        "notes": "Brief post type and target query, Planner framework selection and plan-gate switching, distinct per-lens rubric files, Packager role and activity kind through metadata proposal acceptance, metadata lint rules shared with CheckArticleRelease, approved claim manifest frozen at release approval, ContentIdeaTest packaging case. Rubrics are repo canon files, so the manifest hash changes and new activities freeze them."
+      },
+      {
+        "title": "Exemplar retrieval",
+        "risk": "medium",
+        "prereqs": [
+          "Voice and goals canon in every prompt"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-5.md",
+        "notes": "Verify pgvector on Laravel Cloud Postgres first (Herd has 0.8.1 available). Migration calls Schema::ensureVectorExtensionExists() and adds vector(1536) with an HNSW index, dedicated openai-compatible provider entry on the OpenRouter key and base URL set as the embeddings default, section chunking of non-canon archive essays and pipeline-published blog pieces, retrieval for blog pieces only, precomputed query embeddings, owner-run php artisan publishing:index-exemplars backfill."
+      },
+      {
+        "title": "Distribution kit and sibling pieces",
+        "risk": "medium",
+        "prereqs": [
+          "Frameworks, sharper reviewers and packaging"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-6.md",
+        "notes": "KitDrafter role and rubric, mechanics-only subset of channels/bluesky.md restated in the public register added to the canon, LinkedIn and email limits from channels/blog.md as lint rules, kit spawn at release approval reading the claim manifest from Phase 4, fixed short-form canon examples (no retrieval), Posted only after flagship Published, sibling creation from an idea."
+      },
+      {
+        "title": "Publishing board",
+        "risk": "medium",
+        "prereqs": [
+          "Distribution kit and sibling pieces"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-7.md",
+        "notes": "Flux kanban over pieces, stage-derived columns, single-action drags, Parked and Killed, nested kit cards, live status chips via the existing polling, replaces the dashboard list; owner reviews rendered behavior."
+      },
+      {
+        "title": "Canon editor",
+        "risk": "medium",
+        "prereqs": [
+          "Deterministic voice lint",
+          "Frameworks, sharper reviewers and packaging",
+          "Distribution kit and sibling pieces"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-8.md",
+        "notes": "Immutable canon versions table seeded from the repo manifest with matching hashes, Publishing settings section where save creates and activates and re-activating is rollback, php artisan publishing:canon-sync deduplicating by hash with the activation rule, rejection of saves that drop a tagged lint id, Admin download of the active version as the repo file tree, owner adds canon-sync to the Cloud deploy commands."
+      },
+      {
+        "title": "Drift trial harness and edit distance",
+        "risk": "medium",
+        "prereqs": [
+          "Frameworks, sharper reviewers and packaging",
+          "Exemplar retrieval"
+        ],
+        "specPath": "docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-9.md",
+        "notes": "Golden-set fixtures (10 real, 10 slopped with recorded injected spans), manual paid trial against the local Postgres test database that records every attempt and the canon hash to drift-validation.json and skips unless DRIFT_TRIAL=1, word-level edit distance on agent-to-owner revision pairs."
+      },
+      {
+        "title": "Owner voice acceptance",
+        "kind": "gate",
+        "prereqs": [
+          "Publishing board",
+          "Canon editor",
+          "Drift trial harness and edit distance"
+        ],
+        "notes": "Owner confirms the OpenRouter workspace, adds canon-sync to the Cloud deploy commands, runs the exemplar backfill locally and in production, runs the drift trial, runs three real ideas end to end, reviews the board in the browser, reads PRODUCT.md against the canon, and records acceptance.json."
+      }
+    ]
+  },
+  "approvalMode": "express",
+  "approvedOn": "2026-10-02",
+  "approvedBy": "Owner (express finish, artifacts only)"
+}

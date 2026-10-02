@@ -1,0 +1,3401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Consistent Voice Publishing — Contract</title>
+    <script>
+      // Apply a saved forced theme before first paint to avoid a flash
+      try {
+        const saved = localStorage.getItem('ideation-contract-theme');
+        if (saved === 'light' || saved === 'dark')
+          document.documentElement.dataset.theme = saved;
+      } catch {}
+    </script>
+    <style>
+/* ═══════════════════════════════════════════════════════════════════
+   Contract — the pre-flight document.
+
+   THESIS   A contract is what you sign before handing hours of
+            autonomous work to a machine. So it shows the machine's
+            behavior, not only the plan's prose. It refuses the dark
+            instrument-panel dashboard this file used to be.
+   WORLD    The ideation field guide — DESIGN.md is the token
+            authority; this file is one of its two canonical
+            declarations. Paper ground, ink, ONE cobalt accent,
+            serif display, letterpress offset chips, hairline
+            rules, 3px radii. Graphite dark deck, never navy.
+   REGISTER Serif carries headings and prose. Mono is demoted to what
+            is literally a command, a path, or a measured number —
+            never a costume for "technical".
+   MOTION   One authored moment: the run model's token traverses
+            scout→build→review→commit once, on entry. Everything else
+            is a state change under 160ms.
+
+   Inlined into generated HTML by contract-gen.ts at build time.
+   Self-contained: no fonts, no CDNs, no images.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Auto: follow the system. The masthead toggle forces a deck by
+     setting data-theme, which pins color-scheme and resolves every
+     light-dark() below. */
+  color-scheme: light dark;
+
+  /* ── Palette ─────────────────────────────────────────────────
+     light-dark(paper deck, graphite deck). Values are the shipped
+     ideation site's, so a contract looks like the product that
+     produced it. */
+  --bg: light-dark(#f7f7f3, #131417);
+  --surface-1: light-dark(#fcfcfa, #1a1c20);
+  --surface-2: light-dark(#ffffff, #202329);
+  --wash: light-dark(#ebebe4, #0c0d0f);
+  --line: light-dark(#dededf, #2d3036);
+  --line-strong: light-dark(#a6a6a0, #4c505a);
+  --ink: light-dark(#191b1d, #e9e9e4);
+  --muted: light-dark(#50555a, #a8aaa6);
+  --faint: light-dark(#75797d, #82858a);
+
+  --accent: light-dark(#2b46c7, #93a7ff);
+  --accent-tint: light-dark(#e6eafb, #1e2542);
+  --go: light-dark(#187a48, #63bf8d);
+  --go-tint: light-dark(#e0f0e7, #15291e);
+  --caution: light-dark(#94660a, #d2ad55);
+  --caution-tint: light-dark(#f5ecd2, #2b2513);
+  --danger: light-dark(#bb3a2c, #e0796e);
+  --danger-tint: light-dark(#f8e2de, #331714);
+
+  /* Letterpress: an offset, no blur. The world's depth device. */
+  --press: 3px 3px 0 0 var(--line);
+  --press-strong: 4px 4px 0 0 var(--wash);
+
+  /* ── Type ────────────────────────────────────────────────────
+     Serif = voice. Sans = interface furniture. Mono = evidence. */
+  --font-serif:
+    'Iowan Old Style', 'Palatino Nova', Palatino, 'Book Antiqua', Georgia,
+    'Times New Roman', serif;
+  --font-mono:
+    'Berkeley Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas,
+    monospace;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+    sans-serif;
+
+  --t-kicker: 0.6875rem;
+  --t-meta: 0.75rem;
+  --t-data: 0.8125rem;
+  --t-small: 0.875rem;
+  --t-body: 1rem;
+  --t-lead: 1.125rem;
+  --t-h3: 1.25rem;
+  --t-h2: 1.75rem;
+  --t-display: clamp(2.25rem, 5.5vw, 3.5rem);
+  --t-figure: clamp(1.75rem, 4vw, 2.5rem);
+
+  /* ── Space (4pt) ─────────────────────────────────────────── */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 72px;
+  --s9: 104px;
+
+  --radius: 3px;
+  --radius-lg: 4px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --measure: 68ch;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  /* clear the running head when jumping to a section */
+  scroll-padding-top: 76px;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+}
+:where(button, summary):focus-visible,
+:where(a, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+.wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-inline: var(--s6);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Voices ────────────────────────────────────────────────── */
+
+/* Reserved for labels on measurements and for the two stamps.
+   Not an eyebrow over every section — sections get real serif heads. */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Letterpress stamp — status, worn like a rubber stamp on paper. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: var(--s1) var(--s3);
+  border: 1.5px solid currentColor;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+.stamp::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+.is-go {
+  color: var(--go);
+}
+.is-caution {
+  color: var(--caution);
+}
+.is-danger {
+  color: var(--danger);
+}
+.is-accent {
+  color: var(--accent);
+}
+
+/* Inline chips — small facts that ride next to text. Flat, hairline. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip-go {
+  color: var(--go);
+  border-color: currentColor;
+  background: var(--go-tint);
+}
+.chip-caution {
+  color: var(--caution);
+  border-color: currentColor;
+  background: var(--caution-tint);
+}
+.chip-danger {
+  color: var(--danger);
+  border-color: currentColor;
+  background: var(--danger-tint);
+}
+.chip-accent {
+  color: var(--accent);
+  border-color: currentColor;
+  background: var(--accent-tint);
+}
+
+/* ── Running head ──────────────────────────────────────────
+   A book's running head, not an app bar: hairline, quiet, and it
+   only appears once the masthead has scrolled away. */
+
+.runhead {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px) saturate(1.4);
+  border-bottom: 1px solid var(--line);
+  opacity: 0;
+  transform: translateY(-100%);
+  transition:
+    opacity 0.22s var(--ease),
+    transform 0.22s var(--ease);
+  pointer-events: none;
+}
+.runhead[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.runhead-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  height: 52px;
+}
+.runhead-name {
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 24ch;
+}
+.runhead-nav {
+  display: flex;
+  gap: var(--s1);
+  margin-inline-start: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.runhead-nav::-webkit-scrollbar {
+  display: none;
+}
+.runhead-nav a {
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-decoration: none;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--radius);
+  white-space: nowrap;
+  transition: color 0.14s var(--ease);
+}
+.runhead-nav a:hover {
+  color: var(--ink);
+  background: var(--wash);
+}
+.runhead-nav a[aria-current='true'] {
+  color: var(--accent);
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+.runhead-run {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 5px var(--s3);
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.runhead-run:hover {
+  filter: brightness(1.08);
+}
+
+/* ── Masthead ──────────────────────────────────────────────── */
+
+.masthead {
+  padding-block: var(--s7) var(--s7);
+}
+.masthead-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s5);
+  flex-wrap: wrap;
+}
+.masthead-slug {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+/* The mark: a rotated square, the same glyph as the plugin's favicon. */
+.masthead-mark {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  flex: 0 0 auto;
+}
+.masthead h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-display);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+  max-width: 18ch;
+}
+.masthead-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s2);
+  text-align: right;
+  flex: 0 0 auto;
+}
+.masthead-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+.theme-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: var(--s1);
+  padding: 0;
+  color: var(--faint);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.theme-toggle svg {
+  width: 15px;
+  height: 15px;
+  display: none;
+}
+.theme-toggle[data-mode='auto'] .i-auto,
+.theme-toggle[data-mode='light'] .i-light,
+.theme-toggle[data-mode='dark'] .i-dark {
+  display: block;
+}
+
+/* The lede — one sentence of what this contract commits to. */
+.masthead-lede {
+  margin: var(--s5) 0 0;
+  font-size: var(--t-lead);
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.masthead-lede strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── Flight strip ──────────────────────────────────────────
+   The five measurements that decide whether you hand this over.
+   One bordered strip of cells, not a row of floating cards. */
+
+.flightstrip {
+  margin-top: var(--s6);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--press);
+  overflow: hidden;
+}
+.fs-cell {
+  padding: var(--s4) var(--s4) var(--s3);
+  border-inline-start: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+.fs-cell:first-child {
+  border-inline-start: 0;
+}
+.fs-figure {
+  font-family: var(--font-mono);
+  font-size: var(--t-figure);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.fs-figure .fs-of {
+  font-size: 0.5em;
+  color: var(--faint);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.fs-note {
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Coverage meter — a real proportion, drawn to scale. */
+.meter {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  margin-top: var(--s1);
+}
+.meter span {
+  flex: 1;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+.meter .on {
+  background: var(--go);
+}
+.meter .warn {
+  background: var(--caution);
+}
+
+/* Risk bar — proportional segments, labelled, never colour alone. */
+.riskbar {
+  display: flex;
+  height: 6px;
+  margin-top: var(--s1);
+  border-radius: 1px;
+  overflow: hidden;
+  background: var(--wash);
+}
+.riskbar i {
+  display: block;
+}
+.riskbar .r-high {
+  background: var(--danger);
+}
+.riskbar .r-medium {
+  background: var(--caution);
+}
+.riskbar .r-low {
+  background: var(--go);
+}
+
+/* ── Section furniture ─────────────────────────────────────── */
+
+.band {
+  padding-block: var(--s8);
+  border-top: 1px solid var(--line);
+}
+.masthead {
+  border-top: 0;
+}
+.band-wash {
+  background: var(--surface-1);
+}
+.sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s5);
+  margin-bottom: var(--s6);
+  flex-wrap: wrap;
+}
+.sec-head h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.15;
+}
+.sec-sub {
+  margin: var(--s2) 0 0;
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.sec-count {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--faint);
+  letter-spacing: 0.03em;
+  padding-bottom: 3px;
+}
+
+/* ── Gate board ────────────────────────────────────────────── */
+
+.gates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.gate {
+  padding: var(--s4);
+  border-inline-start: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s1) var(--s3);
+  align-content: start;
+}
+.gate:first-child {
+  border-inline-start: 0;
+}
+.gate-mark {
+  grid-row: span 2;
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.gate-name {
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink);
+  align-self: center;
+}
+.gate-ev {
+  grid-column: 2;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* ── Run advice ────────────────────────────────────────────
+   verify.mjs's adviseRunMode(), rendered. The verdict the routing
+   decision is made on, printed in the contract instead of lost in
+   a transcript. */
+
+/* Two columns only when there is enough to fill the second one. adviseRunMode
+   short-circuits on the first disqualifying reason, so a one-reason verdict is
+   the common case, not the edge case. */
+.advice {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: var(--s6);
+  align-items: start;
+  padding: var(--s5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--press);
+}
+.advice-verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+.advice[data-few='true'] {
+  grid-template-columns: 1fr;
+  gap: var(--s4);
+}
+.advice[data-few='true'] .advice-reasons {
+  padding: var(--s4) 0 0;
+  border-inline-start: 0;
+  border-top: 1px solid var(--line);
+}
+.advice-mode {
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+.advice-gloss {
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.advice-reasons {
+  margin: 0;
+  padding: 0 0 0 var(--s6);
+  border-inline-start: 1px solid var(--line);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  align-self: stretch;
+}
+.advice-reasons li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink);
+  align-items: start;
+}
+.advice-reasons .r-mark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.advice-reasons .m-ok {
+  color: var(--go);
+}
+.advice-reasons .m-no {
+  color: var(--danger);
+}
+.advice-reasons .m-warn {
+  color: var(--caution);
+}
+
+/* ── Prose & goals ─────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: var(--s8);
+  align-items: start;
+}
+.prose p {
+  margin: 0 0 var(--s4);
+  font-size: var(--t-body);
+  line-height: 1.68;
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+.prose p:last-child {
+  margin-bottom: 0;
+}
+/* Drop cap on the first paragraph — the field guide's opening device. */
+.prose > p:first-child::first-letter {
+  float: left;
+  font-size: 3.1em;
+  line-height: 0.82;
+  padding: 0.06em 0.09em 0 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+.goals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: goal;
+}
+.goals li {
+  counter-increment: goal;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.goals li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.goals li::before {
+  content: counter(goal, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 600;
+  color: var(--accent);
+  padding-top: 3px;
+}
+
+/* ── Scope ─────────────────────────────────────────────────
+   The nesting diagram stops being decoration: hovering or focusing
+   a tier lights its own items, and the counts are live. */
+
+.scope {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--s7);
+  align-items: start;
+}
+.nest {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  flex: 0 0 auto;
+}
+.nest-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: background 0.16s var(--ease);
+}
+.nest-stretch {
+  width: 280px;
+  height: 280px;
+  border: 1px dashed var(--line-strong);
+}
+.nest-full {
+  width: 202px;
+  height: 202px;
+  border: 1px solid var(--accent);
+}
+.nest-mvp {
+  width: 124px;
+  height: 124px;
+  border: 1.5px solid var(--accent);
+  background: var(--accent-tint);
+}
+.nest-ring[aria-pressed='true'],
+.nest-ring:hover {
+  background: var(--accent-tint);
+}
+.nest-mvp[aria-pressed='true'],
+.nest-mvp:hover {
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.nest-label {
+  position: absolute;
+  top: 7px;
+  left: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.nest-stretch > .nest-label {
+  color: var(--faint);
+}
+.nest-caption {
+  margin-top: var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 280px;
+}
+.tiers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+.tier-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+.tier-hd h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  font-weight: 600;
+}
+.hrule {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  min-width: var(--s5);
+}
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.items li {
+  font-size: var(--t-small);
+  line-height: 1.55;
+  padding-inline-start: var(--s4);
+  position: relative;
+  text-wrap: pretty;
+  margin-bottom: var(--s1);
+}
+.items li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+.items strong {
+  font-weight: 600;
+}
+/* The reason goes on its own line: run inline, a five-clause justification
+   turns a scannable list of commitments into a wall of paragraph. */
+.items .why {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--muted);
+}
+/* Tier dimming when a ring is engaged */
+.tiers[data-tier] .tier-group {
+  opacity: 0.3;
+  transition: opacity 0.18s var(--ease);
+}
+.tiers[data-tier='mvp'] .tier-group[data-tier='mvp'],
+.tiers[data-tier='full'] .tier-group[data-tier='full'],
+.tiers[data-tier='stretch'] .tier-group[data-tier='stretch'] {
+  opacity: 1;
+}
+
+.boundaries {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s5);
+  margin-top: var(--s7);
+}
+.bound {
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.bound h3 {
+  margin: 0 0 var(--s3);
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+.bound-out h3 {
+  color: var(--danger);
+}
+.bound ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.bound li {
+  font-size: var(--t-data);
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.struck {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+  text-decoration-thickness: 1.5px;
+}
+.bound-empty {
+  font-size: var(--t-data);
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* ── Plan: the graph ───────────────────────────────────────
+   HTML nodes, so titles wrap and never truncate. Edges are an SVG
+   overlay measured from real geometry after layout — which is also
+   why the graph survives a font the machine actually has. */
+
+.graph {
+  position: relative;
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  overflow-x: auto;
+}
+.graph-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.graph-edges path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.graph-edges .e-hot {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.graph-grid {
+  position: relative;
+  display: grid;
+  gap: var(--s5) var(--s7);
+  justify-content: start;
+  align-items: start;
+  min-width: min-content;
+}
+.wave-label {
+  grid-row: 1;
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s2);
+}
+
+/* A phase node. Left rail carries risk; the whole thing is a button. */
+.pnode {
+  position: relative;
+  width: 216px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  padding: var(--s3) var(--s3) var(--s3) var(--s4);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--press);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  transition:
+    transform 0.16s var(--ease),
+    box-shadow 0.16s var(--ease),
+    border-color 0.16s var(--ease);
+}
+.pnode::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: 3px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--go);
+}
+.pnode[data-risk='medium']::before {
+  background: var(--caution);
+}
+.pnode[data-risk='high']::before {
+  background: var(--danger);
+}
+.pnode:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 var(--line);
+  border-color: var(--accent);
+}
+.pnode-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.pnode-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 700;
+  color: var(--faint);
+  letter-spacing: 0.06em;
+}
+.pnode-title {
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: pretty;
+}
+.pnode-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s2);
+  align-items: center;
+  margin-top: 2px;
+}
+.pnode-gate {
+  background: var(--accent-tint);
+  border-style: dashed;
+}
+/* Focus state: one phase selected, the rest recede. */
+.graph[data-focus] .pnode {
+  opacity: 0.42;
+  filter: saturate(0.5);
+}
+.graph[data-focus] .pnode[aria-pressed='true'] {
+  opacity: 1;
+  filter: none;
+  border-color: var(--accent);
+  box-shadow: 4px 4px 0 0 var(--accent-tint);
+}
+.graph-hint {
+  margin-top: var(--s4);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  color: var(--faint);
+  display: flex;
+  gap: var(--s3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.graph-clear {
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 2px var(--s2);
+  cursor: pointer;
+  visibility: hidden;
+}
+.graph-hint[data-active='true'] .graph-clear {
+  visibility: visible;
+}
+
+/* ── Plan: the ledger ──────────────────────────────────────
+   One row per phase. Not cards — a ledger, so notes have room and
+   the eye tracks down a single column of titles. */
+
+.ledger {
+  margin-top: var(--s5);
+  display: flex;
+  flex-direction: column;
+}
+.lrow {
+  display: grid;
+  grid-template-columns: 40px minmax(180px, 1.1fr) 2fr;
+  gap: var(--s5);
+  padding: var(--s4) var(--s3);
+  border-top: 1px solid var(--line);
+  align-items: start;
+  scroll-margin-top: 96px;
+  transition:
+    opacity 0.18s var(--ease),
+    background 0.18s var(--ease);
+}
+.ledger[data-focus] .lrow {
+  opacity: 0.35;
+}
+.ledger[data-focus] .lrow[data-hot='true'] {
+  opacity: 1;
+  background: var(--accent-tint);
+  border-radius: var(--radius);
+}
+.lrow-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: 700;
+  color: var(--faint);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+.lrow-head h3 {
+  margin: 0 0 var(--s2);
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: pretty;
+}
+.lrow-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s2);
+}
+.lrow-body {
+  font-family: var(--font-sans);
+  font-size: var(--t-data);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.lrow-body .spec {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--accent);
+  word-break: break-all;
+}
+.lrow-none {
+  font-style: italic;
+  color: var(--faint);
+}
+
+/* ── The run model ─────────────────────────────────────────
+   The signature moment. Five stages, the loop that can send review
+   back to build, and the gates that stop the run — with this
+   contract's own numbers in them. */
+
+.model {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--press);
+  overflow: hidden;
+}
+.model-track {
+  position: relative;
+  padding: var(--s6) var(--s5) var(--s7);
+  overflow-x: auto;
+}
+.stages {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: var(--s5);
+  min-width: 780px;
+  /* room under the outcome chips for the review⇄fix arc to pass through */
+  padding-bottom: 52px;
+}
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-top: var(--s5);
+}
+/* The rail every stage sits on, and the travelling token. */
+/* Bridges the grid gap so the rail reads as one track, not five dashes. */
+.stage::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  inset-inline: calc(var(--s5) / -2 - 1px);
+  height: 1px;
+  background: var(--line-strong);
+}
+.stage:first-child::before {
+  inset-inline-start: 50%;
+}
+.stage:last-child::before {
+  inset-inline-end: 50%;
+}
+.stage-dot {
+  position: absolute;
+  top: 3px;
+  left: calc(50% - 6.5px);
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--line-strong);
+  z-index: 1;
+  transition:
+    border-color 0.3s var(--ease),
+    background 0.3s var(--ease),
+    transform 0.3s var(--ease);
+}
+.model[data-lit] .stage[data-reached='true'] .stage-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: scale(1.18);
+}
+.stage-name {
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.stage-agent {
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+.stage-what {
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.stage-outs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin-top: var(--s1);
+}
+/* Where the run leaves the loop. Set in caution so the eye can read the exits
+   as a row across the track without reading the prose. */
+.stage-exit {
+  margin-top: var(--s1);
+  padding-top: var(--s2);
+  border-top: 1px dashed var(--line);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.45;
+  color: var(--caution);
+  text-wrap: pretty;
+}
+.stage-exit code {
+  font-family: var(--font-mono);
+}
+/* The fix loop: an arc from review back to build. */
+/* Spans the Review column's centre (50%) to the Fix column's (70%) — the two
+   stages the cycle actually runs between. */
+.loopback {
+  position: absolute;
+  left: 50%;
+  right: 30%;
+  bottom: 22px;
+  height: 26px;
+  pointer-events: none;
+}
+.loopback svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.loopback path {
+  fill: none;
+  stroke: var(--caution);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.loopback-label {
+  position: absolute;
+  left: 50%;
+  bottom: -22px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--caution);
+  background: var(--surface-2);
+  padding-inline: var(--s2);
+  white-space: nowrap;
+}
+
+/* Run-level rules — what the engine does around the per-phase loop. */
+.rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  border-top: 1px solid var(--line);
+}
+.rule {
+  padding: var(--s4) var(--s5);
+  border-inline-start: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.rule:first-child {
+  border-inline-start: 0;
+}
+.rule h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+.rule p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.rule code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--ink);
+  background: var(--wash);
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
+/* ── Done when ─────────────────────────────────────────────
+   The completion predicate, shown as the scoreboard it becomes. */
+
+.score {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: var(--s7);
+  align-items: start;
+}
+/* Grid and flex items default to min-width:auto, so one nowrap command string
+   inside the panel would set a floor the whole page has to scroll to reach. */
+.score > *,
+.split > *,
+.scope > *,
+.advice > * {
+  min-width: 0;
+}
+.score-panel {
+  padding: var(--s5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--press);
+  position: sticky;
+  top: 76px;
+}
+.score-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--t-figure);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.score-figure .of {
+  font-size: 0.44em;
+  color: var(--faint);
+  letter-spacing: 0;
+}
+.score-label {
+  margin-top: var(--s2);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.verify-line {
+  margin-top: var(--s4);
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--wash);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.verify-line .vk {
+  color: var(--faint);
+}
+.verify-line .vg {
+  color: var(--go);
+  font-weight: 700;
+}
+.verify-cap {
+  margin-top: var(--s2);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.crit-group + .crit-group {
+  margin-top: var(--s6);
+}
+.crit-group > h3 {
+  margin: 0 0 var(--s3);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+.crits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.crit {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  align-items: start;
+}
+.crit:first-child {
+  border-top: 0;
+}
+.crit-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 600;
+  color: var(--faint);
+  padding-top: 3px;
+}
+.crit-text {
+  font-size: var(--t-small);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.crit-check {
+  display: block;
+  margin-top: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--wash);
+  border: 1px solid var(--line);
+  /* Hairline, not a 2px tab: the mechanical/judgment split is already carried
+     by the group heading and by the mono/sans switch, so this is the third
+     signal and gets the least weight. */
+  border-inline-start: 1px solid var(--go);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+.crit-judge .crit-check {
+  border-inline-start-color: var(--caution);
+  font-family: var(--font-sans);
+  color: var(--muted);
+}
+.crit-expect {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  color: var(--muted);
+}
+.crit-static {
+  margin-inline-start: var(--s2);
+}
+
+/* ── Decisions ─────────────────────────────────────────────── */
+
+.decisions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 2;
+  column-gap: var(--s8);
+}
+.decision {
+  break-inside: avoid;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--line);
+}
+.decision:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.decision h3 {
+  margin: 0 0 var(--s2);
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.decision p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.decision .rejected {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ── Open questions ────────────────────────────────────────── */
+
+.openqs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.openq {
+  break-inside: avoid;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--line);
+}
+.openq:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.openq h3 {
+  margin: var(--s2) 0 var(--s2);
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+/* A label on a kind, not an eyebrow over a section — the four kinds are the
+   thing the reader routes on. */
+.openq-type {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.openq-meta {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+/* Blocked entries are marked by the word, coloured to be findable in a scan. */
+.openq-wait {
+  color: var(--caution);
+  font-weight: 600;
+}
+/* An id is a handle the next session types back in, so it is mono. No chip:
+   padding would open a gap before the comma that separates two of them. */
+.openq-meta code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--ink);
+}
+/* The entry's own id leads its meta line, and the ids after "waiting on" are
+   references to other entries. Same mono treatment would make the two
+   indistinguishable, so the leading one carries the weight: it is the label
+   a reader scans for when resolving somebody else's "waiting on". */
+.openq-id {
+  font-weight: 600;
+}
+
+/* ── Commands ──────────────────────────────────────────────── */
+
+.runbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.5fr);
+  gap: var(--s5);
+  align-items: center;
+  padding: var(--s5);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--press-strong);
+}
+.runbar h3 {
+  margin: 0 0 var(--s2);
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.runbar p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 46ch;
+}
+.cmd {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  background: var(--wash);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--t-data);
+  line-height: 1.5;
+  min-width: 0;
+}
+.cmd-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: all;
+}
+.cmd-block {
+  align-items: flex-start;
+}
+.cmd-block .cmd-text {
+  white-space: pre-wrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.copy {
+  position: relative;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-kicker);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 3px var(--s2);
+  cursor: pointer;
+  min-width: 5.4em;
+  text-align: center;
+}
+.copy::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+.copy:hover {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+.copy[data-state='done'] {
+  color: var(--go);
+  border-color: var(--go);
+  background: var(--go-tint);
+}
+
+.fold {
+  margin-top: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: var(--s3) var(--s4);
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.fold > summary::-webkit-details-marker {
+  display: none;
+}
+.fold > summary:hover {
+  color: var(--ink);
+}
+.fold > summary::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-block: 4px solid transparent;
+  border-inline-start: 6px solid var(--faint);
+  transition: transform 0.16s var(--ease);
+}
+.fold[open] > summary::before {
+  transform: rotate(90deg);
+}
+.fold-body {
+  padding: var(--s4);
+  border-top: 1px solid var(--line);
+}
+.fold-body > p {
+  margin: 0 0 var(--s4);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 76ch;
+}
+.phase-cmds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.phase-cmd {
+  display: grid;
+  grid-template-columns: 34px minmax(140px, 220px) 1fr;
+  gap: var(--s4);
+  align-items: center;
+}
+.phase-cmd .n {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  font-weight: 600;
+  color: var(--faint);
+}
+.phase-cmd .t {
+  font-family: var(--font-serif);
+  font-size: var(--t-data);
+  font-weight: 600;
+}
+
+/* ── Awaiting approval / close ─────────────────────────────── */
+
+.awaiting {
+  margin-top: var(--s5);
+  padding: var(--s5);
+  border: 1px solid var(--caution);
+  border-radius: var(--radius-lg);
+  background: var(--caution-tint);
+}
+.awaiting p {
+  margin: var(--s2) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-data);
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 64ch;
+}
+.placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.close {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s5);
+  align-items: center;
+  padding: var(--s6) var(--s5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--press);
+  overflow: hidden;
+}
+/* The approved cap. As a `border-top: 3px` it mitered into the 1px side
+   borders inside a 4px corner arc — a visible wedge. Clipped by the parent's
+   radius instead, so the cap follows the corner. */
+.close::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: var(--go);
+}
+.close h2 {
+  margin: var(--s2) 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+.close p {
+  margin: var(--s3) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--t-data);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.close-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s2);
+  text-align: right;
+}
+.colophon {
+  padding-block: var(--s6) var(--s8);
+  font-family: var(--font-sans);
+  font-size: var(--t-meta);
+  color: var(--faint);
+  line-height: 1.6;
+}
+.colophon code {
+  font-family: var(--font-mono);
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 1020px) {
+  .split,
+  .scope,
+  .score {
+    grid-template-columns: 1fr;
+    gap: var(--s6);
+  }
+  .score-panel {
+    position: static;
+  }
+  .advice {
+    grid-template-columns: 1fr;
+    gap: var(--s5);
+  }
+  .decisions {
+    columns: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    padding-inline: var(--s4);
+  }
+  .band {
+    padding-block: var(--s7);
+  }
+  .masthead {
+    padding-top: var(--s6);
+  }
+  .masthead-top {
+    flex-direction: column;
+  }
+  .masthead-aside {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .masthead-dates {
+    align-items: flex-start;
+  }
+  /* Two-up, with the rules following the grid: auto-fit would keep two
+     columns here while the single-column border rules assumed one. */
+  .flightstrip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fs-cell {
+    border-top: 1px solid var(--line);
+  }
+  .fs-cell:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .fs-cell:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .fs-cell:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+  .gate {
+    border-inline-start: 0;
+    border-top: 1px solid var(--line);
+  }
+  .gate:first-child {
+    border-top: 0;
+  }
+  .rule {
+    border-inline-start: 0;
+    border-top: 1px solid var(--line);
+  }
+  .rule:first-child {
+    border-top: 0;
+  }
+  .nest {
+    display: none;
+  }
+  .boundaries,
+  .runbar,
+  .close {
+    grid-template-columns: 1fr;
+  }
+  .close-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .lrow {
+    grid-template-columns: 30px 1fr;
+    gap: var(--s3);
+  }
+  .lrow-body {
+    grid-column: 2;
+  }
+  .phase-cmd {
+    grid-template-columns: 30px 1fr;
+  }
+  .phase-cmd .cmd {
+    grid-column: 1 / -1;
+  }
+  .runhead-nav {
+    display: none;
+  }
+  .prose > p:first-child::first-letter {
+    font-size: 2.6em;
+  }
+}
+
+/* ── Motion ───────────────────────────────────────────────
+   One authored moment. The token traverses the run model once when
+   the section is first seen; nothing else animates on scroll. */
+
+@keyframes token-travel {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--travel, 0px));
+  }
+}
+.token {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 22%, transparent);
+  opacity: 0;
+  z-index: 2;
+}
+.model[data-lit='running'] .token {
+  opacity: 1;
+  animation: token-travel var(--dur, 2400ms) var(--ease) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .token {
+    display: none;
+  }
+  /* Reduced motion still gets the information: every stage reads lit. */
+  .model .stage-dot {
+    border-color: var(--accent);
+  }
+}
+
+/* ── Print — the contract as a paper document ──────────────── */
+
+@media print {
+  :root,
+  :root[data-theme] {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface-1: #ffffff;
+    --surface-2: #ffffff;
+    --wash: #f2f2ee;
+    --line: #c9c9c4;
+    --line-strong: #8a8a84;
+    --ink: #000000;
+    --muted: #303336;
+    --faint: #4a4d51;
+    --accent: #1c2f96;
+    --accent-tint: #eceffc;
+    --go: #105934;
+    --caution: #6b4a07;
+    --danger: #8e2b20;
+    --press: none;
+    --press-strong: none;
+  }
+  body {
+    font-size: 10.5pt;
+  }
+  .wrap {
+    max-width: none;
+    padding-inline: 0;
+  }
+  .runhead,
+  .copy,
+  .theme-toggle,
+  .graph-hint,
+  .token {
+    display: none !important;
+  }
+  .band {
+    padding-block: 18pt;
+    break-inside: auto;
+  }
+  .graph,
+  .model-track,
+  .flightstrip {
+    overflow: visible;
+  }
+  /* Folded content is part of the document on paper. */
+  .fold {
+    border: 0;
+  }
+  .fold > summary {
+    padding-inline: 0;
+  }
+  .fold:not([open]) > *:not(summary) {
+    display: block !important;
+  }
+  .fold-body {
+    padding-inline: 0;
+  }
+  .decisions {
+    columns: 2;
+  }
+  .score-panel {
+    position: static;
+  }
+  .gates,
+  .flightstrip,
+  .model,
+  .runbar,
+  .close,
+  .lrow,
+  .decision,
+  .openq,
+  .crit,
+  .pnode {
+    break-inside: avoid;
+  }
+  .graph[data-focus] .pnode,
+  .ledger[data-focus] .lrow {
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+    </style>
+  </head>
+  <body data-contract-status="Approved">
+    <div class="runhead" id="runhead" data-visible="false">
+      <div class="wrap runhead-inner">
+        <span class="runhead-name">Consistent Voice Publishing</span>
+        <nav class="runhead-nav" aria-label="Contract sections">
+          <a href="#readiness">Readiness</a>
+          <a href="#brief">Brief</a>
+          <a href="#scope">Scope</a>
+          <a href="#plan">Plan</a>
+          <a href="#run-model">Run model</a>
+          <a href="#done">Done when</a>
+          <a href="#decisions">Decisions</a>
+        </nav>
+        <button type="button" class="runhead-run" data-copy-text="/ideation:autopilot docs/ideation/2026-10-02-consistent-voice-publishing/contract.md">copy run command</button>
+      </div>
+    </div>
+
+    <header class="band masthead" id="top">
+      <div class="wrap">
+        <div class="masthead-top">
+          <div>
+            <div class="masthead-slug">
+              <span class="masthead-mark" aria-hidden="true"></span>
+              <span class="kicker">contract · 2026-10-02-consistent-voice-publishing</span>
+            </div>
+            <h1>Consistent Voice Publishing</h1>
+          </div>
+          <div class="masthead-aside">
+            <span class="stamp is-go">Approved</span>
+            <div class="masthead-dates">
+              <span class="meta">drafted 2026-10-02</span>
+              <span class="meta">approved 2026-10-02 · Owner (express finish, artifacts only)</span>
+              <span class="meta">express · one confirmation</span>
+            </div>
+            <button type="button" class="theme-toggle" id="theme-toggle" data-mode="auto" aria-label="Colour theme: follow system">
+      <svg class="i-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M8 3v10" /><path d="M8 3a5 5 0 010 10z" fill="currentColor" stroke="none"/></svg>
+      <svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3.1"/><path d="M8 1v1.6M8 13.4V15M15 8h-1.6M2.6 8H1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1M12.9 12.9l-1.1-1.1M4.2 4.2L3.1 3.1"/></svg>
+      <svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.4 9.8A5.8 5.8 0 016.2 2.6a5.8 5.8 0 107.2 7.2z"/></svg>
+            </button>
+          </div>
+        </div>
+        <p class="masthead-lede"><strong>9 build phases</strong> plus 1 human gate across 7 dependency waves, delivering 15 committed scope items. Completion is decided by <strong>19 of 22</strong> criteria a machine can check and 3 a human must.</p>
+        <div class="flightstrip">
+          <div class="fs-cell">
+            <span class="kicker">gates</span>
+            <span class="fs-figure"><span class="num">5</span><span class="fs-of">/5</span></span>
+            <span class="fs-note">ready — the interview closed every gate</span>
+            <div class="meter" aria-hidden="true"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+          </div>
+          <div class="fs-cell">
+            <span class="kicker">phases</span>
+            <span class="fs-figure"><span class="num">10</span></span>
+            <span class="fs-note">7 dependency waves · 9 expected to commit</span>
+          </div>
+          <div class="fs-cell">
+            <span class="kicker">checkable</span>
+            <span class="fs-figure"><span class="num">19</span><span class="fs-of">/22</span></span>
+            <span class="fs-note">3 need a human to look</span>
+            <div class="meter" aria-hidden="true"><span class="on"></span><span class="on"></span><span class="on"></span><span class="warn"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class=""></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class=""></span><span class=""></span><span class="on"></span></div>
+          </div>
+          <div class="fs-cell">
+            <span class="kicker">scope</span>
+            <span class="fs-figure"><span class="num">15</span></span>
+            <span class="fs-note">7 MVP · 5 full · 3 stretch · 8 refused</span>
+          </div>
+          <div class="fs-cell">
+            <span class="kicker">risk</span>
+            <span class="fs-figure"><span class="num">3</span><span class="fs-of">high</span></span>
+            <span class="fs-note">of 10 plan items · 3 high · 6 medium · 1 low</span>
+            <div class="riskbar" aria-hidden="true"><i class="r-high" style="width:30.0%"></i><i class="r-medium" style="width:60.0%"></i><i class="r-low" style="width:10.0%"></i></div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+
+    <section class="band" id="readiness" aria-labelledby="readiness-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="readiness-h">Is this ready to hand over?</h2>
+          <p class="sec-sub">Every dimension the interview probes closed with evidence. Each cell below is what closed it.</p>
+        </div>
+        <span class="sec-count">5/5 ready</span>
+      </div>
+      <div class="gates">
+        <div class="gate">
+          <span class="gate-mark is-go" aria-hidden="true">✓</span>
+          <span class="gate-name">Problem Clarity <span class="sr-only">— ready</span></span>
+          <span class="gate-ev">The workflow scout traced that voice samples reach agents as 220-character excerpts only when hand-picked, never on the dashboard path, and that no style, register, channel, framework or PRODUCT.md material reaches any prompt, while Article.slug and labels derive from the raw idea.</span>
+        </div>
+        <div class="gate">
+          <span class="gate-mark is-go" aria-hidden="true">✓</span>
+          <span class="gate-name">Goal Definition <span class="sr-only">— ready</span></span>
+          <span class="gate-ev">Eight pass/fail goals (frozen canon in every input, one lint rule per tagged mechanical rule, framework selection, golden-set drift thresholds, one idea yielding a flagship, kit and siblings, Admin canon editing, owner acceptance of three real ideas, an edit-distance baseline) were proposed and accepted with explicit thresholds.</span>
+        </div>
+        <div class="gate">
+          <span class="gate-mark is-go" aria-hidden="true">✓</span>
+          <span class="gate-name">Success Criteria <span class="sr-only">— ready</span></span>
+          <span class="gate-ev">Every goal maps to a named Pest file on the Postgres suite, a grep, or a jq recomputation over recorded evidence; owner voice acceptance, the PRODUCT.md reconciliation and the rendered board review remain explicit judgment calls with mechanical twins where evidence is recorded.</span>
+        </div>
+        <div class="gate">
+          <span class="gate-mark is-go" aria-hidden="true">✓</span>
+          <span class="gate-name">Scope Boundaries <span class="sr-only">— ready</span></span>
+          <span class="gate-ev">The owner set the MVP line (data model, canon, frameworks, lint, sharper reviewers, packaging), placed the board, kit, siblings, retrieval, canon editor and drift trial in Full, and excluded automated posting, idea feeds, canon serving other tools and learning from edits.</span>
+        </div>
+        <div class="gate">
+          <span class="gate-mark is-go" aria-hidden="true">✓</span>
+          <span class="gate-name">Consistency <span class="sr-only">— ready</span></span>
+          <span class="gate-ev">Six tensions with earlier contracts (self-repair vs protected prose, retrieval vs frozen inputs, archive exemplars vs the no-archive-anecdote rule, kit claims, Vale vs native PHP, sibling gates) were resolved in writing, lint blocking and drag semantics were decided explicitly, and critic blockers on SQLite vectors and canon propagation were fixed and recorded.</span>
+        </div>
+      </div>
+
+      <div class="advice" data-few="false" style="margin-top: var(--s5)">
+        <div class="advice-verdict">
+          <span class="stamp is-caution">watch</span>
+          <span class="advice-mode">Stay at the desk</span>
+          <span class="advice-gloss">Something here needs a human at the failure gate. Run it, but do not leave the session — a green result would not mean what you want it to mean.</span>
+          <span class="meta">RUNMODE 2026-10-02-consistent-voice-publishing: watch  phases=9 cmd=19 judgment=3 risk=high</span>
+        </div>
+        <ul class="advice-reasons">
+          <li><span class="r-mark m-no" aria-hidden="true">✗</span><span><span class="sr-only">Against: </span>phase &quot;Content ideas and pieces&quot; is risk=high — be present for the failure gate</span></li>
+          <li><span class="r-mark m-warn" aria-hidden="true">!</span><span><span class="sr-only">Caveat: </span>1 of 19 cmd checks only inspect files rather than running anything</span></li>
+          <li><span class="r-mark m-warn" aria-hidden="true">!</span><span><span class="sr-only">Caveat: </span>express contract — no human reviewed these specs; phases dispatch --strict and fail closed</span></li>
+        </ul>
+      </div>
+      <div class="runbar" style="margin-top: var(--s5)">
+        <div>
+          <span class="kicker">start here</span>
+          <h3>Run the whole contract.</h3>
+          <p>Autopilot reads this plan, orders the phases, and dispatches each one through the loop below. It skips phases that already have a commit, so re-running after a fix is safe.</p>
+        </div>
+        <div class="cmd">
+            <span class="cmd-text" id="cmd-top">/ideation:autopilot docs/ideation/2026-10-02-consistent-voice-publishing/contract.md</span>
+            <button type="button" class="copy" data-copy="cmd-top">copy</button>
+          </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band" id="brief" aria-labelledby="brief-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="brief-h">What is wrong, and what would fix it</h2>
+          <p class="sec-sub">The problem this contract exists to close, and the outcomes that would mean it closed.</p>
+        </div>
+      </div>
+      <div class="split">
+        <div class="prose">
+          <p>The owner wants every Birdcar post to sound like him and to serve the same business goals: owners of established service businesses as the reader, one plain Walkthrough invitation, the outcome chain, and the claims and exclusion rules. Today the publishing workflow asks him to tick voice samples from previous posts for each article, and that mechanism barely works. Excerpts are cut to about 220 characters before the 1,200-character cap applies. The dashboard Develop path starts the interview with only the idea, so research, plan, draft and the automatic reviews receive an empty voice_context. No agent instruction tells a role how to use the samples. None of his style guide, public register, blog channel rules, narrative frameworks or PRODUCT.md positioning reaches any prompt, and BuyerReviewer is told not to invent buyer facts without being told who the buyer is.</p>
+          <p>The result is that voice and goals vary per post and the owner catches drift by hand. The pipeline also has structural gaps for producing marketable output: the raw idea becomes the article's slug and fallback title instead of a working summary with the real title set later as metadata; one idea can produce exactly one manuscript, with no distribution kit or sibling posts; the Planner has no notion of post type or narrative framework; mechanical rules such as the em dash ban, banned vocabulary, title and meta lengths and the single /walkthrough link are left to LLM attention; and there is no board showing where each piece sits across stages.</p>
+          <p>The owner's voice profile already exists in unusual detail (bat-kol style.md, registers/public.md, channels/blog.md, the new-post framework library and the marketingskills and Hormozi distillations), and the ten-agent pipeline with human angle, plan and release gates already exists. The work is to decompose that profile into what each role needs, freeze it into every activity, enforce what is mechanical deterministically, and refine the existing pipeline's stages so one idea reliably becomes several on-voice, on-goal pieces.</p>
+        </div>
+        <div>
+          <div class="tier-hd">
+            <h3>Goals</h3>
+            <span class="hrule"></span>
+            <span class="sec-count">×8</span>
+          </div>
+          <ol class="goals">
+            <li>G1 Inputs: every editorial activity kind freezes the active canon's version id and content hash, its own role rubric and the shared goals block into its input; Drafter and VoiceReviewer also receive the fixed exemplar canon labeled voice-only, and for blog pieces 2-4 retrieved exemplar sections; the per-post voice sample checklist no longer exists.</li>
+            <li>G2 Mechanical rules: every mechanical rule tagged in the canon has exactly one deterministic lint rule with a seeded-violation fixture that fires and a clean fixture that does not, every lint rule is tagged in the canon and stated in the Drafter's instructions, and title, SEO title, meta and slug rules are enforced once and shared by packaging and release.</li>
+            <li>G3 Drift detection: on a golden set of 10 real canon or site-copy passages and 10 slopped variants of the same passages, lint plus VoiceReviewer flag at least 9 of 10 distinct slopped passages at the injected span and raise a drift finding on no more than 2 of 10 distinct real ones, measured against the current canon hash.</li>
+            <li>G4 Pieces: one idea yields a flagship blog post plus LinkedIn, Bluesky and email pieces and any number of owner-requested sibling posts, each its own card with its own stage; the idea's summary title never becomes a piece's title or slug, and the real title and slug are set at packaging.</li>
+            <li>G5 Owner acceptance: the owner runs three real ideas end to end and judges each flagship and its kit publishable with light edits.</li>
+            <li>G6 Baseline: the edit distance between each agent-authored revision and the owner's next saved revision is recorded per piece, as a measured baseline with no target.</li>
+            <li>G7 Structure: every plan records a post type, a primary narrative framework from the blog channel's allowed list for that type and a runner-up with reasons, and the Drafter receives the chosen framework file in full.</li>
+            <li>G8 Canon ownership: the owner can change the canon in Admin without a deploy, the next activity freezes the new version, and a downloaded export committed to the repo keeps fresh environments and tests in step.</li>
+          </ol>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band band-wash" id="scope" aria-labelledby="scope-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="scope-h">What is in, and what was refused</h2>
+          <p class="sec-sub">MVP nests inside Full nests inside Stretch — each ring contains the one before it. Select a ring to isolate its items.</p>
+        </div>
+        <span class="sec-count">15 committed · 8 refused</span>
+      </div>
+      <div class="scope">
+        <div>
+          <div class="nest">
+            <button type="button" class="nest-ring nest-stretch" data-tier="stretch" aria-pressed="false"><span class="nest-label">Stretch ×3</span></button>
+            <button type="button" class="nest-ring nest-full" data-tier="full" aria-pressed="false"><span class="nest-label">Full ×5</span></button>
+            <button type="button" class="nest-ring nest-mvp" data-tier="mvp" aria-pressed="false"><span class="nest-label">MVP ×7</span></button>
+          </div>
+          <p class="nest-caption">Cutting to the inner ring is always a legal move. Adding a ring is not — that is a new revision that supersedes this one.</p>
+        </div>
+        <div class="tiers" id="tiers">
+          <div class="tier-group" data-tier="mvp">
+            <div class="tier-hd">
+              <h3>MVP — must ship</h3>
+              <span class="hrule"></span>
+              <span class="sec-count">×7</span>
+            </div>
+            <ul class="items">
+              <li><strong>ContentIdea model owning pieces: an idea has a summary title and notes; Article becomes the piece with a kind and optional parent; pieces use a provisional slug until packaging; no title or slug derives from the idea</strong> <span class="why">— Fixes the idea-becomes-title bug, and doing the data model now means existing articles migrate once instead of again when kit and sibling pieces arrive</span></li>
+              <li><strong>Voice-and-goals canon version 1: style, public register, blog channel, allowed narrative frameworks and framework guide, humanizer and editor passes, marketingskills sweeps, Hormozi structure, PRODUCT.md positioning and the goals block decomposed into per-role rubric files in the repo with mechanical rules tagged by id, frozen into every activity by sha256 manifest hash</strong> <span class="why">— The core ask: the same voice and goals reach every role on every post</span></li>
+              <li><strong>Fixed exemplar canon of four essays (Just build it twice, Your AI wrote a bug, Six months of talking to a machine, The tools that build the tools) plus a dated snapshot of approved homepage and Walkthrough copy, labeled voice-only</strong> <span class="why">— Replaces per-post sample picking with a stable reference set; research shows few-shot gains saturate after a handful</span></li>
+              <li><strong>Remove the voice sample checklist and its state, update the manual model trial, and reconcile PRODUCT.md's Written Voice section with the canon</strong> <span class="why">— The checklist is the mechanism being replaced, and contradictory voice records mislead future work</span></li>
+              <li><strong>Post type and narrative framework selection: brief records post type and target query; Planner proposes a primary framework from the channel's allowed list plus a runner-up; owner chooses at the plan gate; Drafter receives the framework file</strong> <span class="why">— G7; post-type templates and frameworks are bat-kol's structural lever for consistent essays</span></li>
+              <li><strong>Deterministic PHP voice linter with at most two agent self-repair passes and a release block with per-finding override</strong> <span class="why">— G2; self-repair is what keeps G5's light edits light, since the owner otherwise fixes every mechanical hit by hand</span></li>
+              <li><strong>Sharper three-lens review with distinct rubrics, plus a Packager activity that proposes titles, SEO title, meta, slug and greatest-hits tag through the existing metadata acceptance path, with the approved claim manifest frozen at release</strong> <span class="why">— Keeps the agreed three-lens batch while giving each reviewer a rubric it can apply consistently, and sets the real title late as metadata (G4); the greatest-hits tag is deliberately packaging metadata</span></li>
+            </ul>
+          </div>
+          <div class="tier-group" data-tier="full">
+            <div class="tier-hd">
+              <h3>Full — the target outcome</h3>
+              <span class="hrule"></span>
+              <span class="sec-count">×5</span>
+            </div>
+            <ul class="items">
+              <li><strong>Retrieved exemplars: 2-4 sections per blog brief from non-canon archive essays and pipeline-published pieces, through the SDK's Embeddings, a dedicated OpenRouter openai-compatible provider and pgvector, with an owner-run backfill command</strong> <span class="why">— G1; the owner chose canon plus retrieval and wants the SDK's built-in embeddings used rather than avoided</span></li>
+              <li><strong>Distribution kit pieces (LinkedIn, Bluesky, email blurb) drafted from the approved flagship by a KitDrafter role using the fixed canon's short-form examples, plus sibling posts from the same idea</strong> <span class="why">— G4; the end goal is one idea becoming several marketable pieces</span></li>
+              <li><strong>Kanban publishing board with stage-derived columns, single-action drags, Parked and Killed lanes, nested kit cards and live status chips</strong> <span class="why">— Owner asked to rethink the flow around phases on a board; blogbot's users repeatedly complained when work looked hung</span></li>
+              <li><strong>Admin canon editor with immutable database versions, save-activates and rollback, a hash-deduplicated deploy-time sync from repo files, and a download of the active version for committing</strong> <span class="why">— G8; the owner chose Admin-edited versions winning over repo files</span></li>
+              <li><strong>Golden-set drift trial (manual, paid, owner-run against local Postgres) and edit-distance capture</strong> <span class="why">— G3 and G6</span></li>
+            </ul>
+          </div>
+          <div class="tier-group" data-tier="stretch">
+            <div class="tier-hd">
+              <h3>Stretch — only if time allows</h3>
+              <span class="hrule"></span>
+              <span class="sec-count">×3</span>
+            </div>
+            <ul class="items">
+              <li><strong>Canon version diff view in Admin</strong> <span class="why">— Useful when editing the canon, not needed to edit it</span></li>
+              <li><strong>Edit-distance trend per piece kind on the board</strong> <span class="why">— Only meaningful once several pieces have accumulated</span></li>
+              <li><strong>Retrieved short-form exemplars for kit pieces</strong> <span class="why">— No published kit pieces exist to retrieve until the kit has been used for a while</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="boundaries">
+        <div class="bound bound-out">
+          <h3>Out of scope — refused on purpose</h3>
+          <ul>
+            <li><span class="struck">Automated posting to LinkedIn, Bluesky or an email service</span> — Owner choice; the app drafts kit pieces and the owner copies them out and marks them Posted</li>
+            <li><span class="struck">Idea-generation feeds such as daily proposals or source sweeps</span> — Owner choice; ideas come from the owner</li>
+            <li><span class="struck">Serving the canon to other tools (bat-kol Slack, email or GitHub drafting, MCP exposure)</span> — Owner choice for now; the canon replacing bat-kol is the stated long-term direction</li>
+            <li><span class="struck">Learning rules from the owner's edits or automatic canon updates</span> — Owner choice; edit distance is measured only, and earlier contracts rejected silent voice learning</li>
+            <li><span class="struck">Vale or any external prose-linting binary</span> — Adds a binary to Laravel Cloud and a dependency; PHP rules run in the existing queue job and get Pest fixtures</li>
+            <li><span class="struck">Fine-tuning a model on the owner's corpus</span> — Corpus is small and fine-tuning adds model lock-in; exemplars plus rubrics come first</li>
+            <li><span class="struck">Changing archived essays' titles, slugs, dates, URLs or text</span> — The blog channel and PRODUCT.md require the archive to stay exactly as published</li>
+            <li><span class="struck">Closing the 2026-09-22 three-piece pilot</span> — Its criteria (piece-type mix, archive fidelity, spend) differ from G5; close or supersede it separately</li>
+          </ul>
+        </div>
+        <div class="bound">
+          <h3>Future — someday, maybe</h3>
+          <ul>
+            <li>The canon replaces bat-kol as the source of truth for every channel and is exposed to other tools over MCP</li>
+            <li>Cluster agent-to-owner correction pairs into owner-approved canon rule proposals</li>
+            <li>Rank ideas by search and AI-visibility gap signals</li>
+            <li>Automated distribution once kit quality is proven</li>
+          </ul>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band" id="plan" aria-labelledby="plan-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="plan-h">What gets built, in what order</h2>
+          <p class="sec-sub">Hybrid (artifacts generated; execution waits for the owner): a sequential spine (pieces, canon, lint, frameworks with reviewers and packaging) followed by Full-tier phases that branch off it, then a human acceptance gate. Commits go directly on main with linear history and no isolation branch; push only when the owner asks. Agent work stays queued and quality beats latency, so token limits and timeouts are runaway guards. Every phase that adds or changes an agent role runs a validator-to-schema audit and keeps EditorialInputContractTest green over EditorialActivityKind::cases(). The paid drift trial and the exemplar backfill never run automatically.. Columns are dependency waves — nothing in a column waits on anything else in it, but two phases naming the same file are still serialised, so a column is an upper bound on concurrency rather than a promise of it.</p>
+        </div>
+        <span class="sec-count">9 phases + 1 gate</span>
+      </div>
+      <div class="graph" id="graph" data-edges="[[0,1],[1,2],[2,3],[1,4],[3,5],[5,6],[2,7],[3,7],[5,7],[3,8],[4,8],[6,9],[7,9],[8,9]]">
+        <div class="graph-grid" aria-label="Phase dependency graph: 01 Content ideas and pieces (wave 1); 02 Voice and goals canon in every prompt (wave 2); 03 Deterministic voice lint (wave 3); 04 Frameworks, sharper reviewers and packaging (wave 4); 05 Exemplar retrieval (wave 3); 06 Distribution kit and sibling pieces (wave 5); 07 Publishing board (wave 6); 08 Canon editor (wave 6); 09 Drift trial harness and edit distance (wave 5); 10 Owner voice acceptance (wave 7)" style="grid-template-columns: repeat(7, max-content)">
+          <svg class="graph-edges" aria-hidden="true"></svg>
+          <div class="wave-label" style="grid-column:1">wave 1</div>
+          <div class="wave-label" style="grid-column:2">wave 2</div>
+          <div class="wave-label" style="grid-column:3">wave 3 · 2 in parallel</div>
+          <div class="wave-label" style="grid-column:4">wave 4</div>
+          <div class="wave-label" style="grid-column:5">wave 5 · 2 in parallel</div>
+          <div class="wave-label" style="grid-column:6">wave 6 · 2 in parallel</div>
+          <div class="wave-label" style="grid-column:7">wave 7</div>
+          <button type="button" class="pnode" data-phase="0" data-risk="high" aria-pressed="false"
+            style="grid-column:1; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">01</span>
+            </span>
+            <span class="pnode-title">Content ideas and pieces</span>
+            <span class="pnode-foot">
+              <span class="chip">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="1" data-risk="high" aria-pressed="false"
+            style="grid-column:2; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">02</span>
+            </span>
+            <span class="pnode-title">Voice and goals canon in every prompt</span>
+            <span class="pnode-foot">
+              <span class="chip">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="2" data-risk="medium" aria-pressed="false"
+            style="grid-column:3; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">03</span>
+            </span>
+            <span class="pnode-title">Deterministic voice lint</span>
+            <span class="pnode-foot">
+              <span class="chip">blocking</span>
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="3" data-risk="high" aria-pressed="false"
+            style="grid-column:4; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">04</span>
+            </span>
+            <span class="pnode-title">Frameworks, sharper reviewers and packaging</span>
+            <span class="pnode-foot">
+              <span class="chip">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="4" data-risk="medium" aria-pressed="false"
+            style="grid-column:3; grid-row:3">
+            <span class="pnode-top">
+              <span class="pnode-n">05</span>
+            </span>
+            <span class="pnode-title">Exemplar retrieval</span>
+            <span class="pnode-foot">
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="5" data-risk="medium" aria-pressed="false"
+            style="grid-column:5; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">06</span>
+            </span>
+            <span class="pnode-title">Distribution kit and sibling pieces</span>
+            <span class="pnode-foot">
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="6" data-risk="medium" aria-pressed="false"
+            style="grid-column:6; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">07</span>
+            </span>
+            <span class="pnode-title">Publishing board</span>
+            <span class="pnode-foot">
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="7" data-risk="medium" aria-pressed="false"
+            style="grid-column:6; grid-row:3">
+            <span class="pnode-top">
+              <span class="pnode-n">08</span>
+            </span>
+            <span class="pnode-title">Canon editor</span>
+            <span class="pnode-foot">
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode" data-phase="8" data-risk="medium" aria-pressed="false"
+            style="grid-column:5; grid-row:3">
+            <span class="pnode-top">
+              <span class="pnode-n">09</span>
+            </span>
+            <span class="pnode-title">Drift trial harness and edit distance</span>
+            <span class="pnode-foot">
+              <span class="chip chip-caution">medium risk</span>
+            </span>
+          </button>
+          <button type="button" class="pnode pnode-gate" data-phase="9" data-risk="low" aria-pressed="false"
+            style="grid-column:7; grid-row:2">
+            <span class="pnode-top">
+              <span class="pnode-n">10</span>
+            </span>
+            <span class="pnode-title">Owner voice acceptance</span>
+            <span class="pnode-foot">
+              <span class="chip chip-accent">gate</span>
+              <span class="chip chip-go">low risk</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="graph-hint" id="graph-hint" data-active="false">
+        <span>Select a phase to isolate it here and in the ledger below.</span>
+        <button type="button" class="graph-clear" id="graph-clear">show all</button>
+      </div>
+      <div class="ledger" id="ledger">
+        <div class="lrow" id="phase-0" data-phase="0">
+          <div class="lrow-n">01</div>
+          <div class="lrow-head">
+            <h3>Content ideas and pieces</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+              <span class="chip">wave 1</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            First, switch the suite to Postgres: phpunit.xml points at birdcar_test on Herd (same host and port as development), CI gets a pgvector-enabled Postgres service, and the existing suite is green on Postgres before any model change. Then the ContentIdea model and migration, Article kind and parent link, idea capture on dashboard and workspace, provisional piece slugs from the existing idea- plus random fallback in WriteArticle, route binding unaffected, labels from metadata or the idea summary shown as the idea (never as the piece title), existing articles and archive migrated without changing published slugs.
+            <div style="margin-top: var(--s2)">If this fails, 9 downstream phases are skipped, not attempted: Voice and goals canon in every prompt, Deterministic voice lint, Frameworks, sharper reviewers and packaging, Exemplar retrieval, Distribution kit and sibling pieces, Publishing board, Canon editor, Drift trial harness and edit distance, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-1.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-1" data-phase="1">
+          <div class="lrow-n">02</div>
+          <div class="lrow-head">
+            <h3>Voice and goals canon in every prompt</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+              <span class="chip">wave 2</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Sources: ~/.config/bat-kol style.md, registers/public.md, channels/blog.md, new-post-skill framework-guide.md, humanizer-rules.md, writer-editor-prompt.md and the blog-allowed frameworks/*.md, plus marketingskills-distilled.md, hormozi-content-principles.md and the repo's PRODUCT.md; rewrite every ~/.config path to repo paths. Per-role rubric files with tagged mechanical rule ids, goals block, fixed exemplar canon with a dated site-copy snapshot from site-copy-raw.md, sha256 manifest hash as version id, php artisan publishing:canon-hash, rubric injection into instructions, checklist removal including tests/Manual/PublishingModelTrialTest.php, PRODUCT.md reconciliation, EditorialInputContractTest and VoiceCanonTest.
+            <div style="margin-top: var(--s2)">Waits for <strong>Content ideas and pieces</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 8 downstream phases are skipped, not attempted: Deterministic voice lint, Frameworks, sharper reviewers and packaging, Exemplar retrieval, Distribution kit and sibling pieces, Publishing board, Canon editor, Drift trial harness and edit distance, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-2.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-2" data-phase="2">
+          <div class="lrow-n">03</div>
+          <div class="lrow-head">
+            <h3>Deterministic voice lint</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">blocking</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 3</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            PHP lint rules keyed to the canon's tagged ids with fixtures, two-way id check, Drafter instruction audit, automatic lint after drafting, at most two self-repair passes on agent blocks using existing protected attrs and proposed_patch, release block with per-finding override through EditorialFinding disposition and reason.
+            <div style="margin-top: var(--s2)">Waits for <strong>Voice and goals canon in every prompt</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 6 downstream phases are skipped, not attempted: Frameworks, sharper reviewers and packaging, Distribution kit and sibling pieces, Publishing board, Canon editor, Drift trial harness and edit distance, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-3.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-3" data-phase="3">
+          <div class="lrow-n">04</div>
+          <div class="lrow-head">
+            <h3>Frameworks, sharper reviewers and packaging</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">blocking</span>
+              <span class="chip chip-danger">high risk</span>
+              <span class="chip">wave 4</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Brief post type and target query, Planner framework selection and plan-gate switching, distinct per-lens rubric files, Packager role and activity kind through metadata proposal acceptance, metadata lint rules shared with CheckArticleRelease, approved claim manifest frozen at release approval, ContentIdeaTest packaging case. Rubrics are repo canon files, so the manifest hash changes and new activities freeze them.
+            <div style="margin-top: var(--s2)">Waits for <strong>Deterministic voice lint</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 5 downstream phases are skipped, not attempted: Distribution kit and sibling pieces, Publishing board, Canon editor, Drift trial harness and edit distance, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-4.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-4" data-phase="4">
+          <div class="lrow-n">05</div>
+          <div class="lrow-head">
+            <h3>Exemplar retrieval</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 3</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Verify pgvector on Laravel Cloud Postgres first (Herd has 0.8.1 available). Migration calls Schema::ensureVectorExtensionExists() and adds vector(1536) with an HNSW index, dedicated openai-compatible provider entry on the OpenRouter key and base URL set as the embeddings default, section chunking of non-canon archive essays and pipeline-published blog pieces, retrieval for blog pieces only, precomputed query embeddings, owner-run php artisan publishing:index-exemplars backfill.
+            <div style="margin-top: var(--s2)">Waits for <strong>Voice and goals canon in every prompt</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 2 downstream phases are skipped, not attempted: Drift trial harness and edit distance, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-5.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-5" data-phase="5">
+          <div class="lrow-n">06</div>
+          <div class="lrow-head">
+            <h3>Distribution kit and sibling pieces</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 5</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            KitDrafter role and rubric, mechanics-only subset of channels/bluesky.md restated in the public register added to the canon, LinkedIn and email limits from channels/blog.md as lint rules, kit spawn at release approval reading the claim manifest from Phase 4, fixed short-form canon examples (no retrieval), Posted only after flagship Published, sibling creation from an idea.
+            <div style="margin-top: var(--s2)">Waits for <strong>Frameworks, sharper reviewers and packaging</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 3 downstream phases are skipped, not attempted: Publishing board, Canon editor, Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-6.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-6" data-phase="6">
+          <div class="lrow-n">07</div>
+          <div class="lrow-head">
+            <h3>Publishing board</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 6</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Flux kanban over pieces, stage-derived columns, single-action drags, Parked and Killed, nested kit cards, live status chips via the existing polling, replaces the dashboard list; owner reviews rendered behavior.
+            <div style="margin-top: var(--s2)">Waits for <strong>Distribution kit and sibling pieces</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 1 downstream phase is skipped, not attempted: Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-7.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-7" data-phase="7">
+          <div class="lrow-n">08</div>
+          <div class="lrow-head">
+            <h3>Canon editor</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 6</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Immutable canon versions table seeded from the repo manifest with matching hashes, Publishing settings section where save creates and activates and re-activating is rollback, php artisan publishing:canon-sync deduplicating by hash with the activation rule, rejection of saves that drop a tagged lint id, Admin download of the active version as the repo file tree, owner adds canon-sync to the Cloud deploy commands.
+            <div style="margin-top: var(--s2)">Waits for <strong>Deterministic voice lint</strong>, <strong>Frameworks, sharper reviewers and packaging</strong>, <strong>Distribution kit and sibling pieces</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 1 downstream phase is skipped, not attempted: Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-8.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-8" data-phase="8">
+          <div class="lrow-n">09</div>
+          <div class="lrow-head">
+            <h3>Drift trial harness and edit distance</h3>
+            <div class="lrow-tags">
+              <span class="chip">phase</span>
+              <span class="chip chip-caution">medium risk</span>
+              <span class="chip">wave 5</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Golden-set fixtures (10 real, 10 slopped with recorded injected spans), manual paid trial against the local Postgres test database that records every attempt and the canon hash to drift-validation.json and skips unless DRIFT_TRIAL=1, word-level edit distance on agent-to-owner revision pairs.
+            <div style="margin-top: var(--s2)">Waits for <strong>Frameworks, sharper reviewers and packaging</strong>, <strong>Exemplar retrieval</strong>.</div>
+            <div style="margin-top: var(--s2)">If this fails, 1 downstream phase is skipped, not attempted: Owner voice acceptance.</div>
+            <span class="spec">docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-9.md</span>
+          </div>
+        </div>
+        <div class="lrow" id="phase-9" data-phase="9">
+          <div class="lrow-n">10</div>
+          <div class="lrow-head">
+            <h3>Owner voice acceptance</h3>
+            <div class="lrow-tags">
+              <span class="chip chip-accent">human gate</span>
+              <span class="chip chip-go">low risk</span>
+              <span class="chip">wave 7</span>
+            </div>
+          </div>
+          <div class="lrow-body">
+            Owner confirms the OpenRouter workspace, adds canon-sync to the Cloud deploy commands, runs the exemplar backfill locally and in production, runs the drift trial, runs three real ideas end to end, reviews the board in the browser, reads PRODUCT.md against the canon, and records acceptance.json.
+            <div style="margin-top: var(--s2)">Waits for <strong>Publishing board</strong>, <strong>Canon editor</strong>, <strong>Drift trial harness and edit distance</strong>.</div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band band-wash" id="run-model" aria-labelledby="run-model-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="run-model-h">What actually happens when you run it</h2>
+          <p class="sec-sub">Every build phase goes through the same five stages. These are the real agents and the real gates — the points where the run can stop before anything is committed. Human gates in the plan above are not build phases: nothing is specced, built, or committed for them.</p>
+        </div>
+        <span class="sec-count">per build phase</span>
+      </div>
+      <div class="model" id="model">
+        <div class="model-track">
+          <div class="stages">
+            <span class="token" id="token" aria-hidden="true"></span>
+            <div class="stage" data-stage="0" data-reached="false">
+              <span class="stage-dot" aria-hidden="true"></span>
+              <span class="stage-name">Scout</span>
+              <span class="stage-agent">ideation:scout</span>
+              <span class="stage-what">Reads the codebase against the spec and scores five evidence gates before a line is written.</span>
+              <span class="stage-outs"><span class="chip chip-go">GO</span><span class="chip chip-caution">HOLD</span></span>
+              <span class="stage-exit"><span class="sr-only">Stops here when: </span>Under --strict a HOLD stops here — nothing is built.</span>
+            </div>
+            <div class="stage" data-stage="1" data-reached="false">
+              <span class="stage-dot" aria-hidden="true"></span>
+              <span class="stage-name">Build</span>
+              <span class="stage-agent">general-purpose</span>
+              <span class="stage-what">Implements the spec, then runs the validation the spec itself declares.</span>
+              <span class="stage-outs"><span class="chip chip-go">BUILT</span><span class="chip chip">NO-OP</span><span class="chip chip-danger">FAIL</span></span>
+              <span class="stage-exit"><span class="sr-only">Stops here when: </span>Failed validation stops here. An empty diff is a NO-OP and also stops here — review never runs.</span>
+            </div>
+            <div class="stage" data-stage="2" data-reached="false">
+              <span class="stage-dot" aria-hidden="true"></span>
+              <span class="stage-name">Review</span>
+              <span class="stage-agent">ideation:reviewer</span>
+              <span class="stage-what">Reads the diff back against the spec and returns findings counted by severity.</span>
+              <span class="stage-outs"><span class="chip chip-go">PASS</span><span class="chip chip-danger">FAIL</span></span>
+              <span class="stage-exit"><span class="sr-only">Stops here when: </span>An unavailable reviewer stops here under --strict; otherwise it commits as validation-only.</span>
+            </div>
+            <div class="stage" data-stage="3" data-reached="false">
+              <span class="stage-dot" aria-hidden="true"></span>
+              <span class="stage-name">Fix</span>
+              <span class="stage-agent">general-purpose</span>
+              <span class="stage-what">Applies or refutes every blocking finding, then hands back for another review.</span>
+              <span class="stage-outs"><span class="chip chip-go">FIXED</span><span class="chip chip-danger">FAIL</span></span>
+              <span class="stage-exit"><span class="sr-only">Stops here when: </span>Still FAIL on cycle 3 stops here — changes are left unstaged, not committed.</span>
+            </div>
+            <div class="stage" data-stage="4" data-reached="false">
+              <span class="stage-dot" aria-hidden="true"></span>
+              <span class="stage-name">Commit</span>
+              <span class="stage-agent">general-purpose</span>
+              <span class="stage-what">Stages only the files the builder named and writes the spec path into the commit body.</span>
+              <span class="stage-outs"><span class="chip chip-accent">COMMITTED</span><span class="chip chip-danger">FAILED</span></span>
+              <span class="stage-exit"><span class="sr-only">Stops here when: </span>If neither the builder nor the phase named a file, it refuses to commit blind rather than <code>git add -A</code>.</span>
+            </div>
+            <div class="loopback" aria-hidden="true">
+              <svg viewBox="0 0 200 26" preserveAspectRatio="none"><path vector-effect="non-scaling-stroke" d="M197 0 V17 Q197 24 190 24 H10 Q3 24 3 17 V0"/></svg>
+              <span class="loopback-label">review → fix → review · 3 cycles max, then it stops</span>
+            </div>
+          </div>
+        </div>
+        <div class="rules">
+          <div class="rule">
+            <h3>Waves, not a queue</h3>
+            <p>Phases are grouped into 7 waves from their declared prerequisites. A wave dispatches together; the next one waits for all of it. No phase here declares <code>files</code>, but autopilot derives them from each spec&rsquo;s File Changes tables before dispatch, so colliding phases can still be serialised. A phase whose spec has no readable File Changes section is treated as parallel-safe, and the engine logs a warning saying so.</p>
+          </div>
+          <div class="rule">
+            <h3>Failure strands, it does not retry</h3>
+            <p>A failed phase is not retried, and everything downstream of it is marked <code>SKIPPED</code> rather than attempted. Here that means <strong>Content ideas and pieces</strong> failing costs 9 more phases, and <strong>Voice and goals canon in every prompt</strong> failing costs 8 more phases.</p>
+          </div>
+          <div class="rule">
+            <h3>Resume is a git question</h3>
+            <p>Re-running skips any phase whose spec path already appears in a commit body — which is why the commit stage writes it there. 9 build phases are expected to leave one; the 1 human gate commits nothing.</p>
+          </div>
+          <div class="rule">
+            <h3>Strict: it fails closed</h3>
+            <p>This is an express contract — no human reviewed the specs — so phases dispatch <code>--strict</code>. A scout HOLD or an unavailable reviewer stops the phase instead of proceeding on an assumption.</p>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band" id="done" aria-labelledby="done-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="done-h">How you will know it worked</h2>
+          <p class="sec-sub">These are not aspirations — the ones with a command are executed by <code>verify.mjs</code>, and their result is what an unattended run is judged on.</p>
+        </div>
+        <span class="sec-count">19 of 22 mechanical</span>
+      </div>
+      <div class="score">
+        <div class="score-panel">
+          <span class="kicker">completion predicate</span>
+          <div class="score-figure"><span class="num">19</span><span class="of">/22</span></div>
+          <p class="score-label">3 criteria are judgment calls — printed, but never counted. A green run does not cover them.</p>
+          <div class="verify-line"><span class="vk">VERIFY</span> 2026-10-02-consistent-voice-publishing: commits=<span class="vg">9/9</span> pass=<span class="vg">19</span> fail=<span class="vg">0</span> judgment=3</div>
+          <p class="verify-cap">Mechanical verification only, as <code>verify.mjs</code> will print it — a green line here is necessary, not sufficient. The 3 judgment criteria above are uncounted, so this contract is not finished until they have been signed off too.</p>
+          <div class="cmd">
+            <span class="cmd-text" id="cmd-verify">node ${CLAUDE_PLUGIN_ROOT}/scripts/verify.mjs docs/ideation/2026-10-02-consistent-voice-publishing/contract-data.json</span>
+            <button type="button" class="copy" data-copy="cmd-verify">copy</button>
+          </div>
+        </div>
+        <div>
+      <div class="crit-group">
+        <h3>Mechanically checked <span class="hrule"></span> <span class="sec-count">×19</span></h3>
+        <ul class="crits">
+          <li class="crit">
+            <span class="crit-n">01</span>
+            <span class="crit-text">The whole test suite runs on Postgres (birdcar_test on Herd, same host and port as development) locally and on a pgvector-enabled Postgres service in CI, with no SQLite configuration left in phpunit.xml or the CI workflow.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/ContentIdeaTest.php &amp;&amp; ! grep -nE 'sqlite|:memory:' phpunit.xml .github/workflows/tests.yml</code><span class="crit-expect">expect: exits 0; the suite switch lands at the start of Phase 1, before any model change</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">02</span>
+            <span class="crit-text">Capturing an idea creates a ContentIdea with a summary title and a flagship blog-post piece with a provisional slug; no piece title, label or slug is ever derived from the idea's summary; every imported archive essay keeps its published title, slug and URL. Phase 4 adds the case where packaging sets the real title and slug.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/ContentIdeaTest.php tests/Feature/Publishing/ArticleSlugTest.php tests/Feature/Publishing/ArchiveMigrationTest.php</code><span class="crit-expect">expect: exits 0; ContentIdeaTest is created in Phase 1 and extended in Phase 4</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">03</span>
+            <span class="crit-text">For every case of EditorialActivityKind, the outbound request body contains the active canon version id and content hash, that role's rubric and the shared goals block; Drafter and VoiceReviewer requests also contain the fixed exemplar canon labeled voice-only.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/EditorialInputContractTest.php</code><span class="crit-expect">expect: exits 0; the dataset is built from EditorialActivityKind::cases(), so a new kind without a contract fails; created in Phase 2</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">04</span>
+            <span class="crit-text">The per-post voice sample checklist, its state and its mentions in agent instructions and the manual model trial are gone.<code class="crit-check">! grep -rniE 'voice[_ ]?samples?' app resources tests/Manual</code><span class="crit-expect">expect: exits 0 (no matches)<span class="chip chip-caution crit-static">inspects files only</span></span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">05</span>
+            <span class="crit-text">Canon version 1 is the repo rubric files plus a sha256 manifest; its hash is the version id frozen into inputs; no frozen input or canon file references a ~/.config path; approved homepage and Walkthrough copy are a dated snapshot inside the canon.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/VoiceCanonTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 2</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">06</span>
+            <span class="crit-text">The brief records a post type and target query; the plan records a primary framework from the blog channel's allowed list for that type, a runner-up with reasons and an optional single-section secondary; disallowed or length-excluded frameworks fail validation; changing the framework at the plan gate re-runs planning; the Drafter receives the chosen framework file in full.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/NarrativeFrameworkTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 4</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">07</span>
+            <span class="crit-text">The set of mechanical rule ids tagged in the canon equals the set of registered lint rule ids in both directions; each rule has a seeded-violation fixture that fires and a clean fixture that passes; every lint rule id is stated in the Drafter's instructions and schema description.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/VoiceLintTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 3</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">08</span>
+            <span class="crit-text">After drafting, lint runs automatically and at most two self-repair passes touch only agent-authored blocks; owner-edited or protected blocks receive findings with proposed patches that are never auto-applied; release approval is blocked while unresolved lint findings remain unless each is overridden with a recorded reason.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/VoiceLintWorkflowTest.php tests/Feature/Publishing/ReleaseReadinessTest.php</code><span class="crit-expect">expect: exits 0; repair cap, protected-prose, override-with-reason and release-block cases covered</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">09</span>
+            <span class="crit-text">FactReviewer, VoiceReviewer and BuyerReviewer each freeze a distinct canon rubric file, pairwise different by hash, carrying its lens's section markers (claims and exclusions; voice, craft and framework adherence; buyer, commercial structure and discovery); reconciliation and recheck receive the findings and reviewed text they judge.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/ReviewRubricTest.php tests/Feature/Publishing/EditorialReviewTest.php</code><span class="crit-expect">expect: exits 0; ReviewRubricTest is created in Phase 4</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">10</span>
+            <span class="crit-text">The Packager activity proposes ten title options plus an H1, a 50-60 character SEO title, a 150-160 character meta description, a 4-6 word slug and a greatest-hits tag through the existing metadata proposal-acceptance path; the shared metadata lint rules (including archive-slug reuse) block release through CheckArticleRelease findings.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/PackagingTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 4</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">11</span>
+            <span class="crit-text">Exemplar indexing chunks non-canon archive essays and pipeline-published blog pieces by section, embeds them with a request to OpenRouter's /api/v1/embeddings using openai/text-embedding-3-small at 1536 dimensions through the dedicated openai-compatible provider, and freezes 2-4 retrieved sections into Drafter and VoiceReviewer inputs for blog pieces; canon essays and site copy are never indexed; vector queries never receive raw strings.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/ExemplarRetrievalTest.php</code><span class="crit-expect">expect: exits 0 on the Postgres suite; asserts the outbound embeddings request with Http::fake and Http::assertSent; created in Phase 5</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">12</span>
+            <span class="crit-text">The vector migration enables pgvector and creates the vector column and HNSW index, and whereVectorSimilarTo returns the expected nearest sections.<code class="crit-check">php artisan test --compact --fail-on-skipped tests/Feature/Publishing/ExemplarVectorSearchTest.php</code><span class="crit-expect">expect: exits 0 with no skipped tests against birdcar_test on Herd Postgres; CI runs the same suite against a pgvector service; created in Phase 5</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">13</span>
+            <span class="crit-text">Approving a flagship release freezes its approved claim manifest and spawns LinkedIn, Bluesky and email kit pieces drafted from the approved post; kit lint enforces channel limits; kit checks reject claims outside the flagship's claim manifest; a kit piece can be marked Posted only after its flagship is Published; sibling posts created from an idea run the full post path including their own angle gate.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/DistributionKitTest.php tests/Feature/Publishing/SiblingPieceTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 6</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">14</span>
+            <span class="crit-text">The publishing board shows columns derived from each piece's stage, allows only the single-action drags (Ideas to Shaping starts development, Ready to Scheduled opens the release dialog, any column to Parked or Killed with a reason), refuses drags across angle, plan or release gates, nests kit cards under their flagship, and shows each card's live agent status.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/PublishingBoardTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 7</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">16</span>
+            <span class="crit-text">Canon versions in the database are immutable; saving an Admin edit creates and activates a new version and re-activating an older one is the rollback; activities keep the version they froze; the deploy-time sync creates a version only when the repo hash is new, and auto-activates it only when the active version is the previous repo-sourced one; the editor rejects a save that drops a tagged lint rule id from the Drafter rubric; the Admin download reproduces the active version as the repo file tree.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/CanonEditorTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 8</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">17</span>
+            <span class="crit-text">Each agent-authored revision followed by an owner-saved revision records a word-level edit distance on the piece.<code class="crit-check">php artisan test --compact tests/Feature/Publishing/EditDistanceTest.php</code><span class="crit-expect">expect: exits 0; created in Phase 9</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">18</span>
+            <span class="crit-text">The paid golden-set drift trial, run against the current canon, meets G3's thresholds computed from its recorded attempts.<code class="crit-check">jq -e --arg h &quot;$(php artisan publishing:canon-hash)&quot; '.canon_hash == $h and ([.attempts[].passage_id] | unique | length) == 20 and ([.attempts[] | select(.variant == &quot;slopped&quot; and .caught_at_injected_span) | .passage_id] | unique | length) &gt;= 9 and ([.attempts[] | select(.variant == &quot;real&quot; and .drift_flagged) | .passage_id] | unique | length) &lt;= 2' docs/ideation/2026-10-02-consistent-voice-publishing/drift-validation.json</code><span class="crit-expect">expect: exits 0; the file is written only by DRIFT_TRIAL=1 vendor/bin/pest tests/Manual/VoiceDriftTrialTest.php against the local Postgres test database, run by the owner at the acceptance gate</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">19</span>
+            <span class="crit-text">Three real ideas each produced a flagship and full kit that the owner recorded as publishable, with an edit distance captured for every piece.<code class="crit-check">jq -e '(.ideas | length) &gt;= 3 and all(.ideas[]; .verdict == &quot;publishable&quot; and ([.pieces[].kind] | sort) == [&quot;blog_post&quot;,&quot;bluesky_thread&quot;,&quot;email_blurb&quot;,&quot;linkedin_post&quot;] and all(.pieces[]; .edit_distance != null))' docs/ideation/2026-10-02-consistent-voice-publishing/acceptance.json</code><span class="crit-expect">expect: exits 0 once the owner records acceptance.json at the gate</span></span>
+          </li>
+          <li class="crit">
+            <span class="crit-n">22</span>
+            <span class="crit-text">The test suite, Pint and static analysis pass.<code class="crit-check">composer test</code></span>
+          </li>
+        </ul>
+      </div>
+      <div class="crit-group">
+        <h3>Judgment calls <span class="hrule"></span> <span class="sec-count">×3 · a human must look</span></h3>
+        <ul class="crits">
+          <li class="crit crit-judge">
+            <span class="crit-n">15</span>
+            <span class="crit-text">The board renders and behaves correctly in the browser at desktop and mobile widths in light and dark mode, including drag feedback, refused gate drags and status chips.<span class="crit-check">The owner reviews the board at admin.birdcar.test in desktop and mobile widths, light and dark, after Phase 7; source and Livewire assertions do not count as this check.</span></span>
+          </li>
+          <li class="crit crit-judge">
+            <span class="crit-n">20</span>
+            <span class="crit-text">The flagships and kits read as the owner's voice and serve the stated goals.<span class="crit-check">The owner reads all three flagships and their kits in Admin and records the verdict and notes in acceptance.json at the acceptance gate.</span></span>
+          </li>
+          <li class="crit crit-judge">
+            <span class="crit-n">21</span>
+            <span class="crit-text">PRODUCT.md's Written Voice section defers to or matches the canon and no longer contradicts it.<span class="crit-check">The owner reads PRODUCT.md § Written Voice against the canon after Phase 2.</span></span>
+          </li>
+        </ul>
+      </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="band band-wash" id="decisions" aria-labelledby="decisions-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="decisions-h">What was considered and turned down</h2>
+          <p class="sec-sub">A rejected alternative is evidence, not an oversight. Before proposing one of these, read why it lost.</p>
+        </div>
+        <span class="sec-count">×18</span>
+      </div>
+      <ul class="decisions">
+        <li class="decision">
+          <h3>One idea owns many pieces: a flagship blog post, LinkedIn, Bluesky and email kit pieces, and owner-requested sibling blog posts, each with its own stage</h3>
+          <p><span class="rejected">Instead of</span> A flagship plus kit only, or sibling posts only; and the 2026-09-22 contract's exclusion of derivative generation. The owner's end goal is one idea becoming potentially several marketable pieces</p>
+        </li>
+        <li class="decision">
+          <h3>Keep Article as the piece model with a kind and parent link, and add a ContentIdea model that owns the summary title</h3>
+          <p><span class="rejected">Instead of</span> Renaming Article to a new Piece model. Reuses revisions, releases, attempts and their tests; the rename would churn every publishing file for no behavior change</p>
+        </li>
+        <li class="decision">
+          <h3>Decompose bat-kol into repo-owned per-role rubric files as canon version 1; Admin-edited database versions win once the editor exists; a download of the active version is committed back to the repo</h3>
+          <p><span class="rejected">Instead of</span> Syncing from bat-kol by heading manifest, the repo always winning, or Admin-only storage after import. Production cannot read ~/.config, role decomposition is the point, and the owner wants the app's canon to eventually replace bat-kol</p>
+        </li>
+        <li class="decision">
+          <h3>A fixed exemplar canon of four 2026 essays plus approved site copy, with 2-4 sections retrieved per blog brief by the SDK's built-in embeddings from non-canon archive essays and pipeline-published pieces</h3>
+          <p><span class="rejected">Instead of</span> A fixed canon only; per-post picking; the 2026-09-22 contract's rejection of an embeddings index; and indexing the canon essays and site copy already frozen in full. The owner chose canon plus retrieval and noted the earlier avoidance of built-in embeddings had to be fixed afterward; the over-engineering critic showed indexing frozen material retrieves what every input already holds</p>
+        </li>
+        <li class="decision">
+          <h3>Embeddings use a dedicated openai-compatible provider entry keyed to the OpenRouter key and base URL, with openai/text-embedding-3-small at 1536 dimensions, set as the embeddings default; vector queries always receive precomputed embeddings</h3>
+          <p><span class="rejected">Instead of</span> OpenAI direct or Gemini embeddings, and the shipped default_for_embeddings of openai. Keeps OpenRouter as the only key and spending authority, as the 2026-09-24 contract decided; passing raw strings would silently embed through the default provider</p>
+        </li>
+        <li class="decision">
+          <h3>Several reviewers: keep the three lenses with sharper, distinct role rubrics, plus deterministic lint ahead of them</h3>
+          <p><span class="rejected">Instead of</span> One general reviewer, or blogbot's single agent with one advisory critic. Mechanical, judgment and reconciliation checks fail differently; research supports decomposed criteria and external grounding over one holistic critic</p>
+        </li>
+        <li class="decision">
+          <h3>Refine the existing stages: add an Ideas column, lint with at most two self-repair passes, a packaging step and kit pieces spawned at release approval; keep every current stage and gate</h3>
+          <p><span class="rejected">Instead of</span> Merging research into planning, or dropping the angle gate. The owner wants the pipeline refined into a seamless workflow, not replaced</p>
+        </li>
+        <li class="decision">
+          <h3>Packaging runs as a Packager activity whose metadata goes through the existing proposal-acceptance path, with metadata rules implemented once as lint rules that CheckArticleRelease enforces</h3>
+          <p><span class="rejected">Instead of</span> A separate accepted-package gate and a new EditorialStage value, with the length rules validated twice (the pre-critic plan). The over-engineering critic showed CheckArticleRelease and metadata proposal acceptance already guard these fields; the owner's Package step survives as an activity on the board</p>
+        </li>
+        <li class="decision">
+          <h3>Deterministic lint findings block release unless each is overridden with a recorded reason; LLM style findings stay advisory</h3>
+          <p><span class="rejected">Instead of</span> Lint as advisory only, matching the 2026-09-22 decision exactly, or a hard block with no override. Mechanical rules like the em dash ban are absolute in the voice profile, but quoted sources can legitimately contain a banned word</p>
+        </li>
+        <li class="decision">
+          <h3>Implement the linter as native PHP rules, with every mechanical canon rule tagged by id and checked against registered lint rules in both directions</h3>
+          <p><span class="rejected">Instead of</span> Vale, and a lint dataset that only lists implemented rules. No external binary or dependency; the two-way id check means a canon rule cannot silently lack enforcement</p>
+        </li>
+        <li class="decision">
+          <h3>Self-repair rewrites only agent-authored blocks; owner-edited blocks get findings with proposed patches that are never auto-applied</h3>
+          <p>Preserves the 2026-09-22 rule that agents never silently change the owner's prose</p>
+        </li>
+        <li class="decision">
+          <h3>Release approval freezes the flagship's approved claim manifest; kit pieces are drafted from the approved flagship, may not add claims outside that manifest, and can be marked Posted only after the flagship is Published</h3>
+          <p>Keeps facts tied to checked claims and follows the blog channel rule against linking a post before it is published; the hidden-dependency critic found no claim-set artifact existed</p>
+        </li>
+        <li class="decision">
+          <h3>The Planner selects a primary narrative framework and a runner-up from the blog channel's allowed list for the post type; the owner chooses at the plan gate; PHP validates the allowed list and length exclusions</h3>
+          <p><span class="rejected">Instead of</span> Leaving structure implicit in the outline, or scoring with framework-guide's topic tables as written. Mirrors bat-kol's top-two selection; the topic tables were tuned for the old practitioner audience and the channel's per-type list supersedes them</p>
+        </li>
+        <li class="decision">
+          <h3>Board columns follow stage; drags are allowed only for single human actions; crossing a gate opens the workspace</h3>
+          <p><span class="rejected">Instead of</span> Dragging across a gate approves it, or a read-only board. The owner should approve the angle, plan and exact release text where he can read them</p>
+        </li>
+        <li class="decision">
+          <h3>Measure drift with 10 real and 10 slopped passages, passing at 9 of 10 caught and at most 2 of 10 real flagged, recomputed from recorded attempts and pinned to the current canon hash</h3>
+          <p><span class="rejected">Instead of</span> A pairwise which-is-Nick judge, owner acceptance alone, or trusting the harness's own summary fields. Tests the pipeline's own checks and goes stale automatically when the canon changes</p>
+        </li>
+        <li class="decision">
+          <h3>The MVP is the data model, canon, frameworks, lint, sharper reviewers and packaging; the board, kit, siblings, retrieval, canon editor and drift trial are Full</h3>
+          <p><span class="rejected">Instead of</span> Everything as MVP, or the board first. Owner choice; voice and goals consistency is the core and the board is a view over stages that must exist first</p>
+        </li>
+        <li class="decision">
+          <h3>The whole test suite moves from SQLite in memory to Postgres: birdcar_test on Herd locally (same host and port as development) and a pgvector-enabled Postgres service in CI; the vector migration calls Schema::ensureVectorExtensionExists() with no driver guard; the drift trial uses the same database</h3>
+          <p><span class="rejected">Instead of</span> One retrieval test on the SQLite suite with embeddings faked (the pre-critic plan), a pgsql-guarded vector migration with only the vector tests on Postgres (the critic-fix plan), or a PHP-side similarity fallback. Both the hidden-dependency and success-criteria critics showed SQLite throws on vector columns; the owner chose production parity over keeping the suite on SQLite</p>
+        </li>
+        <li class="decision">
+          <h3>Canon version 1 in Phases 2-7 is the repo files frozen by sha256 manifest hash; database versions, the Admin editor and a deploy-time sync arrive in Phase 8 after every rubric exists, deduplicating by hash and auto-activating a repo version only when the active version is the previous repo-sourced one</h3>
+          <p><span class="rejected">Instead of</span> Seeding immutable database versions in Phase 2 (the pre-critic plan), which would strand the Phase 4 and Phase 6 rubrics outside already-seeded environments. The hidden-dependency critic showed no path carried later rubrics into existing environments, and the over-engineering critic showed a versions table with one unchangeable row does no work before the editor exists</p>
+        </li>
+      </ul>
+      </div>
+    </section>
+
+
+    <section class="band" id="run" aria-labelledby="run-h">
+      <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2 id="run-h">Run it</h2>
+          <p class="sec-sub">Three ways in, in descending order of how much you can walk away from.</p>
+        </div>
+      </div>
+      <div class="runbar">
+        <div>
+          <span class="kicker">recommended</span>
+          <h3>Autopilot.</h3>
+          <p>Dispatches every phase through the loop above, in dependency order, gating on failure. Already-committed phases are skipped, so re-running after a fix picks up where it stopped.</p>
+        </div>
+        <div class="cmd">
+            <span class="cmd-text" id="cmd-autopilot">/ideation:autopilot docs/ideation/2026-10-02-consistent-voice-publishing/contract.md</span>
+            <button type="button" class="copy" data-copy="cmd-autopilot">copy</button>
+          </div>
+      </div>
+
+      <details class="fold">
+        <summary>Unattended, with a stop condition (/goal)</summary>
+        <div class="fold-body">
+          <p>A durability wrapper around the same autopilot run: Claude re-checks this condition before it is allowed to stop, so a failed phase gets repaired and re-run instead of ending the session. The done-when is deliberately disjunctive — two identical failing VERIFY lines release the run, because a contract whose checks have rotted must not trap it forever.</p>
+          <div class="cmd cmd-block">
+            <span class="cmd-text" id="cmd-goal">/goal Drive the Consistent Voice Publishing contract (2026-10-02-consistent-voice-publishing) to completion with /ideation:autopilot.
+
+1. Run `/ideation:autopilot docs/ideation/2026-10-02-consistent-voice-publishing/contract.md`.
+2. It dispatches a BACKGROUND workflow. Wait for the completion notification — never start a second autopilot run while one is in flight.
+3. Then run the ideation plugin's `scripts/verify.mjs` against `docs/ideation/2026-10-02-consistent-voice-publishing/contract-data.json` and leave its VERIFY line in the conversation. Resolve the plugin's install directory first — `${CLAUDE_PLUGIN_ROOT}/scripts/verify.mjs` is a placeholder, not a shell variable, and bash will not expand it. That line is the only evidence this goal is judged on.
+4. If anything failed, fix the spec or the implementation and go back to step 1. Autopilot skips phases that already have commits.
+
+Done when the most recent VERIFY line reads fail=0 and commits=9/9 — or when two consecutive VERIFY lines are identical and still failing, in which case name the failing checks and stop, because a contract whose checks have rotted must not trap the run.</span>
+            <button type="button" class="copy" data-copy="cmd-goal">copy</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>One phase at a time (10)</summary>
+        <div class="fold-body">
+          <p>No orchestration, no failure gating, no resume — you are the scheduler. Start with <strong>Content ideas and pieces</strong>.</p>
+          <div class="phase-cmds">
+            <div class="phase-cmd">
+              <span class="n">01</span>
+              <span class="t">Content ideas and pieces</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-1">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-1.md</span>
+            <button type="button" class="copy" data-copy="cmd-1">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">02</span>
+              <span class="t">Voice and goals canon in every prompt</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-2">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-2.md</span>
+            <button type="button" class="copy" data-copy="cmd-2">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">03</span>
+              <span class="t">Deterministic voice lint</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-3">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-3.md</span>
+            <button type="button" class="copy" data-copy="cmd-3">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">04</span>
+              <span class="t">Frameworks, sharper reviewers and packaging</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-4">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-4.md</span>
+            <button type="button" class="copy" data-copy="cmd-4">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">05</span>
+              <span class="t">Exemplar retrieval</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-5">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-5.md</span>
+            <button type="button" class="copy" data-copy="cmd-5">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">06</span>
+              <span class="t">Distribution kit and sibling pieces</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-6">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-6.md</span>
+            <button type="button" class="copy" data-copy="cmd-6">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">07</span>
+              <span class="t">Publishing board</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-7">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-7.md</span>
+            <button type="button" class="copy" data-copy="cmd-7">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">08</span>
+              <span class="t">Canon editor</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-8">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-8.md</span>
+            <button type="button" class="copy" data-copy="cmd-8">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">09</span>
+              <span class="t">Drift trial harness and edit distance</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-9">/ideation:execute-spec docs/ideation/2026-10-02-consistent-voice-publishing/spec-phase-9.md</span>
+            <button type="button" class="copy" data-copy="cmd-9">copy</button>
+          </div>
+            </div>
+            <div class="phase-cmd">
+              <span class="n">10</span>
+              <span class="t">Owner voice acceptance</span>
+              <div class="cmd">
+            <span class="cmd-text" id="cmd-10"># Review: Owner voice acceptance</span>
+            <button type="button" class="copy" data-copy="cmd-10">copy</button>
+          </div>
+            </div>
+          </div>
+        </div>
+      </details>
+      </div>
+    </section>
+
+    <section class="band" id="close" aria-labelledby="close-h">
+      <div class="wrap">
+        <div class="close">
+          <div>
+            <span class="kicker">the commitment</span>
+            <h2 id="close-h">This plan is what was agreed.</h2>
+            <p>10 phases · Hybrid (artifacts generated; execution waits for the owner): a sequential spine (pieces, canon, lint, frameworks with reviewers and packaging) followed by Full-tier phases that branch off it, then a human acceptance gate. Commits go directly on main with linear history and no isolation branch; push only when the owner asks. Agent work stays queued and quality beats latency, so token limits and timeouts are runaway guards. Every phase that adds or changes an agent role runs a validator-to-schema audit and keeps EditorialInputContractTest green over EditorialActivityKind::cases(). The paid drift trial and the exemplar backfill never run automatically.. Scope changes mean a new revision that supersedes this document — not silent drift. Express run — approved in one confirmation after the interview, so the review lives in the branch diff rather than in a per-artifact sign-off.</p>
+          </div>
+          <div class="close-meta">
+            <span class="stamp is-go">approved</span>
+            <span class="meta">2026-10-02 · Owner (express finish, artifacts only)</span>
+          </div>
+        </div>
+        <p class="colophon">Generated by <code>ideation:contract-gen</code> from <code>docs/ideation/2026-10-02-consistent-voice-publishing/contract-data.json</code>. That JSON is the source of truth; this page and <code>docs/ideation/2026-10-02-consistent-voice-publishing/contract.md</code> are both rendered from it, so edit the data and re-render rather than editing either output.</p>
+      </div>
+    </section>
+    </main>
+    <script>
+(function () {
+  'use strict';
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- copy ------------------------------------------------------------ */
+  function flash(btn, label) {
+    var prior = btn.dataset.label || btn.textContent;
+    btn.dataset.label = prior;
+    btn.textContent = label;
+    btn.dataset.state = 'done';
+    setTimeout(function () {
+      btn.textContent = prior;
+      btn.removeAttribute('data-state');
+    }, 1800);
+  }
+  function wireCopy(btn, getText) {
+    btn.setAttribute('aria-live', 'polite');
+    btn.addEventListener('click', function () {
+      var text = getText();
+      if (text == null) return;
+      /* file:// or a denied permission: point at the manual path rather than
+         failing silently — and select the text first, so "press ⌘C" is true.
+         navigator.clipboard is absent entirely outside a secure context, which
+         throws synchronously before any rejection handler runs, so the guard
+         has to come before the call and not only after it. */
+      var manual = function () {
+        var t = btn.dataset.copy ? document.getElementById(btn.dataset.copy) : null;
+        if (t && window.getSelection && document.createRange) {
+          var range = document.createRange();
+          range.selectNodeContents(t);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        flash(btn, 'press ' + (navigator.platform.indexOf('Mac') === 0 ? '⌘C' : 'Ctrl+C'));
+      };
+      if (!navigator.clipboard || !navigator.clipboard.writeText) { manual(); return; }
+      navigator.clipboard.writeText(text).then(
+        function () { flash(btn, 'copied'); },
+        manual
+      );
+    });
+  }
+  document.querySelectorAll('.copy[data-copy]').forEach(function (btn) {
+    wireCopy(btn, function () {
+      var t = document.getElementById(btn.dataset.copy);
+      return t ? t.textContent.trim() : null;
+    });
+  });
+  document.querySelectorAll('[data-copy-text]').forEach(function (btn) {
+    wireCopy(btn, function () { return btn.dataset.copyText; });
+  });
+
+  /* ---- theme (auto -> light -> dark) ----------------------------------- */
+  var themeBtn = document.getElementById('theme-toggle');
+  if (themeBtn) {
+    var KEY = 'ideation-contract-theme';
+    var root = document.documentElement;
+    var LABEL = {
+      auto: 'Colour theme: follow system',
+      light: 'Colour theme: light',
+      dark: 'Colour theme: dark'
+    };
+    var apply = function (mode) {
+      if (mode === 'auto') delete root.dataset.theme;
+      else root.dataset.theme = mode;
+      themeBtn.dataset.mode = mode;
+      themeBtn.setAttribute('aria-label', LABEL[mode]);
+      themeBtn.title = LABEL[mode];
+      try {
+        if (mode === 'auto') localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, mode);
+      } catch (e) {}
+    };
+    apply(root.dataset.theme || 'auto');
+    themeBtn.addEventListener('click', function () {
+      var order = ['auto', 'light', 'dark'];
+      apply(order[(order.indexOf(root.dataset.theme || 'auto') + 1) % 3]);
+    });
+  }
+
+  /* ---- running head + scrollspy ---------------------------------------- */
+  var runhead = document.getElementById('runhead');
+  var masthead = document.querySelector('.masthead');
+  if (runhead && masthead && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) {
+      runhead.dataset.visible = String(!es[0].isIntersecting);
+    }, { rootMargin: '-60px 0px 0px 0px' }).observe(masthead);
+
+    var navLinks = {};
+    runhead.querySelectorAll('.runhead-nav a').forEach(function (a) {
+      navLinks[a.getAttribute('href').slice(1)] = a;
+    });
+    /* One observer over every section; the topmost intersecting one wins, so
+       the marker never flickers between two bands sharing the viewport. */
+    var visible = {};
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+      var order = Object.keys(navLinks);
+      var current = order.filter(function (id) { return visible[id]; })[0];
+      order.forEach(function (id) {
+        if (current === id) navLinks[id].setAttribute('aria-current', 'true');
+        else navLinks[id].removeAttribute('aria-current');
+      });
+    }, { rootMargin: '-70px 0px -55% 0px' });
+    Object.keys(navLinks).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+
+  /* ---- phase graph: edges measured from real geometry ------------------ */
+  var graph = document.getElementById('graph');
+  var ledger = document.getElementById('ledger');
+  if (graph) {
+    var grid = graph.querySelector('.graph-grid');
+    var svg = graph.querySelector('.graph-edges');
+    var nodes = Array.prototype.slice.call(grid.querySelectorAll('.pnode'));
+    var edges = [];
+    try { edges = JSON.parse(graph.dataset.edges || '[]'); } catch (e) {}
+    var byIndex = {};
+    nodes.forEach(function (n) { byIndex[n.dataset.phase] = n; });
+
+    var draw = function () {
+      if (!edges.length) return;
+      var gb = grid.getBoundingClientRect();
+      svg.setAttribute('viewBox', '0 0 ' + gb.width + ' ' + gb.height);
+      var box = function (i) {
+        var el = byIndex[i];
+        if (!el) return null;
+        var r = el.getBoundingClientRect();
+        return {
+          l: r.left - gb.left, r: r.right - gb.left,
+          cy: r.top - gb.top + r.height / 2
+        };
+      };
+      var focus = graph.dataset.focus;
+      /* Built with DOM calls rather than innerHTML: every value here is
+         geometry, but a renderer that cannot inject markup cannot regress
+         into one that can. */
+      var NS = 'http://www.w3.org/2000/svg';
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var defs = document.createElementNS(NS, 'defs');
+      var marker = document.createElementNS(NS, 'marker');
+      marker.setAttribute('id', 'ah');
+      marker.setAttribute('viewBox', '0 0 10 10');
+      marker.setAttribute('refX', '9');
+      marker.setAttribute('refY', '5');
+      marker.setAttribute('markerWidth', '6');
+      marker.setAttribute('markerHeight', '6');
+      marker.setAttribute('orient', 'auto');
+      var head = document.createElementNS(NS, 'path');
+      head.setAttribute('d', 'M0 0 L10 5 L0 10 z');
+      head.setAttribute('fill', 'context-stroke');
+      marker.appendChild(head);
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+      edges.forEach(function (e) {
+        var a = box(e[0]), b = box(e[1]);
+        if (!a || !b) return;
+        var x1 = a.r, x2 = b.l - 7, y1 = a.cy, y2 = b.cy;
+        var mid = x1 + (x2 - x1) / 2;
+        var d = Math.abs(y1 - y2) < 0.5
+          ? 'M' + x1 + ' ' + y1 + ' H' + x2
+          : 'M' + x1 + ' ' + y1 + ' H' + mid + ' V' + y2 + ' H' + x2;
+        var p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', d);
+        p.setAttribute('marker-end', 'url(#ah)');
+        if (focus !== undefined && (String(e[0]) === focus || String(e[1]) === focus)) {
+          p.setAttribute('class', 'e-hot');
+        }
+        svg.appendChild(p);
+      });
+    };
+
+    /* Fonts land after first paint and change node heights. */
+    draw();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+    addEventListener('resize', draw);
+    addEventListener('beforeprint', draw);
+    graph.addEventListener('scroll', draw);
+
+    /* ---- focus: one phase isolated across graph and ledger ------------- */
+    var hint = document.getElementById('graph-hint');
+    var rows = ledger ? Array.prototype.slice.call(ledger.querySelectorAll('.lrow')) : [];
+    var clearFocus = function () {
+      delete graph.dataset.focus;
+      if (ledger) delete ledger.dataset.focus;
+      nodes.forEach(function (n) { n.setAttribute('aria-pressed', 'false'); });
+      rows.forEach(function (r) { r.dataset.hot = 'false'; });
+      if (hint) hint.dataset.active = 'false';
+      draw();
+    };
+    var setFocus = function (i, scroll) {
+      if (graph.dataset.focus === String(i)) return clearFocus();
+      graph.dataset.focus = String(i);
+      if (ledger) ledger.dataset.focus = String(i);
+      nodes.forEach(function (n) {
+        n.setAttribute('aria-pressed', String(n.dataset.phase === String(i)));
+      });
+      rows.forEach(function (r) { r.dataset.hot = String(r.dataset.phase === String(i)); });
+      if (hint) hint.dataset.active = 'true';
+      draw();
+      if (scroll) {
+        var row = document.getElementById('phase-' + i);
+        if (row) row.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+      }
+    };
+    nodes.forEach(function (n) {
+      n.addEventListener('click', function () { setFocus(n.dataset.phase, true); });
+    });
+    var clearBtn = document.getElementById('graph-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearFocus);
+    addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && graph.dataset.focus !== undefined) clearFocus();
+    });
+  }
+
+  /* ---- scope rings ------------------------------------------------------ */
+  var tiers = document.getElementById('tiers');
+  if (tiers) {
+    var rings = Array.prototype.slice.call(document.querySelectorAll('.nest-ring'));
+    rings.forEach(function (ring) {
+      ring.addEventListener('click', function () {
+        var t = ring.dataset.tier;
+        var on = tiers.dataset.tier !== t;
+        if (on) tiers.dataset.tier = t; else delete tiers.dataset.tier;
+        rings.forEach(function (r) {
+          r.setAttribute('aria-pressed', String(on && r.dataset.tier === t));
+        });
+      });
+    });
+  }
+
+  /* ---- the one authored moment: the run model's token ------------------ */
+  var model = document.getElementById('model');
+  var token = document.getElementById('token');
+  if (model && token && 'IntersectionObserver' in window) {
+    var stages = Array.prototype.slice.call(model.querySelectorAll('.stage'));
+    var light = function (animate) {
+      var dots = stages.map(function (s) { return s.querySelector('.stage-dot'); });
+      var wrap = model.querySelector('.stages');
+      var wb = wrap.getBoundingClientRect();
+      var first = dots[0].getBoundingClientRect();
+      var last = dots[dots.length - 1].getBoundingClientRect();
+      token.style.left = (first.left - wb.left + first.width / 2 - 5.5) + 'px';
+      token.style.setProperty('--travel', (last.left - first.left) + 'px');
+      if (!animate) {
+        stages.forEach(function (s) { s.dataset.reached = 'true'; });
+        model.dataset.lit = 'done';
+        return;
+      }
+      var dur = 420 * (stages.length - 1);
+      token.style.setProperty('--dur', dur + 'ms');
+      model.dataset.lit = 'running';
+      stages.forEach(function (s, i) {
+        setTimeout(function () { s.dataset.reached = 'true'; }, (dur / (stages.length - 1)) * i);
+      });
+      setTimeout(function () { model.dataset.lit = 'done'; }, dur + 260);
+    };
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      light(!reduce);
+    }, { threshold: 0.3 });
+    io.observe(model);
+  }
+})();
+</script>
+  </body>
+</html>
