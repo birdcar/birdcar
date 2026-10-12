@@ -35,6 +35,9 @@ class EditorialActivity extends Model
 
     public const UNSUPPORTED_RECOMMENDATION_PAUSE_REASON = 'The recommended model for this agent role is not in the supported model list. The work resumes automatically once the configuration is corrected.';
 
+    /** A worker claimed the activity while its attempt was paused, parked or replaced, so no provider request was made. */
+    public const BLOCKED_ATTEMPT_PAUSE_REASON = 'The publishing attempt is blocked or no longer current.';
+
     /** Activities frozen before the voice canon existed never reach the provider; the owner starts the step again. */
     public const PRE_CANON_PAUSE_REASON = 'Created before the voice canon; restart this step.';
 

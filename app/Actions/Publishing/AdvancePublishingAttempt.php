@@ -99,6 +99,20 @@ class AdvancePublishingAttempt
         ]);
     }
 
+    /**
+     * Clears the park. Work a worker picked up while the piece was parked was paused before any provider request, so it
+     * returns to the queue unless the attempt is also paused.
+     */
+    public function unpark(User $actor, PublishingAttempt|int $attempt): PublishingAttempt
+    {
+        $this->authorize($actor, PublishingPermission::Develop->value);
+
+        return $this->updateAttempt($attempt, [
+            'parked_at' => null,
+            'parked_reason' => null,
+        ]);
+    }
+
     public function abandon(User $actor, PublishingAttempt|int $attempt, string $reason): PublishingAttempt
     {
         $this->authorize($actor, PublishingPermission::Develop->value);
@@ -398,6 +412,19 @@ class AdvancePublishingAttempt
                     ->where('attempt_id', $lockedAttempt->id)
                     ->where('status', EditorialActivityStatus::Paused->value)
                     ->whereIn('pause_reason', EditorialActivity::RESUMABLE_PAUSE_REASONS)
+                    ->update([
+                        'status' => EditorialActivityStatus::Pending->value,
+                        'paused_at' => null,
+                        'pause_reason' => null,
+                        'available_at' => now(),
+                    ]);
+            }
+
+            if (array_key_exists('parked_at', $attributes) && $attributes['parked_at'] === null && $lockedAttempt->paused_at === null) {
+                EditorialActivity::query()
+                    ->where('attempt_id', $lockedAttempt->id)
+                    ->where('status', EditorialActivityStatus::Paused->value)
+                    ->where('pause_reason', EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON)
                     ->update([
                         'status' => EditorialActivityStatus::Pending->value,
                         'paused_at' => null,

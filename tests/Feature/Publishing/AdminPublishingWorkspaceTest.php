@@ -203,7 +203,7 @@ test('admission only users cannot open direct publishing urls', function (): voi
 test('revoked publishing permission fails closed during livewire updates', function (): void {
     $user = publishingUser();
     $component = Livewire\Livewire::actingAs($user)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'Should not save after revoke');
 
     $user->removeRole(PublishingRole::Author->value);
@@ -216,7 +216,7 @@ test('revoked publishing permission fails closed during livewire updates', funct
 test('revoked admin admission fails closed during livewire updates', function (): void {
     $user = publishingUser();
     $component = Livewire\Livewire::actingAs($user)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'Should not save after admin revoke');
 
     $user->removeRole(AdminRole::Access->value);
@@ -226,7 +226,7 @@ test('revoked admin admission fails closed during livewire updates', function ()
     expect(Article::query()->whereRelation('contentIdea', 'body', 'Should not save after admin revoke')->exists())->toBeFalse();
 });
 
-test('publishing authors can reach dashboard and create passive ideas without starting an interview', function (): void {
+test('publishing authors can reach the board and create passive ideas without starting an interview', function (): void {
     $user = publishingUser();
 
     $this->actingAs($user)
@@ -235,7 +235,7 @@ test('publishing authors can reach dashboard and create passive ideas without st
         ->assertSee('Publishing workspace');
 
     Livewire\Livewire::actingAs($user)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'A passive idea')
         ->call('saveForLater')
         ->assertHasNoErrors()
@@ -250,7 +250,7 @@ test('develop idea starts one pending interview and redirects to the workspace',
     $user = publishingUser();
 
     Livewire\Livewire::actingAs($user)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'An active idea')
         ->call('developIdea')
         ->assertHasNoErrors()
@@ -299,7 +299,7 @@ test('develop idea is forbidden without develop permission', function (): void {
     $user = publishingWriteOnlyUser();
 
     Livewire\Livewire::actingAs($user)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'No develop permission')
         ->call('developIdea')
         ->assertForbidden();
@@ -307,7 +307,7 @@ test('develop idea is forbidden without develop permission', function (): void {
     expect(Article::query()->whereRelation('contentIdea', 'body', 'No develop permission')->exists())->toBeFalse();
 });
 
-test('dashboard lists owner-scoped ideas and active writing with titles and full idea access', function (): void {
+test('board lists owner-scoped ideas and active writing with titles and full idea access', function (): void {
     $user = publishingUser();
     $other = publishingUser();
     $longIdea = str_repeat('Long idea sentence. ', 80).'Final accessible sentence.';
@@ -320,68 +320,67 @@ test('dashboard lists owner-scoped ideas and active writing with titles and full
         ->get('http://admin.birdcar.test/publishing')
         ->assertOk()
         ->assertSee('Ideas')
-        ->assertSee('Active writing')
+        ->assertSee('Writing')
         ->assertSee(ContentIdea::deriveSummaryTitle($longIdea))
         ->assertSee('Final accessible sentence.')
         ->assertSee('Working active title')
-        ->assertSee('In review')
         ->assertDontSee('Other author idea')
         ->assertDontSee('Other active title');
 });
 
-test('dashboard paginates ideas and active writing independently', function (): void {
+test('board shows every saved idea and caps the published column at the twelve newest', function (): void {
     $user = publishingUser();
     foreach (range(1, 13) as $index) {
         Article::factory()->idea(sprintf('Backlog idea %02d', $index))->create([
             'author_id' => $user->id,
-            'created_at' => now()->subMinutes($index),
+            'updated_at' => now()->subMinutes($index),
         ]);
-        $this->travelTo(now()->subMinutes($index), fn (): Article => activeArticleFor($user, sprintf('Active writing %02d', $index)));
+        $article = publishedArticleFor($user, sprintf('Published idea %02d', $index), sprintf('Live title %02d', $index));
+        $article->forceFill(['first_published_at' => now()->subMinutes($index)])->save();
     }
 
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing')
         ->assertOk()
         ->assertSee('Backlog idea 01')
-        ->assertDontSee('Backlog idea 13')
-        ->assertSee('Active writing 01')
-        ->assertDontSee('Active writing 13')
-        ->assertSee('paginator-ideasPage-page2', false)
-        ->assertSee('paginator-activePage-page2', false);
+        ->assertSee('Backlog idea 13')
+        ->assertSee('Live title 01')
+        ->assertSee('Live title 12')
+        ->assertDontSee('Live title 13')
+        ->assertSee('See all 13 in the published library')
+        ->assertSee(route('admin.publishing.published'), false);
 });
 
-test('dashboard pages break created_at ties by newest id so no article repeats or goes missing', function (): void {
+test('board orders cards newest first and breaks timestamp ties by newest id so no card repeats or goes missing', function (): void {
     $this->freezeTime();
     $user = publishingUser();
     foreach (range(1, 13) as $index) {
         Article::factory()->idea(sprintf('Backlog idea %02d', $index))->create(['author_id' => $user->id]);
-        activeArticleFor($user, sprintf('Active writing %02d', $index));
+        $article = publishedArticleFor($user, sprintf('Published idea %02d', $index), sprintf('Live title %02d', $index));
+        $article->forceFill(['first_published_at' => now()])->save();
     }
-
-    $firstPage = $this->actingAs($user)->get('http://admin.birdcar.test/publishing');
-    $secondPage = $this->actingAs($user)->get('http://admin.birdcar.test/publishing?ideasPage=2&activePage=2');
-
-    $firstPage->assertOk()
-        ->assertSee('Backlog idea 13')
-        ->assertDontSee('Backlog idea 01')
-        ->assertSee('Active writing 13')
-        ->assertDontSee('Active writing 01');
-    $secondPage->assertOk()
-        ->assertSee('Backlog idea 01')
-        ->assertDontSee('Backlog idea 13')
-        ->assertSee('Active writing 01')
-        ->assertDontSee('Active writing 13');
-});
-
-test('published work is listed separately from active writing', function (): void {
-    $user = publishingUser();
-    $published = publishedArticleFor($user, 'Published piece', 'Published live title');
 
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing')
         ->assertOk()
-        ->assertDontSee('Published piece')
-        ->assertDontSee('Published live title');
+        ->assertSeeInOrder(array_map(fn (int $index): string => sprintf('Backlog idea %02d', $index), range(13, 1)))
+        ->assertSeeInOrder(array_map(fn (int $index): string => sprintf('Live title %02d', $index), range(13, 2)))
+        ->assertDontSee('Live title 01');
+});
+
+test('published work appears in the published column and in the library', function (): void {
+    $user = publishingUser();
+    $published = publishedArticleFor($user, 'Published piece', 'Published live title');
+
+    $board = $this->actingAs($user)
+        ->get('http://admin.birdcar.test/publishing')
+        ->assertOk()
+        ->assertSee('Published live title');
+
+    $document = new DOMDocument;
+    @$document->loadHTML($board->content());
+    $xpath = new DOMXPath($document);
+    expect(workspaceXpathNodes($xpath, sprintf('//*[@data-board-column="published"]//*[@data-board-card="%d"]', $published->id))->length)->toBe(1);
 
     $response = $this->actingAs($user)
         ->get('http://admin.birdcar.test/publishing/published')
@@ -409,7 +408,7 @@ test('published library is owner-scoped and shows draft-in-progress status witho
         ->assertOk()
         ->assertSee('Published active live title')
         ->assertSee('Draft in progress on published work')
-        ->assertDontSee('Terminal live title')
+        ->assertSee('Terminal live title')
         ->assertDontSee('Other live title');
 
     $this->actingAs($user)

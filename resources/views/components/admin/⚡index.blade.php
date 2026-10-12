@@ -54,9 +54,9 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
     @elseif ($unavailable)
         <flux:callout variant="warning" icon="exclamation-triangle" role="alert">
             <flux:callout.heading>Publishing work couldn’t be loaded</flux:callout.heading>
-            <flux:callout.text>Your attention list is unavailable, not empty. Refresh to try again, or open Publishing.</flux:callout.text>
+            <flux:callout.text>Your attention list is unavailable, not empty. Refresh to try again, or open the publishing board.</flux:callout.text>
             <x-slot:actions>
-                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate>Open Publishing</flux:button>
+                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate>Open the board</flux:button>
             </x-slot:actions>
         </flux:callout>
     @else
@@ -66,8 +66,8 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                     <section class="border-y border-zinc-200 py-10 dark:border-zinc-700" aria-labelledby="attention-empty">
                         <flux:icon.check-circle class="mb-4 size-6 text-accent-content" />
                         <flux:heading id="attention-empty" level="2" size="lg">Nothing needs your attention</flux:heading>
-                        <flux:text class="mt-2 max-w-prose">Your current publishing work has no flagged blockers or decisions. Pick up an active piece, or open Publishing to start something new.</flux:text>
-                        <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="primary" class="mt-5">Open Publishing</flux:button>
+                        <flux:text class="mt-2 max-w-prose">Your current publishing work has no flagged blockers or decisions. Pick up an active piece, or open the publishing board to start something new.</flux:text>
+                        <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="primary" class="mt-5">Open the board</flux:button>
                     </section>
                 @endif
 
@@ -103,7 +103,7 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                 @endforeach
 
                 @if ($blocked !== [] || $decisions !== [])
-                    <flux:text size="sm">Up to five items per section. <flux:link :href="route('admin.publishing.dashboard')" wire:navigate>Open Publishing for all active writing.</flux:link></flux:text>
+                    <flux:text size="sm">Up to five items per section. <flux:link :href="route('admin.publishing.dashboard')" wire:navigate>Open the publishing board for every piece.</flux:link></flux:text>
                 @endif
             </div>
 
@@ -124,10 +124,10 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                             <flux:text class="mt-2" size="sm">Publishing · <time datetime="{{ $item['updated_at']->toIso8601String() }}">{{ $item['updated_at']->diffForHumans() }}</time></flux:text>
                         </li>
                     @empty
-                        <li class="py-4"><flux:text size="sm">No other active work. Your saved ideas are in Publishing.</flux:text></li>
+                        <li class="py-4"><flux:text size="sm">No other active work. Your saved ideas are on the publishing board.</flux:text></li>
                     @endforelse
                 </ul>
-                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="ghost" icon:trailing="arrow-right" class="mt-3">Open Publishing</flux:button>
+                <flux:button :href="route('admin.publishing.dashboard')" wire:navigate variant="ghost" icon:trailing="arrow-right" class="mt-3">Open the board</flux:button>
             </aside>
         </div>
     @endif

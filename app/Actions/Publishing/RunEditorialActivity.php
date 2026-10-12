@@ -250,7 +250,7 @@ class RunEditorialActivity implements ShouldQueue
             $activity->forceFill([
                 'status' => EditorialActivityStatus::Paused,
                 'paused_at' => now(),
-                'pause_reason' => 'The publishing attempt is blocked or no longer current.',
+                'pause_reason' => EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON,
             ])->save();
 
             return false;

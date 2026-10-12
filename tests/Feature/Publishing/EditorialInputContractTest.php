@@ -488,11 +488,11 @@ test('an activity created before the voice canon pauses with a restart message a
     Http::assertNothingSent();
 });
 
-test('developing an idea from the dashboard freezes the canon into the interview', function () {
+test('developing an idea from the board composer freezes the canon into the interview', function () {
     $actor = inputContractAuthor();
 
     Livewire\Livewire::actingAs($actor)
-        ->test('admin.publishing.dashboard')
+        ->test('admin.publishing.board')
         ->set('idea', 'Owners keep rebuilding the Friday report by hand.')
         ->call('developIdea')
         ->assertHasNoErrors();

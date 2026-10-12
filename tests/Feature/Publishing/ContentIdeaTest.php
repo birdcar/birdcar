@@ -252,7 +252,7 @@ test('an idea without a top level blog post has no flagship', function (): void 
     expect($idea->flagship())->toBeNull();
 });
 
-test('the dashboard labels idea summaries in both lists and never uses them as bare headings', function (): void {
+test('the board labels idea summaries on every card and never uses them as bare headings', function (): void {
     $user = contentIdeaAuthor();
     $saved = Article::factory()->idea('**Saved** idea summary')->create(['author_id' => $user->id]);
     $active = contentIdeaActiveArticle($user, '**Active** idea summary');
@@ -260,7 +260,7 @@ test('the dashboard labels idea summaries in both lists and never uses them as b
     ArticleRevision::factory()->create(['article_id' => $titled->id, 'created_by' => $user->id, 'metadata' => ['title' => 'A real piece title']]);
     $titled->forceFill(['working_revision_id' => ArticleRevision::query()->where('article_id', $titled->id)->value('id')])->save();
 
-    $html = Livewire::actingAs($user)->test('admin.publishing.dashboard')->html();
+    $html = Livewire::actingAs($user)->test('admin.publishing.board')->html();
 
     foreach ([$saved, $active, $titled] as $article) {
         contentIdeaAssertLabeledOnly($html, $article->contentIdea->summary_title);
