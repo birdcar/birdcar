@@ -268,8 +268,11 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                     'replacement' => $schema->string()->description('JSON-encoded replacement for the whole block: its node from input.blocks with only the flagged spans changed. Keep the same type and attrs, including attrs.id and attrs.protected; text marks are limited to bold, italic, strike, code and link. The encoded string must stay under '.$this->maxFieldBytes().' bytes.')->required(),
                 ]))->required(),
             ],
-            EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => [
+            EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewBuyer => [
                 'findings' => $schema->array()->description('At most '.$this->maxFindings().' findings.')->items($this->finding($schema))->required(),
+            ],
+            EditorialActivityKind::ReviewVoice => [
+                'findings' => $schema->array()->description('At most '.$this->maxFindings().' findings, each with exactly one kind as your rubric defines it: "voice_drift" when the passage stops sounding like Nick (voice alignment, the soul check, the swap test, the final audit, formality, personality or mood drift); "clarity" when it is hard to follow; "framework" when the draft departs from input.canon.framework or input.canon.post_type; "register" when it is pitched at the wrong reader (a corporate or agency voice, hype or urgency, or shorthand an owner would not use).')->items($this->finding($schema, EditorialOutput::VOICE_FINDING_KINDS))->required(),
             ],
             EditorialActivityKind::Reconciliation => [
                 'groups' => $schema->array()->items($schema->object([

@@ -23,6 +23,9 @@ class EditorialOutput
     /** What a kit reviewer may report. Only a claim outside the manifest blocks; register and channel stay advisory. */
     public const KIT_FINDING_KINDS = ['claim_outside_manifest', 'register', 'channel'];
 
+    /** What a voice reviewer may report. The drift trial counts only voice_drift as drift on a real passage. */
+    public const VOICE_FINDING_KINDS = ['voice_drift', 'clarity', 'framework', 'register'];
+
     /**
      * @param  array<string, mixed>  $payload
      * @param  list<int|string>  $knownEvidenceIds
@@ -42,7 +45,8 @@ class EditorialOutput
             EditorialActivityKind::Plan => $this->validatePlan($payload, $frozenInput),
             EditorialActivityKind::Draft => $this->validateDraft($payload),
             EditorialActivityKind::LintRepair => $this->validateLintRepair($payload, $frozenInput),
-            EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById),
+            EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewBuyer => $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById),
+            EditorialActivityKind::ReviewVoice => $this->validateVoiceFindings($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Reconciliation => $this->validateReconciliation($payload),
             EditorialActivityKind::Recheck => $this->validateRecheck($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Package => $this->validatePackage($payload, $frozenInput),
@@ -456,15 +460,10 @@ class EditorialOutput
     private function validateKitFindings(array $payload, array $knownEvidenceIds, array $evidenceTextsById): array
     {
         $payload = $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById);
-        $findings = is_array($payload['findings'] ?? null) ? $payload['findings'] : [];
+        $findings = $this->ensureFindingKinds($payload, self::KIT_FINDING_KINDS, 'kit');
 
         foreach ($findings as $index => $finding) {
-            $kind = is_array($finding) ? ($finding['kind'] ?? null) : null;
-            if (! is_array($finding) || ! is_string($kind) || ! in_array($kind, self::KIT_FINDING_KINDS, true)) {
-                throw new InvalidArgumentException('Each kit finding must have kind '.implode(', ', self::KIT_FINDING_KINDS).'.');
-            }
-
-            $finding['severity'] = $kind === 'claim_outside_manifest' ? 'blocking' : 'advisory';
+            $finding['severity'] = $finding['kind'] === 'claim_outside_manifest' ? 'blocking' : 'advisory';
             $finding['proposed_patch'] = null;
             $findings[$index] = $finding;
         }
@@ -472,6 +471,42 @@ class EditorialOutput
         $payload['findings'] = $findings;
 
         return $payload;
+    }
+
+    /**
+     * Voice review findings follow the review finding rules and carry one of the voice kinds, so drift can be told apart
+     * from clarity, framework and register findings. The reviewer's severity stands.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  list<int|string>  $knownEvidenceIds
+     * @param  array<int|string, string|null>  $evidenceTextsById
+     * @return array<string, mixed>
+     */
+    private function validateVoiceFindings(array $payload, array $knownEvidenceIds, array $evidenceTextsById): array
+    {
+        $payload = $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById);
+        $this->ensureFindingKinds($payload, self::VOICE_FINDING_KINDS, 'voice');
+
+        return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload  output whose findings already passed validateFindings
+     * @param  list<string>  $kinds
+     * @return array<int|string, array<array-key, mixed>> the findings, each with a kind from the list
+     */
+    private function ensureFindingKinds(array $payload, array $kinds, string $role): array
+    {
+        $findings = [];
+        foreach (is_array($payload['findings'] ?? null) ? $payload['findings'] : [] as $index => $finding) {
+            $kind = is_array($finding) ? ($finding['kind'] ?? null) : null;
+            if (! is_array($finding) || ! is_string($kind) || ! in_array($kind, $kinds, true)) {
+                throw new InvalidArgumentException('Each '.$role.' finding must have kind '.implode(', ', $kinds).'.');
+            }
+            $findings[$index] = $finding;
+        }
+
+        return $findings;
     }
 
     /**

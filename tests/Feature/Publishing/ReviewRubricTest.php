@@ -166,7 +166,7 @@ function reviewRubricRun(EditorialActivity $activity, array $payload): array
 /** @return array<string, mixed> */
 function reviewRubricFinding(string $statement): array
 {
-    return ['statement' => $statement, 'severity' => 'advisory', 'block_id' => 'blk_00000000000000d1', 'supporting_source_ids' => [], 'supporting_quotations' => []];
+    return ['statement' => $statement, 'kind' => 'clarity', 'severity' => 'advisory', 'block_id' => 'blk_00000000000000d1', 'supporting_source_ids' => [], 'supporting_quotations' => []];
 }
 
 test('the three lens rubrics are distinct files with their own markers', function () {

@@ -55,4 +55,9 @@ input.canon.exemplars are published passages in Nick's voice, for calibration on
 ## How to report
 
 - Point at the block with block_id and put suggested wording in rationale. Voice findings are advisory unless the passage misrepresents the offer or the owner.
+- Give every finding exactly one kind:
+  - voice_drift: the passage stops sounding like Nick. Use it for what Voice alignment, the Soul check, the swap test and the Final audit find, and for formality, personality or mood drift.
+  - clarity: the passage is hard to follow. Use it for what the clarity sweep finds.
+  - framework: the draft departs from the chosen framework or post-type template. Use it for what Framework adherence finds.
+  - register: the passage is pitched at the wrong reader: a corporate or agency voice, hype or urgency, or shorthand an owner would not use.
 - Never cite the manuscript, brief, plan, or exemplars as evidence.

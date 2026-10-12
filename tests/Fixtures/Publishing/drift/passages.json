@@ -1,0 +1,207 @@
+{
+    "real": [
+        {
+            "id": "real-01",
+            "source": "just-build-it-twice",
+            "blocks": [
+                "The agent has lowered the cost of building the same thing twice.",
+                "That is the entire delta. That's where I'm actually faster. Everything I value about working with these tools collapses into that one sentence."
+            ]
+        },
+        {
+            "id": "real-02",
+            "source": "just-build-it-twice",
+            "blocks": [
+                "None of this is a productivity claim. I am not telling you agents will make your work twice as fast.",
+                "What I am telling you is this: for the class of problem where you don't yet know what you want, the cost of finding out has dropped enough to matter. By enough that I now build throwaway drafts on purpose, on a Tuesday afternoon, as a standard part of how I work. That's the change. That's the whole pitch."
+            ]
+        },
+        {
+            "id": "real-03",
+            "source": "your-ai-wrote-a-bug",
+            "blocks": [
+                "I want to tell you this was a one-time thing, that I learned my lesson and it never happened again.",
+                "It happened 51 more times."
+            ]
+        },
+        {
+            "id": "real-04",
+            "source": "your-ai-wrote-a-bug",
+            "blocks": [
+                "And it's true, in the same way that saying \"a car goes 80 miles per hour\" is true. It omits the traffic, the fuel stops, the wrong turns, the flat tire in New Mexico, and the hour you spent in a rest stop parking lot arguing with Google Maps. The destination speed is real. The journey speed is different."
+            ]
+        },
+        {
+            "id": "real-05",
+            "source": "six-months-talking-to-a-machine",
+            "blocks": [
+                "Reading them now, they sound like emails to a new contractor. Here's the work, here's where to find things, here's what I need back. There's a formality to it, a hedging, that I recognize from every first week at a new job. You over-explain because you haven't calibrated trust yet. You don't know what the other party knows, so you fill the gaps preemptively."
+            ]
+        },
+        {
+            "id": "real-06",
+            "source": "six-months-talking-to-a-machine",
+            "blocks": [
+                "The popular narrative is that prompt engineering is a skill you learn, a set of techniques you apply, a craft you refine. And maybe it is, for people using ChatGPT for one-off questions. But in a sustained working relationship with a coding assistant, what actually happens is closer to what happens with any colleague: you develop shared context, and the shared context makes the communication shorter.",
+                "I started writing paragraph-length messages to a stranger. I ended sending five-word commands to a collaborator. The compression isn't laziness. It's trust."
+            ]
+        },
+        {
+            "id": "real-07",
+            "source": "the-tools-that-build-the-tools",
+            "blocks": [
+                "You install an AI coding assistant. You type a prompt. It writes some code. You fix the parts it got wrong. You type another prompt. This is the loop, and for most people it stays the loop forever. Prompt, generate, fix, repeat.",
+                "I did this for about three months. It was useful. I built things faster than I would have alone. I explored codebases I didn't know. I generated documentation nobody else was going to write. The tool was good at its job, and I was good at asking it to do that job, and that was the whole story."
+            ]
+        },
+        {
+            "id": "real-08",
+            "source": "exemplars/site-copy-2026-10-02.md",
+            "blocks": [
+                "Today, every question finds its way to your desk. The quote waiting on your approval. The crew schedule that changed again. The Friday report someone builds by hand. None of it is hard. It all just needs you.",
+                "In a Walkthrough, I follow the work through the business. You and your team show me how it really happens. I write down where it gets stuck and why, using names you'll recognize, and send you a report within three business days, including where I'd start."
+            ]
+        },
+        {
+            "id": "real-09",
+            "source": "exemplars/site-copy-2026-10-02.md",
+            "blocks": [
+                "When you're the person keeping track of everything, it's hard to step back far enough to see what needs to change. So I start with the people doing the work, not with software.",
+                "Maybe onboarding a new client involves a dozen reminders. Maybe reporting eats an afternoon. Maybe the process works perfectly, as long as you're there to keep it working. Left alone, that kind of work has one fix: another coordinator, another subscription, or another late night. That's the expensive version of standing still."
+            ]
+        },
+        {
+            "id": "real-10",
+            "source": "exemplars/site-copy-2026-10-02.md",
+            "blocks": [
+                "Is this about replacing my team? No. The point is to give the people you already have room for work that's worth their time. That rules out surveillance, and projects whose whole purpose is cutting people regardless of the consequences."
+            ]
+        }
+    ],
+    "slopped": [
+        {
+            "id": "slop-01",
+            "real_id": "real-01",
+            "blocks": [
+                "Ultimately, AI agents have made it significantly cheaper and easier to build the same software more than once.",
+                "This represents the core benefit of working with these tools. It is the main area where productivity gains can be observed. All of the value that these tools provide can be summarized by this single idea."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "stock-openers", "mechanical": true},
+                {"block_index": 1, "tell": "flattened_rhythm", "mechanical": false},
+                {"block_index": 1, "tell": "synonym_cycling", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-02",
+            "real_id": "real-02",
+            "blocks": [
+                "It is important to note that this is not a claim about productivity. Agents will not necessarily make your work twice as fast.",
+                "Rather, the key point is that for problems where the desired outcome is unclear, the cost of discovering it has decreased significantly. As a result, building throwaway drafts intentionally has become a standard part of the workflow. This shift represents a meaningful change in how software can be developed."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "filler-phrases", "mechanical": true},
+                {"block_index": 1, "tell": "neutral_reporting", "mechanical": false},
+                {"block_index": 1, "tell": "generic_conclusion", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-03",
+            "real_id": "real-03",
+            "blocks": [
+                "It would be reassuring to report that this was an isolated incident and that the lesson was learned the first time.",
+                "However, the same issue occurred 51 additional times over the following months, which highlights the importance of careful review."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
+                {"block_index": 1, "tell": "no_turn", "mechanical": false},
+                {"block_index": 1, "tell": "generic_conclusion", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-04",
+            "real_id": "real-04",
+            "blocks": [
+                "This narrative is true in a sense, much like saying that a car can travel at 80 miles per hour is true. However, it does not account for real-world factors such as traffic, fuel stops, wrong turns, and unexpected delays along the way. While the top speed is accurate, the actual travel time is often quite different. In the end, it's not just about speed, it's about the whole journey."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "negative-parallelism", "mechanical": true},
+                {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
+                {"block_index": 0, "tell": "generic_conclusion", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-05",
+            "real_id": "real-05",
+            "blocks": [
+                "Looking back, these early prompts resemble messages written to a new contractor. They provide instructions, explain where to find relevant files, and describe the expected output. This level of formality is common during the first week of any new role. It reflects a lack of established trust. As trust develops, communication tends to become more efficient."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "flattened_rhythm", "mechanical": false},
+                {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
+                {"block_index": 0, "tell": "generic_conclusion", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-06",
+            "real_id": "real-06",
+            "blocks": [
+                "Prompt engineering is often described as a skill to be learned, a set of techniques to be applied, and a craft to be refined. While this may be accurate for casual ChatGPT users, sustained collaboration with a coding assistant works differently. Furthermore, both parties develop shared context over time, which allows messages to become shorter.",
+                "Early messages tend to be long and detailed, while later messages become brief and direct. This compression should not be mistaken for laziness. Instead, it is a reflection of the trust that has been built."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "ai-vocabulary", "mechanical": true},
+                {"block_index": 1, "tell": "no_turn", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-07",
+            "real_id": "real-07",
+            "blocks": [
+                "When using an AI coding assistant, the typical workflow involves typing a prompt, receiving generated code, and correcting any errors. This process is then repeated. For many users, this cycle continues indefinitely.",
+                "This approach was used for approximately three months and proved to be quite useful. It made it possible to build things more quickly, explore unfamiliar codebases, and generate documentation that would otherwise not have been written. Overall, the tool performed its intended function effectively. I hope this helps illustrate the starting point."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
+                {"block_index": 1, "tell": "flattened_rhythm", "mechanical": false},
+                {"block_index": 1, "tell": "chatbot-artifacts", "mechanical": true}
+            ]
+        },
+        {
+            "id": "slop-08",
+            "real_id": "real-08",
+            "blocks": [
+                "Many business owners find that a wide range of questions and tasks end up on their desk. These can include quotes awaiting approval, schedule changes, and weekly reports that are compiled manually. While none of these tasks are particularly difficult, each of them requires the owner's involvement.",
+                "During a Walkthrough, the process is examined from start to finish with input from the team. Bottlenecks are identified and documented, and a report is delivered within three business days, including recommended next steps."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "flattened_rhythm", "mechanical": false},
+                {"block_index": 1, "tell": "neutral_reporting", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-09",
+            "real_id": "real-09",
+            "blocks": [
+                "For busy business owners, it can be challenging to step back and identify what needs to change. That is why our process begins by talking with the people who do the work, rather than focusing on software.",
+                "For example, client onboarding may require numerous reminders, reporting may take an entire afternoon, or a process may only work when the owner is present to manage it. Typically, the only alternatives are to hire another coordinator, purchase another subscription, or work late. These options can be costly over time."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "corporate-we", "mechanical": true},
+                {"block_index": 1, "tell": "no_turn", "mechanical": false},
+                {"block_index": 1, "tell": "generic_conclusion", "mechanical": false}
+            ]
+        },
+        {
+            "id": "slop-10",
+            "real_id": "real-10",
+            "blocks": [
+                "Is the goal to replace existing staff? No. The aim is to free up team members to focus on higher-value work. Approaches that involve monitoring employees or that are designed solely to reduce headcount fall outside the scope of this work."
+            ],
+            "injected": [
+                {"block_index": 0, "tell": "synonym_cycling", "mechanical": false},
+                {"block_index": 0, "tell": "neutral_reporting", "mechanical": false}
+            ]
+        }
+    ]
+}

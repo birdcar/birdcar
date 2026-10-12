@@ -101,6 +101,7 @@ test('schemas state the output rules the application enforces', function () {
     $review = (new FactReviewer(editorialActivity(EditorialActivityKind::ReviewFacts)))->schema(new JsonSchemaTypeFactory);
     $recheck = (new RevisionRechecker(editorialActivity(EditorialActivityKind::Recheck)))->schema(new JsonSchemaTypeFactory);
     $kitReview = (new KitReviewer(editorialActivity(EditorialActivityKind::ReviewKit)))->schema(new JsonSchemaTypeFactory);
+    $voiceReview = (new VoiceReviewer(editorialActivity(EditorialActivityKind::ReviewVoice)))->schema(new JsonSchemaTypeFactory);
     $kitDraft = (new KitDrafter(editorialActivity(EditorialActivityKind::DraftKit, ['piece_kind' => 'email_blurb'])))->schema(new JsonSchemaTypeFactory);
     $contradiction = $research['contradictions']->toArray()['items']['properties'];
 
@@ -119,6 +120,9 @@ test('schemas state the output rules the application enforces', function () {
         ->and($recheck['unresolved']->toArray()['items']['properties']['status']['enum'])->toBe(['resolved', 'unresolved'])
         ->and($recheck['newBlockingFindings']->toArray()['description'])->toContain('severity to "blocking"')
         ->and($kitReview['findings']->toArray()['items']['properties']['kind']['enum'])->toBe(['claim_outside_manifest', 'register', 'channel'])
+        ->and($voiceReview['findings']->toArray()['items']['properties']['kind']['enum'])->toBe(['voice_drift', 'clarity', 'framework', 'register'])
+        ->and($voiceReview['findings']->toArray()['items']['required'])->toContain('kind')
+        ->and($voiceReview['findings']->toArray()['description'])->toContain('"voice_drift" when the passage stops sounding like Nick')
         ->and($kitReview['findings']->toArray()['description'])->toContain('supporting_source_ids and supporting_quotations are always empty lists')
         ->and(array_keys($kitDraft))->toBe(['subject', 'preview', 'body'])
         ->and($kitDraft['subject']->toArray()['maxLength'])->toBe(50)
@@ -227,6 +231,26 @@ test('a kit draft schema read without a piece kind lists every kit field instead
 
     expect(array_keys($schema))->toBe(['text', 'first_comment', 'posts', 'subject', 'preview', 'body'])
         ->and($schema['posts']->toArray()['type'])->toBe(['array', 'null']);
+});
+
+test('the voice reviewer rubric defines every finding kind its schema allows', function () {
+    $instructions = (string) (new VoiceReviewer(editorialActivity(EditorialActivityKind::ReviewVoice)))->instructions();
+
+    foreach (['voice_drift', 'clarity', 'framework', 'register'] as $kind) {
+        expect($instructions)->toContain('  - '.$kind.': ');
+    }
+});
+
+test('a voice review finding must carry one of the rubric kinds and keeps the severity the reviewer chose', function () {
+    $output = new EditorialOutput;
+    $finding = fn (array $kind): array => ['statement' => 'The paragraph could appear in anyone\'s post.', 'severity' => 'blocking', 'supporting_source_ids' => [], 'supporting_quotations' => [], ...$kind];
+
+    $validated = $output->validate(EditorialActivityKind::ReviewVoice, ['findings' => [$finding(['kind' => 'voice_drift'])]]);
+
+    expect($validated['findings'][0]['severity'] ?? null)->toBe('blocking')
+        ->and(fn () => $output->validate(EditorialActivityKind::ReviewVoice, ['findings' => [$finding(['kind' => 'style'])]]))->toThrow(InvalidArgumentException::class, 'Each voice finding must have kind voice_drift, clarity, framework, register.')
+        ->and(fn () => $output->validate(EditorialActivityKind::ReviewVoice, ['findings' => [$finding([])]]))->toThrow(InvalidArgumentException::class, 'Each voice finding must have kind')
+        ->and($output->validate(EditorialActivityKind::ReviewFacts, ['findings' => [$finding([])]])['findings'])->toHaveCount(1);
 });
 
 test('it keeps historical array outputs valid while decoding SDK JSON strings before validation', function () {

@@ -16,6 +16,17 @@ class ArticleRevision extends Model
     /** @use HasFactory<ArticleRevisionFactory> */
     use HasFactory;
 
+    /** Origins of the revisions an agent wrote. An owner save straight after one records its edit distance. */
+    public const AGENT_ORIGINS = ['agent-initial', 'agent-repair', 'agent-accepted'];
+
+    /**
+     * Set once, from null, by RecordEditDistance after the owner's save; that job is their only writer. Once recorded,
+     * a distance is evidence and never changes.
+     *
+     * @var list<string>
+     */
+    private const RECORDED_ONCE_ATTRIBUTES = ['agent_edit_distance', 'agent_baseline_revision_id'];
+
     /**
      * @var list<string>
      */
@@ -37,6 +48,14 @@ class ArticleRevision extends Model
             if ($revision->isDirty(self::IMMUTABLE_ATTRIBUTES)) {
                 throw new RuntimeException('Article revisions are append-only and cannot be mutated.');
             }
+
+            // A column this model never loaded cannot be shown to be null, so it cannot be set here either.
+            $original = $revision->getRawOriginal();
+            foreach (self::RECORDED_ONCE_ATTRIBUTES as $attribute) {
+                if ($revision->isDirty($attribute) && (! array_key_exists($attribute, $original) || $original[$attribute] !== null)) {
+                    throw new RuntimeException('An edit distance is recorded once and cannot be changed.');
+                }
+            }
         });
     }
 
@@ -48,6 +67,8 @@ class ArticleRevision extends Model
         return [
             'document' => 'array',
             'metadata' => 'array',
+            'agent_edit_distance' => 'integer',
+            'agent_baseline_revision_id' => 'integer',
         ];
     }
 

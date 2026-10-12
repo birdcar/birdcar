@@ -3,6 +3,7 @@
 namespace App\Actions\Publishing;
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
+use App\Jobs\RecordEditDistance;
 use App\Models\Article;
 use App\Models\ArticleRevision;
 use App\Models\ContentIdea;
@@ -152,6 +153,10 @@ class WriteArticle
 
             $previousRevisionId = $lockedArticle->working_revision_id;
             $lockedArticle->forceFill(['working_revision_id' => $revision->id])->save();
+
+            if ($origin === 'human' && $previousRevisionId !== null && in_array(ArticleRevision::query()->whereKey($previousRevisionId)->value('origin'), ArticleRevision::AGENT_ORIGINS, true)) {
+                RecordEditDistance::dispatch((int) $revision->id)->afterCommit();
+            }
 
             if ($lockedAttempt instanceof PublishingAttempt) {
                 $this->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Release, ApprovalKind::Kit]);
