@@ -14,7 +14,7 @@ class VoiceReviewer extends EditorialAgent
 
     protected function roleInstructions(): string
     {
-        return 'Voice review: find voice, clarity, positioning, and editorial-fit issues while preserving truthful source boundaries.';
+        return 'Voice review: find where the draft stops sounding like Nick writing for owners, judged against your rubric; the linter owns the mechanical rules.';
     }
 
     protected function roleReasoningEffort(): string

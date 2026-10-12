@@ -17,6 +17,7 @@ use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\VoiceCanon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -337,10 +338,6 @@ test('agent generated plan is persisted displayed approved by human and gates dr
     $article = $write->captureIdea($actor, 'Agent plan pipeline.');
     $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], editorialMetadata('Agent Plan Pipeline'), 'agent-plan-empty-draft');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Show the pipeline']);
-    $attempt->forceFill(['interview_context' => [
-        'voice_sample_ids' => [42],
-        'voice_samples' => [['id' => 42, 'excerpt' => 'Distinct voice sample excerpt for bounded review prompts.']],
-    ]])->save();
 
     expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', EditorialActivityKind::ResearchChallenge->value)->exists())->toBeFalse();
 
@@ -376,7 +373,6 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         $prompt = (string) data_get($payload, 'messages.1.content');
 
         return str_contains($prompt, 'Agent drafted manuscript.')
-            && str_contains($prompt, 'Distinct voice sample excerpt for bounded review prompts.')
             && ! str_contains($prompt, 'Altered later manuscript')
             && data_get($payload, 'response_format.json_schema.schema.properties.findings.items.properties.supporting_quotations.items.properties.quote.type') === 'string';
     });
@@ -396,8 +392,10 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         ->and(data_get($planPrompt, 'input.evidence_sources.0.extracted_text'))->toBe('Retained source passage supports the generated plan.')
         ->and(str_contains(json_encode($planPrompt, JSON_THROW_ON_ERROR), 'Altered later source passage'))->toBeFalse()
         ->and(data_get($reviewPrompt, 'input.manuscript.document.content.0.content.0.text'))->toBe('Agent drafted manuscript.')
-        ->and(data_get($reviewPrompt, 'input.voice_context.samples.0.excerpt'))->toBe('Distinct voice sample excerpt for bounded review prompts.')
-        ->and(data_get($reviewPrompt, 'input.voice_context.samples.0.excerpt'))->not->toBeNull()
+        ->and(data_get($reviewPrompt, 'input.canon.role'))->toBe(EditorialActivityKind::ReviewFacts->value)
+        ->and(data_get($reviewPrompt, 'input.canon.version'))->toBe(app(VoiceCanon::class)->snapshot()->version)
+        ->and($reviewPrompt)->not->toHaveKey('input.voice_context')
+        ->and((string) data_get($reviewRequest, 'messages.0.content'))->toContain('## Business goals')
         ->and(str_contains(json_encode($reviewPrompt, JSON_THROW_ON_ERROR), 'Altered later manuscript'))->toBeFalse()
         ->and(data_get($planRequest, 'response_format.json_schema.schema.required'))->toBe(['outline', 'argument', 'visualPlan'])
         ->and(data_get($reviewRequest, 'response_format.json_schema.schema.properties.findings.items.properties.supporting_quotations.items.properties.quote.type'))->toBe('string');

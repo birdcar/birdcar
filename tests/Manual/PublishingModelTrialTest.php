@@ -7,7 +7,6 @@ use App\Ai\Agents\EditorialAgent;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
-use App\Models\ArticleRelease;
 use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
@@ -16,6 +15,7 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
@@ -138,15 +138,6 @@ function liveTrialJourney(string $evidencePath, string $runId): array
     $owner->assignRole([AdminRole::Access->value, PublishingRole::Author->value]);
     $writer = app(WriteArticle::class);
 
-    $voiceArticle = $writer->captureIdea($owner, 'Synthetic published voice sample');
-    $voiceRevision = $writer->save($owner, $voiceArticle, null, liveTrialDocument(['blk_0000000000000a01' => $fixture['voice_sample']]), ['title' => 'Boring fixes for small service teams'], 'live-trial-voice-sample');
-    $voiceRelease = ArticleRelease::factory()->imported()->create([
-        'article_id' => $voiceArticle->id,
-        'attempt_id' => null,
-        'revision_id' => $voiceRevision->id,
-    ]);
-    $voiceArticle->forceFill(['published_release_id' => $voiceRelease->id, 'first_published_at' => $voiceRelease->published_at])->save();
-
     $article = $writer->captureIdea($owner, 'How a small service team stopped dropping customer follow-ups');
     $emptyRevision = $writer->save($owner, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Dropped follow-ups'], 'live-trial-empty');
     $attempt = app(AdvancePublishingAttempt::class)->develop($owner, $article, $emptyRevision->id, ['goal' => 'Explain how a small service team stopped dropping customer follow-ups.']);
@@ -160,7 +151,6 @@ function liveTrialJourney(string $evidencePath, string $runId): array
     ]);
 
     liveTrialWorkspace($owner, $article)
-        ->set('selectedVoiceSampleArticleIds', [$voiceArticle->id])
         ->set('selectedEvidenceSourceIds', [$ownerEvidence->id])
         ->call('startInterview')
         ->assertSet('saveError', null);
@@ -231,7 +221,6 @@ function liveTrialJourney(string $evidencePath, string $runId): array
     }
 
     liveTrialWorkspace($owner, $article)
-        ->set('selectedVoiceSampleArticleIds', [$voiceArticle->id])
         ->call('startReviews')
         ->assertSet('saveError', null);
 
@@ -383,7 +372,9 @@ function liveTrialRecordedActivity(string $evidencePath, string $agent, Editoria
         throw new RuntimeException("Refusing the replay: no completed {$agent} input has been recorded yet.");
     }
 
-    $input = $recorded['input']['activity_input'];
+    // Replays run against the current canon; recordings from before it carry an obsolete voice block instead.
+    $input = array_diff_key($recorded['input']['activity_input'], ['voice_context' => true]);
+    $input['canon'] = app(VoiceCanon::class)->snapshot()->frozenFor($kind);
     // Earlier recordings carried a misleading patch flag that the application no longer sends.
     if (is_array($input['review_findings'] ?? null)) {
         $input['review_findings'] = array_map(fn (array $finding): array => array_diff_key($finding, ['patch_applied' => true]), $input['review_findings']);
@@ -566,9 +557,9 @@ function liveTrialDocument(array $paragraphs): array
 }
 
 /**
- * Fictional scenario, business facts and voice guidance; nothing here comes from real manuscripts or customers.
+ * Fictional scenario and business facts; nothing here comes from real manuscripts or customers.
  *
- * @return array{voice_sample: string, owner_evidence: string, author_answer: string, interview_answers: string, seeded_blocks: array{fact: string, voice: string, buyer: string}, seeded_manuscript: array<string, string>, fixed_manuscript: array<string, string>}
+ * @return array{owner_evidence: string, author_answer: string, interview_answers: string, seeded_blocks: array{fact: string, voice: string, buyer: string}, seeded_manuscript: array<string, string>, fixed_manuscript: array<string, string>}
  */
 function liveTrialFixture(): array
 {
@@ -585,7 +576,6 @@ function liveTrialFixture(): array
     $fixed[$blocks['fact']] = 'In April, 7 of 198 requests went more than 48 hours without a follow-up, down from 31 of 212 in March. We did not measure revenue.';
 
     return [
-        'voice_sample' => 'I run operations reviews for small service businesses. Most of the fixes I recommend are boring on purpose: one list instead of three, a named owner for each step, and a check that happens at the same time every day. I write the way I would talk to a client across a kitchen table. Short sentences. Real numbers when I have them, and a plain "we did not measure that" when I do not. I do not use words like game-changing or revolutionary, and I do not promise results a reader cannot check. Every change has a cost, so I name it: a daily triage takes fifteen minutes that someone has to give up.',
         'owner_evidence' => 'Synthetic engagement notes for Brightline Plumbing, a fictional six-person residential plumbing company. March: 212 inbound requests by phone, web form and email; 31 went more than 48 hours without a follow-up. Requests were tracked in three places: a paper phone log, the owner\'s personal inbox and a web-form spreadsheet. Change made on April 1: one shared intake spreadsheet, every request entered within an hour, and a fixed fifteen-minute triage at 8:00 each weekday led by the office manager. April: 198 inbound requests; 7 went more than 48 hours without a follow-up. No new software was purchased. Revenue and customer satisfaction were not measured.',
         'author_answer' => 'I am writing for owner-operators of service businesses with 5 to 20 people who still handle intake themselves. I worked with Brightline as an outside operations adviser; I did not build or sell them software. My one takeaway: a shared intake list with a fixed daily triage beats buying a new CRM. Do not invent revenue or satisfaction results; we only measured follow-ups that took longer than 48 hours.',
         'interview_answers' => 'The reader is an owner-operator of a 5 to 20 person service business. I advised Brightline as an outside operations adviser. The only measured result is follow-ups taking longer than 48 hours: 31 of 212 in March and 7 of 198 in April.',

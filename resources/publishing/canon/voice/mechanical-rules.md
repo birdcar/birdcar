@@ -1,0 +1,25 @@
+# Mechanical rules
+
+Each rule below can be checked without judgment, and each line ends with its rule id. A deterministic linter enforces these rules on every manuscript, so reviewers do not report them. The Drafter must never break them.
+
+- Never use an em dash (—) in prose, headings, titles, or metadata; use commas, parentheses, colons, or a new sentence instead. [rule:em-dash]
+- Use straight quotes and apostrophes (" and '), never curly quotes or apostrophes (“ ” ‘ ’). [rule:curly-quotes]
+- Never use AI vocabulary: additionally, furthermore, moreover, testament, landscape (in the abstract sense), showcasing, delve, tapestry, realm, pivotal, crucial, innovative, cutting-edge, game-changing, transformative, align with, garner, underscore, interplay, intricate, intricacies, vibrant, enhance, fostering, enduring. [rule:ai-vocabulary]
+- Never use corporate vocabulary: synergy, circle back, leverage (as a verb), bandwidth (meaning capacity), align, holistic, robust, seamless. [rule:corporate-vocabulary]
+- Never use the words the public register bans: agentic, AI-powered, solution, streamline, unlock, supercharge, 10x, pain points, stack, tech debt, SaaS, and "scale" as a hype verb. [rule:public-vocabulary]
+- Never use filler phrases: "in order to" (write "to"), "due to the fact that" (write "because"), "at this point in time" (write "now"), "in the event that" (write "if"), "has the ability to" (write "can"), "it is important to note that", "it's worth noting", "it should be noted". [rule:filler-phrases]
+- Never write negative parallelisms: "not only X, but also Y", "it's not just X, it's Y", "not merely X, it's Y". State the conclusion directly. [rule:negative-parallelism]
+- Never write chatbot artifacts, sycophancy, or knowledge-cutoff disclaimers: "I hope this helps", "let me know if you have any questions", "feel free to reach out", "great question", "you're absolutely right", "here is an overview of", "while details are limited", "based on available information". [rule:chatbot-artifacts]
+- Never open a post or a section with a stock opener or stock transition: "In this post", "In this article", "In today's...", "Let's explore", "Let's dive in", "Now that we've covered", "In conclusion", "Ultimately,". [rule:stock-openers]
+- Write every heading in sentence case: capitalize the first word and proper nouns only, never Title Case. [rule:sentence-case-headings]
+- Never use a label heading: Introduction, Conclusion, Overview, Summary, FAQ, Frequently asked questions, Pros, Cons, Verdict, Bottom line, Key takeaways. [rule:label-headings]
+- The title is metadata, so the body never contains a level-1 heading; body headings start at H2, use H3 only beneath an H2, and never skip a level. [rule:heading-order]
+- Never write an inline-header list: no list item or paragraph that starts with a bold label followed by a colon ("**Performance:** ..."). [rule:inline-header-list]
+- Never bold key terms; use bold at most once per H2 section, and only for real emphasis. [rule:bold-limit]
+- Use at most one exclamation point in a whole post, and none in a heading, title, SEO title, meta description, or distribution piece. [rule:exclamation-limit]
+- Never use emoji anywhere. [rule:emoji]
+- Write in the first-person singular: outside quotation marks, never use "we", "us", "our", "ours", or "ourselves" for Birdcar or an implied team; write "you and I" for shared work. [rule:corporate-we]
+- Never mention WorkOS, GHX, or DataDash. [rule:excluded-names]
+- Write experience as "fifteen years" or "more than 12 years"; never "more than fifteen years", "over fifteen years", or "15+ years". [rule:experience-claim]
+- A blog post contains exactly one link to /walkthrough, in the closing invitation paragraph; a distribution piece links to the post and never to /walkthrough. [rule:walkthrough-link]
+- No `[NEED: ...]` or `[TODO: ...]` marker may remain in a piece that is ready for release; while drafting they are the only allowed way to mark missing proof or an anecdote only Nick can supply. [rule:unresolved-markers]

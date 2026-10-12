@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Publishing\RunEditorialActivity;
+use App\Services\Publishing\VoiceCanon;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\LazyLoadingViolationException;
@@ -21,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(VoiceCanon::class);
     }
 
     /**

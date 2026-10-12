@@ -1,0 +1,177 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 2 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Voice and goals canon in every prompt —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 2</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 2</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Voice and goals canon in every prompt</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Pre-canon gate — pause, not fail</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says an activity without input.canon &quot;fails&quot; with the restart message. A Failed activity shows Retry, and RetryEditorialActivity does not refreeze input, so Retry would fail the same way forever.</dd>
+          <dt>Decision</dt>
+          <dd>RunEditorialActivity::handle() throws the message (EditorialActivity::PRE_CANON_PAUSE_REASON) before the agent or conversation is built; handleFailure pauses it with that pause_reason. It is in neither RESUMABLE_PAUSE_REASONS nor CONFIGURATION_PAUSE_REASONS. The test asserts status Paused, the exact reason, no conversation and Http::assertNothingSent(). Restart: for interview, research, plan and draft a new start creates a new row because the canon changes prompt_hash. For review, reconciliation and recheck kinds idempotency ignores prompt_hash, so the owner needs a new review cycle or batch key; the dev database&#x27;s one failed review_buyer row will hit this.</dd>
+          <dt>Alternative</dt>
+          <dd>Setting status Failed (literal spec reading); including the canon version in review idempotency keys (could duplicate auto-queued reviews after a deploy).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>EditorialAgent — goals and rubric not repeated in the user message</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>promptText() JSON-encodes the whole input, so the frozen rubric and goals would be sent twice (system and user message), about 15-20k extra tokens for the Drafter.</dd>
+          <dt>Decision</dt>
+          <dd>promptText() drops canon.rubric and canon.goals; the user message keeps version, hash, role, rubric_files, exemplars and exemplar_label. The system message renders goals and rubric only from the frozen input. The contract test asserts both halves.</dd>
+          <dt>Alternative</dt>
+          <dd>Sending the full input as before.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Canon block — hash key and rubric_files order</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The contract asks for a version id and a content hash; in Phase 2 they are the same manifest hash.</dd>
+          <dt>Decision</dt>
+          <dd>The frozen block carries both &#x27;version&#x27; and &#x27;hash&#x27; (equal) so Phase 8 can split them without changing the input shape. rubric_files is a path =&gt; sha256 map keyed by repo-relative paths; Postgres jsonb reorders its keys, so roles.json order lives in the rubric text, and tests compare the keys canonically.</dd>
+          <dt>Alternative</dt>
+          <dd>A single version key; a list of {path, hash} pairs.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>VoiceCanon — logical manifest paths and config override</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>&quot;Paths relative to the repo root&quot; conflicts with pointing the canon at a temporary copy in tests.</dd>
+          <dt>Decision</dt>
+          <dd>Added publishing_agents.canon.path and .archive_path. Manifest paths are always logical: resources/publishing/canon/&lt;rel&gt; and resources/writing/&lt;slug&gt;.md, so a byte-identical copy yields the same version. Only *.md and *.json are hashed and hidden files are skipped (.DS_Store never changes the version). CanonSnapshot gained an exemplarManifest constructor argument and frozenFor()/exemplarLabel() helpers so StartEditorialActivity, EditorialAgentsTest and the manual trial share one builder.</dd>
+          <dt>Alternative</dt>
+          <dd>base_path()-relative paths (a temp copy would hash differently).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Exemplars — directive blocks dropped whole</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to drop @figure, @aside and @callout blocks; it does not say whether their contents go too.</dd>
+          <dt>Decision</dt>
+          <dd>Whole blocks are dropped, contents included: the figures carry only captions, the epigraph in &#x27;The tools that build the tools&#x27; is someone else&#x27;s quotation, and the one callout in &#x27;Your AI wrote a bug&#x27; is a takeaway summary. Titles come from the YAML frontmatter.</dd>
+          <dt>Alternative</dt>
+          <dd>Keeping callout prose (owner&#x27;s voice, but a summary box the blog channel bans).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Site copy snapshot — straight quotes</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The approved homepage and Walkthrough copy uses curly apostrophes, which the canon&#x27;s curly-quotes rule bans in manuscripts.</dd>
+          <dt>Decision</dt>
+          <dd>The snapshot keeps the approved wording (hero, &quot;fifteen years&quot;, FAQ answers) but uses straight quotes so the Drafter does not imitate a banned character. Text was extracted from resources/views/pages/index.blade.php and walkthrough.blade.php.</dd>
+          <dt>Alternative</dt>
+          <dd>Byte-faithful curly quotes.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Canon decomposition — framework copies and authored files</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The 13 framework files are copied from new-post-skill; they contain no ~/.config or FW/ paths but do use em dashes and curly quotes. No role receives them yet (Phase 4).</dd>
+          <dt>Decision</dt>
+          <dd>Framework files are verbatim copies. Authored canon files avoid em dashes and name the Sisyphean Arc and Comedian&#x27;s Set without paths. A test checks every *.md path a canon file mentions resolves inside the canon. The work-story template says &quot;its old internal name&quot; instead of repeating the excluded name.</dd>
+          <dt>Alternative</dt>
+          <dd>Rewriting the framework prose to the house style now.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Role instructions — output contracts kept</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks to shorten roleInstructions(); they were already one sentence each, and the reconciler/rechecker ones carry output contracts RunEditorialActivity enforces.</dd>
+          <dt>Decision</dt>
+          <dd>Planner, Drafter, VoiceReviewer and BuyerReviewer now defer to the rubric (BuyerReviewer reads the owner from the business goals). Reconciler and Rechecker instructions are unchanged, and their contracts are also restated in roles/reconciler.md and roles/rechecker.md.</dd>
+          <dt>Alternative</dt>
+          <dd>Cutting the contract wording.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Tests outside the spec</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>EditorialAgentsTest built inputs with no canon, and the manual trial replays recorded inputs.</dd>
+          <dt>Decision</dt>
+          <dd>EditorialAgentsTest&#x27;s helper merges CanonSnapshot::frozenFor(). The manual trial no longer seeds a published archive article; replays drop the obsolete voice_context and freeze the current canon. PublishingJourneyTest lost its archive seed and the now-unused journeyDocument() helper. EditorialOutput::VERSION is not bumped (the canon already changes prompt_hash).</dd>
+          <dt>Alternative</dt>
+          <dd>Letting replays refuse.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Owner follow-ups</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>.ai/rules/actions.md says archive files are import/parity inputs only; .ai/rules/resources.md says PRODUCT.md owns written voice.</dd>
+          <dt>Decision</dt>
+          <dd>VoiceCanon (app/Services) reads resources/writing/*.md for agent exemplars, not for public pages, as the contract&#x27;s fixed-exemplar decision requires. PRODUCT.md now points at the canon. Whether either rule should be updated is the owner&#x27;s call; no record-rule was made.</dd>
+          <dt>Alternative</dt>
+          <dd>Copying the essays into the canon (would drift from the archive).</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

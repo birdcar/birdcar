@@ -6,7 +6,6 @@ use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
-use App\Models\ArticleRelease;
 use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
@@ -15,6 +14,7 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\VoiceCanon;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -88,16 +88,6 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 
     $actor = journeyUser();
     $write = app(WriteArticle::class);
-    $archive = $write->captureIdea($actor, 'Published archive voice');
-    $publishedArchive = $write->save($actor, $archive, null, journeyDocument('Archive voice sample with direct, concrete editorial language.', 'archive-voice'), ['title' => 'Archive voice sample'], 'journey-archive');
-    $publishedRelease = ArticleRelease::factory()->imported()->create([
-        'article_id' => $archive->id,
-        'attempt_id' => null,
-        'revision_id' => $publishedArchive->id,
-    ]);
-    $archive->forceFill(['published_release_id' => $publishedRelease->id, 'first_published_at' => $publishedRelease->published_at])->save();
-    $write->save($actor, $archive, $publishedArchive->id, journeyDocument('Private working draft voice must not enter prompts.', 'archive-private'), ['title' => 'Private archive draft'], 'journey-archive-private');
-
     $article = $write->captureIdea($actor, 'Journey article');
     $seed = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Journey article'], 'journey-seed');
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $seed->id, ['goal' => 'Initial owner brief']);
@@ -114,7 +104,6 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 
     Livewire\Livewire::actingAs($actor)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->set('selectedVoiceSampleArticleIds', [$archive->id])
         ->set('selectedEvidenceSourceIds', [$ownerSource->id])
         ->call('startInterview')
         ->assertSet('saveError', null);
@@ -174,14 +163,15 @@ test('displayed interview to recheck journey uses real workspace actions and fro
             && str_contains(json_encode($prompt, JSON_THROW_ON_ERROR), 'Owner retained proof says approvals stay bounded.');
     });
 
-    Http::assertSent(function (Request $request): bool {
+    $canon = app(VoiceCanon::class)->snapshot();
+
+    Http::assertSent(function (Request $request) use ($canon): bool {
         $prompt = json_decode((string) data_get($request->data(), 'messages.1.content'), true, flags: JSON_THROW_ON_ERROR);
 
-        $encoded = json_encode($prompt, JSON_THROW_ON_ERROR);
-
         return data_get($prompt, 'kind') === EditorialActivityKind::ReviewFacts->value
-            && str_contains($encoded, 'Archive voice sample with direct, concrete editorial language.')
-            && ! str_contains($encoded, 'Private working draft voice must not enter prompts.');
+            && data_get($prompt, 'input.canon.version') === $canon->version
+            && data_get($prompt, 'input.canon.exemplars') === []
+            && str_contains((string) data_get($request->data(), 'messages.0.content'), $canon->rubricFor(EditorialActivityKind::ReviewFacts)['text']);
     });
 });
 
@@ -234,14 +224,4 @@ function journeyFirstEvidenceId(): int
     return (int) EvidenceSource::query()
         ->where('extracted_text', 'Retrieved annotation says bounded review catches unsupported launch claims.')
         ->value('id');
-}
-
-/** @return array<string, mixed> */
-function journeyDocument(string $text, string $id): array
-{
-    return ['version' => 1, 'type' => 'doc', 'content' => [[
-        'type' => 'paragraph',
-        'attrs' => ['id' => $id],
-        'content' => [['type' => 'text', 'text' => $text]],
-    ]]];
 }

@@ -17,6 +17,7 @@ use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublishingFingerprint;
+use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ use RuntimeException;
 
 class StartEditorialActivity
 {
-    public function __construct(private readonly PublishingFingerprint $fingerprint) {}
+    public function __construct(private readonly PublishingFingerprint $fingerprint, private readonly VoiceCanon $canon) {}
 
     /**
      * @param  array<string, mixed>  $input
@@ -52,7 +53,6 @@ class StartEditorialActivity
             $stageValue = $this->stageValue($lockedAttempt);
             $this->ensureEligible($lockedAttempt, $article, $kind, $stageValue, $revision, $input);
             $this->persistSelectedEvidenceContext($lockedAttempt, $input);
-            $this->persistVoiceContext($lockedAttempt, $input);
             $lockedAttempt->refresh();
             $approvalHashes = [
                 ApprovalKind::Angle->value => $this->activeApprovalHash($lockedAttempt, ApprovalKind::Angle),
@@ -77,7 +77,7 @@ class StartEditorialActivity
                 ] : null,
                 'completed_research' => $this->completedResearchSnapshots($lockedAttempt),
                 'evidence_sources' => $this->eligibleEvidenceSources($lockedAttempt),
-                'voice_context' => $this->voiceContext($lockedAttempt, $input),
+                'canon' => $this->canon->snapshot()->frozenFor($kind),
             ], $this->reviewContext($lockedAttempt, $article, $kind, $revision, $input));
             $promptHash = $this->fingerprint->hash([
                 'version' => EditorialOutput::VERSION,
@@ -455,25 +455,6 @@ class StartEditorialActivity
             && $this->activityMatchesCurrentApproval($activity, $attempt, EditorialActivityKind::ResearchChallenge);
     }
 
-    /**
-     * @param  array<string, mixed>  $input
-     * @return array<string, mixed>
-     */
-    private function voiceContext(PublishingAttempt $attempt, array $input): array
-    {
-        $contextValue = $attempt->getAttribute('interview_context');
-        $context = is_array($contextValue) ? $contextValue : [];
-        $selected = array_key_exists('voice_sample_ids', $input) ? $input['voice_sample_ids'] : data_get($context, 'voice_sample_ids', []);
-        $samples = array_key_exists('voice_samples', $input) ? $input['voice_samples'] : data_get($context, 'voice_samples', []);
-        $notes = array_key_exists('voice_notes', $context) ? $context['voice_notes'] : null;
-
-        return [
-            'selected_voice_sample_ids' => is_array($selected) ? array_values(array_map('intval', $selected)) : [],
-            'samples' => $this->boundedVoiceSamples($samples),
-            'notes' => is_string($notes) ? $notes : null,
-        ];
-    }
-
     /** @param array<string, mixed> $input */
     private function persistSelectedEvidenceContext(PublishingAttempt $attempt, array $input): void
     {
@@ -489,50 +470,6 @@ class StartEditorialActivity
         $context['selected_evidence_source_ids'] = $ids;
 
         $attempt->forceFill(['interview_context' => $context])->save();
-    }
-
-    /** @param array<string, mixed> $input */
-    private function persistVoiceContext(PublishingAttempt $attempt, array $input): void
-    {
-        if (! array_key_exists('voice_sample_ids', $input) && ! array_key_exists('voice_samples', $input)) {
-            return;
-        }
-
-        $contextValue = $attempt->getAttribute('interview_context');
-        $context = is_array($contextValue) ? $contextValue : [];
-        if (array_key_exists('voice_sample_ids', $input)) {
-            $ids = is_array($input['voice_sample_ids']) ? array_values(array_map('intval', $input['voice_sample_ids'])) : [];
-            $context['voice_sample_ids'] = $ids;
-        }
-        if (array_key_exists('voice_samples', $input)) {
-            $context['voice_samples'] = $this->boundedVoiceSamples($input['voice_samples']);
-        }
-
-        $attempt->forceFill(['interview_context' => $context])->save();
-    }
-
-    /**
-     * @return list<array{id: int, excerpt: string}>
-     */
-    private function boundedVoiceSamples(mixed $samples): array
-    {
-        if (! is_array($samples)) {
-            return [];
-        }
-
-        $bounded = [];
-        foreach ($samples as $sample) {
-            if (! is_array($sample)) {
-                continue;
-            }
-            $id = $sample['id'] ?? null;
-            $excerpt = $sample['excerpt'] ?? null;
-            if (is_numeric($id) && is_string($excerpt) && trim($excerpt) !== '') {
-                $bounded[] = ['id' => (int) $id, 'excerpt' => mb_substr($excerpt, 0, 1200)];
-            }
-        }
-
-        return $bounded;
     }
 
     /**

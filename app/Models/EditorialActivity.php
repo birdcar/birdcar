@@ -35,6 +35,9 @@ class EditorialActivity extends Model
 
     public const UNSUPPORTED_RECOMMENDATION_PAUSE_REASON = 'The recommended model for this agent role is not in the supported model list. The work resumes automatically once the configuration is corrected.';
 
+    /** Activities frozen before the voice canon existed never reach the provider; the owner starts the step again. */
+    public const PRE_CANON_PAUSE_REASON = 'Created before the voice canon; restart this step.';
+
     /** Pre-request pauses that recovery releases once the configuration they depend on is valid again. */
     public const CONFIGURATION_PAUSE_REASONS = [self::MISSING_CREDENTIALS_PAUSE_REASON, self::INVALID_OVERRIDE_PAUSE_REASON, self::UNSUPPORTED_RECOMMENDATION_PAUSE_REASON];
 

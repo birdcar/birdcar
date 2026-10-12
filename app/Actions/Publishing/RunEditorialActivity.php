@@ -74,6 +74,9 @@ class RunEditorialActivity implements ShouldQueue
         $responseReceived = false;
 
         try {
+            if (! is_array(data_get($activity->input, 'canon'))) {
+                throw new RuntimeException(EditorialActivity::PRE_CANON_PAUSE_REASON);
+            }
             $kind = $this->kind($activity);
             $decisions = $this->decisionsFor($activity);
             $continuation = $decisions !== null;
@@ -929,31 +932,6 @@ class RunEditorialActivity implements ShouldQueue
         return $finding;
     }
 
-    /** @return array{voice_sample_ids: list<int>, voice_samples: list<array{id: int, excerpt: string}>} */
-    private function reviewVoiceInput(PublishingAttempt $attempt): array
-    {
-        $context = $attempt->fresh()?->getAttribute('interview_context');
-        $context = is_array($context) ? $context : [];
-        $ids = is_array($context['voice_sample_ids'] ?? null) ? array_values(array_map('intval', $context['voice_sample_ids'])) : [];
-        $samples = [];
-
-        foreach ((is_array($context['voice_samples'] ?? null) ? $context['voice_samples'] : []) as $sample) {
-            if (! is_array($sample)) {
-                continue;
-            }
-            $id = $sample['id'] ?? null;
-            $excerpt = $sample['excerpt'] ?? null;
-            if (is_numeric($id) && is_string($excerpt) && trim($excerpt) !== '') {
-                $samples[] = ['id' => (int) $id, 'excerpt' => mb_substr($excerpt, 0, 1200)];
-            }
-        }
-
-        return [
-            'voice_sample_ids' => $ids,
-            'voice_samples' => $samples,
-        ];
-    }
-
     private function handleFailure(EditorialActivity $activity, Throwable $throwable, bool $continuation, bool $invoked, bool $responseReceived): void
     {
         if (! $invoked) {
@@ -1079,9 +1057,8 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         $batchKey = 'review-'.$attempt->review_cycle.'-'.$proposal['applied_revision_id'];
-        $voiceInput = $this->reviewVoiceInput($attempt);
         foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer] as $kind) {
-            app(StartEditorialActivity::class)->start($actor, $attempt, $kind, array_merge(['draft_activity_id' => $fresh->id], $voiceInput), $batchKey);
+            app(StartEditorialActivity::class)->start($actor, $attempt, $kind, ['draft_activity_id' => $fresh->id], $batchKey);
         }
     }
 

@@ -14,7 +14,7 @@ class BuyerReviewer extends EditorialAgent
 
     protected function roleInstructions(): string
     {
-        return 'Buyer review: find audience, value, objection, and conversion risks without inventing buyer facts or intent.';
+        return 'Buyer review: read the draft as the owner described in the business goals and find audience, value, objection, and conversion risks without inventing buyer facts or intent.';
     }
 
     protected function roleReasoningEffort(): string

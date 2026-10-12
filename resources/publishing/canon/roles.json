@@ -1,0 +1,11 @@
+{
+    "interview": {"files": ["roles/interviewer.md"], "exemplars": false},
+    "research_challenge": {"files": ["roles/researcher.md"], "exemplars": false},
+    "plan": {"files": ["channels/blog.md", "post-types/essay.md", "post-types/playbook.md", "post-types/teardown.md", "post-types/work-story.md", "roles/planner.md"], "exemplars": false},
+    "draft": {"files": ["voice/core.md", "voice/mechanical-rules.md", "channels/blog.md", "roles/drafter.md"], "exemplars": true},
+    "review_facts": {"files": ["roles/fact-reviewer.md"], "exemplars": false},
+    "review_voice": {"files": ["voice/core.md", "roles/voice-reviewer.md"], "exemplars": true},
+    "review_buyer": {"files": ["channels/blog.md", "roles/buyer-reviewer.md"], "exemplars": false},
+    "reconciliation": {"files": ["roles/reconciler.md"], "exemplars": false},
+    "recheck": {"files": ["roles/rechecker.md"], "exemplars": false}
+}

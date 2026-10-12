@@ -20,4 +20,12 @@ return [
         'max_findings_per_activity' => 25,
         'max_field_bytes' => 32768,
     ],
+    /*
+     * The voice and goals canon every agent role receives, and the archive essays its exemplars are read from.
+     * Tests point these at temporary copies; the manifest always records repo-relative logical paths.
+     */
+    'canon' => [
+        'path' => resource_path('publishing/canon'),
+        'archive_path' => resource_path('writing'),
+    ],
 ];

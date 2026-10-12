@@ -294,41 +294,45 @@ is recorded in `DESIGN.md`; first-surface decisions belong in its surface brief.
 
 ## Written Voice
 
-The owner's instructions and corrections are authoritative. The following
-working interpretation comes from the essays linked below, read for voice only.
-It should be refined by the owner's response to actual copy.
+The owner's instructions and corrections are authoritative. The publishing
+agents' voice source is the versioned canon in `resources/publishing/canon/`
+(goals, core voice, mechanical rules, blog channel, post types, frameworks and
+per-role rubrics); every editorial activity freezes it into its input. The
+principles below summarize it for people writing outside the agents, and they
+must not contradict it.
 
 - Start from something recognizable: a moment at work, a frustrating repetition,
-  or a specific observation. Develop the reasoning until the conclusion feels earned.
-- Speak directly to the reader. Use contractions, ordinary words, occasional
-  asides, and varied sentence lengths. Give a developed thought room to breathe;
-  do not reduce every paragraph to a sequence of advertising fragments.
+  or a specific observation. Develop the reasoning until the conclusion feels
+  earned. On the blog the answer comes first and the scene becomes its evidence.
+- Speak directly to the reader in the first-person singular. Use contractions,
+  ordinary words, occasional asides, and varied sentence lengths. Give a
+  developed thought room to breathe; do not reduce every paragraph to a sequence
+  of advertising fragments.
 - Make the point of view visible. Explain what I notice, what I think is wrong,
   how I approach it, and why it matters to the people involved. Expertise shows
   through specific reasoning and responsibility for the work.
 - Keep the dry humor and candor, including the ability to admit a mistake or
-  revise a belief. Do not manufacture certainty, provocation, or profanity to
-  imitate a personality. The criticism targets assumptions and broken systems;
-  it does not belittle the person asking for help.
+  revise a belief. Do not manufacture certainty or provocation to imitate a
+  personality. No politics, and no profanity on anything that sells. The
+  criticism targets assumptions and broken systems; it does not belittle the
+  person asking for help.
 - Treat useful technology with curiosity and skepticism. Describe its actual
   contribution and limits; let the human consequences explain why the work matters.
 - Keep offers and actions easy to understand. Hormozi supplies commercial
   structure, not a substitute personality or a vocabulary of hype and urgency.
 
-Voice references:
+Voice exemplars: the canon's fixed exemplars are four 2026 essays and the
+approved homepage and Walkthrough copy.
 
-- [Your metrics are bullshit](https://www.birdcar.dev/writing/your-metrics-are-bullshit/):
-  recognizable working scenes, direct criticism, and concern for the people
-  affected by a system.
-- [Just build it twice](https://www.birdcar.dev/writing/just-build-it-twice/):
-  first-person reasoning, conversational asides, and a conclusion developed from
-  experience rather than an inflated productivity claim.
-- [Your AI wrote a bug](https://www.birdcar.dev/writing/your-ai-wrote-a-bug/):
-  concrete failure, personal accountability, and self-aware humor.
+- [Just build it twice](https://www.birdcar.dev/writing/just-build-it-twice/)
+- [Your AI wrote a bug](https://www.birdcar.dev/writing/your-ai-wrote-a-bug/)
+- [Six months of talking to a machine](https://www.birdcar.dev/writing/six-months-talking-to-a-machine/)
+- [The tools that build the tools](https://www.birdcar.dev/writing/the-tools-that-build-the-tools/)
 
-Use these as style evidence only. Do not import their anecdotes or numbers as
-client results, copy the old marketing, or mechanically reproduce their sentence
-patterns. New copy must express the offer and constraints established here.
+Use them as style evidence only. They were written for practitioners: do not
+import their anecdotes, numbers, audience or profanity as client material, copy
+the old marketing, or mechanically reproduce their sentence patterns. New copy
+must express the offer and constraints established here.
 
 ## Evidence on Hand
 

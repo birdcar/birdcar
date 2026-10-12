@@ -17,8 +17,10 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\VoiceCanon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -368,7 +370,7 @@ test('imported published articles show historical published release readiness wi
         ->assertSee('release='.$release->id, false);
 });
 
-test('workspace wires agent activity source voice and interview answer actions without allowance controls', function (): void {
+test('workspace wires agent activity source canon and interview answer actions without allowance controls', function (): void {
     $user = editorUser();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
@@ -376,18 +378,14 @@ test('workspace wires agent activity source voice and interview answer actions w
     $article = $write->captureIdea($user, 'Agent UI wiring');
     $revision = $write->save($user, $article, null, simpleDocument('Agent UI'), [], 'mut_agent_ui_seed');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
-    $archive = $write->captureIdea($user, 'Published voice sample');
-    $archiveRevision = $write->save($user, $archive, null, simpleDocument('Published archive voice.'), ['title' => 'Published voice sample'], 'mut_agent_ui_archive');
-    $archiveRelease = ArticleRelease::factory()->imported()->create([
-        'article_id' => $archive->id,
-        'attempt_id' => null,
-        'revision_id' => $archiveRevision->id,
-    ]);
-    $archive->forceFill(['published_release_id' => $archiveRelease->id, 'first_published_at' => $archiveRelease->published_at])->save();
+    $canonVersion = app(VoiceCanon::class)->snapshot()->version;
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
-        ->set('selectedVoiceSampleArticleIds', [$archive->id])
+        ->assertSee('Source material')
+        ->assertDontSee('Voice and source material')
+        ->assertSee('Voice canon')
+        ->assertSee(Str::substr($canonVersion, 0, 12))
         ->set('interviewAnswers', 'The best customer objected to onboarding time.')
         ->call('startInterview')
         ->call('submitInterviewAnswers')
@@ -402,7 +400,10 @@ test('workspace wires agent activity source voice and interview answer actions w
         ->set('sourceUrl', 'https://example.com/source')
         ->call('startResearch');
 
-    expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'interview')->first()?->input['voice_sample_ids'])->toBe([$archive->id])
+    $interview = EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'interview')->first();
+
+    expect($interview?->input['canon']['version'] ?? null)->toBe($canonVersion)
+        ->and($interview?->input)->not->toHaveKey('voice_context')
         ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', 'research_challenge')->first()?->input['source_url'])->toBe('https://example.com/source')
         ->and($attempt->fresh()?->interview_context['answers'])->toBe('The best customer objected to onboarding time.');
 });

@@ -14,6 +14,7 @@ use App\Ai\Tools\AskAuthor;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\VoiceCanon;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
 use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Approvals\Approval;
@@ -25,7 +26,10 @@ function editorialActivity(EditorialActivityKind $kind, array $input = []): Edit
 {
     return new EditorialActivity([
         'kind' => $kind,
-        'input' => $input ?: ['frozen' => ['title' => 'Owner supplied brief', 'sources' => ['untrusted excerpt']]],
+        'input' => array_merge(
+            ['canon' => app(VoiceCanon::class)->snapshot()->frozenFor($kind)],
+            $input ?: ['frozen' => ['title' => 'Owner supplied brief', 'sources' => ['untrusted excerpt']]],
+        ),
     ]);
 }
 

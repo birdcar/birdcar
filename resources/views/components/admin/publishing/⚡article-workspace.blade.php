@@ -21,6 +21,7 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
+use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -44,7 +45,6 @@ new #[Layout('layouts.admin')] class extends Component
     public ?string $planInputHash = null;
     public ?string $releaseInputHash = null;
     public string $sourceUrl = '';
-    public string $voiceSample = '';
     public string $interviewAnswers = '';
     public string $ideaTitle = '';
 
@@ -54,9 +54,6 @@ new #[Layout('layouts.admin')] class extends Component
     public string $releaseSlug = '';
     public string $releaseScheduledAt = '';
     public string $releaseScheduledTimezone = '';
-
-    /** @var list<int> */
-    public array $selectedVoiceSampleArticleIds = [];
 
     /** @var list<int> */
     public array $selectedEvidenceSourceIds = [];
@@ -101,7 +98,7 @@ new #[Layout('layouts.admin')] class extends Component
         try {
             DB::transaction(function (): void {
                 $attempt = app(AdvancePublishingAttempt::class)->develop(auth()->user(), $this->article, $this->currentRevisionId, ['idea' => $this->article->contentIdea->body]);
-                app(StartEditorialActivity::class)->start(auth()->user(), $attempt, EditorialActivityKind::Interview, $this->voiceActivityInput(), 'interview-'.$attempt->review_cycle);
+                app(StartEditorialActivity::class)->start(auth()->user(), $attempt, EditorialActivityKind::Interview, [], 'interview-'.$attempt->review_cycle);
             });
             $this->saveError = null;
             $this->refreshAgentWork();
@@ -155,7 +152,6 @@ new #[Layout('layouts.admin')] class extends Component
         $attempt = $this->article->currentAttempt;
         $context = $attempt instanceof PublishingAttempt && is_array($attempt->interview_context) ? $attempt->interview_context : [];
         $this->selectedEvidenceSourceIds = is_array($context['selected_evidence_source_ids'] ?? null) ? array_values(array_map('intval', $context['selected_evidence_source_ids'])) : [];
-        $this->selectedVoiceSampleArticleIds = is_array($context['voice_sample_ids'] ?? null) ? array_values(array_map('intval', $context['voice_sample_ids'])) : [];
         $selectedAngle = $context['selected_angle_option'] ?? '';
         $this->selectedAngleOptionKey = is_scalar($selectedAngle) ? (string) $selectedAngle : '';
     }
@@ -363,61 +359,6 @@ new #[Layout('layouts.admin')] class extends Component
         }
     }
 
-    /** @return array{voice_sample_ids: list<int>, voice_samples: list<array{id: int, excerpt: string|null}>} */
-    private function voiceActivityInput(): array
-    {
-        $ids = $this->selectedVoiceSampleIds();
-        if ($ids === [] && trim($this->voiceSample) !== '') {
-            throw new RuntimeException('Select voice samples from the published archive; pasted legacy IDs or excerpts are not accepted for new dispatches.');
-        }
-        $excerpts = $this->selectedVoiceSampleExcerpts($ids);
-        if ($ids !== [] && count($excerpts) < count($ids)) {
-            throw new RuntimeException('Selected voice samples must be published archive articles with readable text.');
-        }
-
-        return [
-            'voice_sample_ids' => $ids,
-            'voice_samples' => array_map(fn (int $id): array => [
-                'id' => $id,
-                'excerpt' => $excerpts[$id] ?? null,
-            ], $ids),
-        ];
-    }
-
-    /** @return list<int> */
-    private function selectedVoiceSampleIds(): array
-    {
-        return array_values(array_unique(array_filter(array_map('intval', $this->selectedVoiceSampleArticleIds), fn (int $id): bool => $id > 0)));
-    }
-
-    /**
-     * @param  list<int>  $ids
-     * @return array<int, string>
-     */
-    private function selectedVoiceSampleExcerpts(array $ids): array
-    {
-        $excerpts = [];
-        if ($ids !== []) {
-            Article::query()
-                ->whereIn('id', $ids)
-                ->where('author_id', auth()->id())
-                ->whereNotNull('published_release_id')
-                ->with('publishedRelease')
-                ->get()
-                ->each(function (Article $article) use (&$excerpts): void {
-                    $release = $article->publishedRelease;
-                    $payload = is_array($release?->payload) ? $release->payload : [];
-                    $document = is_array($payload['document'] ?? null) ? $payload['document'] : [];
-                    $excerpt = $this->documentExcerpt($document);
-                    if ($excerpt !== '') {
-                        $excerpts[(int) $article->id] = mb_substr($excerpt, 0, 1200);
-                    }
-                });
-        }
-
-        return $excerpts;
-    }
-
     public function refreshAgentWork(): void
     {
         Gate::authorize('view', $this->article);
@@ -472,9 +413,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function startInterview(?StartEditorialActivity $activities = null): void
     {
-        $this->startActivity(EditorialActivityKind::Interview, $activities, array_merge($this->voiceActivityInput(), [
+        $this->startActivity(EditorialActivityKind::Interview, $activities, [
             'selected_evidence_source_ids' => $this->selectedEvidenceSourceIds(),
-        ]));
+        ]);
     }
 
     /** @return list<int> */
@@ -559,9 +500,8 @@ new #[Layout('layouts.admin')] class extends Component
         }
 
         try {
-            $voiceInput = $this->voiceActivityInput();
             foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer] as $kind) {
-                $activities->start(auth()->user(), $attempt, $kind, $voiceInput, 'review-'.$attempt->review_cycle);
+                $activities->start(auth()->user(), $attempt, $kind, [], 'review-'.$attempt->review_cycle);
             }
             $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
             session()->flash('status', 'Review activities started.');
@@ -898,14 +838,6 @@ new #[Layout('layouts.admin')] class extends Component
             ->where('attempt_id', $attempt->id)
             ->latest()
             ->get();
-        $voiceSampleOptions = Article::query()
-            ->where('author_id', auth()->id())
-            ->whereNotNull('published_release_id')
-            ->whereHas('publishedRelease')
-            ->with('publishedRelease')
-            ->latest('updated_at')
-            ->limit(20)
-            ->get();
         $interviewContext = is_array($attempt?->interview_context) ? $attempt->interview_context : [];
         $stage = $attempt?->stage;
         $currentActivity = $activities->first(fn ($activity) => $activity->stage === $stage?->value && $activity->status !== EditorialActivityStatus::Stale);
@@ -948,7 +880,7 @@ new #[Layout('layouts.admin')] class extends Component
                 ->oldest('id')->get(),
             'editorialFindings' => $findings,
             'evidenceSources' => $sources,
-            'voiceSampleOptions' => $voiceSampleOptions,
+            'voiceCanonVersion' => Str::substr(app(VoiceCanon::class)->snapshot()->version, 0, 12),
             'interviewContext' => $interviewContext,
         ];
     }
