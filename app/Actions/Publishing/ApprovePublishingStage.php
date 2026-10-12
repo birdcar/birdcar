@@ -286,6 +286,25 @@ class ApprovePublishingStage
         if (! $this->hasReviewedPlanForCurrentInput($attempt)) {
             throw new RuntimeException('Plan approval requires a reviewed outline and visual plan for the current input.');
         }
+
+        $this->ensureFrameworkChosen($attempt);
+    }
+
+    /**
+     * An agent plan is approved only with the framework the owner chose at the plan gate, stored inside the plan so the
+     * plan approval hash covers it. A plan the owner wrote by hand carries its own structure and needs no choice.
+     */
+    private function ensureFrameworkChosen(PublishingAttempt $attempt): void
+    {
+        $plan = $attempt->plan ?? [];
+        if (($plan['source'] ?? 'human') !== 'agent') {
+            return;
+        }
+
+        $chosen = data_get($plan, 'framework.chosen');
+        if (! is_string($chosen) || $chosen === '' || $chosen !== data_get($plan, 'framework.primary')) {
+            throw new RuntimeException('Plan approval requires a chosen narrative framework: keep the primary or pick another framework first.');
+        }
     }
 
     private function ensureStage(PublishingAttempt $attempt, EditorialStage $stage, string $message): void
@@ -362,7 +381,7 @@ class ApprovePublishingStage
     {
         $approval = match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
 

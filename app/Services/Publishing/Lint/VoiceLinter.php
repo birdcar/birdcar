@@ -12,20 +12,26 @@ final class VoiceLinter
 {
     public const TAG = 'publishing.lint-rules';
 
+    /** Metadata fields in the order the owner reads them in the packaging panel. */
+    private const METADATA_ORDER = ['title', 'seo_title', 'description', 'slug'];
+
     /** @param iterable<LintRule> $rules */
     public function __construct(#[Tag(self::TAG)] private readonly iterable $rules) {}
 
     /**
-     * Hits in reading order: the title and description first, then the body top to bottom. Overrides and findings key
-     * on the hit hash, so a repeat of the same rule, location and excerpt is numbered as its own occurrence.
+     * Hits in reading order: the packaging metadata first, then the body top to bottom. Overrides and findings key on
+     * the hit hash, so a repeat of the same rule, location and excerpt is numbered as its own occurrence.
      *
      * @return list<LintHit>
      */
     public function lint(LintTarget $target): array
     {
-        $positions = ['$.metadata.title' => 0, '$.metadata.description' => 1];
+        $positions = [];
+        foreach (self::METADATA_ORDER as $index => $field) {
+            $positions['$.metadata.'.$field] = $index;
+        }
         foreach ($target->blocks as $index => $block) {
-            $positions[$block['id']] ??= $index + 2;
+            $positions[$block['id']] ??= $index + count(self::METADATA_ORDER);
         }
 
         $hits = [];

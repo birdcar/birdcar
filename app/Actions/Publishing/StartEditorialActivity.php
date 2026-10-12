@@ -16,8 +16,10 @@ use App\Models\Publishing\EditorialStage;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\CanonSnapshot;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\ExemplarRetriever;
+use App\Services\Publishing\FrameworkCatalog;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
@@ -126,22 +128,80 @@ class StartEditorialActivity
         return $activity;
     }
 
+    /** One package per review cycle and revision; the one after a recheck gets its own key, so it never reuses an earlier package. */
+    public static function packageBatchKey(PublishingAttempt $attempt, int $revisionId, bool $afterRecheck = false): string
+    {
+        return 'package-'.$attempt->review_cycle.'-'.$revisionId.($afterRecheck ? '-after-recheck' : '');
+    }
+
     /**
-     * The canon block this activity freezes. A blog-post Draft and VoiceReviewer also carry the sections the plan
-     * approval retrieved, under the same voice-only exemplar label.
+     * The canon block this activity freezes. The Interviewer and Planner also carry the framework catalog their output
+     * is validated against. A blog-post Draft and VoiceReviewer carry the sections the plan approval retrieved, under
+     * the same voice-only exemplar label, and the post-type template and chosen framework in full.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     private function frozenCanon(PublishingAttempt $attempt, Article $article, EditorialActivityKind $kind, array $input): array
     {
-        $canon = $this->canon->snapshot()->frozenFor($kind);
+        $snapshot = $this->canon->snapshot();
+        $canon = $snapshot->frozenFor($kind);
+
+        if (in_array($kind, [EditorialActivityKind::Interview, EditorialActivityKind::Plan], true)) {
+            $canon['catalog'] = FrameworkCatalog::fromSnapshot($snapshot)->toArray();
+        }
 
         if (! in_array($kind, [EditorialActivityKind::Draft, EditorialActivityKind::ReviewVoice], true) || $article->kind !== PieceKind::BlogPost) {
             return $canon;
         }
 
-        return [...$canon, ...$this->retrievedExemplars($attempt, $kind, $input)];
+        $draftCanon = $kind === EditorialActivityKind::ReviewVoice ? $this->draftCanon($attempt, $input) : null;
+
+        return [...$canon, ...$this->retrievedExemplars($attempt, $draftCanon), ...$this->structureCanon($attempt, $draftCanon)];
+    }
+
+    /**
+     * The post-type template and the framework the owner chose at the plan gate, read from the canon snapshot. A voice
+     * review copies exactly what its Draft froze; a plan approved before frameworks existed freezes neither key.
+     *
+     * @param  array<string, mixed>|null  $draftCanon
+     * @return array<string, mixed>
+     */
+    private function structureCanon(PublishingAttempt $attempt, ?array $draftCanon): array
+    {
+        if ($draftCanon !== null) {
+            return array_intersect_key($draftCanon, ['post_type' => true, 'framework' => true]);
+        }
+
+        $snapshot = $this->canon->snapshot();
+        $catalog = FrameworkCatalog::fromSnapshot($snapshot);
+        $text = fn (?string $relative): ?string => $relative === null ? null : (isset($snapshot->files[CanonSnapshot::CANON_PREFIX.$relative]) ? trim($snapshot->files[CanonSnapshot::CANON_PREFIX.$relative]) : null);
+        $structure = [];
+
+        $postType = data_get($attempt->brief, 'post_type');
+        $template = is_string($postType) ? $text($catalog->templatePath($postType)) : null;
+        if (is_string($postType) && $template !== null) {
+            $structure['post_type'] = ['slug' => $postType, 'text' => $template];
+        }
+
+        $chosen = data_get($attempt->plan, 'framework.chosen');
+        $frameworkText = is_string($chosen) ? $text($catalog->frameworkPath($chosen)) : null;
+        if (is_string($chosen) && $frameworkText !== null) {
+            $framework = ['slug' => $chosen, 'text' => $frameworkText];
+            $secondary = data_get($attempt->plan, 'framework.secondary');
+            $secondarySlug = is_array($secondary) ? ($secondary['framework'] ?? null) : null;
+            $secondaryText = is_string($secondarySlug) ? $text($catalog->frameworkPath($secondarySlug)) : null;
+            if (is_array($secondary) && is_string($secondarySlug) && $secondaryText !== null) {
+                $framework['secondary'] = [
+                    'slug' => $secondarySlug,
+                    'text' => $secondaryText,
+                    'section_heading' => is_string($secondary['section_heading'] ?? null) ? $secondary['section_heading'] : '',
+                ];
+            }
+            $structure['framework'] = $framework;
+        }
+
+        return $structure;
     }
 
     /**
@@ -149,16 +209,13 @@ class StartEditorialActivity
      * follows. Otherwise the attempt's stored context is used; one whose query no longer matches the brief, angle and
      * plan (after a rethink) is `stale`, and an attempt that never retrieved is `none`.
      *
-     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>|null  $draftCanon
      * @return array{retrieved_exemplars: list<mixed>, retrieval_status: string}
      */
-    private function retrievedExemplars(PublishingAttempt $attempt, EditorialActivityKind $kind, array $input): array
+    private function retrievedExemplars(PublishingAttempt $attempt, ?array $draftCanon): array
     {
-        if ($kind === EditorialActivityKind::ReviewVoice) {
-            $draftCanon = $this->draftRetrieval($attempt, $input);
-            if ($draftCanon !== null) {
-                return $draftCanon;
-            }
+        if ($draftCanon !== null && is_array($draftCanon['retrieved_exemplars'] ?? null) && is_string($draftCanon['retrieval_status'] ?? null)) {
+            return ['retrieved_exemplars' => array_values($draftCanon['retrieved_exemplars']), 'retrieval_status' => $draftCanon['retrieval_status']];
         }
 
         $context = $attempt->getAttribute('exemplar_context');
@@ -178,13 +235,13 @@ class StartEditorialActivity
     }
 
     /**
-     * The retrieval frozen into the Draft this review follows: the given `draft_activity_id` when it names a Draft of
-     * this attempt, otherwise the latest Draft of the current review cycle.
+     * The canon frozen into the Draft this review follows: the given `draft_activity_id` when it names a Draft of this
+     * attempt, otherwise the latest Draft of the current review cycle.
      *
      * @param  array<string, mixed>  $input
-     * @return array{retrieved_exemplars: list<mixed>, retrieval_status: string}|null
+     * @return array<string, mixed>|null
      */
-    private function draftRetrieval(PublishingAttempt $attempt, array $input): ?array
+    private function draftCanon(PublishingAttempt $attempt, array $input): ?array
     {
         $draftId = $input['draft_activity_id'] ?? null;
         $draft = EditorialActivity::query()
@@ -199,11 +256,8 @@ class StartEditorialActivity
             ->first();
 
         $canon = $draft?->input['canon'] ?? null;
-        if (! is_array($canon) || ! is_array($canon['retrieved_exemplars'] ?? null) || ! is_string($canon['retrieval_status'] ?? null)) {
-            return null;
-        }
 
-        return ['retrieved_exemplars' => array_values($canon['retrieved_exemplars']), 'retrieval_status' => $canon['retrieval_status']];
+        return is_array($canon) ? $canon : null;
     }
 
     /**
@@ -220,7 +274,69 @@ class StartEditorialActivity
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => $this->ensureReviewEligible($attempt, $article, $stageValue, $revision),
             EditorialActivityKind::Reconciliation => $this->ensureReconciliationEligible($attempt, $article, $stageValue),
             EditorialActivityKind::Recheck => $this->ensureRecheckEligible($attempt, $article, $stageValue, $input),
+            EditorialActivityKind::Package => $this->ensurePackageEligible($attempt, $article, $revision, $input),
         };
+    }
+
+    /**
+     * Review has finished when the reviewed revision has a completed reconciliation and no blocking or conflicting
+     * finding (outside lint) waits for a disposition. When the one recheck was used, it must have completed on the
+     * current revision; otherwise the reviewed revision is the current one. Null means packaging may start.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public function packageEligibilityProblem(PublishingAttempt $attempt, Article $article, ?ArticleRevision $revision, array $input): ?string
+    {
+        if ($this->stageValue($attempt) !== EditorialStage::InReview->value || ! $this->hasCurrentActiveApproval($attempt, ApprovalKind::Plan)) {
+            return 'Packaging requires an approved plan and review stage.';
+        }
+
+        if (! $revision instanceof ArticleRevision || (int) ($article->working_revision_id ?? 0) !== (int) $revision->id) {
+            return 'Packaging must target the current revision.';
+        }
+
+        $reviewedRevisionId = (int) ($input['reviewed_revision_id'] ?? $revision->id);
+        if (! $this->completedActivityExists($attempt, EditorialActivityKind::Reconciliation, $reviewedRevisionId)) {
+            return 'Packaging starts after review is reconciled.';
+        }
+
+        $openFindings = EditorialFinding::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('revision_id', $reviewedRevisionId)
+            ->where('lens', '!=', LintRevision::LENS)
+            ->whereNull('stale_at')
+            ->whereNull('disposition')
+            ->where(fn ($query) => $query->where('severity', 'blocking')->orWhere('reconciliation_state', 'conflict'))
+            ->exists();
+        if ($openFindings) {
+            return 'Packaging starts after every blocking or conflicting finding has a disposition.';
+        }
+
+        $rechecks = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::Recheck->value);
+        if ((clone $rechecks)->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Running->value])->exists()) {
+            return 'Packaging starts after the recheck completes.';
+        }
+
+        if ((bool) $attempt->recheck_used) {
+            $completed = (clone $rechecks)->where('status', EditorialActivityStatus::Completed->value)->where('revision_id', $revision->id)->exists();
+
+            return $completed ? null : 'Packaging starts after the recheck completes on the current revision.';
+        }
+
+        return $reviewedRevisionId === (int) $revision->id ? null : 'Packaging must follow review of the current revision.';
+    }
+
+    /** @param array<string, mixed> $input */
+    private function ensurePackageEligible(PublishingAttempt $attempt, Article $article, ?ArticleRevision $revision, array $input): void
+    {
+        $problem = $this->packageEligibilityProblem($attempt, $article, $revision, $input);
+        if ($problem !== null) {
+            throw new RuntimeException($problem);
+        }
     }
 
     /** @param list<EditorialStage> $stages */
@@ -602,6 +718,7 @@ class StartEditorialActivity
             EditorialActivityKind::ReviewBuyer,
             EditorialActivityKind::Reconciliation,
             EditorialActivityKind::Recheck,
+            EditorialActivityKind::Package,
         ], true)) {
             $payload['revision_id'] = $revision?->id;
             $payload['revision_hash'] = $revision?->content_hash;
@@ -708,7 +825,7 @@ class StartEditorialActivity
     {
         $approval = match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
 

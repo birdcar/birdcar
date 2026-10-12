@@ -165,10 +165,23 @@ function publicWritingMetadata(string $title, string $date): array
 {
     return [
         'title' => $title,
-        'description' => $title.' description.',
+        'seo_title' => publicWritingSeoTitle($title),
+        'description' => publicWritingDescription($title),
         'date' => $date,
         'tags' => [],
     ];
+}
+
+/** A 50-60 character SEO title, so release checks reach the behavior under test. */
+function publicWritingSeoTitle(string $title): string
+{
+    return rtrim(mb_substr($title.' for owners who run a client service business and their teams', 0, 56));
+}
+
+/** A 150-160 character meta description, so release checks reach the behavior under test. */
+function publicWritingDescription(string $title): string
+{
+    return rtrim(mb_substr($title.' description. '.str_repeat('What an owner should check before the next hire. ', 4), 0, 156));
 }
 
 /** @return array<string, mixed> */

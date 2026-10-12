@@ -6,6 +6,7 @@ use App\Ai\Agents\EditorialAgent;
 use App\Ai\Agents\FactReviewer;
 use App\Ai\Agents\Interviewer;
 use App\Ai\Agents\LintRepairer;
+use App\Ai\Agents\Packager;
 use App\Ai\Agents\Planner;
 use App\Ai\Agents\Researcher;
 use App\Ai\Agents\ReviewReconciler;
@@ -44,7 +45,8 @@ test('it selects the role-specific SDK agent for each editorial activity kind', 
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewVoice)))->toBeInstanceOf(VoiceReviewer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewBuyer)))->toBeInstanceOf(BuyerReviewer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Reconciliation)))->toBeInstanceOf(ReviewReconciler::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Recheck)))->toBeInstanceOf(RevisionRechecker::class);
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Recheck)))->toBeInstanceOf(RevisionRechecker::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Package)))->toBeInstanceOf(Packager::class);
 });
 
 test('it prompts the native SDK with frozen context and returns structured output from the fake', function () {
@@ -157,6 +159,7 @@ test('each role sends its explicit native recommendation without price or provid
     'buyer reviewer' => [EditorialActivityKind::ReviewBuyer, 'deepseek/deepseek-v4-pro-0813', 'medium', 24000],
     'reconciler' => [EditorialActivityKind::Reconciliation, 'deepseek/deepseek-v4.1-flash', 'low', 16000],
     'rechecker' => [EditorialActivityKind::Recheck, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
+    'packager' => [EditorialActivityKind::Package, 'google/gemini-3.8-flash', 'medium', 16000],
 ]);
 
 test('allowlisted overrides replace only the model and keep role reasoning where supported', function (string $override) {
@@ -211,7 +214,6 @@ test('it keeps historical array outputs valid while decoding SDK JSON strings be
 
     $validated = $output->validate(EditorialActivityKind::Draft, [
         'document' => json_encode(['type' => 'doc', 'content' => []], JSON_THROW_ON_ERROR),
-        'metadataProposals' => ['title' => 'Known array metadata'],
     ]);
 
     expect($validated['document'])->toBe(['type' => 'doc', 'content' => []])

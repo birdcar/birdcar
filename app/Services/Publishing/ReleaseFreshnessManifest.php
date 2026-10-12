@@ -82,7 +82,13 @@ class ReleaseFreshnessManifest
         ];
     }
 
-    /** @return array{mode: string, release_revision_id: int, reviewed_revision_ids: list<int>, revision_ids: list<int>, recheck_activity_ids: list<int>}|null */
+    /**
+     * How the release revision is covered by review: its own same-revision batch, a targeted recheck tied to a reviewed
+     * batch, or (`metadata_only`) metadata-only saves such as an accepted package on top of a revision covered either way.
+     * A metadata-only lineage walks back through parent revisions while the document stays identical.
+     *
+     * @return array{mode: string, release_revision_id: int, reviewed_revision_ids: list<int>, revision_ids: list<int>, recheck_activity_ids: list<int>}|null
+     */
     public function reviewLineage(int $attemptId, int $revisionId): ?array
     {
         $attempt = PublishingAttempt::query()->find($attemptId);
@@ -90,6 +96,56 @@ class ReleaseFreshnessManifest
             return null;
         }
 
+        $direct = $this->directReviewLineage($attempt, $revisionId);
+        if ($direct !== null) {
+            return $direct;
+        }
+
+        $releaseRevision = ArticleRevision::query()->whereKey($revisionId)->first();
+        if (! $releaseRevision instanceof ArticleRevision) {
+            return null;
+        }
+
+        $documentHash = $this->documentHash($releaseRevision);
+        $metadataRevisionIds = [$revisionId];
+        $current = $releaseRevision;
+        while (is_numeric($current->parent_revision_id)) {
+            $parent = ArticleRevision::query()
+                ->where('article_id', $releaseRevision->article_id)
+                ->whereKey((int) $current->parent_revision_id)
+                ->first();
+            if (! $parent instanceof ArticleRevision || in_array((int) $parent->id, $metadataRevisionIds, true) || ! hash_equals($documentHash, $this->documentHash($parent))) {
+                return null;
+            }
+
+            $covered = $this->directReviewLineage($attempt, (int) $parent->id);
+            if ($covered !== null) {
+                return [
+                    'mode' => 'metadata_only',
+                    'release_revision_id' => $revisionId,
+                    'reviewed_revision_ids' => $covered['mode'] === 'same_revision' ? [(int) $parent->id] : $covered['reviewed_revision_ids'],
+                    'revision_ids' => array_values(array_unique([...$metadataRevisionIds, ...$covered['revision_ids']])),
+                    'recheck_activity_ids' => $covered['recheck_activity_ids'],
+                ];
+            }
+
+            $metadataRevisionIds[] = (int) $parent->id;
+            $current = $parent;
+        }
+
+        return null;
+    }
+
+    private function documentHash(ArticleRevision $revision): string
+    {
+        $document = $revision->getAttribute('document');
+
+        return $this->fingerprint->hash(is_array($document) ? $document : []);
+    }
+
+    /** @return array{mode: string, release_revision_id: int, reviewed_revision_ids: list<int>, revision_ids: list<int>, recheck_activity_ids: list<int>}|null */
+    private function directReviewLineage(PublishingAttempt $attempt, int $revisionId): ?array
+    {
         if ($this->hasCompletedReviewBatchForRevision($attempt, $revisionId)) {
             return [
                 'mode' => 'same_revision',

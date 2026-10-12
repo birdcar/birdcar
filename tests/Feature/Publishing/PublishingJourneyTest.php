@@ -36,7 +36,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
             return Http::response(match ($kind) {
                 EditorialActivityKind::Interview->value => journeyOpenRouterResponse('journey-interview', [
                     'questions' => ['What proof should the owner include before approving this angle?'],
-                    'brief' => ['goal' => 'Explain the publishing control loop', 'audience' => 'Founder editing a launch article'],
+                    'brief' => ['goal' => 'Explain the publishing control loop', 'audience' => 'Founder editing a launch article', 'postType' => 'playbook', 'targetQuery' => 'how to review AI drafts safely', 'ideaTitle' => null],
                     'angleOptions' => [[
                         'title' => 'Control loop angle',
                         'thesis' => 'Human approvals and bounded agents make launch writing safer.',
@@ -52,6 +52,12 @@ test('displayed interview to recheck journey uses real workspace actions and fro
                     'outline' => [['heading' => 'Show the gates'], ['heading' => 'Show evidence and reviews']],
                     'argument' => 'The displayed plan uses the approved control loop angle and grounded research.',
                     'visualPlan' => [['slot' => 'diagram', 'description' => 'Approval and review loop']],
+                    'framework' => [
+                        'primary' => 'three-act',
+                        'runner_up' => 'the-petal',
+                        'reasons' => ['primary' => 'One throughline from draft to release.', 'runner_up' => 'Each gate could stand alone.'],
+                        'secondary' => null,
+                    ],
                 ]),
                 EditorialActivityKind::Draft->value => journeyOpenRouterResponse('journey-draft', [
                     'document' => ['version' => 1, 'type' => 'doc', 'content' => [[
@@ -67,7 +73,6 @@ test('displayed interview to recheck journey uses real workspace actions and fro
                             ['type' => 'text', 'text' => '.'],
                         ],
                     ]]],
-                    'metadataProposals' => [],
                 ]),
                 EditorialActivityKind::ReviewFacts->value => journeyOpenRouterResponse('journey-review-facts', [
                     'findings' => [[
@@ -89,6 +94,14 @@ test('displayed interview to recheck journey uses real workspace actions and fro
                 EditorialActivityKind::ReviewVoice->value, EditorialActivityKind::ReviewBuyer->value => journeyOpenRouterResponse('journey-'.$kind, ['findings' => []]),
                 EditorialActivityKind::Reconciliation->value => journeyOpenRouterResponse('journey-reconciliation', ['groups' => [], 'conflicts' => []]),
                 EditorialActivityKind::Recheck->value => journeyOpenRouterResponse('journey-recheck', ['resolved' => [['block_id' => 'blk_0000000000000002', 'status' => 'resolved']], 'unresolved' => [], 'newBlockingFindings' => []]),
+                EditorialActivityKind::Package->value => journeyOpenRouterResponse('journey-package', [
+                    'titleOptions' => array_map(fn (int $number): string => 'Bounded review catches launch claims, take '.$number, range(1, 10)),
+                    'title' => 'Bounded review catches launch claims',
+                    'seoTitle' => 'How to review AI drafts before they reach your readers',
+                    'description' => 'When an agent drafts your launch article, every claim still needs a person to approve it. Here is the review loop I use before anything goes live on the site.',
+                    'slug' => 'review-ai-drafts-before-launch',
+                    'greatestHitsTag' => 'the review loop',
+                ]),
                 default => throw new RuntimeException('Unexpected journey kind '.$kind),
             });
         },
@@ -136,6 +149,11 @@ test('displayed interview to recheck journey uses real workspace actions and fro
         ->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
         ->assertSee('A plan for the piece')
         ->assertSee('grounded research')
+        ->assertSee('Three-Act Structure')
+        ->call('approvePlan')
+        ->assertSet('saveError', 'Plan approval requires a chosen narrative framework: keep the primary or pick another framework first.')
+        ->call('chooseFramework', 'three-act')
+        ->assertSet('saveError', null)
         ->call('approvePlan')
         ->assertSet('saveError', null);
 
@@ -161,6 +179,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
         ->and($recheck->status)->toBe(EditorialActivityStatus::Completed)
         ->and($recheck->input['reviewed_revision_id'])->toBe($draftRevision->id)
         ->and($recheck->input['expected_revision_id'])->toBe($targetRevision->id)
+        ->and(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', EditorialActivityKind::Package->value)->where('revision_id', $targetRevision->id)->exists())->toBeTrue()
         ->and(EvidenceSource::query()->where('attempt_id', $attempt->id)->where('extracted_text', 'Retrieved annotation says bounded review catches unsupported launch claims.')->exists())->toBeTrue();
 
     Http::assertSent(function (Request $request): bool {

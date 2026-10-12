@@ -117,7 +117,7 @@ function lintWorkflowFakeAgents(array $draft, ?Closure $repairText = null, ?Clos
         $input = is_array($prompt['input'] ?? null) ? $prompt['input'] : [];
 
         $payload = match ($prompt['kind'] ?? null) {
-            EditorialActivityKind::Draft->value => ['document' => json_encode(lintWorkflowDocument($draft), JSON_THROW_ON_ERROR), 'metadataProposals' => []],
+            EditorialActivityKind::Draft->value => ['document' => json_encode(lintWorkflowDocument($draft), JSON_THROW_ON_ERROR)],
             EditorialActivityKind::LintRepair->value => ['patches' => $repairPatches !== null ? $repairPatches($input) : lintWorkflowPatches($input, $repairText ?? fn (string $text): string => $text)],
             EditorialActivityKind::ReviewFacts->value, EditorialActivityKind::ReviewVoice->value, EditorialActivityKind::ReviewBuyer->value => ['findings' => []],
             EditorialActivityKind::Reconciliation->value => ['groups' => [], 'conflicts' => []],

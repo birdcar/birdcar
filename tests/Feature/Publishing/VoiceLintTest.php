@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\Drafter;
+use App\Models\Article;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\PieceKind;
@@ -48,6 +49,16 @@ function voiceLintWalkthrough(string $id = 'blk_00000000000000f1', string $href 
 function voiceLintDocument(array $content, array $metadata = []): LintTarget
 {
     return LintTarget::fromDocument(['version' => 1, 'type' => 'doc', 'content' => $content], $metadata, PieceKind::BlogPost);
+}
+
+const VOICE_LINT_OWNER_DESCRIPTION = 'When the team is full and the work keeps coming back to you, a new hire often adds a person to the same chores. Here is what to check before you post the job.';
+
+/** A post whose slug repeats an archive essay's slug, with that essay in the database. */
+function voiceLintArchiveSlugTarget(): LintTarget
+{
+    Article::factory()->create(['slug' => 'just-build-it-twice']);
+
+    return voiceLintDocument([], ['slug' => 'just-build-it-twice']);
 }
 
 /** @return list<LintHit> */
@@ -105,6 +116,11 @@ test('each voice rule fires on its seeded violation', function (string $ruleId, 
     'experience-claim' => ['experience-claim', voiceLintDocument([voiceLintParagraph('I have more than fifteen years of practice.')]), 1],
     'walkthrough-link' => ['walkthrough-link', voiceLintDocument([voiceLintParagraph('Bring one example of work that takes more than it should.')]), 1],
     'unresolved-markers' => ['unresolved-markers', voiceLintDocument([voiceLintParagraph('The report saves [NEED: proof] hours.')]), 1],
+    'seo-title-length' => ['seo-title-length', voiceLintDocument([], ['seo_title' => 'Do you need another admin hire']), 1],
+    'meta-description-length' => ['meta-description-length', voiceLintDocument([], ['description' => 'What I would check first when the team is full.']), 1],
+    'slug-shape' => ['slug-shape', voiceLintDocument([], ['slug' => 'Another_Admin_Hire']), 1],
+    'slug-archive-reuse' => ['slug-archive-reuse', fn (): LintTarget => voiceLintArchiveSlugTarget(), 1],
+    'title-sentence-case' => ['title-sentence-case', voiceLintDocument([], ['title' => "Why Another Hire Won't Fix It"]), 1],
 ]);
 
 test('each voice rule stays quiet on clean owner prose and near misses', function (string $ruleId, LintTarget $target) {
@@ -145,6 +161,11 @@ test('each voice rule stays quiet on clean owner prose and near misses', functio
     'experience-claim' => ['experience-claim', voiceLintDocument([voiceLintParagraph('I have fifteen years of practice, and more than 12 years with owners.')])],
     'walkthrough-link' => ['walkthrough-link', voiceLintDocument([voiceLintParagraph('Bring one example of work that takes more than it should.'), voiceLintWalkthrough()])],
     'unresolved-markers' => ['unresolved-markers', voiceLintDocument([voiceLintParagraph('The report saves an afternoon every week.')])],
+    'seo-title-length' => ['seo-title-length', voiceLintDocument([], ['seo_title' => 'Do you need another admin hire? What to check first'])],
+    'meta-description-length' => ['meta-description-length', voiceLintDocument([], ['description' => VOICE_LINT_OWNER_DESCRIPTION])],
+    'slug-shape' => ['slug-shape', voiceLintDocument([], ['slug' => 'another-admin-hire-what-to-check'])],
+    'slug-archive-reuse' => ['slug-archive-reuse', voiceLintDocument([], ['slug' => 'another-admin-hire-what-to-check'])],
+    'title-sentence-case' => ['title-sentence-case', voiceLintDocument([], ['title' => "Another admin hire won't fix it", 'seo_title' => 'Do You Need Another Admin Hire? What To Check First'])],
 ]);
 
 test('the walkthrough link fails without exactly one link in the closing section', function (LintTarget $target) {
@@ -166,16 +187,17 @@ test('the register examples in the voice canon pass every rule', function () {
     $content = array_map(fn (string $text, int $index): array => voiceLintParagraph($text, sprintf('blk_%016x', $index + 1)), voiceLintRegisterExamples(), array_keys(voiceLintRegisterExamples()));
     $content[] = voiceLintWalkthrough();
 
-    $hits = app(VoiceLinter::class)->lint(voiceLintDocument($content, ['title' => 'Why another admin hire will not fix the Friday report', 'description' => 'What I would check first when the team is full.']));
+    $hits = app(VoiceLinter::class)->lint(voiceLintDocument($content, ['title' => 'Why another admin hire will not fix the Friday report', 'description' => VOICE_LINT_OWNER_DESCRIPTION]));
 
     expect(voiceLintRegisterExamples())->not->toBeEmpty()
         ->and(array_map(fn (LintHit $hit): string => $hit->ruleId.': '.$hit->message, $hits))->toBe([]);
 });
 
-test('metadata gets the character rules but never sentence case', function () {
+test('metadata gets the character rules, and only the title gets sentence case', function () {
     $target = voiceLintDocument([voiceLintParagraph('A clean paragraph.'), voiceLintWalkthrough()], [
-        'title' => 'Agent Plan Pipeline — Explained',
-        'description' => 'The Friday report, finally fixed!',
+        'title' => 'Agent plan pipeline — explained',
+        'seo_title' => 'Do You Need Another Admin Hire? What To Check First',
+        'description' => substr(VOICE_LINT_OWNER_DESCRIPTION, 0, -1).'!',
     ]);
 
     $hits = app(VoiceLinter::class)->lint($target);
@@ -268,8 +290,11 @@ test('the drafter is sent every mechanical rule statement and every rule id', fu
     $documentDescription = (string) data_get($body, 'response_format.json_schema.schema.properties.document.description');
     preg_match_all('/^.*\[rule:[a-z0-9-]+\].*$/m', (string) file_get_contents(resource_path('publishing/canon/voice/mechanical-rules.md')), $statements);
 
-    expect($statements[0])->toHaveCount(21);
-    foreach ($statements[0] as $statement) {
+    preg_match_all('/^.*\[rule:[a-z0-9-]+\].*$/m', (string) file_get_contents(resource_path('publishing/canon/voice/metadata-rules.md')), $metadataStatements);
+
+    expect($statements[0])->toHaveCount(21)
+        ->and($metadataStatements[0])->toHaveCount(5);
+    foreach ([...$statements[0], ...$metadataStatements[0]] as $statement) {
         expect($system)->toContain($statement);
     }
     foreach (app(VoiceLinter::class)->ruleIds() as $ruleId) {

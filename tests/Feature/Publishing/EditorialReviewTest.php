@@ -37,7 +37,6 @@ test('initial draft writes only into an empty untouched manuscript', function ()
             'id' => 'gen-draft',
             'choices' => [['message' => ['content' => json_encode([
                 'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'AI draft']]],
-                'metadataProposals' => ['title' => 'AI Draft'],
             ])]]],
         ]),
     ]);
@@ -51,7 +50,7 @@ test('initial draft writes only into an empty untouched manuscript', function ()
     expect($article?->workingRevision?->origin)->toBe('agent-initial')
         ->and($article?->workingRevision?->document['content'][0]['content'][0]['text'])->toBe('AI draft')
         ->and($article?->workingRevision?->metadata['title'])->toBe('Review')
-        ->and($activity->fresh()?->proposal['metadata']['title'])->toBe('AI Draft');
+        ->and($activity->fresh()?->proposal)->not->toHaveKey('metadata');
 });
 
 test('a drafted level-one heading is demoted instead of discarding the draft', function (): void {
@@ -68,7 +67,6 @@ test('a drafted level-one heading is demoted instead of discarding the draft', f
                     ['type' => 'heading', 'attrs' => ['level' => 4], 'content' => [['type' => 'text', 'text' => 'A smaller heading']]],
                     ['type' => 'paragraph', 'text' => 'Body'],
                 ]],
-                'metadataProposals' => ['title' => 'Eight ways work gets stuck'],
             ])]]],
         ]),
     ]);
@@ -94,7 +92,6 @@ test('initial draft does not overwrite nested manuscript text', function (): voi
             'id' => 'gen-nested-draft',
             'choices' => [['message' => ['content' => json_encode([
                 'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'AI replacement']]],
-                'metadataProposals' => [],
             ])]]],
         ]),
     ]);
@@ -131,7 +128,6 @@ test('review lenses are queued only after draft completion on the drafted revisi
             'id' => 'gen-draft-review',
             'choices' => [['message' => ['content' => json_encode([
                 'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'Draft for review'], reviewClosingParagraph()]],
-                'metadataProposals' => ['title' => 'Proposed'],
             ])]]],
         ]),
     ]);

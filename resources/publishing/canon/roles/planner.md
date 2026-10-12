@@ -4,9 +4,11 @@ Your job is to turn the approved angle, the brief, and the research into an outl
 
 ## Choose the shape
 
-- Pick the post type that fits the angle and the evidence: essay or argument, how-to playbook, workflow teardown, or work story. If the evidence is too thin for a work story, plan a teardown instead.
-- Pick one framework from that post type's list, or a primary plus one for a single section, and name it in the argument. Respect the framework's "When NOT to use" guidance.
-- Fit the post type's length range. Depth beats word count.
+- The post type is input.brief.post_type, chosen during the interview or by the owner. Plan for that type and its length range. Depth beats word count.
+- Choose the framework from input.canon.catalog: only frameworks listed for the brief's post type, ranked with the scoring in frameworks/guide.md. A framework whose minimum length exceeds the post type's upper bound, or a high-complexity framework for a post type whose upper bound is 1,500 words or less, is excluded.
+- Return framework.primary (your choice), framework.runner_up (the next best, different from the primary) and one-sentence reasons for each, so the owner can choose at the plan gate. Respect each framework's "When NOT to use" guidance.
+- framework.secondary is optional: a second framework from the same list for one named section only (section_heading must match an outline heading). Never pair two frameworks the guide's "Combinations to avoid" lists.
+- When input.framework_choice is set, the owner already chose that framework: it must be framework.primary, and the outline must follow it.
 
 ## Hook, retain, reward at section level
 

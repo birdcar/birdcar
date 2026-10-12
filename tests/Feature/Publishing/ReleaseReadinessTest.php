@@ -37,7 +37,7 @@ test('release readiness reports blocking package completeness findings before pr
     $check = app(CheckArticleRelease::class)->check($actor, $attempt, $revision->id, 'missing-metadata');
 
     expect($check['blocking'])->toBeTrue()
-        ->and(array_column($check['findings'], 'code'))->toContain('metadata.description.required', 'metadata.date.required');
+        ->and(array_column($check['findings'], 'code'))->toContain('metadata.description.required', 'metadata.seo_title.required', 'metadata.date.required');
 
     expect(fn () => app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'missing-metadata'))
         ->toThrow(RuntimeException::class, 'Release readiness has blocking findings');
@@ -117,7 +117,7 @@ test('release freshness hashes evidence with blank resolved restrictions', funct
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
     $article = $write->captureIdea($actor, 'Blank restriction freshness.');
-    $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Blank Restriction Freshness'), 'blank-restriction-freshness-1');
+    $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Blank restriction freshness'), 'blank-restriction-freshness-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $source = EvidenceSource::create([
         'article_id' => $attempt->article_id,
@@ -214,7 +214,7 @@ test('completed review lineage is blocked by active same-revision review work', 
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
     $article = $write->captureIdea($actor, 'Active review work.');
-    $revision = $write->save($actor, $article, null, readinessDocument('Review work body.'), readinessMetadata('Active Review Work'), 'active-review-work-1');
+    $revision = $write->save($actor, $article, null, readinessDocument('Review work body.'), readinessMetadata('Active review work'), 'active-review-work-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
     foreach ([EditorialActivityKind::ReviewFacts->value => EditorialActivityStatus::Running, EditorialActivityKind::Reconciliation->value => EditorialActivityStatus::Failed] as $kind => $status) {
@@ -282,7 +282,7 @@ test('first publication packages and delivery use the validated metadata public 
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
     $article = $write->captureIdea($actor, 'First public date.');
-    $revision = $write->save($actor, $article, null, readinessDocument('First public body.'), readinessMetadata('First Public Date'), 'first-public-date-1');
+    $revision = $write->save($actor, $article, null, readinessDocument('First public body.'), readinessMetadata('First public date'), 'first-public-date-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
     $release = app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'first-public-date');
@@ -315,7 +315,7 @@ test('reasoned false-positive dispositions clear blockers but bare false positiv
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
     $article = $write->captureIdea($actor, 'False positive blockers.');
-    $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('False Positive Blockers'), 'false-positive-1');
+    $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('False positive blockers'), 'false-positive-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $finding = readinessFinding($attempt, $revision, ['disposition' => 'false_positive']);
 
@@ -572,10 +572,23 @@ function readinessMetadata(string $title): array
 {
     return [
         'title' => $title,
-        'description' => $title.' description.',
+        'seo_title' => readinessSeoTitle($title),
+        'description' => readinessDescription($title),
         'date' => '2024-01-01',
         'tags' => ['testing'],
     ];
+}
+
+/** A 50-60 character SEO title, so release checks reach the behavior under test. */
+function readinessSeoTitle(string $title): string
+{
+    return rtrim(mb_substr($title.' for owners who run a client service business and their teams', 0, 56));
+}
+
+/** A 150-160 character meta description, so release checks reach the behavior under test. */
+function readinessDescription(string $title): string
+{
+    return rtrim(mb_substr($title.' description. '.str_repeat('What an owner should check before the next hire. ', 4), 0, 156));
 }
 
 /**

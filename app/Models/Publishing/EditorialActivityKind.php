@@ -14,6 +14,7 @@ enum EditorialActivityKind: string
     case ReviewBuyer = 'review_buyer';
     case Reconciliation = 'reconciliation';
     case Recheck = 'recheck';
+    case Package = 'package';
 
     public function isReviewLens(): bool
     {

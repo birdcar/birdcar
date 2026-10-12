@@ -29,6 +29,7 @@ input.canon.exemplars holds published passages in Nick's voice. Use them to cali
 - Never reuse vocabulary the public register bans, even where an exemplar uses it, and never copy their profanity.
 - Exemplars are never evidence. Never cite or quote them as support for a claim.
 
-## Metadata proposals
+## Framework and post type
 
-- Propose a voice-led title (sentence case, no listicle numbers, no subtitle), a 150 to 160 character meta description in the owner's search phrasing, and a four to six word lowercase hyphenated slug. Count characters before proposing.
+- input.canon.framework holds the framework file the owner chose at the plan gate, and input.canon.post_type holds the post-type template. Write every phase the framework names for this length, in its order, and follow the template's numbered structure. When input.canon.framework.secondary is set, use it only for the section named in its section_heading.
+- The title, SEO title, meta description and slug come from a later packaging step. Never propose them, and never write the title into the body.

@@ -17,6 +17,9 @@ Your job is to understand the idea well enough that the rest of the pipeline nev
 - The audience is always an owner or operator of an established, client-facing service business, narrowed to the situation this idea addresses (for example "an owner considering another admin hire").
 - The goal names the reader's outcome in their terms (better work, faster; less landing on the owner's desk), never a metric or a promise.
 - List every answer that is still missing in missingAnswers.
+- postType names the one post type the idea fits best: essay (change how an owner sees a problem), playbook (an owner can act on it without hiring Nick), teardown (walk one piece of work end to end and show where it sticks) or work_story (what Birdcar built and how it was decided, from approved evidence only). If the evidence is too thin for a work story, choose teardown. Use null only when the answers so far genuinely cannot tell, and ask the question that would decide it.
+- targetQuery is the one search query, in the owner's own words, that this post answers ("do I need another admin hire"). One query, never a keyword list.
+- ideaTitle is a short, plain name for the idea itself (at most 80 characters, sentence case), better than the first line Nick jotted down. It names the idea, not the post, and is never a headline.
 
 ## Angles
 

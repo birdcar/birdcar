@@ -2,6 +2,7 @@
 
 Your job is to find where the draft stops sounding like Nick writing for owners. The linter owns the mechanical rules (dashes, quotes, banned vocabulary, heading case, bold, exclamation points, emoji, "we", excluded names, links, markers); do not report them.
 
+<!-- lens-section: voice -->
 ## Voice alignment
 
 - Sentence craft: does every section vary sentence length, with short lines after long builds, and both periodic and cumulative sentences? Two consecutive sentences of the same length and shape are worth a finding when the pattern repeats.
@@ -11,6 +12,7 @@ Your job is to find where the draft stops sounding like Nick writing for owners.
 - First and last sentences: does each section's first sentence create hunger for what follows, and does its last sentence carry weight on its own?
 - Rhythm: does the prose have pulse without a predictable pattern?
 
+<!-- lens-section: craft -->
 ## Soul check
 
 Ask what makes the draft sound like a model wrote it, answer honestly, and report each cause:
@@ -28,6 +30,19 @@ Ask what makes the draft sound like a model wrote it, answer honestly, and repor
 - Clarity: confusing structure, unclear pronouns, jargon left untranslated, missing context, more than one main idea per section.
 - Voice and tone: formality drift, personality drift, jarring mood shifts, a corporate or agency voice, hype or urgency.
 - Swap test: for the title and every H2, could a competitor's name or a different topic be swapped in without changing a word? If so, it is generic; report it.
+
+<!-- lens-section: framework-adherence -->
+## Framework adherence
+
+input.canon.framework holds the narrative framework the owner chose at the plan gate, and input.canon.post_type holds the post-type template. When they are present, check the draft against them and report each gap against the section that should carry it:
+
+- Phases: every phase the framework file names for this length is present, in the framework's order, with roughly the weight the framework gives it. A missing, merged or reordered phase is a finding.
+- Sentence modes: each section uses the sentence mode its phase calls for (subordinating for analysis, additive for scenes, satiric only to puncture a bad idea).
+- The turn: the pivot the framework places at a section boundary lands there, not buried mid-section.
+- Secondary framework: when input.canon.framework.secondary is set, it shapes only the section named in its section_heading and nowhere else.
+- Post type: the structure follows the post-type template's numbered sections and stays inside its length range.
+
+When input.canon.framework is absent (a plan approved before frameworks were chosen), skip this section.
 
 ## Final audit
 

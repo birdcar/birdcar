@@ -8,6 +8,7 @@ use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -16,6 +17,8 @@ use RuntimeException;
 
 class FinishEditorialReview
 {
+    public const PACKAGE_SUPERSEDED_REASON = 'A recheck started after packaging; packaging runs again once the recheck completes.';
+
     public function __construct(private readonly StartEditorialActivity $activities) {}
 
     /**
@@ -114,6 +117,7 @@ class FinishEditorialReview
             $activity = null;
             if ($shouldRecheck && ! (bool) $lockedAttempt->recheck_used) {
                 $lockedAttempt->forceFill(['recheck_used' => true])->save();
+                $this->staleEarlierPackages($lockedAttempt);
                 $activity = $this->activities->start($actor, $lockedAttempt->refresh(), EditorialActivityKind::Recheck, [
                     'reviewed_revision_id' => $expectedRevisionId,
                     'expected_revision_id' => $targetRevisionId,
@@ -122,10 +126,46 @@ class FinishEditorialReview
                 ], 'recheck-'.$lockedAttempt->review_cycle.'-'.$targetRevisionId);
             }
 
+            if ($activity === null) {
+                $this->startPackage($actor, $lockedAttempt->refresh(), $article, $targetRevision, $expectedRevisionId);
+            }
+
             return $activity;
         });
 
         return $activity;
+    }
+
+    /**
+     * Review is finished with no recheck queued, so packaging starts as a side effect; the caller still receives only the
+     * review work it queued. An actor who cannot start agent work, or a review that is not settled, starts nothing.
+     */
+    private function startPackage(User $actor, PublishingAttempt $attempt, Article $article, ArticleRevision $revision, int $reviewedRevisionId): void
+    {
+        $input = ['reviewed_revision_id' => $reviewedRevisionId, 'expected_revision_id' => (int) $revision->id];
+        if (! $actor->can(PublishingPermission::Develop->value) || $this->activities->packageEligibilityProblem($attempt, $article, $revision, $input) !== null) {
+            return;
+        }
+
+        $this->activities->start($actor, $attempt, EditorialActivityKind::Package, $input, StartEditorialActivity::packageBatchKey($attempt, (int) $revision->id));
+    }
+
+    /**
+     * A recheck that starts after packaging may change what the package describes, so the earlier package is set aside
+     * and packaging runs again once the recheck completes. A package already running finishes, and acceptance refuses it.
+     */
+    private function staleEarlierPackages(PublishingAttempt $attempt): void
+    {
+        EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::Package->value)
+            ->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Failed->value, EditorialActivityStatus::Paused->value, EditorialActivityStatus::Completed->value])
+            ->update([
+                'status' => EditorialActivityStatus::Stale->value,
+                'completed_at' => now(),
+                'error_reason' => self::PACKAGE_SUPERSEDED_REASON,
+            ]);
     }
 
     private function needsAffectedAreaRecheck(PublishingAttempt $attempt, int $revisionId, int $targetRevisionId, ?string $reviewedRevisionHash, ?string $targetRevisionHash): bool

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Publishing\AcceptPackageProposal;
 use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApplyEditorialProposal;
 use App\Actions\Publishing\ApprovePublishingStage;
@@ -22,6 +23,12 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
+use App\Models\Publishing\PieceKind;
+use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\FrameworkCatalog;
+use App\Services\Publishing\Lint\LintHit;
+use App\Services\Publishing\Lint\LintTarget;
+use App\Services\Publishing\Lint\VoiceLinter;
 use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +62,11 @@ new #[Layout('layouts.admin')] class extends Component
     public string $releaseSlug = '';
     public string $releaseScheduledAt = '';
     public string $releaseScheduledTimezone = '';
+    public string $postType = '';
+    public string $frameworkChoice = '';
+
+    /** @var array{title: string, seo_title: string, description: string, slug: string, greatest_hits_tag: string} */
+    public array $package = ['title' => '', 'seo_title' => '', 'description' => '', 'slug' => '', 'greatest_hits_tag' => ''];
 
     /** @var list<int> */
     public array $selectedEvidenceSourceIds = [];
@@ -80,7 +92,7 @@ new #[Layout('layouts.admin')] class extends Component
         $this->article = $article->load(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
         $this->ideaTitle = $article->contentIdea->summary_title;
         $this->currentRevisionId = $article->working_revision_id;
-        $this->releaseSlug = (string) $article->slug;
+        $this->releaseSlug = (string) ($article->workingRevision?->metadata['slug'] ?? $article->slug);
         $this->releaseScheduledTimezone = (string) (auth()->user()?->timezone ?? config('app.timezone', 'UTC'));
         $revision = $article->workingRevision;
         if ($revision instanceof ArticleRevision) {
@@ -89,6 +101,7 @@ new #[Layout('layouts.admin')] class extends Component
         }
         $this->details = ['title' => (string) ($this->metadata['title'] ?? ''), 'description' => (string) ($this->metadata['description'] ?? ''), 'date' => (string) ($this->metadata['date'] ?? $article->first_published_at?->toDateString() ?? now()->toDateString())];
         $this->hydrateAgentSelectionsFromAttempt();
+        $this->hydratePackageFromLatestProposal();
         $this->refreshApprovalInputs();
     }
 
@@ -155,6 +168,166 @@ new #[Layout('layouts.admin')] class extends Component
         $this->selectedEvidenceSourceIds = is_array($context['selected_evidence_source_ids'] ?? null) ? array_values(array_map('intval', $context['selected_evidence_source_ids'])) : [];
         $selectedAngle = $context['selected_angle_option'] ?? '';
         $this->selectedAngleOptionKey = is_scalar($selectedAngle) ? (string) $selectedAngle : '';
+        $this->hydrateStructureChoices();
+    }
+
+    /** The post type and framework the attempt holds now, for example after an interview or a plan finished. */
+    private function hydrateStructureChoices(): void
+    {
+        $attempt = $this->article->currentAttempt;
+        $postType = $attempt instanceof PublishingAttempt ? data_get($attempt->brief, 'post_type') : null;
+        $this->postType = is_string($postType) ? $postType : '';
+        $framework = $attempt instanceof PublishingAttempt ? data_get($attempt->plan, 'framework') : null;
+        $choice = is_array($framework) ? ($framework['chosen'] ?? $framework['primary'] ?? null) : null;
+        $this->frameworkChoice = is_string($choice) ? $choice : '';
+    }
+
+    /** The package panel starts from the latest completed package of this review cycle. */
+    private function hydratePackageFromLatestProposal(): void
+    {
+        $proposal = $this->latestPackage()?->proposal;
+        if (! is_array($proposal)) {
+            return;
+        }
+
+        foreach (array_keys($this->package) as $field) {
+            $this->package[$field] = is_string($proposal[$field] ?? null) ? $proposal[$field] : '';
+        }
+    }
+
+    private function latestPackage(): ?EditorialActivity
+    {
+        $attempt = $this->article->currentAttempt;
+
+        return $attempt === null ? null : $attempt->editorialActivities()
+            ->where('review_cycle', $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::Package->value)
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->latest('id')
+            ->first();
+    }
+
+    public function choosePostType(?AdvancePublishingAttempt $advance = null): void
+    {
+        Gate::authorize('develop', $this->article);
+        $attempt = $this->article->currentAttempt;
+        if ($attempt === null) {
+            $this->saveError = 'No active publishing attempt exists.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            ($advance ?? app(AdvancePublishingAttempt::class))->choosePostType(auth()->user(), $attempt, $this->postType);
+            $this->article = $this->article->fresh(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', 'Post type saved.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function chooseFramework(string $slug = '', ?AdvancePublishingAttempt $advance = null): void
+    {
+        Gate::authorize('develop', $this->article);
+        $attempt = $this->article->currentAttempt;
+        if ($attempt === null) {
+            $this->saveError = 'No active publishing attempt exists.';
+            return;
+        }
+
+        $slug = $slug !== '' ? $slug : $this->frameworkChoice;
+
+        try {
+            $this->saveError = null;
+            $replan = ($advance ?? app(AdvancePublishingAttempt::class))->chooseFramework(auth()->user(), $attempt, $slug);
+            $this->frameworkChoice = $slug;
+            $this->article = $this->article->fresh(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', $replan === null ? 'Framework chosen. The plan is ready for your approval.' : 'Re-planning with the framework you chose.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function acceptPackageProposal(int $activityId, ?AcceptPackageProposal $packages = null): void
+    {
+        Gate::authorize('approve', $this->article);
+        Gate::authorize('update', $this->article);
+        $limits = AcceptPackageProposal::LIMITS;
+        $validated = $this->validate([
+            'package.title' => ['required', 'string', 'max:'.$limits['title']],
+            'package.seo_title' => ['required', 'string', 'max:'.$limits['seo_title']],
+            'package.description' => ['required', 'string', 'max:'.$limits['description']],
+            'package.slug' => ['required', 'string', 'max:'.$limits['slug']],
+            'package.greatest_hits_tag' => ['required', 'string', 'max:'.$limits['greatest_hits_tag']],
+        ]);
+        $package = EditorialActivity::query()->where('article_id', $this->article->id)->where('kind', EditorialActivityKind::Package->value)->findOrFail($activityId);
+
+        try {
+            $this->saveError = null;
+            $baseRevisionId = $this->currentRevisionId;
+            $revision = ($packages ?? app(AcceptPackageProposal::class))->accept(auth()->user(), $package, $validated['package'], (int) $baseRevisionId);
+            $this->currentRevisionId = (int) $revision->id;
+            $this->document = $revision->document ?? $this->document;
+            $this->metadata = $revision->metadata ?? $this->metadata;
+            $this->details['title'] = (string) ($this->metadata['title'] ?? '');
+            $this->details['description'] = (string) ($this->metadata['description'] ?? '');
+            $this->releaseSlug = (string) ($this->metadata['slug'] ?? $this->releaseSlug);
+            $this->article = $this->article->fresh(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            $this->notifyEditor($baseRevisionId);
+            session()->flash('status', 'Titles and search details saved to your article.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    /**
+     * The metadata rules and character rules the package fields break as typed, so the owner sees them before saving.
+     *
+     * @return list<string>
+     */
+    private function packageLintMessages(): array
+    {
+        $target = LintTarget::fromDocument([], [
+            'title' => $this->package['title'],
+            'seo_title' => $this->package['seo_title'],
+            'description' => $this->package['description'],
+            'slug' => $this->package['slug'],
+        ], PieceKind::BlogPost, (int) $this->article->id);
+
+        return array_map(static fn (LintHit $hit): string => $hit->message, app(VoiceLinter::class)->lint($target));
+    }
+
+    /**
+     * The frameworks the owner may pick at the plan gate: the plan's primary and runner-up with their reasons first,
+     * then every other framework the post type allows.
+     *
+     * @return list<array{slug: string, name: string, role: string, reason: string|null}>
+     */
+    private function frameworkOptions(FrameworkCatalog $catalog, ?PublishingAttempt $attempt): array
+    {
+        $framework = $attempt === null ? null : data_get($attempt->plan, 'framework');
+        $postType = $attempt === null ? null : data_get($attempt->brief, 'post_type');
+        if (! is_array($framework) || ! is_string($postType)) {
+            return [];
+        }
+
+        $options = [];
+        foreach (['primary' => 'Recommended', 'runner_up' => 'Runner-up'] as $key => $role) {
+            $slug = $framework[$key] ?? null;
+            if (is_string($slug) && $slug !== '') {
+                $reason = data_get($framework, 'reasons.'.$key);
+                $options[$slug] = ['slug' => $slug, 'name' => $catalog->frameworkName($slug), 'role' => $role, 'reason' => is_string($reason) ? $reason : null];
+            }
+        }
+
+        foreach ($catalog->allowedFor($postType) as $slug) {
+            $options[$slug] ??= ['slug' => $slug, 'name' => $catalog->frameworkName($slug), 'role' => 'Also allowed', 'reason' => null];
+        }
+
+        return array_values($options);
     }
 
     /**
@@ -378,6 +551,10 @@ new #[Layout('layouts.admin')] class extends Component
                 }
             }
             $this->notifyEditor($baseRevisionId);
+        }
+        $this->hydrateStructureChoices();
+        if (array_filter($this->package) === []) {
+            $this->hydratePackageFromLatestProposal();
         }
         $this->refreshApprovalInputs();
     }
@@ -906,6 +1083,8 @@ new #[Layout('layouts.admin')] class extends Component
         $working = $activities->contains(fn ($activity) => in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true));
         $angleApproved = $attempt?->approvals->contains(fn ($approval) => $approval->kind === ApprovalKind::Angle && $approval->invalidated_at === null) ?? false;
         $planApproved = $attempt?->approvals->contains(fn ($approval) => $approval->kind === ApprovalKind::Plan && $approval->invalidated_at === null) ?? false;
+        $catalog = FrameworkCatalog::fromSnapshot(app(VoiceCanon::class)->snapshot());
+        $packageActivity = $this->latestPackage();
         $sessionMode = match ($stage) {
             EditorialStage::InReview => 'write',
             EditorialStage::Approved, EditorialStage::Scheduled, EditorialStage::Published => 'release',
@@ -946,6 +1125,14 @@ new #[Layout('layouts.admin')] class extends Component
             'evidenceSources' => $sources,
             'voiceCanonVersion' => Str::substr(app(VoiceCanon::class)->snapshot()->version, 0, 12),
             'interviewContext' => $interviewContext,
+            'postTypeOptions' => collect($catalog->postTypeSlugs())->mapWithKeys(fn (string $slug): array => [$slug => $catalog->postTypeLabel($slug)])->all(),
+            'postTypeLabel' => is_string(data_get($attempt?->brief, 'post_type')) ? $catalog->postTypeLabel((string) data_get($attempt?->brief, 'post_type')) : null,
+            'frameworkOptions' => $this->frameworkOptions($catalog, $attempt),
+            'frameworkChosen' => is_string(data_get($attempt?->plan, 'framework.chosen')) ? $catalog->frameworkName((string) data_get($attempt?->plan, 'framework.chosen')) : null,
+            'planning' => $activities->contains(fn ($activity) => $activity->kind === EditorialActivityKind::Plan && in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true)),
+            'packageActivity' => $packageActivity,
+            'packageLintMessages' => $packageActivity === null ? [] : $this->packageLintMessages(),
+            'packageTitleOptionCount' => EditorialOutput::PACKAGE_TITLE_OPTIONS,
         ];
     }
 };

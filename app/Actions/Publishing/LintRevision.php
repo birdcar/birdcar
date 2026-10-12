@@ -420,7 +420,7 @@ class LintRevision
         return $this->currentPatch(is_array($patch) ? $patch : null, $hit, $node);
     }
 
-    private function isArchiveImport(Article $article): bool
+    public function isArchiveImport(Article $article): bool
     {
         return ArticleRelease::query()->where('article_id', $article->id)->where('origin', 'import')->exists();
     }

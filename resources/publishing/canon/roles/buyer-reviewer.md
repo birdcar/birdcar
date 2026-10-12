@@ -2,6 +2,7 @@
 
 Your job is to read the draft as the owner it is written for and find where it fails to earn their attention, their belief, or their next step.
 
+<!-- lens-section: buyer -->
 ## The value equation
 
 Run these four questions against the draft. A weak answer is a finding against the section that should carry it.
@@ -11,6 +12,7 @@ Run these four questions against the draft. A weak answer is a finding against t
 3. Time delay: what is the first sign it is working, and how soon? Is there a small first move the reader can make this week?
 4. Effort and sacrifice: what does the reader not have to do (diagnose the process, specify software, learn a new tool)? Is the real effort named honestly?
 
+<!-- lens-section: discovery -->
 ## The publishing test
 
 - Could a stranger tell from the title and first sentence whether this is their problem?
@@ -26,6 +28,7 @@ Run these four questions against the draft. A weak answer is a finding against t
 - Make the before state concrete: is the reader's current situation shown as a real, recognizable scene, without manipulation, scarcity, or loss-aversion framing?
 - Zero risk: report friction near the invitation, unanswered objections, missing trust signals, unclear next steps, or hidden costs.
 
+<!-- lens-section: commercial-structure -->
 ## Answer-first and the invitation
 
 - The first passage answers the target question in 40 to 60 words with the subject named, and the target phrase appears within the first 100 words and in one question H2.

@@ -1,0 +1,28 @@
+{
+    "post_types": {
+        "essay": {"label": "Essay or argument", "template": "post-types/essay.md", "words": [1500, 2500], "frameworks": ["the-false-start", "the-sparkline", "the-dialectic", "the-jeremiad", "the-montaigne"]},
+        "playbook": {"label": "How-to playbook", "template": "post-types/playbook.md", "words": [1200, 2000], "frameworks": ["socratic-path", "the-petal", "three-act"]},
+        "teardown": {"label": "Workflow teardown", "template": "post-types/teardown.md", "words": [1200, 2000], "frameworks": ["in-medias-res", "reverse-chronology", "kafkaesque-labyrinth", "strangers-report"]},
+        "work_story": {"label": "Work story", "template": "post-types/work-story.md", "words": [800, 1500], "frameworks": ["story-circle", "three-act"]}
+    },
+    "frameworks": {
+        "three-act": {"name": "Three-Act Structure", "file": "frameworks/three-act.md", "complexity": "low", "min_words": 800},
+        "story-circle": {"name": "Story Circle", "file": "frameworks/story-circle.md", "complexity": "medium", "min_words": 800},
+        "kafkaesque-labyrinth": {"name": "Kafkaesque Labyrinth", "file": "frameworks/kafkaesque-labyrinth.md", "complexity": "high", "min_words": 800},
+        "strangers-report": {"name": "Stranger's Report", "file": "frameworks/strangers-report.md", "complexity": "medium", "min_words": 800},
+        "in-medias-res": {"name": "In Medias Res", "file": "frameworks/in-medias-res.md", "complexity": "low", "min_words": 800},
+        "reverse-chronology": {"name": "Reverse Chronology", "file": "frameworks/reverse-chronology.md", "complexity": "high", "min_words": 800},
+        "the-sparkline": {"name": "The Sparkline", "file": "frameworks/the-sparkline.md", "complexity": "medium", "min_words": 800},
+        "the-petal": {"name": "The Petal", "file": "frameworks/the-petal.md", "complexity": "low", "min_words": 800},
+        "the-false-start": {"name": "The False Start", "file": "frameworks/the-false-start.md", "complexity": "low", "min_words": 800},
+        "socratic-path": {"name": "The Socratic Path", "file": "frameworks/socratic-path.md", "complexity": "medium", "min_words": 800},
+        "the-dialectic": {"name": "The Dialectic", "file": "frameworks/the-dialectic.md", "complexity": "medium", "min_words": 800},
+        "the-jeremiad": {"name": "The Jeremiad", "file": "frameworks/the-jeremiad.md", "complexity": "high", "min_words": 1500},
+        "the-montaigne": {"name": "The Montaigne", "file": "frameworks/the-montaigne.md", "complexity": "low", "min_words": 800}
+    },
+    "avoid_combinations": [
+        ["the-dialectic", "the-false-start"],
+        ["the-montaigne", "the-sparkline"],
+        ["kafkaesque-labyrinth", "socratic-path"]
+    ]
+}

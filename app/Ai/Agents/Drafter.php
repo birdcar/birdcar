@@ -14,7 +14,7 @@ class Drafter extends EditorialAgent
 
     protected function roleInstructions(): string
     {
-        return 'Drafting: write the approved plan in Nick\'s public voice as a JSON-encoded Tiptap document with bounded metadata proposals, preserving protected structure and evidence boundaries.';
+        return 'Drafting: write the approved plan in Nick\'s public voice as a JSON-encoded Tiptap document that follows the chosen framework and post-type template, preserving protected structure and evidence boundaries. Titles and other metadata come from packaging later.';
     }
 
     protected function roleReasoningEffort(): string

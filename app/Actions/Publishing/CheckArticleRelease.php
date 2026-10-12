@@ -10,6 +10,7 @@ use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
@@ -67,6 +68,11 @@ class CheckArticleRelease
 
         if (trim((string) ($metadata['description'] ?? '')) === '') {
             $findings[] = $this->finding('blocking', 'metadata.description.required', '$.metadata.description', 'A public description is required.', 'Add the final public description before preparing the release.');
+        }
+
+        // Packaging gives new blog posts an SEO title; archive essays keep their published metadata.
+        if ($article->kind === PieceKind::BlogPost && trim((string) ($metadata['seo_title'] ?? '')) === '' && ! $this->lint->isArchiveImport($article)) {
+            $findings[] = $this->finding('blocking', 'metadata.seo_title.required', '$.metadata.seo_title', 'An SEO title is required.', 'Accept a package or add a 50 to 60 character SEO title before preparing the release.');
         }
 
         try {

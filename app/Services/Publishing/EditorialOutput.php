@@ -2,35 +2,60 @@
 
 namespace App\Services\Publishing;
 
+use App\Models\ContentIdea;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\PieceKind;
+use App\Services\Publishing\Lint\LintHit;
+use App\Services\Publishing\Lint\LintTarget;
+use App\Services\Publishing\Lint\VoiceLinter;
 use InvalidArgumentException;
 
 class EditorialOutput
 {
     public const VERSION = 2;
 
+    /** Packaging proposes exactly this many title options before choosing one. */
+    public const PACKAGE_TITLE_OPTIONS = 10;
+
+    /** The greatest-hits tag is a short internal label, never public prose. */
+    public const GREATEST_HITS_TAG_LIMIT = 80;
+
     /**
      * @param  array<string, mixed>  $payload
      * @param  list<int|string>  $knownEvidenceIds
      * @param  array<int|string, string|null>  $evidenceTextsById
-     * @param  array<string, mixed>  $frozenRepairInput  the hits and blocks a lint repair was frozen with
+     * @param  array<string, mixed>  $frozenInput  the input the activity was frozen with: a repair's hits and blocks, the
+     *                                             plan's brief, catalog and framework choice, the package's article
      * @return array<string, mixed>
      */
-    public function validate(EditorialActivityKind $kind, array $payload, array $knownEvidenceIds = [], array $evidenceTextsById = [], array $frozenRepairInput = []): array
+    public function validate(EditorialActivityKind $kind, array $payload, array $knownEvidenceIds = [], array $evidenceTextsById = [], array $frozenInput = []): array
     {
         $payload = $this->normalizeJsonEncodedFields($payload);
         $this->rejectUnknownOversized($payload, $this->allowedKeys($kind));
 
         return match ($kind) {
-            EditorialActivityKind::Interview => $this->validateInterview($payload),
+            EditorialActivityKind::Interview => $this->validateInterview($payload, $frozenInput),
             EditorialActivityKind::ResearchChallenge => $this->validateResearch($payload, $knownEvidenceIds, $evidenceTextsById),
-            EditorialActivityKind::Plan => $this->validatePlan($payload),
+            EditorialActivityKind::Plan => $this->validatePlan($payload, $frozenInput),
             EditorialActivityKind::Draft => $this->validateDraft($payload),
-            EditorialActivityKind::LintRepair => $this->validateLintRepair($payload, $frozenRepairInput),
+            EditorialActivityKind::LintRepair => $this->validateLintRepair($payload, $frozenInput),
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Reconciliation => $this->validateReconciliation($payload),
             EditorialActivityKind::Recheck => $this->validateRecheck($payload, $knownEvidenceIds, $evidenceTextsById),
+            EditorialActivityKind::Package => $this->validatePackage($payload, $frozenInput),
         };
+    }
+
+    /**
+     * The catalog the activity was frozen with; activities frozen before the catalog existed fall back to the live canon.
+     *
+     * @param  array<string, mixed>  $frozenInput
+     */
+    public static function frameworkCatalog(array $frozenInput): FrameworkCatalog
+    {
+        $frozen = data_get($frozenInput, 'canon.catalog');
+
+        return is_array($frozen) ? FrameworkCatalog::fromArray($frozen) : FrameworkCatalog::fromSnapshot(app(VoiceCanon::class)->snapshot());
     }
 
     /**
@@ -56,12 +81,13 @@ class EditorialOutput
         return match ($kind) {
             EditorialActivityKind::Interview => ['questions', 'brief', 'angleOptions'],
             EditorialActivityKind::ResearchChallenge => ['claims', 'sourceReferences', 'contradictions', 'gaps'],
-            EditorialActivityKind::Plan => ['outline', 'argument', 'visualPlan'],
-            EditorialActivityKind::Draft => ['document', 'metadataProposals'],
+            EditorialActivityKind::Plan => ['outline', 'argument', 'visualPlan', 'framework'],
+            EditorialActivityKind::Draft => ['document'],
             EditorialActivityKind::LintRepair => ['patches'],
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => ['findings'],
             EditorialActivityKind::Reconciliation => ['groups', 'conflicts'],
             EditorialActivityKind::Recheck => ['resolved', 'unresolved', 'newBlockingFindings'],
+            EditorialActivityKind::Package => ['titleOptions', 'title', 'seoTitle', 'description', 'slug', 'greatestHitsTag'],
         };
     }
 
@@ -71,7 +97,7 @@ class EditorialOutput
      */
     private function normalizeJsonEncodedFields(array $payload): array
     {
-        foreach (['document', 'metadataProposals', 'proposed_patch'] as $key) {
+        foreach (['document', 'proposed_patch'] as $key) {
             if (array_key_exists($key, $payload)) {
                 $payload[$key] = $this->decodeJsonField($payload[$key], $key);
             }
@@ -143,13 +169,36 @@ class EditorialOutput
     }
 
     /**
+     * A null post type is allowed (the owner picks one before angle approval); any other value must be in the catalog.
+     *
      * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $frozenInput
      * @return array<string, mixed>
      */
-    private function validateInterview(array $payload): array
+    private function validateInterview(array $payload, array $frozenInput): array
     {
         if (! is_array($payload['questions'] ?? null) || ! is_array($payload['brief'] ?? null) || ! is_array($payload['angleOptions'] ?? null)) {
             throw new InvalidArgumentException('Interview output must include questions, brief and angle options.');
+        }
+
+        $brief = $payload['brief'];
+        $postType = $brief['postType'] ?? null;
+        if ($postType !== null) {
+            $catalog = self::frameworkCatalog($frozenInput);
+            if (! is_string($postType) || ! $catalog->hasPostType($postType)) {
+                throw new InvalidArgumentException('Interview brief post type must be one of: '.implode(', ', $catalog->postTypeSlugs()).'.');
+            }
+        }
+
+        foreach (['targetQuery', 'ideaTitle'] as $key) {
+            if (($brief[$key] ?? null) !== null && ! is_string($brief[$key])) {
+                throw new InvalidArgumentException('Interview brief '.$key.' must be text or null.');
+            }
+        }
+
+        $ideaTitle = is_string($brief['ideaTitle'] ?? null) ? trim($brief['ideaTitle']) : '';
+        if (mb_strlen($ideaTitle) > ContentIdea::DERIVED_TITLE_LIMIT) {
+            throw new InvalidArgumentException('Interview idea title is '.mb_strlen($ideaTitle).' characters; it must be at most '.ContentIdea::DERIVED_TITLE_LIMIT.'.');
         }
 
         return $payload;
@@ -226,12 +275,16 @@ class EditorialOutput
     }
 
     /**
+     * The framework proposal is judged against the brief's post type and the catalog frozen into the plan, so a re-plan
+     * validates against the same canon version. A re-plan must keep the framework the owner chose.
+     *
      * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $frozenInput
      * @return array<string, mixed>
      */
-    private function validatePlan(array $payload): array
+    private function validatePlan(array $payload, array $frozenInput): array
     {
-        foreach (['outline', 'argument', 'visualPlan'] as $key) {
+        foreach (['outline', 'argument', 'visualPlan', 'framework'] as $key) {
             if (! array_key_exists($key, $payload)) {
                 throw new InvalidArgumentException('Plan output must include '.$key.'.');
             }
@@ -245,6 +298,27 @@ class EditorialOutput
             throw new InvalidArgumentException('Plan argument must be a non-empty string.');
         }
 
+        $framework = $payload['framework'];
+        if (! is_array($framework)) {
+            throw new InvalidArgumentException('Plan framework must be an object with a primary, a runner-up and their reasons.');
+        }
+
+        $catalog = self::frameworkCatalog($frozenInput);
+        $postType = data_get($frozenInput, 'brief.post_type');
+        if (! is_string($postType) || trim($postType) === '') {
+            throw new InvalidArgumentException('Planning needs a post type in the brief; choose one of '.implode(', ', $catalog->postTypeSlugs()).' before planning.');
+        }
+
+        $errors = $catalog->validate($framework, $postType);
+        $choice = $frozenInput['framework_choice'] ?? null;
+        if (is_string($choice) && $choice !== '' && ($framework['primary'] ?? null) !== $choice) {
+            $errors[] = 'The owner chose "'.$choice.'", so it must be the primary framework of this plan.';
+        }
+
+        if ($errors !== []) {
+            throw new InvalidArgumentException('Plan framework is invalid: '.implode(' ', $errors));
+        }
+
         return $payload;
     }
 
@@ -254,8 +328,61 @@ class EditorialOutput
      */
     private function validateDraft(array $payload): array
     {
-        if (! is_array($payload['document'] ?? null) || ! is_array($payload['metadataProposals'] ?? null)) {
-            throw new InvalidArgumentException('Draft output must include document and metadata proposals.');
+        if (! is_array($payload['document'] ?? null)) {
+            throw new InvalidArgumentException('Draft output must include a document.');
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Every metadata hit fails the package, so the owner never receives a proposal that release would block. Lengths
+     * are measured in characters as written, and the reason carries the measured length for the retry.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $frozenInput
+     * @return array<string, mixed>
+     */
+    private function validatePackage(array $payload, array $frozenInput): array
+    {
+        $options = $payload['titleOptions'] ?? null;
+        if (! is_array($options) || ! array_is_list($options) || count($options) !== self::PACKAGE_TITLE_OPTIONS) {
+            throw new InvalidArgumentException('Package output must include exactly '.self::PACKAGE_TITLE_OPTIONS.' title options; it had '.(is_array($options) ? count($options) : 0).'.');
+        }
+
+        $seen = [];
+        foreach ($options as $option) {
+            if (! is_string($option) || trim($option) === '') {
+                throw new InvalidArgumentException('Every package title option must be non-empty text.');
+            }
+            $key = mb_strtolower(trim($option));
+            if (isset($seen[$key])) {
+                throw new InvalidArgumentException('Package title options must be distinct; "'.trim($option).'" appears twice.');
+            }
+            $seen[$key] = true;
+        }
+
+        foreach (['title' => 'title', 'seoTitle' => 'SEO title', 'description' => 'meta description', 'slug' => 'slug', 'greatestHitsTag' => 'greatest-hits tag'] as $key => $label) {
+            if (! is_string($payload[$key] ?? null) || trim($payload[$key]) === '') {
+                throw new InvalidArgumentException('Package output must include a '.$label.'.');
+            }
+        }
+
+        $tagLength = mb_strlen(trim((string) $payload['greatestHitsTag']));
+        if ($tagLength > self::GREATEST_HITS_TAG_LIMIT) {
+            throw new InvalidArgumentException('Greatest-hits tag is '.$tagLength.' characters; it must be at most '.self::GREATEST_HITS_TAG_LIMIT.'.');
+        }
+
+        $articleId = $frozenInput['article_id'] ?? null;
+        $target = LintTarget::fromDocument([], [
+            'title' => (string) $payload['title'],
+            'seo_title' => (string) $payload['seoTitle'],
+            'description' => (string) $payload['description'],
+            'slug' => (string) $payload['slug'],
+        ], PieceKind::BlogPost, is_numeric($articleId) ? (int) $articleId : null);
+        $hits = app(VoiceLinter::class)->lint($target);
+        if ($hits !== []) {
+            throw new InvalidArgumentException(implode(' ', array_map(static fn (LintHit $hit): string => $hit->message, $hits)));
         }
 
         return $payload;

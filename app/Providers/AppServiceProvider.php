@@ -18,10 +18,15 @@ use App\Services\Publishing\Lint\Rules\FillerPhrases;
 use App\Services\Publishing\Lint\Rules\HeadingOrder;
 use App\Services\Publishing\Lint\Rules\InlineHeaderList;
 use App\Services\Publishing\Lint\Rules\LabelHeadings;
+use App\Services\Publishing\Lint\Rules\MetaDescriptionLength;
 use App\Services\Publishing\Lint\Rules\NegativeParallelism;
 use App\Services\Publishing\Lint\Rules\PublicVocabulary;
 use App\Services\Publishing\Lint\Rules\SentenceCaseHeadings;
+use App\Services\Publishing\Lint\Rules\SeoTitleLength;
+use App\Services\Publishing\Lint\Rules\SlugArchiveReuse;
+use App\Services\Publishing\Lint\Rules\SlugShape;
 use App\Services\Publishing\Lint\Rules\StockOpeners;
+use App\Services\Publishing\Lint\Rules\TitleSentenceCase;
 use App\Services\Publishing\Lint\Rules\UnresolvedMarkers;
 use App\Services\Publishing\Lint\Rules\WalkthroughLink;
 use App\Services\Publishing\Lint\VoiceLinter;
@@ -68,6 +73,11 @@ class AppServiceProvider extends ServiceProvider
             ExperienceClaim::class,
             WalkthroughLink::class,
             UnresolvedMarkers::class,
+            SeoTitleLength::class,
+            MetaDescriptionLength::class,
+            SlugShape::class,
+            SlugArchiveReuse::class,
+            TitleSentenceCase::class,
         ], VoiceLinter::TAG);
     }
 

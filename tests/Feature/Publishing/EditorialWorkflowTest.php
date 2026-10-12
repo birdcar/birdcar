@@ -301,13 +301,18 @@ test('agent generated plan is persisted displayed approved by human and gates dr
                 'outline' => [['heading' => 'Lead with the owner problem']],
                 'argument' => 'The article should explain the publishing control loop.',
                 'visualPlan' => [['slot' => 'hero', 'description' => 'Workflow diagram']],
+                'framework' => [
+                    'primary' => 'three-act',
+                    'runner_up' => 'the-petal',
+                    'reasons' => ['primary' => 'One throughline from problem to loop.', 'runner_up' => 'Each control could stand alone.'],
+                    'secondary' => null,
+                ],
             ])]]],
         ],
         [
             'id' => 'gen-draft-pipeline',
             'choices' => [['message' => ['content' => json_encode([
                 'document' => editorialDocument('Agent drafted manuscript.'),
-                'metadataProposals' => [],
             ])]]],
         ],
         [
@@ -336,8 +341,8 @@ test('agent generated plan is persisted displayed approved by human and gates dr
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
     $article = $write->captureIdea($actor, 'Agent plan pipeline.');
-    $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], editorialMetadata('Agent Plan Pipeline'), 'agent-plan-empty-draft');
-    $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Show the pipeline']);
+    $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], editorialMetadata('Agent plan pipeline'), 'agent-plan-empty-draft');
+    $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Show the pipeline', 'post_type' => 'playbook']);
 
     expect(EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', EditorialActivityKind::ResearchChallenge->value)->exists())->toBeFalse();
 
@@ -354,6 +359,11 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         ->and(EditorialActivity::query()->where('attempt_id', $attempt?->id)->where('kind', EditorialActivityKind::Plan->value)->where('status', EditorialActivityStatus::Completed->value)->exists())->toBeTrue()
         ->and(EditorialActivity::query()->where('attempt_id', $attempt?->id)->where('kind', EditorialActivityKind::Draft->value)->exists())->toBeFalse();
 
+    expect(fn () => $approve->approve($actor, $attempt, ApprovalKind::Plan, $approve->inputHashFor($attempt, ApprovalKind::Plan)))
+        ->toThrow(RuntimeException::class, 'Plan approval requires a chosen narrative framework');
+
+    $advance->chooseFramework($actor, $attempt, 'three-act');
+    $attempt = $attempt->fresh() ?? throw new RuntimeException('The attempt disappeared.');
     $approve->approve($actor, $attempt, ApprovalKind::Plan, $approve->inputHashFor($attempt, ApprovalKind::Plan));
     drainEditorialActivities(1);
 
@@ -397,7 +407,7 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         ->and($reviewPrompt)->not->toHaveKey('input.voice_context')
         ->and((string) data_get($reviewRequest, 'messages.0.content'))->toContain('## Business goals')
         ->and(str_contains(json_encode($reviewPrompt, JSON_THROW_ON_ERROR), 'Altered later manuscript'))->toBeFalse()
-        ->and(data_get($planRequest, 'response_format.json_schema.schema.required'))->toBe(['outline', 'argument', 'visualPlan'])
+        ->and(data_get($planRequest, 'response_format.json_schema.schema.required'))->toBe(['outline', 'argument', 'visualPlan', 'framework'])
         ->and(data_get($reviewRequest, 'response_format.json_schema.schema.properties.findings.items.properties.supporting_quotations.items.properties.quote.type'))->toBe('string');
 });
 
@@ -582,10 +592,23 @@ function editorialMetadata(string $title): array
 {
     return [
         'title' => $title,
-        'description' => $title.' description.',
+        'seo_title' => editorialSeoTitle($title),
+        'description' => editorialDescription($title),
         'date' => '2024-01-01',
         'tags' => [],
     ];
+}
+
+/** A 50-60 character SEO title, so release checks reach the behavior under test. */
+function editorialSeoTitle(string $title): string
+{
+    return rtrim(mb_substr($title.' for owners who run a client service business and their teams', 0, 56));
+}
+
+/** A 150-160 character meta description, so release checks reach the behavior under test. */
+function editorialDescription(string $title): string
+{
+    return rtrim(mb_substr($title.' description. '.str_repeat('What an owner should check before the next hire. ', 4), 0, 156));
 }
 
 /**

@@ -1,5 +1,9 @@
 <?php
 
+use App\Actions\Publishing\AcceptPackageProposal;
+use App\Actions\Publishing\AdvancePublishingAttempt;
+use App\Actions\Publishing\RunEditorialActivity;
+use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Permission as PublishingPermission;
@@ -8,14 +12,23 @@ use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
 use App\Models\ContentIdea;
+use App\Models\EditorialActivity;
+use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\EditorialOutput;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
@@ -145,6 +158,61 @@ test('renaming an idea requires the publishing write permission', function (): v
 
     expect(fn () => app(WriteArticle::class)->renameIdea($viewer, $idea, 'Renamed'))
         ->toThrow(AuthorizationException::class);
+});
+
+test('packaging sets the piece title and slug and never touches the idea summary', function (): void {
+    $actor = contentIdeaAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'Owners keep hiring for the same chores');
+    $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Working title', 'date' => '2024-01-01'], 'packaging-idea-revision');
+    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id);
+    $package = contentIdeaCompletedPackage($actor, $attempt, $revision);
+    $summaryBefore = $article->contentIdea->only(['summary_title', 'summary_title_source', 'body']);
+
+    $accepted = app(AcceptPackageProposal::class)->accept($actor, $package, [
+        'title' => 'Another admin hire will not fix it',
+        'seo_title' => 'Do you need another admin hire? What to check first',
+        'description' => 'What to check first.',
+        'slug' => 'another-admin-hire-will-not-fix-it',
+        'greatest_hits_tag' => 'the admin hire question',
+    ], $revision->id);
+
+    expect($accepted->metadata)->toMatchArray(['title' => 'Another admin hire will not fix it', 'slug' => 'another-admin-hire-will-not-fix-it', 'date' => '2024-01-01'])
+        ->and($article->contentIdea->fresh()?->only(['summary_title', 'summary_title_source', 'body']))->toBe($summaryBefore)
+        ->and($article->fresh()?->slug)->toBe($article->slug);
+});
+
+test('the interviewer names the idea only when the owner has not renamed it', function (string $source, string $expectedTitle, string $expectedSource): void {
+    $actor = contentIdeaAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'owners keep rebuilding the friday report by hand every week and nobody owns it');
+    $article->contentIdea->forceFill(['summary_title' => 'A title from '.$source, 'summary_title_source' => $source])->save();
+    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article);
+
+    contentIdeaRunInterview($actor, $attempt, '  Nobody owns the Friday report  ');
+
+    expect($article->contentIdea->fresh()?->only(['summary_title', 'summary_title_source']))->toBe(['summary_title' => $expectedTitle, 'summary_title_source' => $expectedSource]);
+})->with([
+    'a derived title' => [ContentIdea::SOURCE_DERIVED, 'Nobody owns the Friday report', ContentIdea::SOURCE_INTERVIEWER],
+    'an earlier interviewer title' => [ContentIdea::SOURCE_INTERVIEWER, 'Nobody owns the Friday report', ContentIdea::SOURCE_INTERVIEWER],
+    'an owner rename' => [ContentIdea::SOURCE_OWNER, 'A title from owner', ContentIdea::SOURCE_OWNER],
+]);
+
+test('an interviewer idea title over the limit fails the interview and a blank one changes nothing', function (): void {
+    $actor = contentIdeaAuthor();
+    $article = app(WriteArticle::class)->captureIdea($actor, 'A rough first line');
+    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article);
+
+    $failed = contentIdeaRunInterview($actor, $attempt, str_repeat('a', ContentIdea::DERIVED_TITLE_LIMIT + 1));
+
+    expect($failed->status)->toBe(EditorialActivityStatus::Failed)
+        ->and($failed->error_reason)->toBe('Interview idea title is 81 characters; it must be at most 80.');
+
+    app(AdvancePublishingAttempt::class)->abandon($actor, $attempt, 'Try the interview again.');
+    $next = app(AdvancePublishingAttempt::class)->develop($actor, $article->fresh() ?? $article);
+    contentIdeaRunInterview($actor, $next, '   ');
+
+    expect($article->contentIdea->fresh()?->only(['summary_title', 'summary_title_source']))->toBe(['summary_title' => 'A rough first line', 'summary_title_source' => ContentIdea::SOURCE_DERIVED]);
 });
 
 test('pieces belong to an idea with an optional parent piece', function (): void {
@@ -322,6 +390,55 @@ test('deleting an author keeps their pieces and ideas', function (): void {
     expect($article->fresh()?->author_id)->toBeNull()
         ->and($article->contentIdea->fresh()?->author_id)->toBeNull();
 });
+
+/** A completed package on the working revision, as packaging would leave it for the owner. */
+function contentIdeaCompletedPackage(User $actor, PublishingAttempt $attempt, ArticleRevision $revision): EditorialActivity
+{
+    return EditorialActivity::create([
+        'article_id' => $attempt->article_id,
+        'attempt_id' => $attempt->id,
+        'initiating_user_id' => $actor->id,
+        'kind' => EditorialActivityKind::Package,
+        'status' => EditorialActivityStatus::Completed,
+        'stage' => 'in_review',
+        'input_version' => $attempt->input_version,
+        'revision_id' => $revision->id,
+        'revision_hash' => $revision->content_hash,
+        'review_cycle' => $attempt->review_cycle,
+        'batch_key' => 'package-'.$attempt->review_cycle.'-'.$revision->id,
+        'idempotency_key' => 'package-'.Str::random(16),
+        'prompt_version' => 1,
+        'prompt_hash' => hash('sha256', Str::random(16)),
+        'input' => [],
+        'model_snapshot' => [],
+        'completed_at' => now(),
+    ]);
+}
+
+/** Runs an interview that names the idea, against a faked OpenRouter answer. */
+function contentIdeaRunInterview(User $actor, PublishingAttempt $attempt, string $ideaTitle): EditorialActivity
+{
+    setPublishingAgentsPaused(true);
+    $interview = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'interview-'.Str::random(6));
+    setPublishingAgentsPaused(false);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    Queue::fake([RunEditorialActivity::class]);
+    Http::swap(new HttpFactory(app(Dispatcher::class)));
+    Http::preventStrayRequests();
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response([
+        'id' => 'gen-content-idea',
+        'choices' => [['finish_reason' => 'stop', 'message' => ['role' => 'assistant', 'content' => json_encode([
+            'questions' => ['What happened last Friday?'],
+            'brief' => ['summary' => 'A brief.', 'missingAnswers' => [], 'postType' => 'teardown', 'targetQuery' => null, 'ideaTitle' => $ideaTitle],
+            'angleOptions' => [['title' => 'Walk the Friday report', 'thesis' => 'The report sticks in five places.']],
+        ], JSON_THROW_ON_ERROR)]]],
+    ])]);
+
+    app(RunEditorialActivity::class, ['activityId' => $interview->id])->handle(app(EditorialOutput::class), app(WriteArticle::class));
+    setPublishingAgentsPaused(true);
+
+    return $interview->fresh() ?? throw new RuntimeException('The interview disappeared.');
+}
 
 /** @return Migration&ContentIdeaRunnableMigration */
 function contentIdeaMigration(): Migration

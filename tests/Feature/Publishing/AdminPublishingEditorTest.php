@@ -76,10 +76,23 @@ function adminReleaseMetadata(string $title): array
 {
     return [
         'title' => $title,
-        'description' => $title.' description.',
+        'seo_title' => adminReleaseSeoTitle($title),
+        'description' => adminReleaseDescription($title),
         'date' => '2024-01-01',
         'tags' => [],
     ];
+}
+
+/** A 50-60 character SEO title, so release checks reach the behavior under test. */
+function adminReleaseSeoTitle(string $title): string
+{
+    return rtrim(mb_substr($title.' for owners who run a client service business and their teams', 0, 56));
+}
+
+/** A 150-160 character meta description, so release checks reach the behavior under test. */
+function adminReleaseDescription(string $title): string
+{
+    return rtrim(mb_substr($title.' description. '.str_repeat('What an owner should check before the next hire. ', 4), 0, 156));
 }
 
 function adminCompletedActivity(User $actor, PublishingAttempt $attempt, EditorialActivityKind $kind, ?int $revisionId = null, ?string $revisionHash = null): EditorialActivity

@@ -3,8 +3,11 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Tools\AskAuthor;
+use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\FrameworkCatalog;
 use App\Services\Publishing\Lint\VoiceLinter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\ObjectType;
@@ -55,6 +58,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
             EditorialActivityKind::ReviewBuyer => new BuyerReviewer($activity, $modelOverride),
             EditorialActivityKind::Reconciliation => new ReviewReconciler($activity, $modelOverride),
             EditorialActivityKind::Recheck => new RevisionRechecker($activity, $modelOverride),
+            EditorialActivityKind::Package => new Packager($activity, $modelOverride),
         };
     }
 
@@ -207,6 +211,9 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                     'audience' => $schema->string()->nullable(),
                     'goal' => $schema->string()->nullable(),
                     'missingAnswers' => $schema->array()->items($schema->string())->required(),
+                    'postType' => $schema->string()->enum($this->catalog()->postTypeSlugs())->description('The one post type the idea fits: '.implode(', ', $this->catalog()->postTypeSlugs()).'. Null only when the answers cannot tell yet.')->nullable(),
+                    'targetQuery' => $schema->string()->description('The one search query, in the owner\'s words, that this post answers.')->nullable(),
+                    'ideaTitle' => $schema->string()->max(ContentIdea::DERIVED_TITLE_LIMIT)->description('A plain name for the idea itself, at most '.ContentIdea::DERIVED_TITLE_LIMIT.' characters, in sentence case. Never a headline.')->nullable(),
                 ])->required(),
                 'angleOptions' => $schema->array()->items($schema->object([
                     'title' => $schema->string()->min(1)->required(),
@@ -239,14 +246,10 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                     'slot' => $schema->string()->min(1)->required(),
                     'description' => $schema->string()->nullable(),
                 ]))->required(),
+                'framework' => $this->frameworkSchema($schema),
             ],
             EditorialActivityKind::Draft => [
                 'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes. It must pass the mechanical rules in your rubric: '.implode(', ', app(VoiceLinter::class)->ruleIds()).'.')->required(),
-                'metadataProposals' => $schema->object([
-                    'title' => $schema->string()->nullable(),
-                    'description' => $schema->string()->nullable(),
-                    'slug' => $schema->string()->nullable(),
-                ])->required(),
             ],
             EditorialActivityKind::LintRepair => [
                 'patches' => $schema->array()->description('At most one patch per block in input.blocks, all together under '.$this->maxFieldBytes().' bytes. Return an empty list when no block can be fixed safely.')->items($schema->object([
@@ -276,7 +279,54 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                 'unresolved' => $schema->array()->description('Findings from input.review_findings that the revised manuscript does not fix, with the reason.')->items($this->resolution($schema))->required(),
                 'newBlockingFindings' => $schema->array()->description('At most '.$this->maxFindings().' findings; every item must set severity to "blocking".')->items($this->finding($schema))->required(),
             ],
+            EditorialActivityKind::Package => [
+                'titleOptions' => $schema->array()->min(EditorialOutput::PACKAGE_TITLE_OPTIONS)->max(EditorialOutput::PACKAGE_TITLE_OPTIONS)->items($schema->string()->min(1))->description('Exactly '.EditorialOutput::PACKAGE_TITLE_OPTIONS.' distinct title options (no two the same ignoring case), each a different shape, each in sentence case.')->required(),
+                'title' => $schema->string()->min(1)->description('The on-page H1, chosen from titleOptions. Sentence case: capitalize the first word and proper nouns only [rule:title-sentence-case]. No em dash, curly quotes, emoji or exclamation point.')->required(),
+                'seoTitle' => $schema->string()->min(50)->max(60)->description('The search-result title: 50 to 60 characters counted as written, phrased the way an owner searches, primary phrase near the start [rule:seo-title-length]. No em dash, curly quotes, emoji or exclamation point.')->required(),
+                'description' => $schema->string()->min(150)->max(160)->description('The meta description: 150 to 160 characters counted as written, a reason to click in the owner\'s search phrasing [rule:meta-description-length]. No em dash, curly quotes, emoji or exclamation point.')->required(),
+                'slug' => $schema->string()->description('Four to six lowercase words of a to z and 0 to 9 joined by single hyphens [rule:slug-shape], never the slug of an archive essay or any other piece [rule:slug-archive-reuse].')->required(),
+                'greatestHitsTag' => $schema->string()->min(1)->max(EditorialOutput::GREATEST_HITS_TAG_LIMIT)->description('A short internal label in Nick\'s words for the problem this post answers, at most '.EditorialOutput::GREATEST_HITS_TAG_LIMIT.' characters. Never shown publicly.')->required(),
+            ],
         };
+    }
+
+    /**
+     * Names the frameworks the plan may use for the brief's post type, so the model sees the rule the validator applies.
+     */
+    private function frameworkSchema(JsonSchema $schema): ObjectType
+    {
+        $catalog = $this->catalog();
+        $postType = data_get($this->activity->input, 'brief.post_type');
+        $choice = data_get($this->activity->input, 'framework_choice');
+        if (is_string($postType) && $catalog->hasPostType($postType)) {
+            $allowed = 'Allowed frameworks for this '.$postType.' post: '.implode(', ', $catalog->allowedFor($postType)).'.';
+        } else {
+            $lists = [];
+            foreach ($catalog->postTypeSlugs() as $slug) {
+                $lists[] = $slug.': '.implode(', ', $catalog->allowedFor($slug));
+            }
+            $allowed = 'Allowed frameworks by post type ('.implode('; ', $lists).').';
+        }
+        $avoid = implode('; ', array_map(static fn (array $pair): string => $pair[0].' with '.$pair[1], $catalog->avoidCombinations));
+        $primary = 'Your chosen framework slug. '.$allowed.(is_string($choice) && $choice !== '' ? ' The owner chose '.$choice.', so it must be the primary.' : '');
+
+        return $schema->object([
+            'primary' => $schema->string()->min(1)->description($primary)->required(),
+            'runner_up' => $schema->string()->min(1)->description('The next best framework slug, different from the primary. '.$allowed)->required(),
+            'reasons' => $schema->object([
+                'primary' => $schema->string()->min(1)->description('One sentence on why the primary fits this angle and evidence.')->required(),
+                'runner_up' => $schema->string()->min(1)->description('One sentence on why the runner-up is the next best fit.')->required(),
+            ])->required(),
+            'secondary' => $schema->object([
+                'framework' => $schema->string()->min(1)->description('A second allowed framework for one section only, different from the primary. Never pair: '.$avoid.'.')->required(),
+                'section_heading' => $schema->string()->min(1)->description('The outline heading of the one section the secondary framework shapes.')->required(),
+            ])->description('Optional; null unless one section needs a different framework.')->nullable(),
+        ])->description('The narrative framework from the canon catalog. '.$allowed)->required();
+    }
+
+    private function catalog(): FrameworkCatalog
+    {
+        return EditorialOutput::frameworkCatalog(is_array($this->activity->input) ? $this->activity->input : []);
     }
 
     abstract protected function roleInstructions(): string;

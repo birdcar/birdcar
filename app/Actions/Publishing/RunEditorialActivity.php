@@ -4,7 +4,9 @@ namespace App\Actions\Publishing;
 
 use App\Ai\Agents\EditorialAgent;
 use App\Models\Article;
+use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\EditorialFinding;
@@ -145,7 +147,7 @@ class RunEditorialActivity implements ShouldQueue
                 // Retrieved page text now lives in the prepared sources; keeping it would push the model's own field past its size limit.
                 $payload = $this->withoutRetrievedContent($payload);
             }
-            $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts, $kind === EditorialActivityKind::LintRepair ? ($activity->input ?? []) : []);
+            $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts, is_array($activity->input) ? $activity->input : []);
             if ($kind === EditorialActivityKind::Recheck) {
                 $this->ensureRecheckAssessedEveryFinding($activity, $validated);
             }
@@ -453,11 +455,15 @@ class RunEditorialActivity implements ShouldQueue
             }
 
             if ($kind === EditorialActivityKind::Interview) {
-                $this->applyInterview($locked, $attempt, $payload);
+                $this->applyInterview($locked, $attempt, $article, $payload);
             }
 
             if ($kind === EditorialActivityKind::Plan) {
                 $this->applyPlan($locked, $attempt, $payload);
+            }
+
+            if ($kind === EditorialActivityKind::Package) {
+                $this->applyPackage($locked, $payload);
             }
 
             if ($kind->isReviewLens() || $kind === EditorialActivityKind::Recheck) {
@@ -481,12 +487,34 @@ class RunEditorialActivity implements ShouldQueue
             $this->lintThenQueueReviews($locked, $freshActor);
             $this->queuePlanAfterCompletedResearch($locked, $freshActor);
             $this->queueReconciliationAfterCompletedReviewLens($locked, $freshActor);
+            $this->queuePackageAfterCompletedRecheck($locked, $freshActor);
         });
     }
 
-    /** @param array<string, mixed> $payload */
-    private function applyInterview(EditorialActivity $activity, PublishingAttempt $attempt, array $payload): void
+    /**
+     * The brief is stored with snake_case keys. A null post type keeps the one the owner already picked, and the
+     * interviewer's idea title never replaces a name the owner gave the idea, or an archive essay's published title.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyInterview(EditorialActivity $activity, PublishingAttempt $attempt, Article $article, array $payload): void
     {
+        $returned = is_array($payload['brief'] ?? null) ? $payload['brief'] : [];
+        $previous = $attempt->brief ?? [];
+        $brief = array_diff_key($returned, ['postType' => true, 'targetQuery' => true, 'ideaTitle' => true]);
+        $postType = is_string($returned['postType'] ?? null) ? $returned['postType'] : ($previous['post_type'] ?? null);
+        $targetQuery = is_string($returned['targetQuery'] ?? null) ? trim($returned['targetQuery']) : '';
+        $brief['post_type'] = is_string($postType) ? $postType : null;
+        $brief['target_query'] = $targetQuery !== '' ? $targetQuery : null;
+
+        $ideaTitle = is_string($returned['ideaTitle'] ?? null) ? trim($returned['ideaTitle']) : '';
+        if ($ideaTitle !== '' && ! ArticleRelease::query()->where('article_id', $article->id)->where('origin', 'import')->exists()) {
+            $idea = ContentIdea::query()->whereKey($article->content_idea_id)->lockForUpdate()->first();
+            if ($idea instanceof ContentIdea && $idea->summary_title_source !== ContentIdea::SOURCE_OWNER) {
+                $idea->forceFill(['summary_title' => $ideaTitle, 'summary_title_source' => ContentIdea::SOURCE_INTERVIEWER])->save();
+            }
+        }
+
         $contextValue = $attempt->getAttribute('interview_context');
         $context = is_array($contextValue) ? $contextValue : [];
         $context['latest_interview_activity_id'] = (int) $activity->id;
@@ -499,24 +527,63 @@ class RunEditorialActivity implements ShouldQueue
         $context['selected_angle_option'] = null;
 
         $attempt->forceFill([
-            'brief' => $payload['brief'],
+            'brief' => $brief,
             'interview_context' => $context,
         ])->save();
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * A re-plan ran with the owner's framework fixed, so that choice is recorded as chosen; a first plan waits for the
+     * owner to keep the primary or pick another framework at the plan gate.
+     *
+     * @param  array<string, mixed>  $payload
+     */
     private function applyPlan(EditorialActivity $activity, PublishingAttempt $attempt, array $payload): void
     {
+        $framework = is_array($payload['framework'] ?? null) ? $payload['framework'] : [];
+        $choice = data_get($activity->input, 'framework_choice');
+        $secondary = is_array($framework['secondary'] ?? null) ? $framework['secondary'] : null;
+
         $attempt->forceFill([
             'plan' => [
                 'outline' => $payload['outline'],
                 'argument' => $payload['argument'],
                 'visualPlan' => $payload['visualPlan'],
+                'framework' => [
+                    'primary' => $framework['primary'] ?? null,
+                    'runner_up' => $framework['runner_up'] ?? null,
+                    'reasons' => [
+                        'primary' => data_get($framework, 'reasons.primary'),
+                        'runner_up' => data_get($framework, 'reasons.runner_up'),
+                    ],
+                    'secondary' => $secondary === null ? null : [
+                        'framework' => $secondary['framework'] ?? null,
+                        'section_heading' => $secondary['section_heading'] ?? null,
+                    ],
+                    'chosen' => is_string($choice) && $choice !== '' ? $choice : null,
+                ],
                 'source' => 'agent',
                 'activity_id' => $activity->id,
                 'generated_at' => now()->toISOString(),
             ],
         ])->save();
+    }
+
+    /**
+     * The package waits on the activity for the owner, as a proposal; nothing reaches the manuscript until accepted.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyPackage(EditorialActivity $activity, array $payload): void
+    {
+        $activity->forceFill(['proposal' => [
+            'title_options' => array_values(array_map(static fn (mixed $option): string => trim((string) $option), is_array($payload['titleOptions'] ?? null) ? $payload['titleOptions'] : [])),
+            'title' => trim((string) ($payload['title'] ?? '')),
+            'seo_title' => trim((string) ($payload['seoTitle'] ?? '')),
+            'description' => trim((string) ($payload['description'] ?? '')),
+            'slug' => trim((string) ($payload['slug'] ?? '')),
+            'greatest_hits_tag' => trim((string) ($payload['greatestHitsTag'] ?? '')),
+        ]])->save();
     }
 
     /**
@@ -543,7 +610,6 @@ class RunEditorialActivity implements ShouldQueue
     private function applyDraft(EditorialActivity $activity, User $actor, Article $article, array $payload, WriteArticle $writer): void
     {
         $document = $this->withArticleHeadingLevels(is_array($payload['document'] ?? null) ? $payload['document'] : []);
-        $metadata = is_array($payload['metadataProposals'] ?? null) ? $payload['metadataProposals'] : [];
         $currentRevision = $article->workingRevision()->first();
         $currentDocumentValue = $currentRevision?->getAttribute('document');
         $currentDocument = is_array($currentDocumentValue) ? $currentDocumentValue : ['version' => 1, 'type' => 'doc', 'content' => []];
@@ -552,12 +618,12 @@ class RunEditorialActivity implements ShouldQueue
             $currentMetadataValue = $currentRevision?->getAttribute('metadata');
             $currentMetadata = is_array($currentMetadataValue) ? $currentMetadataValue : [];
             $revision = $writer->save($actor, $article, $article->working_revision_id, $document, $currentMetadata, 'agent-initial-'.$activity->id, 'agent-initial');
-            $activity->forceFill(['proposal' => ['applied_revision_id' => $revision->id, 'metadata' => $metadata, 'reason' => 'Metadata changes require human acceptance.']])->save();
+            $activity->forceFill(['proposal' => ['applied_revision_id' => $revision->id]])->save();
 
             return;
         }
 
-        $activity->forceFill(['proposal' => ['document' => $document, 'metadata' => $metadata, 'reason' => 'Current manuscript was not empty; human acceptance is required.']])->save();
+        $activity->forceFill(['proposal' => ['document' => $document, 'reason' => 'Current manuscript was not empty; human acceptance is required.']])->save();
     }
 
     /**
@@ -1320,6 +1386,31 @@ class RunEditorialActivity implements ShouldQueue
         app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Reconciliation, ['expected_revision_id' => $revisionId], 'reconciliation-'.$attempt->review_cycle.'-'.$revisionId);
     }
 
+    /**
+     * A completed recheck ends review, so packaging starts on its revision. Any recheck outcome qualifies: unresolved
+     * items still block release, and the owner may want the package while fixing them.
+     */
+    private function queuePackageAfterCompletedRecheck(EditorialActivity $activity, User $actor): void
+    {
+        $fresh = $activity->fresh();
+        if (! $fresh instanceof EditorialActivity || $this->kind($fresh) !== EditorialActivityKind::Recheck || $this->status($fresh) !== EditorialActivityStatus::Completed) {
+            return;
+        }
+
+        $attempt = $fresh->attempt()->first();
+        $article = $fresh->article()->first();
+        $revision = $article?->workingRevision()->first();
+        if (! $attempt instanceof PublishingAttempt || ! $article instanceof Article || ! $revision instanceof ArticleRevision || ! $actor->can('publishing.develop')) {
+            return;
+        }
+
+        $input = ['reviewed_revision_id' => (int) data_get($fresh->input, 'reviewed_revision_id', $revision->id), 'expected_revision_id' => (int) $revision->id];
+        $starter = app(StartEditorialActivity::class);
+        if ($starter->packageEligibilityProblem($attempt, $article, $revision, $input) === null) {
+            $starter->start($actor, $attempt, EditorialActivityKind::Package, $input, StartEditorialActivity::packageBatchKey($attempt, (int) $revision->id, afterRecheck: true));
+        }
+    }
+
     private function staleReason(EditorialActivity $activity, PublishingAttempt $attempt, Article $article): ?string
     {
         if ((int) ($activity->input_version ?? 0) !== (int) ($attempt->input_version ?? 0)) {
@@ -1370,7 +1461,7 @@ class RunEditorialActivity implements ShouldQueue
     {
         return match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
     }

@@ -74,7 +74,8 @@
                         @if ($angleOptions === [])<x-admin.publishing.partials.editorial-content :value="$displayAngle" />@endif
                     </div>
                     @if (! $angleApproved && ! $working)
-                        @can('approve', $article)<flux:button variant="primary" wire:click="approveAngle('{{ $angleInputHash }}')" data-publishing-editor-action>Approve angle</flux:button>@endcan
+                        @if ($postTypeLabel === null)<flux:callout icon="information-circle" text="Choose a post type in the brief before you approve the angle. It sets the length and the frameworks the plan can use." data-post-type-needed />@endif
+                        @can('approve', $article)<flux:button variant="primary" wire:click="approveAngle('{{ $angleInputHash }}')" :disabled="$postTypeLabel === null" data-publishing-editor-action>Approve angle</flux:button>@endcan
                     @endif
                     @if ($angleApproved)<p class="text-sm text-zinc-600 dark:text-zinc-300">Choosing another angle withdraws downstream approvals. Your manuscript is preserved.</p>@endif
                 </section>
@@ -86,8 +87,22 @@
                     @if (isset($displayPlan['argument']))<p class="text-lg leading-relaxed">{{ $displayPlan['argument'] }}</p>@endif
                     <div><flux:heading level="3">Outline</flux:heading><x-admin.publishing.partials.editorial-content class="mt-3" :value="$displayPlan['outline'] ?? []" /></div>
                     <div><flux:heading level="3">Visual plan</flux:heading><x-admin.publishing.partials.editorial-content class="mt-3" :value="$displayPlan['visualPlan'] ?? []" /></div>
+                    @if ($frameworkOptions !== [])
+                        <div class="space-y-4" data-framework-choice>
+                            <div class="flex flex-wrap items-center justify-between gap-3"><flux:heading level="3">Narrative framework</flux:heading>@if ($frameworkChosen)<flux:badge size="sm" color="teal">{{ $frameworkChosen }}</flux:badge>@endif</div>
+                            @if (! $planApproved)
+                                <flux:radio.group wire:model="frameworkChoice" label="Choose the structure for this piece">
+                                    @foreach ($frameworkOptions as $option)
+                                        <flux:radio wire:key="framework-{{ $option['slug'] }}" value="{{ $option['slug'] }}" label="{{ $option['name'] }} ({{ $option['role'] }})" :description="$option['reason']" />
+                                    @endforeach
+                                </flux:radio.group>
+                                @can('develop', $article)<flux:button size="sm" wire:click="chooseFramework" :disabled="$working || $planning" data-publishing-editor-action>Use this framework</flux:button>@endcan
+                                <p class="text-sm text-zinc-600 dark:text-zinc-300">Keeping the recommended framework records your choice. Any other framework plans the piece again with it fixed, before you approve.</p>
+                            @endif
+                        </div>
+                    @endif
                     @if (! $planApproved && $angleApproved && ! $working)
-                        @can('approve', $article)<flux:button variant="primary" wire:click="approvePlan('{{ $planInputHash }}')" data-publishing-editor-action>Approve plan and draft</flux:button>@endcan
+                        @can('approve', $article)<flux:button variant="primary" wire:click="approvePlan('{{ $planInputHash }}')" :disabled="$frameworkOptions !== [] && $frameworkChosen === null" data-publishing-editor-action>Approve plan and draft</flux:button>@endcan
                         <p class="text-sm text-zinc-600 dark:text-zinc-300">Authorizes drafting from this plan.</p>
                     @elseif ($planApproved)
                         <flux:button variant="primary" @click="selectMode('write')" icon:trailing="arrow-right">Go to the manuscript</flux:button>
@@ -99,7 +114,24 @@
     <aside class="publishing-brief space-y-7">
         <div><flux:heading level="2" size="lg">The living brief</flux:heading><flux:text class="mt-2">The thought behind the work, kept close.</flux:text></div>
         <details class="publishing-disclosure" @if (mb_strlen($article->contentIdea->body) < 260) open @endif><summary>The original idea</summary><p class="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $article->contentIdea->body }}</p></details>
-        @if ($displayBrief !== [])<x-admin.publishing.partials.editorial-content :value="array_diff_key($displayBrief, ['idea' => true])" />@else<flux:text>Your brief will take shape during the interview. You don’t need to fill out a specification first.</flux:text>@endif
+        @if ($attempt !== null && ! in_array($stage?->value, ['published', 'abandoned'], true))
+            <div class="space-y-3" data-post-type>
+                @if (! $angleApproved)
+                    @can('develop', $article)
+                        <flux:select wire:model="postType" label="Post type" placeholder="Choose a post type">
+                            @foreach ($postTypeOptions as $slug => $label)<flux:select.option value="{{ $slug }}">{{ $label }}</flux:select.option>@endforeach
+                        </flux:select>
+                        <flux:button size="sm" wire:click="choosePostType" data-publishing-editor-action>Save post type</flux:button>
+                    @else
+                        <p class="text-sm"><span class="font-medium">Post type:</span> {{ $postTypeLabel ?? 'Not chosen yet' }}</p>
+                    @endcan
+                    <p class="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">The post type sets the length and the frameworks the plan can use. Choose it before you approve the angle.</p>
+                @else
+                    <p class="text-sm"><span class="font-medium">Post type:</span> {{ $postTypeLabel ?? 'Not chosen' }}</p>
+                @endif
+            </div>
+        @endif
+        @if ($displayBrief !== [])<x-admin.publishing.partials.editorial-content :value="array_diff_key($displayBrief, ['idea' => true, 'post_type' => true])" />@else<flux:text>Your brief will take shape during the interview. You don’t need to fill out a specification first.</flux:text>@endif
         <details class="publishing-disclosure">
             <summary>Source material</summary>
             <div class="mt-5 space-y-6">

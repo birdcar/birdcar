@@ -126,6 +126,32 @@
                     @if ($voiceRuleFindings->isEmpty())<div class="publishing-feedback-empty"><flux:icon.chat-bubble-left-right variant="outline" class="mb-4 size-7 text-accent-content" /><flux:heading level="3">Room for another perspective.</flux:heading><flux:text class="mt-2">No findings have been recorded for this revision. Reviews will check facts, voice, and the reader’s experience.</flux:text></div>@endif
                 @endforelse
             </div>
+            @if ($packageActivity)
+                <section class="mt-8 space-y-5" data-package-panel="{{ $packageActivity->id }}" aria-labelledby="package-heading">
+                    <flux:heading level="3" id="package-heading">Titles and search</flux:heading>
+                    <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">Review is done, so packaging proposed {{ $packageTitleOptionCount }} titles and the search details. Pick a title, edit anything, then save. Nothing changes in your article until you save.</p>
+                    <div>
+                        <p class="mb-2 text-sm font-medium">Title options</p>
+                        <ol class="list-decimal space-y-2 pl-5 text-sm">
+                            @foreach ($packageActivity->proposal['title_options'] ?? [] as $index => $option)
+                                <li wire:key="title-option-{{ $index }}"><button type="button" class="text-left underline-offset-2 hover:underline" wire:click="$set('package.title', {{ \Illuminate\Support\Js::from((string) $option) }})">{{ $option }}</button></li>
+                            @endforeach
+                        </ol>
+                    </div>
+                    <div class="space-y-4">
+                        <div><flux:input wire:model.live.debounce.400ms="package.title" label="Title" maxlength="240" /><p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300">Sentence case. Shown as the page heading.</p></div>
+                        <div><flux:input wire:model.live.debounce.400ms="package.seo_title" label="SEO title" maxlength="240" /><p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300" data-character-count="seo_title"><span x-text="[...($wire.package.seo_title ?? '')].length">{{ mb_strlen($package['seo_title']) }}</span> characters; aim for 50 to 60.</p></div>
+                        <div><flux:textarea wire:model.live.debounce.400ms="package.description" label="Meta description" rows="3" maxlength="1000" /><p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300" data-character-count="description"><span x-text="[...($wire.package.description ?? '')].length">{{ mb_strlen($package['description']) }}</span> characters; aim for 150 to 160.</p></div>
+                        <div><flux:input wire:model.live.debounce.400ms="package.slug" label="Slug" maxlength="240" /><p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300">Four to six lowercase words joined by hyphens. Never an archive slug.</p></div>
+                        <div><flux:input wire:model="package.greatest_hits_tag" label="Greatest-hits tag" maxlength="80" /><p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300">Your label for this piece. Never shown publicly.</p></div>
+                    </div>
+                    @if ($packageLintMessages !== [])
+                        <ul class="space-y-1 text-sm text-amber-800 dark:text-amber-200" data-package-lint>@foreach ($packageLintMessages as $message)<li>{{ $message }}</li>@endforeach</ul>
+                    @endif
+                    @can('approve', $article)<flux:button size="sm" variant="primary" wire:click="acceptPackageProposal({{ $packageActivity->id }})" data-publishing-editor-action>Save titles and search details</flux:button>@endcan
+                    <p class="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">Saving creates a new revision with the same manuscript, so your review still counts. The release check runs these rules again.</p>
+                </section>
+            @endif
             @if ($planApproved)
                 @can('approve', $article)<details class="publishing-disclosure mt-8"><summary>Start another review cycle</summary><p class="my-3 text-sm text-zinc-600 dark:text-zinc-300">The default is one review batch and one focused recheck. A new cycle is a deliberate restart.</p><flux:button size="sm" wire:click="restartReview" data-publishing-editor-action>Restart cycle</flux:button></details>@endcan
             @endif

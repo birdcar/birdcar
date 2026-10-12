@@ -10,8 +10,10 @@ use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\EditorialFinding;
+use App\Models\EvidenceSource;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
@@ -152,6 +154,7 @@ class ManageArticleRelease
                 'canonical_slug' => $canonicalSlug,
                 'supporting_evidence_manifest' => $this->releaseFreshness->evidenceManifest((int) $lockedAttempt->id),
                 'review_manifest' => $this->releaseFreshness->reviewManifest((int) $lockedAttempt->id, (int) $revision->id),
+                'claim_manifest' => $this->claimManifest($lockedAttempt),
                 'readiness_check' => $readiness,
                 'delivery_intent' => $deliveryIntent,
                 'scheduled_at' => $scheduledAt?->toISOString(),
@@ -178,6 +181,94 @@ class ManageArticleRelease
         });
 
         return $release;
+    }
+
+    /**
+     * The claims the release may make, frozen into its payload: each grounded claim from the attempt's latest completed
+     * research that has a quotation, no contradicting quotation and no unresolved marker, with the evidence source ids
+     * behind it. Response-local references resolve to the sources that research retained. Order follows the research.
+     *
+     * @return list<array{statement: string, supporting_source_ids: list<int>}>
+     */
+    private function claimManifest(PublishingAttempt $attempt): array
+    {
+        $research = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('kind', EditorialActivityKind::ResearchChallenge->value)
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->latest('id')
+            ->first(['id', 'response']);
+        $response = $research?->getAttribute('response');
+        if (! $research instanceof EditorialActivity || ! is_array($response) || ! is_array($response['claims'] ?? null)) {
+            return [];
+        }
+
+        $sourceIdsByRef = [];
+        EvidenceSource::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('activity_id', $research->id)
+            ->orderBy('id')
+            ->get(['id', 'url', 'origin_metadata'])
+            ->each(function (EvidenceSource $source) use (&$sourceIdsByRef): void {
+                $origin = $source->getAttribute('origin_metadata');
+                $origin = is_array($origin) ? $origin : [];
+                foreach (['local_id', 'localId', 'ref', 'reference', 'source_ref', 'sourceRef', 'url'] as $key) {
+                    if (is_string($origin[$key] ?? null) && $origin[$key] !== '') {
+                        $sourceIdsByRef[$origin[$key]] ??= (int) $source->id;
+                    }
+                }
+                if (is_string($source->url) && $source->url !== '') {
+                    $sourceIdsByRef[$source->url] ??= (int) $source->id;
+                }
+            });
+
+        $manifest = [];
+        foreach ($response['claims'] as $claim) {
+            if (! is_array($claim) || ! is_string($claim['statement'] ?? null) || trim($claim['statement']) === '' || $this->claimIsUnresolved($claim)) {
+                continue;
+            }
+
+            $quotations = is_array($claim['supporting_quotations'] ?? null) ? array_values(array_filter($claim['supporting_quotations'], 'is_array')) : [];
+            $contradicted = collect($quotations)->contains(fn (array $quotation): bool => ($quotation['relationship'] ?? null) === 'contradicts' || ($quotation['contradicts'] ?? null) === true);
+            if ($quotations === [] || $contradicted) {
+                continue;
+            }
+
+            $ids = [];
+            foreach (is_array($claim['supporting_source_ids'] ?? null) ? $claim['supporting_source_ids'] : [] as $id) {
+                if (is_int($id)) {
+                    $ids[] = $id;
+                }
+            }
+            foreach (is_array($claim['supporting_source_refs'] ?? null) ? $claim['supporting_source_refs'] : [] as $ref) {
+                if (is_string($ref) && isset($sourceIdsByRef[$ref])) {
+                    $ids[] = $sourceIdsByRef[$ref];
+                }
+            }
+            foreach ($quotations as $quotation) {
+                if (is_int($quotation['source_id'] ?? null)) {
+                    $ids[] = $quotation['source_id'];
+                } elseif (is_string($quotation['source_ref'] ?? null) && isset($sourceIdsByRef[$quotation['source_ref']])) {
+                    $ids[] = $sourceIdsByRef[$quotation['source_ref']];
+                }
+            }
+
+            $ids = array_values(array_unique($ids));
+            sort($ids);
+            $manifest[] = ['statement' => trim($claim['statement']), 'supporting_source_ids' => $ids];
+        }
+
+        return $manifest;
+    }
+
+    /** @param array<mixed> $claim */
+    private function claimIsUnresolved(array $claim): bool
+    {
+        $reason = $claim['unresolved_reason'] ?? null;
+
+        return ($claim['unresolved'] ?? null) === true
+            || (is_string($reason) && trim($reason) !== '')
+            || in_array($claim['status'] ?? null, ['unresolved', 'unsupported'], true);
     }
 
     /**
@@ -548,13 +639,14 @@ class ManageArticleRelease
             throw new RuntimeException('Release approval requires an active plan approval.');
         }
 
-        $readiness = $this->releaseReviewReadiness($attempt, $release);
-        if ($readiness === null) {
+        // The same lineage the release check and the release payload use, so a metadata-only package revision qualifies.
+        $lineage = $this->releaseFreshness->reviewLineage((int) $attempt->id, (int) $release->revision_id);
+        if ($lineage === null) {
             throw new RuntimeException('Release approval requires a complete same-revision review batch for the release revision or a completed targeted recheck tied to that reviewed batch.');
         }
 
-        $revisionIdsToInspect = array_values(array_unique([(int) $release->revision_id, ...$readiness['reviewed_revision_ids']]));
-        $targetedResolutions = $this->targetedRecheckResolvedReferences($attempt, $release);
+        $revisionIdsToInspect = array_values(array_unique(array_map('intval', [(int) $release->revision_id, ...$lineage['revision_ids']])));
+        $targetedResolutions = $this->targetedRecheckResolvedReferences($lineage['recheck_activity_ids']);
         $unresolved = EditorialFinding::query()
             ->where('attempt_id', $attempt->id)
             ->where('review_cycle', $attempt->review_cycle)
@@ -585,117 +677,22 @@ class ManageArticleRelease
     }
 
     /**
-     * @return array{reviewed_revision_ids: list<int>}|null
-     */
-    private function releaseReviewReadiness(PublishingAttempt $attempt, ArticleRelease $release): ?array
-    {
-        if ($this->hasCompletedReviewBatchForRevision($attempt, (int) $release->revision_id)) {
-            return ['reviewed_revision_ids' => []];
-        }
-
-        $releaseRevision = ArticleRevision::query()->whereKey($release->revision_id)->first();
-        if (! $releaseRevision instanceof ArticleRevision) {
-            return null;
-        }
-
-        $reviewedRevisionIds = [];
-        $rechecks = EditorialActivity::query()
-            ->where('attempt_id', $attempt->id)
-            ->where('review_cycle', $attempt->review_cycle)
-            ->where('kind', EditorialActivityKind::Recheck->value)
-            ->where('status', 'completed')
-            ->where('revision_id', $release->revision_id)
-            ->latest('id')
-            ->get();
-
-        foreach ($rechecks as $activity) {
-            $reviewedRevisionId = $this->successfulTargetedRecheckReviewedRevisionId($attempt, $releaseRevision, $activity);
-            if ($reviewedRevisionId !== null) {
-                $reviewedRevisionIds[] = $reviewedRevisionId;
-            }
-        }
-
-        if ($reviewedRevisionIds === []) {
-            return null;
-        }
-
-        return ['reviewed_revision_ids' => array_values(array_unique($reviewedRevisionIds))];
-    }
-
-    private function successfulTargetedRecheckReviewedRevisionId(PublishingAttempt $attempt, ArticleRevision $releaseRevision, EditorialActivity $activity): ?int
-    {
-        $input = $activity->getAttribute('input');
-        $response = $activity->getAttribute('response');
-        if (! is_array($input) || ! is_array($response)) {
-            return null;
-        }
-
-        $reviewedRevisionId = (int) ($input['reviewed_revision_id'] ?? 0);
-        $expectedRevisionId = (int) ($input['expected_revision_id'] ?? 0);
-        $reviewedHash = $input['reviewed_revision_hash'] ?? null;
-        $targetHash = $input['target_revision_hash'] ?? null;
-        if ($reviewedRevisionId === 0 || $expectedRevisionId !== (int) $releaseRevision->id || ! is_string($reviewedHash) || ! is_string($targetHash) || ! is_string($activity->batch_key) || $activity->batch_key === '') {
-            return null;
-        }
-
-        if (! hash_equals((string) $releaseRevision->content_hash, $targetHash)) {
-            return null;
-        }
-
-        $reviewedRevision = ArticleRevision::query()->whereKey($reviewedRevisionId)->first();
-        if (! $reviewedRevision instanceof ArticleRevision || ! hash_equals((string) $reviewedRevision->content_hash, $reviewedHash)) {
-            return null;
-        }
-
-        if (! $this->hasCompletedReviewBatchForRevision($attempt, $reviewedRevisionId)) {
-            return null;
-        }
-
-        if (is_array($response['unresolved'] ?? null) && count($response['unresolved']) > 0) {
-            return null;
-        }
-
-        $newBlocking = is_array($response['newBlockingFindings'] ?? null) ? count($response['newBlockingFindings']) : 0;
-        if ($newBlocking > 0) {
-            $persistedBlocking = EditorialFinding::query()
-                ->where('activity_id', $activity->id)
-                ->where('attempt_id', $attempt->id)
-                ->where('revision_id', $releaseRevision->id)
-                ->where('severity', 'blocking')
-                ->count();
-            if ($persistedBlocking < $newBlocking) {
-                return null;
-            }
-        }
-
-        return $reviewedRevisionId;
-    }
-
-    /**
+     * @param  list<int>  $recheckActivityIds  the successful targeted rechecks in the release's review lineage
      * @return array{finding_ids: array<int, true>, block_ids: array<string, true>}
      */
-    private function targetedRecheckResolvedReferences(PublishingAttempt $attempt, ArticleRelease $release): array
+    private function targetedRecheckResolvedReferences(array $recheckActivityIds): array
     {
         $resolved = ['finding_ids' => [], 'block_ids' => []];
-        $releaseRevision = ArticleRevision::query()->whereKey($release->revision_id)->first();
-        if (! $releaseRevision instanceof ArticleRevision) {
+        if ($recheckActivityIds === []) {
             return $resolved;
         }
 
         $rechecks = EditorialActivity::query()
-            ->where('attempt_id', $attempt->id)
-            ->where('review_cycle', $attempt->review_cycle)
-            ->where('kind', EditorialActivityKind::Recheck->value)
-            ->where('status', 'completed')
-            ->where('revision_id', $release->revision_id)
+            ->whereIn('id', $recheckActivityIds)
             ->orderBy('id')
-            ->get();
+            ->get(['id', 'response']);
 
         foreach ($rechecks as $activity) {
-            if ($this->successfulTargetedRecheckReviewedRevisionId($attempt, $releaseRevision, $activity) === null) {
-                continue;
-            }
-
             $response = $activity->getAttribute('response');
             $items = is_array($response) && is_array($response['resolved'] ?? null) ? $response['resolved'] : [];
             foreach ($items as $item) {
@@ -742,25 +739,6 @@ class ManageArticleRelease
         $quotations = $finding->getAttribute('supporting_quotations');
 
         return (is_array($sourceIds) && $sourceIds !== []) || (is_array($quotations) && $quotations !== []);
-    }
-
-    private function hasCompletedReviewBatchForRevision(PublishingAttempt $attempt, int $revisionId): bool
-    {
-        foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation] as $kind) {
-            $complete = EditorialActivity::query()
-                ->where('attempt_id', $attempt->id)
-                ->where('review_cycle', $attempt->review_cycle)
-                ->where('kind', $kind->value)
-                ->where('status', 'completed')
-                ->where('revision_id', $revisionId)
-                ->exists();
-
-            if (! $complete) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function planInputHash(PublishingAttempt $attempt): string

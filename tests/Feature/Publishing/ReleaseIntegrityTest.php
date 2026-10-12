@@ -623,7 +623,7 @@ test('publish due command leaves live content unchanged when the approving actor
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
     $article = $write->captureIdea($actor, 'Revoked due command.');
-    $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Revoked Due Body'), 'revoked-due-1');
+    $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Revoked due body'), 'revoked-due-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $schedule = releaseSchedule($releases, now()->addMinute());
     $scheduledAt = $schedule['scheduled_at'];
@@ -784,10 +784,23 @@ function releaseMetadata(string $title): array
 {
     return [
         'title' => $title,
-        'description' => $title.' description',
+        'seo_title' => releaseSeoTitle($title),
+        'description' => releaseDescription($title),
         'date' => '2024-01-01',
         'tags' => [],
     ];
+}
+
+/** A 50-60 character SEO title, so release checks reach the behavior under test. */
+function releaseSeoTitle(string $title): string
+{
+    return rtrim(mb_substr($title.' for owners who run a client service business and their teams', 0, 56));
+}
+
+/** A 150-160 character meta description, so release checks reach the behavior under test. */
+function releaseDescription(string $title): string
+{
+    return rtrim(mb_substr($title.' description. '.str_repeat('What an owner should check before the next hire. ', 4), 0, 156));
 }
 
 /**

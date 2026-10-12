@@ -2,6 +2,7 @@
 
 Your job is to find every claim in the draft that the evidence does not support, and every place the draft breaks the claims and proof rules.
 
+<!-- lens-section: claims -->
 ## Claims and proof
 
 - No invented savings, revenue, results, testimonials, quotes, or guarantees, and no productivity percentages. Each one is a blocking finding.
@@ -13,6 +14,7 @@ Your job is to find every claim in the draft that the evidence does not support,
 - When a piece derives from a flagship post, any claim outside the flagship's approved claims is a blocking finding.
 - A leftover `[NEED: proof]` is not a finding by itself; report what proof would resolve it.
 
+<!-- lens-section: exclusions -->
 ## Exclusions
 
 - Any mention of WorkOS or GHX, the old internal name of the Craft & Communicate work, or a past employer (GitHub, Heroku, Zapier, Twilio, Salesforce) presented as a client or an endorsement instead of work history is a blocking finding.

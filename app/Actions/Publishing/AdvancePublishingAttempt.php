@@ -6,10 +6,14 @@ use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\ApprovalKind;
+use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\FrameworkCatalog;
+use App\Services\Publishing\VoiceCanon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -198,6 +202,98 @@ class AdvancePublishingAttempt
         });
 
         return $updated;
+    }
+
+    /**
+     * Sets the brief's post type. The brief feeds the angle approval, so a change withdraws the angle, plan and release
+     * approvals like any other brief change.
+     */
+    public function choosePostType(User $actor, PublishingAttempt|int $attempt, string $postType): PublishingAttempt
+    {
+        $this->authorize($actor, PublishingPermission::Develop->value);
+
+        $catalog = FrameworkCatalog::fromSnapshot(app(VoiceCanon::class)->snapshot());
+        if (! $catalog->hasPostType($postType)) {
+            throw new RuntimeException('Choose one of these post types: '.implode(', ', $catalog->postTypeSlugs()).'.');
+        }
+
+        $current = PublishingAttempt::query()->findOrFail($this->attemptId($attempt));
+        $brief = $current->brief ?? [];
+        if (($brief['post_type'] ?? null) === $postType) {
+            return $current;
+        }
+
+        return $this->rethink($actor, $current, brief: [...$brief, 'post_type' => $postType]);
+    }
+
+    /**
+     * The owner's framework decision at the plan gate. Keeping the plan's primary records it as chosen; any other allowed
+     * framework clears the choice and re-runs planning with that framework fixed, returning the re-plan activity.
+     */
+    public function chooseFramework(User $actor, PublishingAttempt|int $attempt, string $slug): ?EditorialActivity
+    {
+        $this->authorize($actor, PublishingPermission::Develop->value);
+
+        /** @var EditorialActivity|null $replan */
+        $replan = DB::transaction(function () use ($actor, $attempt, $slug): ?EditorialActivity {
+            $attemptId = $this->attemptId($attempt);
+            $lockedArticle = $this->lockedArticleForAttemptId($attemptId);
+            $lockedAttempt = $this->lockedAttemptById($attemptId);
+            $this->ensureAttemptCanBeMutated($lockedAttempt, $lockedArticle);
+
+            if ($lockedAttempt->paused_at !== null || $lockedAttempt->parked_at !== null) {
+                throw new RuntimeException('Blocked publishing attempts cannot change their framework.');
+            }
+
+            if ($this->stage($lockedAttempt) !== EditorialStage::Drafting) {
+                throw new RuntimeException('The framework can only change before the plan is approved.');
+            }
+
+            $plan = $lockedAttempt->plan ?? [];
+            if (($plan['source'] ?? null) !== 'agent') {
+                throw new RuntimeException('Choose a framework for a plan the Planner proposed.');
+            }
+
+            $planning = EditorialActivity::query()
+                ->where('attempt_id', $lockedAttempt->id)
+                ->where('kind', EditorialActivityKind::Plan->value)
+                ->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Running->value])
+                ->latest('id')
+                ->first();
+            if ($planning instanceof EditorialActivity) {
+                if (data_get($planning->input, 'framework_choice') === $slug) {
+                    return $planning;
+                }
+
+                throw new RuntimeException('Wait for the current plan to finish before choosing another framework.');
+            }
+
+            $planActivity = is_numeric($plan['activity_id'] ?? null) ? EditorialActivity::query()->select(['id', 'input'])->find((int) $plan['activity_id']) : null;
+            $catalog = EditorialOutput::frameworkCatalog(is_array($planActivity?->input) ? $planActivity->input : []);
+            $postType = data_get($lockedAttempt->brief, 'post_type');
+            $allowed = is_string($postType) ? $catalog->allowedFor($postType) : [];
+            if (! in_array($slug, $allowed, true)) {
+                throw new RuntimeException('Choose one of the frameworks allowed for this post type: '.($allowed === [] ? 'pick a post type first' : implode(', ', $allowed)).'.');
+            }
+
+            $keepsPrimary = $slug === data_get($plan, 'framework.primary');
+            $framework = is_array($plan['framework'] ?? null) ? $plan['framework'] : [];
+            $framework['chosen'] = $keepsPrimary ? $slug : null;
+            $lockedAttempt->forceFill(['plan' => [...$plan, 'framework' => $framework]])->save();
+            $this->writeArticle->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Plan, ApprovalKind::Release]);
+            app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
+
+            if ($keepsPrimary) {
+                return null;
+            }
+
+            return app(StartEditorialActivity::class)->start($actor, $lockedAttempt->refresh(), EditorialActivityKind::Plan, [
+                'framework_choice' => $slug,
+                'research_activity_id' => data_get($planActivity?->input, 'research_activity_id'),
+            ], 'plan-'.$lockedAttempt->review_cycle.'-'.$slug);
+        });
+
+        return $replan;
     }
 
     public function submitInterviewAnswers(User $actor, PublishingAttempt|int $attempt, string $answers): PublishingAttempt

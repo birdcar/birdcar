@@ -140,7 +140,7 @@ function liveTrialJourney(string $evidencePath, string $runId): array
 
     $article = $writer->captureIdea($owner, 'How a small service team stopped dropping customer follow-ups');
     $emptyRevision = $writer->save($owner, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Dropped follow-ups'], 'live-trial-empty');
-    $attempt = app(AdvancePublishingAttempt::class)->develop($owner, $article, $emptyRevision->id, ['goal' => 'Explain how a small service team stopped dropping customer follow-ups.']);
+    $attempt = app(AdvancePublishingAttempt::class)->develop($owner, $article, $emptyRevision->id, ['goal' => 'Explain how a small service team stopped dropping customer follow-ups.', 'post_type' => 'teardown']);
     $ownerEvidence = EvidenceSource::create([
         'article_id' => $article->id,
         'attempt_id' => $attempt->id,
@@ -212,7 +212,12 @@ function liveTrialJourney(string $evidencePath, string $runId): array
 
     // The owner's working manuscript carries the seeded defects, so the drafter proposes against it and the lenses review it.
     $seeded = $writer->save($owner, $article, (int) $article->fresh()->working_revision_id, liveTrialDocument($fixture['seeded_manuscript']), ['title' => 'Dropped follow-ups'], 'live-trial-seeded-review');
-    liveTrialWorkspace($owner, $article)->call('approvePlan')->assertSet('saveError', null);
+    $primary = data_get($attempt->fresh()?->plan, 'framework.primary');
+    liveTrialWorkspace($owner, $article)
+        ->call('chooseFramework', is_string($primary) ? $primary : '')
+        ->assertSet('saveError', null)
+        ->call('approvePlan')
+        ->assertSet('saveError', null);
 
     [$draft, $durationMs] = liveTrialRun(liveTrialPendingActivity($attempt, EditorialActivityKind::Draft));
     $record(liveTrialTrial('initial', $draft, $durationMs, $draft->status === EditorialActivityStatus::Completed, ['proposal' => $draft->proposal]));

@@ -223,6 +223,7 @@ new #[Layout('layouts.settings'), Title('Publishing settings')] class extends Co
             EditorialActivityKind::ReviewBuyer => 'Buyer review',
             EditorialActivityKind::Reconciliation => 'Reconciliation',
             EditorialActivityKind::Recheck => 'Recheck',
+            EditorialActivityKind::Package => 'Packaging',
         };
     }
 
@@ -239,6 +240,7 @@ new #[Layout('layouts.settings'), Title('Publishing settings')] class extends Co
             EditorialActivityKind::ReviewBuyer => 'Checks audience value, objections, and buyer risks.',
             EditorialActivityKind::Reconciliation => 'Groups review findings and surfaces conflicts to resolve.',
             EditorialActivityKind::Recheck => 'Confirms whether revisions resolved the findings.',
+            EditorialActivityKind::Package => 'Proposes ten titles, the SEO title, meta description, slug and greatest-hits tag after review.',
         };
     }
 };

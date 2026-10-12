@@ -57,7 +57,7 @@ function inputContractAttempt(User $actor, string $through): PublishingAttempt
     $approve = app(ApprovePublishingStage::class);
     $article = $write->captureIdea($actor, 'Why another admin hire will not fix the Friday report');
     $revision = $write->save($actor, $article, null, inputContractDocument('The Friday report takes an afternoon.'), ['title' => 'The Friday report'], 'input-contract-'.Str::random(8));
-    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Show owners what to check first']);
+    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Show owners what to check first', 'post_type' => 'essay']);
     if ($through === 'developing') {
         return $attempt;
     }
@@ -126,18 +126,20 @@ function inputContractStart(User $actor, EditorialActivityKind $kind): Editorial
     if ($kind->isReviewLens() || $kind === EditorialActivityKind::LintRepair) {
         inputContractCompletedActivity($actor, $attempt, EditorialActivityKind::Draft, $revisionId);
     }
-    if ($kind === EditorialActivityKind::Reconciliation || $kind === EditorialActivityKind::Recheck) {
+    if (in_array($kind, [EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package], true)) {
         foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer] as $lens) {
             inputContractCompletedActivity($actor, $attempt, $lens, $revisionId);
         }
     }
-    if ($kind === EditorialActivityKind::Recheck) {
+    if ($kind === EditorialActivityKind::Recheck || $kind === EditorialActivityKind::Package) {
         inputContractCompletedActivity($actor, $attempt, EditorialActivityKind::Reconciliation, $revisionId);
+    }
+    if ($kind === EditorialActivityKind::Recheck) {
         $attempt->forceFill(['recheck_used' => true])->save();
     }
 
     $input = match ($kind) {
-        EditorialActivityKind::Recheck => ['reviewed_revision_id' => $revisionId, 'expected_revision_id' => $revisionId],
+        EditorialActivityKind::Recheck, EditorialActivityKind::Package => ['reviewed_revision_id' => $revisionId, 'expected_revision_id' => $revisionId],
         EditorialActivityKind::LintRepair => inputContractRepairInput($revisionId),
         default => [],
     };
@@ -174,12 +176,25 @@ function inputContractResponse(EditorialActivityKind $kind): array
     return match ($kind) {
         EditorialActivityKind::Interview => ['questions' => ['What happened last Friday?'], 'brief' => ['summary' => 'A brief.', 'missingAnswers' => []], 'angleOptions' => [['title' => 'Check the chores first', 'thesis' => 'A hire adds a person to the same chores.']]],
         EditorialActivityKind::ResearchChallenge => ['claims' => [], 'sourceReferences' => [], 'contradictions' => [], 'gaps' => []],
-        EditorialActivityKind::Plan => ['outline' => [['heading' => 'Why another hire will not fix it', 'evidence_refs' => []]], 'argument' => 'Check the chores first.', 'visualPlan' => [['slot' => 'hero', 'description' => 'The Friday report']]],
-        EditorialActivityKind::Draft => ['document' => json_encode(inputContractDocument('A drafted paragraph.'), JSON_THROW_ON_ERROR), 'metadataProposals' => ['title' => 'Check the chores first']],
+        EditorialActivityKind::Plan => ['outline' => [['heading' => 'Why another hire will not fix it', 'evidence_refs' => []]], 'argument' => 'Check the chores first.', 'visualPlan' => [['slot' => 'hero', 'description' => 'The Friday report']], 'framework' => [
+            'primary' => 'the-false-start',
+            'runner_up' => 'the-montaigne',
+            'reasons' => ['primary' => 'The plausible default is another hire.', 'runner_up' => 'It suits a values piece.'],
+            'secondary' => null,
+        ]],
+        EditorialActivityKind::Draft => ['document' => json_encode(inputContractDocument('A drafted paragraph.'), JSON_THROW_ON_ERROR)],
         EditorialActivityKind::LintRepair => ['patches' => []],
         EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => ['findings' => []],
         EditorialActivityKind::Reconciliation => ['groups' => [], 'conflicts' => []],
         EditorialActivityKind::Recheck => ['resolved' => [], 'unresolved' => [], 'newBlockingFindings' => []],
+        EditorialActivityKind::Package => [
+            'titleOptions' => array_map(fn (int $number): string => 'Check the chores first, option '.$number, range(1, 10)),
+            'title' => 'Check the chores first',
+            'seoTitle' => 'Do you need another admin hire? What to check first',
+            'description' => 'When the team is full and the work keeps coming back to you, a new hire often adds a person to the same chores. Here is what to check before you post the job.',
+            'slug' => 'check-the-chores-before-hiring',
+            'greatestHitsTag' => 'the admin hire question',
+        ],
     };
 }
 
@@ -240,11 +255,13 @@ test('every kind sends its frozen goals and rubric in the system message and the
         'resources/publishing/canon/post-types/playbook.md',
         'resources/publishing/canon/post-types/teardown.md',
         'resources/publishing/canon/post-types/work-story.md',
+        'resources/publishing/canon/frameworks/guide.md',
         'resources/publishing/canon/roles/planner.md',
     ]],
     'draft' => [EditorialActivityKind::Draft, '# Core voice', [
         'resources/publishing/canon/voice/core.md',
         'resources/publishing/canon/voice/mechanical-rules.md',
+        'resources/publishing/canon/voice/metadata-rules.md',
         'resources/publishing/canon/channels/blog.md',
         'resources/publishing/canon/roles/drafter.md',
     ]],
@@ -258,12 +275,30 @@ test('every kind sends its frozen goals and rubric in the system message and the
     'buyer review' => [EditorialActivityKind::ReviewBuyer, '# Blog channel', ['resources/publishing/canon/channels/blog.md', 'resources/publishing/canon/roles/buyer-reviewer.md']],
     'reconciliation' => [EditorialActivityKind::Reconciliation, '# Reconciler rubric', ['resources/publishing/canon/roles/reconciler.md']],
     'recheck' => [EditorialActivityKind::Recheck, '# Rechecker rubric', ['resources/publishing/canon/roles/rechecker.md']],
+    'package' => [EditorialActivityKind::Package, '# Core voice', [
+        'resources/publishing/canon/voice/core.md',
+        'resources/publishing/canon/voice/metadata-rules.md',
+        'resources/publishing/canon/channels/blog.md',
+        'resources/publishing/canon/roles/packager.md',
+    ]],
 ]);
 
 test('the dataset covers every editorial activity kind', function () {
     expect(array_map(fn (EditorialActivityKind $kind): string => $kind->value, EditorialActivityKind::cases()))->toBe([
-        'interview', 'research_challenge', 'plan', 'draft', 'lint_repair', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck',
+        'interview', 'research_challenge', 'plan', 'draft', 'lint_repair', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck', 'package',
     ]);
+});
+
+test('the package input carries the final manuscript and the brief', function () {
+    $activity = inputContractStart(inputContractAuthor(), EditorialActivityKind::Package);
+    $revision = ArticleRevision::query()->findOrFail($activity->revision_id);
+
+    $input = inputContractRun($activity)['input'];
+
+    expect($input['manuscript']['document'] ?? null)->toEqual($revision->document)
+        ->and($input['manuscript']['revision_id'] ?? null)->toBe($revision->id)
+        ->and($input['brief'] ?? null)->toBe(['goal' => 'Show owners what to check first', 'post_type' => 'essay'])
+        ->and($activity->fresh()?->status)->toBe(EditorialActivityStatus::Completed);
 });
 
 test('the lint repair input holds its hits and the blocks they touch', function () {

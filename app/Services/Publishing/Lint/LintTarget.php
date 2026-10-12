@@ -13,33 +13,43 @@ use App\Models\Publishing\PieceKind;
  */
 final readonly class LintTarget
 {
-    /** Metadata a character rule reads. Dates, tags and slugs carry no prose. */
-    public const METADATA_FIELDS = ['title', 'description'];
+    /** Metadata a character rule reads. Dates, tags, slugs and the greatest-hits tag carry no public prose. */
+    public const METADATA_FIELDS = ['title', 'seo_title', 'description'];
 
     /**
      * @param  array<array-key, mixed>  $metadata
      * @param  list<LintBlock>  $blocks
+     * @param  int|null  $articleId  the piece being linted, so a slug rule can tell its own slug from another piece's
      */
-    public function __construct(public PieceKind $kind, public array $metadata, public array $blocks) {}
+    public function __construct(public PieceKind $kind, public array $metadata, public array $blocks, public ?int $articleId = null) {}
 
     public static function fromRevision(ArticleRevision $revision, PieceKind $kind): self
     {
         $document = $revision->getAttribute('document');
         $metadata = $revision->getAttribute('metadata');
+        $articleId = $revision->getAttribute('article_id');
 
-        return self::fromDocument(is_array($document) ? $document : [], is_array($metadata) ? $metadata : [], $kind);
+        return self::fromDocument(is_array($document) ? $document : [], is_array($metadata) ? $metadata : [], $kind, is_numeric($articleId) ? (int) $articleId : null);
     }
 
     /**
      * @param  array<array-key, mixed>  $document
      * @param  array<array-key, mixed>  $metadata
      */
-    public static function fromDocument(array $document, array $metadata, PieceKind $kind): self
+    public static function fromDocument(array $document, array $metadata, PieceKind $kind, ?int $articleId = null): self
     {
         $blocks = [];
         self::collect(is_array($document['content'] ?? null) ? $document['content'] : [], '$.content', false, false, $blocks);
 
-        return new self($kind, $metadata, $blocks);
+        return new self($kind, $metadata, $blocks, $articleId);
+    }
+
+    /** One metadata field as written, or null when it is missing or blank; presence is the release checklist's job. */
+    public function metadataValue(string $field): ?string
+    {
+        $value = $this->metadata[$field] ?? null;
+
+        return is_string($value) && trim($value) !== '' ? $value : null;
     }
 
     /** @return array<string, string> non-empty metadata text keyed by field */
