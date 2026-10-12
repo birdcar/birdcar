@@ -17,7 +17,7 @@ return [
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',
-    'default_for_embeddings' => 'openai',
+    'default_for_embeddings' => 'openrouter-embeddings',
     'default_for_reranking' => 'cohere',
 
     /*
@@ -143,6 +143,18 @@ return [
             'driver' => 'openrouter',
             'key' => env('OPENROUTER_API_KEY'),
             'url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+        ],
+
+        'openrouter-embeddings' => [
+            'driver' => 'openai-compatible',
+            'key' => env('OPENROUTER_API_KEY'),
+            'url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+            'models' => [
+                'embeddings' => [
+                    'default' => 'openai/text-embedding-3-small',
+                    'dimensions' => 1536,
+                ],
+            ],
         ],
 
         'voyageai' => [

@@ -3,6 +3,7 @@
 namespace App\Actions\Publishing;
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
+use App\Jobs\IndexPublishedExemplar;
 use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
@@ -12,6 +13,7 @@ use App\Models\EditorialFinding;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialStage;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
@@ -325,6 +327,11 @@ class ManageArticleRelease
                 'published_release_id' => $lockedRelease->id,
                 'first_published_at' => $firstPublishedAt,
             ])->save();
+
+            // Re-index after the commit so the newly live text replaces the post's exemplar sections.
+            if ($article->kind === PieceKind::BlogPost) {
+                IndexPublishedExemplar::dispatch((int) $article->id)->afterCommit();
+            }
 
             if ($lockedAttempt !== null) {
                 $lockedAttempt->forceFill(['stage' => EditorialStage::Published])->save();

@@ -222,7 +222,8 @@ test('every kind sends its frozen goals and rubric in the system message and the
         ->and($sent['system'])->toContain($frozen['rubric'])
         ->and(strpos($sent['system'], '## Business goals'))->toBeLessThan((int) strpos($sent['system'], '## Your rubric'))
         ->and(strpos($sent['system'], '## Your rubric'))->toBeLessThan((int) strpos($sent['system'], 'Common rules:'))
-        ->and($sent['system'])->toContain('canon exemplars in input.canon.exemplars are voice-only and are never evidence');
+        ->and($sent['system'])->toContain('canon exemplars in input.canon.exemplars are voice-only and are never evidence')
+        ->and($sent['system'])->toContain('Retrieved sections in input.canon.retrieved_exemplars');
 
     expect($canon['version'])->toBe($snapshot->version)
         ->and($canon['hash'])->toBe($snapshot->version)
@@ -299,6 +300,14 @@ test('only the drafter and voice reviewer receive the labeled exemplar canon', f
 
     expect(array_column($canon['exemplars'], 'id'))->toBe($receivesExemplars ? INPUT_CONTRACT_EXEMPLAR_IDS : [])
         ->and($canon['exemplar_label'])->toBe('Voice-only exemplars. Imitate sentence craft and rhythm. Never reuse their anecdotes, numbers, audience or banned vocabulary, and never cite them as evidence.');
+
+    // The plan was approved while agents were paused, so nothing was retrieved and the blog post carries an empty list.
+    if ($receivesExemplars) {
+        expect($canon['retrieved_exemplars'] ?? null)->toBe([])
+            ->and($canon['retrieval_status'] ?? null)->toBe('none');
+    } else {
+        expect($canon)->not->toHaveKeys(['retrieved_exemplars', 'retrieval_status']);
+    }
 })->with([
     'draft' => [EditorialActivityKind::Draft, true],
     'voice review' => [EditorialActivityKind::ReviewVoice, true],

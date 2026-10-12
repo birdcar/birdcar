@@ -3,6 +3,7 @@
 namespace App\Actions\Publishing;
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
+use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
@@ -10,8 +11,10 @@ use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\ExemplarRetriever;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -20,7 +23,7 @@ use RuntimeException;
 
 class ApprovePublishingStage
 {
-    public function __construct(private PublishingFingerprint $fingerprint) {}
+    public function __construct(private PublishingFingerprint $fingerprint, private ExemplarRetriever $exemplars) {}
 
     public function approve(
         User $actor,
@@ -36,8 +39,11 @@ class ApprovePublishingStage
             throw new RuntimeException('Release approvals must be managed through release packages.');
         }
 
+        // The Draft starts inside the transaction below, so the network call happens first and never holds row locks.
+        $exemplarContext = $kind === ApprovalKind::Plan ? $this->exemplarContextFor($attempt) : null;
+
         /** @var EditorialApproval $approval */
-        $approval = DB::transaction(function () use ($actor, $attempt, $kind, $expectedInputHash, $revisionId, $releaseId): EditorialApproval {
+        $approval = DB::transaction(function () use ($actor, $attempt, $kind, $expectedInputHash, $revisionId, $releaseId, $exemplarContext): EditorialApproval {
             $lockedAttempt = $this->lockedAttempt($attempt);
             $actualHash = $this->inputHashFor($lockedAttempt, $kind, $revisionId, $releaseId);
 
@@ -63,7 +69,11 @@ class ApprovePublishingStage
                 'approved_at' => now(),
             ]);
 
-            $lockedAttempt->forceFill(['stage' => $this->nextStage($kind)])->save();
+            $changes = ['stage' => $this->nextStage($kind)];
+            if ($exemplarContext !== null) {
+                $changes['exemplar_context'] = $exemplarContext;
+            }
+            $lockedAttempt->forceFill($changes)->save();
             $lockedAttempt->refresh();
 
             if (! app(PublishingAgentSettings::class)->paused) {
@@ -79,6 +89,31 @@ class ApprovePublishingStage
         });
 
         return $approval;
+    }
+
+    /**
+     * Blog-post exemplars for the Draft a plan approval starts. A paused approval starts no Draft, so it spends nothing;
+     * kit pieces never retrieve.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function exemplarContextFor(PublishingAttempt|int $attempt): ?array
+    {
+        if (app(PublishingAgentSettings::class)->paused) {
+            return null;
+        }
+
+        $fresh = PublishingAttempt::query()->find($attempt instanceof PublishingAttempt ? $attempt->getKey() : $attempt);
+        if (! $fresh instanceof PublishingAttempt) {
+            return null;
+        }
+
+        $article = Article::query()->select(['id', 'kind'])->find($fresh->article_id);
+        if ($article?->kind !== PieceKind::BlogPost) {
+            return null;
+        }
+
+        return $this->exemplars->forAttempt($fresh);
     }
 
     public function inputHashFor(PublishingAttempt $attempt, ApprovalKind $kind, ?int $revisionId = null, ?int $releaseId = null): string

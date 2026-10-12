@@ -27,6 +27,7 @@ class PublishingAttempt extends Model
             'angle' => 'array',
             'plan' => 'array',
             'interview_context' => 'array',
+            'exemplar_context' => 'array',
             'paused_at' => 'datetime',
             'parked_at' => 'datetime',
             'abandoned_at' => 'datetime',

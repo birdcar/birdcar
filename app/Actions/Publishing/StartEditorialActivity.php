@@ -13,9 +13,11 @@ use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\EditorialStage;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\ExemplarRetriever;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
@@ -25,7 +27,11 @@ use RuntimeException;
 
 class StartEditorialActivity
 {
-    public function __construct(private readonly PublishingFingerprint $fingerprint, private readonly VoiceCanon $canon) {}
+    public function __construct(
+        private readonly PublishingFingerprint $fingerprint,
+        private readonly VoiceCanon $canon,
+        private readonly ExemplarRetriever $exemplars,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $input
@@ -77,7 +83,7 @@ class StartEditorialActivity
                 ] : null,
                 'completed_research' => $this->completedResearchSnapshots($lockedAttempt),
                 'evidence_sources' => $this->eligibleEvidenceSources($lockedAttempt),
-                'canon' => $this->canon->snapshot()->frozenFor($kind),
+                'canon' => $this->frozenCanon($lockedAttempt, $article, $kind, $input),
             ], $this->reviewContext($lockedAttempt, $article, $kind, $revision, $input));
             $promptHash = $this->fingerprint->hash([
                 'version' => EditorialOutput::VERSION,
@@ -118,6 +124,86 @@ class StartEditorialActivity
         }
 
         return $activity;
+    }
+
+    /**
+     * The canon block this activity freezes. A blog-post Draft and VoiceReviewer also carry the sections the plan
+     * approval retrieved, under the same voice-only exemplar label.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function frozenCanon(PublishingAttempt $attempt, Article $article, EditorialActivityKind $kind, array $input): array
+    {
+        $canon = $this->canon->snapshot()->frozenFor($kind);
+
+        if (! in_array($kind, [EditorialActivityKind::Draft, EditorialActivityKind::ReviewVoice], true) || $article->kind !== PieceKind::BlogPost) {
+            return $canon;
+        }
+
+        return [...$canon, ...$this->retrievedExemplars($attempt, $kind, $input)];
+    }
+
+    /**
+     * A voice review judges the draft against exactly the sections that draft saw, so it copies them from the Draft it
+     * follows. Otherwise the attempt's stored context is used; one whose query no longer matches the brief, angle and
+     * plan (after a rethink) is `stale`, and an attempt that never retrieved is `none`.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{retrieved_exemplars: list<mixed>, retrieval_status: string}
+     */
+    private function retrievedExemplars(PublishingAttempt $attempt, EditorialActivityKind $kind, array $input): array
+    {
+        if ($kind === EditorialActivityKind::ReviewVoice) {
+            $draftCanon = $this->draftRetrieval($attempt, $input);
+            if ($draftCanon !== null) {
+                return $draftCanon;
+            }
+        }
+
+        $context = $attempt->getAttribute('exemplar_context');
+        if (! is_array($context)) {
+            return ['retrieved_exemplars' => [], 'retrieval_status' => 'none'];
+        }
+
+        $storedHash = $context['query_hash'] ?? null;
+        if (! is_string($storedHash) || ! hash_equals($storedHash, hash('sha256', $this->exemplars->queryText($attempt)))) {
+            return ['retrieved_exemplars' => [], 'retrieval_status' => 'stale'];
+        }
+
+        return [
+            'retrieved_exemplars' => is_array($context['sections'] ?? null) ? array_values($context['sections']) : [],
+            'retrieval_status' => is_string($context['status'] ?? null) ? $context['status'] : 'none',
+        ];
+    }
+
+    /**
+     * The retrieval frozen into the Draft this review follows: the given `draft_activity_id` when it names a Draft of
+     * this attempt, otherwise the latest Draft of the current review cycle.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{retrieved_exemplars: list<mixed>, retrieval_status: string}|null
+     */
+    private function draftRetrieval(PublishingAttempt $attempt, array $input): ?array
+    {
+        $draftId = $input['draft_activity_id'] ?? null;
+        $draft = EditorialActivity::query()
+            ->select(['id', 'input'])
+            ->where('attempt_id', $attempt->id)
+            ->where('kind', EditorialActivityKind::Draft->value)
+            ->when(
+                is_numeric($draftId),
+                fn ($query) => $query->whereKey((int) $draftId),
+                fn ($query) => $query->where('review_cycle', (int) $attempt->review_cycle)->latest('id'),
+            )
+            ->first();
+
+        $canon = $draft?->input['canon'] ?? null;
+        if (! is_array($canon) || ! is_array($canon['retrieved_exemplars'] ?? null) || ! is_string($canon['retrieval_status'] ?? null)) {
+            return null;
+        }
+
+        return ['retrieved_exemplars' => array_values($canon['retrieved_exemplars']), 'retrieval_status' => $canon['retrieval_status']];
     }
 
     /**

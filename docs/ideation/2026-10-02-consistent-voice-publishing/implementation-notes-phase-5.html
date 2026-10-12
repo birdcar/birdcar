@@ -1,0 +1,177 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 5 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Exemplar retrieval —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 5</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 5</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Exemplar retrieval</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Pre-flight — Laravel Cloud pgvector support</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to confirm Laravel Cloud Postgres supports CREATE EXTENSION vector before shipping the migration, and to stop if it does not.</dd>
+          <dt>Decision</dt>
+          <dd>Laravel Cloud&#x27;s Serverless Postgres docs (laravel.com/cloud/docs/resources/databases/postgres) state it supports pgvector, so the phase proceeds. Read-only CLI checks could not confirm which database is attached to production: `cloud database-cluster:list` returns 400 (the CLI asks for an include the API no longer allows), and `environment:get` returns databaseSchemaId null, but the same response also lists the app with no environmentIds, so its relation fields are not populated and prove nothing. Owner gate: before deploying, confirm production is attached to a Laravel Serverless Postgres database. On SQLite or MySQL, `Schema::ensureVectorExtensionExists()` throws during `migrate --force` in the deploy command.</dd>
+          <dt>Alternative</dt>
+          <dd>Stopping the phase. The documented support is the condition the spec names, and mutating Cloud to probe further is gated.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>ApprovePublishingStage — retrieve only when the approval will start a Draft</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to retrieve once per plan approval for blog posts. Agents are paused by default, and a paused plan approval never starts a Draft (no other path starts one).</dd>
+          <dt>Decision</dt>
+          <dd>Retrieval runs only when agents are unpaused, the piece is a blog post, and the approval is for a plan. It runs before the transaction. A paused approval leaves exemplar_context untouched and makes no request. Retrieval also returns early with no request when the query text is empty or no candidate rows exist, so the existing plan-approval tests send nothing.</dd>
+          <dt>Alternative</dt>
+          <dd>Retrieving on every plan approval. That spends on approvals that never produce a Draft, and every paused test approval would reach the retriever.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>IndexPublishedExemplar — guard against paid calls from the publish hook</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The context map notes the hook runs inline in tests (sync queue plus afterCommit), and the local .env carries a real OpenRouter key.</dd>
+          <dt>Decision</dt>
+          <dd>The job syncs sections but skips embedding while publishing agents are paused, since the pause is the kill switch for automatic paid calls; the backfill command embeds the rows later. The job catches any Throwable and report()s it, so indexing never fails publishing. ExemplarEmbeddings also refuses to send a request when the openrouter-embeddings key is blank, which matches CI.</dd>
+          <dt>Alternative</dt>
+          <dd>Pinning OPENROUTER_API_KEY to empty in phpunit.xml. It would break the paid tests/Manual live trial, which reads the real key from .env through the same phpunit.xml.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>ExemplarEmbeddings — a shared service not listed in the spec</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The indexer and the retriever both call `Embeddings::for(...)-&gt;dimensions(1536)-&gt;generate(provider: &#x27;openrouter-embeddings&#x27;, model: &#x27;openai/text-embedding-3-small&#x27;)` and must both check the vector size.</dd>
+          <dt>Decision</dt>
+          <dd>Added app/Services/Publishing/ExemplarEmbeddings with PROVIDER, MODEL and DIMENSIONS constants and one embed() method. It refuses a blank key, checks the vector count, and requires exactly 1536 floats per vector, throwing a clear error otherwise, so the row keeps a null embedding.</dd>
+          <dt>Alternative</dt>
+          <dd>Duplicating the call and the checks in both classes.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>IndexExemplarSections — the text walker, captions and long blocks</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec names CheckArticleRelease::documentText as the pattern. It joins every text node and double-counts payload nodes that carry both the legacy text key and content.</dd>
+          <dt>Decision</dt>
+          <dd>Reused LintTarget::fromDocument, the walker the voice linter already uses. It prefers content over the legacy text key, flattens lists and blockquotes, skips code blocks, replaces inline code with a space, and includes note/callout titles and chart/diagram captions as the owner&#x27;s prose. Whitespace inside a block is collapsed. A single block over 4,000 characters stays whole, with no sentence split. The embedded input is the heading, a blank line, then the text. The content_hash follows the spec: sha256 of the heading, a newline, then the text.</dd>
+          <dt>Alternative</dt>
+          <dd>A sibling walker that keeps inline code text. That is more code for archive and consultancy posts that rarely use inline code.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>StartEditorialActivity — which inputs carry retrieval, and how ReviewVoice matches the Draft</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says Draft and ReviewVoice on blog posts get canon.retrieved_exemplars and canon.retrieval_status with the same voice-only label, and that a retried draft and its reviewer see the same sections.</dd>
+          <dt>Decision</dt>
+          <dd>Only blog-post Draft and ReviewVoice inputs carry the two keys; every other kind and every kit piece omits them, so their prompt hashes are unchanged. The existing canon.exemplar_label is reused rather than adding a second label. ReviewVoice copies the sections and status frozen into its Draft: the Draft named by draft_activity_id when it is a Draft of the same attempt (a forged id falls back), otherwise the latest Draft of the current review cycle. Without a Draft it uses the attempt context. The status is `none` when the attempt never retrieved, and `stale` when the stored query_hash no longer matches the brief, angle and plan, for example after a rethink.</dd>
+          <dt>Alternative</dt>
+          <dd>Freezing from the attempt context every time. A re-approval between the Draft and its review could then show the reviewer different sections.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>EditorialAgent — telling agents what retrieved sections are</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The common rules and role rubrics mentioned only input.canon.exemplars.</dd>
+          <dt>Decision</dt>
+          <dd>Added one sentence to the common rules after the existing exemplar sentence, which the contract test asserts verbatim. It says retrieved sections are the owner&#x27;s earlier published writing, chosen for topical closeness, under the same label: imitate only their craft, never reuse their anecdotes, numbers or audience, and never cite them as evidence. Canon role files are unchanged, so the canon version does not move.</dd>
+          <dt>Alternative</dt>
+          <dd>Editing roles/drafter.md and roles/voice-reviewer.md, which would change the canon version for every activity.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>PublishingIndexExemplars — command shape</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec leaves the meaning of --article open.</dd>
+          <dt>Decision</dt>
+          <dd>--article takes a slug. The command syncs, then embeds each article separately, prints its created, pruned and embedded counts, keeps going after a failure, and exits non-zero if any article failed. Without --article it also visits articles that still have rows but are no longer eligible, so they get pruned. It ignores the agent pause because it is an explicit owner action. It is not scheduled, and its description says a model or dimension change needs a re-embed migration. No production confirmation flag was added.</dd>
+          <dt>Alternative</dt>
+          <dd>Taking an id, or adding a --confirm-production flag like publishing:import-archive.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>ExemplarRetriever — limits</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec does not cap sections per source article and does not set a timeout.</dd>
+          <dt>Decision</dt>
+          <dd>No per-article cap: all four sections may come from one essay. The query embedding uses a 15-second timeout because it runs inside the owner&#x27;s approval request; indexing batches use 60 seconds. A failure reason is the exception&#x27;s class name and message, capped at 300 characters. It never contains the API key.</dd>
+          <dt>Alternative</dt>
+          <dd>A one-section-per-article cap, which the spec does not ask for.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Migration — filename and rollback</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>make:migration produced a 2026_10_12 timestamp, and the spec names 2026_10_02_200000.</dd>
+          <dt>Decision</dt>
+          <dd>Renamed the migration to the spec&#x27;s filename (it sorts after 2026_10_02_100000). Rolling back drops the table and the exemplar_context column but leaves the vector extension installed. An optional ExemplarSectionFactory was added with an embedded() state that the tests use.</dd>
+          <dt>Alternative</dt>
+          <dd>Dropping the extension in down(), which could break other objects that use it.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>
