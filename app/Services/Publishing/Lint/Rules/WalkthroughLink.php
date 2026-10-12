@@ -10,6 +10,8 @@ use App\Services\Publishing\Lint\LintTarget;
  */
 class WalkthroughLink extends VoiceRule
 {
+    use AppliesToBlogPosts;
+
     private const HREF = '~^(?:https?://(?:www\.)?birdcar\.dev)?/walkthrough/?(?:[?#].*)?$~i';
 
     public function id(): string

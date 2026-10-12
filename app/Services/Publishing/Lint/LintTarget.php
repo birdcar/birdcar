@@ -4,12 +4,15 @@ namespace App\Services\Publishing\Lint;
 
 use App\Models\ArticleRevision;
 use App\Models\Publishing\PieceKind;
+use App\Services\Publishing\KitDocument;
 
 /**
  * The text a voice rule reads: one block per paragraph, heading and titled or captioned node in document order, plus
- * the metadata a character rule checks. Code-marked text and code blocks are never part of a block's text.
+ * the metadata a character rule checks. Code-marked text and code blocks are never part of a block's text. A distribution
+ * kit piece also names each block's field role and carries the flagship context its channel rules check against.
  *
  * @phpstan-type LintBlock array{id: string, type: string, level: int|null, text: string, bold_spans: list<array{text: string, offset: int}>, links: list<array{href: string, text: string}>, in_blockquote: bool, protected: bool}
+ * @phpstan-type LintContext array{canonical_url?: string|null, target_query?: string|null}
  */
 final readonly class LintTarget
 {
@@ -20,28 +23,66 @@ final readonly class LintTarget
      * @param  array<array-key, mixed>  $metadata
      * @param  list<LintBlock>  $blocks
      * @param  int|null  $articleId  the piece being linted, so a slug rule can tell its own slug from another piece's
+     * @param  array<string, string>  $roles  a kit piece's field role for each block id
+     * @param  LintContext  $context  a kit piece's flagship URL and target query
      */
-    public function __construct(public PieceKind $kind, public array $metadata, public array $blocks, public ?int $articleId = null) {}
+    public function __construct(public PieceKind $kind, public array $metadata, public array $blocks, public ?int $articleId = null, public array $roles = [], public array $context = []) {}
 
-    public static function fromRevision(ArticleRevision $revision, PieceKind $kind): self
+    /** @param LintContext $context */
+    public static function fromRevision(ArticleRevision $revision, PieceKind $kind, array $context = []): self
     {
         $document = $revision->getAttribute('document');
         $metadata = $revision->getAttribute('metadata');
         $articleId = $revision->getAttribute('article_id');
 
-        return self::fromDocument(is_array($document) ? $document : [], is_array($metadata) ? $metadata : [], $kind, is_numeric($articleId) ? (int) $articleId : null);
+        return self::fromDocument(is_array($document) ? $document : [], is_array($metadata) ? $metadata : [], $kind, is_numeric($articleId) ? (int) $articleId : null, $context);
     }
 
     /**
      * @param  array<array-key, mixed>  $document
      * @param  array<array-key, mixed>  $metadata
+     * @param  LintContext  $context
      */
-    public static function fromDocument(array $document, array $metadata, PieceKind $kind, ?int $articleId = null): self
+    public static function fromDocument(array $document, array $metadata, PieceKind $kind, ?int $articleId = null, array $context = []): self
     {
         $blocks = [];
         self::collect(is_array($document['content'] ?? null) ? $document['content'] : [], '$.content', false, false, $blocks);
 
-        return new self($kind, $metadata, $blocks, $articleId);
+        return new self($kind, $metadata, $blocks, $articleId, $kind->isKit() ? KitDocument::roles($kind, $document) : [], $context);
+    }
+
+    /**
+     * The block holding one kit field, such as `first_comment` or `body`.
+     *
+     * @return LintBlock|null
+     */
+    public function roleBlock(string $role): ?array
+    {
+        foreach ($this->blocks as $block) {
+            if (($this->roles[$block['id']] ?? null) === $role) {
+                return $block;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * A Bluesky thread's posts in reading order.
+     *
+     * @return list<LintBlock>
+     */
+    public function postBlocks(): array
+    {
+        return array_values(array_filter($this->blocks, fn (array $block): bool => str_starts_with($this->roles[$block['id']] ?? '', 'post:')));
+    }
+
+    /** A kit context value such as `canonical_url`, or null when it is missing or blank. */
+    public function contextValue(string $key): ?string
+    {
+        $value = $this->context[$key] ?? null;
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /** One metadata field as written, or null when it is missing or blank; presence is the release checklist's job. */

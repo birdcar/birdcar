@@ -5,6 +5,8 @@ use App\Ai\Agents\Drafter;
 use App\Ai\Agents\EditorialAgent;
 use App\Ai\Agents\FactReviewer;
 use App\Ai\Agents\Interviewer;
+use App\Ai\Agents\KitDrafter;
+use App\Ai\Agents\KitReviewer;
 use App\Ai\Agents\LintRepairer;
 use App\Ai\Agents\Packager;
 use App\Ai\Agents\Planner;
@@ -46,7 +48,9 @@ test('it selects the role-specific SDK agent for each editorial activity kind', 
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewBuyer)))->toBeInstanceOf(BuyerReviewer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Reconciliation)))->toBeInstanceOf(ReviewReconciler::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Recheck)))->toBeInstanceOf(RevisionRechecker::class)
-        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Package)))->toBeInstanceOf(Packager::class);
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Package)))->toBeInstanceOf(Packager::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::DraftKit)))->toBeInstanceOf(KitDrafter::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewKit)))->toBeInstanceOf(KitReviewer::class);
 });
 
 test('it prompts the native SDK with frozen context and returns structured output from the fake', function () {
@@ -96,6 +100,8 @@ test('schemas state the output rules the application enforces', function () {
     $plan = (new Planner(editorialActivity(EditorialActivityKind::Plan)))->schema(new JsonSchemaTypeFactory);
     $review = (new FactReviewer(editorialActivity(EditorialActivityKind::ReviewFacts)))->schema(new JsonSchemaTypeFactory);
     $recheck = (new RevisionRechecker(editorialActivity(EditorialActivityKind::Recheck)))->schema(new JsonSchemaTypeFactory);
+    $kitReview = (new KitReviewer(editorialActivity(EditorialActivityKind::ReviewKit)))->schema(new JsonSchemaTypeFactory);
+    $kitDraft = (new KitDrafter(editorialActivity(EditorialActivityKind::DraftKit, ['piece_kind' => 'email_blurb'])))->schema(new JsonSchemaTypeFactory);
     $contradiction = $research['contradictions']->toArray()['items']['properties'];
 
     expect($contradiction['severity']['description'])->toContain('Must be "blocking" whenever any supporting quotation contradicts')
@@ -112,6 +118,11 @@ test('schemas state the output rules the application enforces', function () {
         ->and($recheck['resolved']->toArray()['items']['required'])->toEqualCanonicalizing(['finding_id', 'status', 'reason'])
         ->and($recheck['unresolved']->toArray()['items']['properties']['status']['enum'])->toBe(['resolved', 'unresolved'])
         ->and($recheck['newBlockingFindings']->toArray()['description'])->toContain('severity to "blocking"')
+        ->and($kitReview['findings']->toArray()['items']['properties']['kind']['enum'])->toBe(['claim_outside_manifest', 'register', 'channel'])
+        ->and($kitReview['findings']->toArray()['description'])->toContain('supporting_source_ids and supporting_quotations are always empty lists')
+        ->and(array_keys($kitDraft))->toBe(['subject', 'preview', 'body'])
+        ->and($kitDraft['subject']->toArray()['maxLength'])->toBe(50)
+        ->and($kitDraft['body']->toArray()['description'])->toContain('2 to 4 sentences [rule:email-blurb-length]')
         ->and((string) (new Researcher(editorialActivity(EditorialActivityKind::ResearchChallenge)))->instructions())->toContain('contradicting quotation must be severity "blocking"');
 });
 
@@ -160,6 +171,8 @@ test('each role sends its explicit native recommendation without price or provid
     'reconciler' => [EditorialActivityKind::Reconciliation, 'deepseek/deepseek-v4.1-flash', 'low', 16000],
     'rechecker' => [EditorialActivityKind::Recheck, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
     'packager' => [EditorialActivityKind::Package, 'google/gemini-3.8-flash', 'medium', 16000],
+    'kit drafter' => [EditorialActivityKind::DraftKit, 'google/gemini-3.8-flash', 'medium', 16000],
+    'kit reviewer' => [EditorialActivityKind::ReviewKit, 'deepseek/deepseek-v4-pro-0813', 'high', 16000],
 ]);
 
 test('allowlisted overrides replace only the model and keep role reasoning where supported', function (string $override) {
@@ -207,6 +220,13 @@ test('it requires approval and human answers before returning author context', f
     expect($tool->shouldRequestApproval(new Request(['questions' => ['What is the owner goal?']])))->toBeInstanceOf(Approval::class)
         ->and(fn () => $tool->handle(new Request(['questions' => ['What is the owner goal?'], 'answers' => null])))->toThrow(InvalidArgumentException::class)
         ->and($tool->handle(new Request(['questions' => ['What is the owner goal?'], 'answers' => 'Build buyer trust.'])))->toContain('Build buyer trust.');
+});
+
+test('a kit draft schema read without a piece kind lists every kit field instead of failing', function () {
+    $schema = (new KitDrafter(editorialActivity(EditorialActivityKind::DraftKit)))->schema(new JsonSchemaTypeFactory);
+
+    expect(array_keys($schema))->toBe(['text', 'first_comment', 'posts', 'subject', 'preview', 'body'])
+        ->and($schema['posts']->toArray()['type'])->toBe(['array', 'null']);
 });
 
 test('it keeps historical array outputs valid while decoding SDK JSON strings before validation', function () {

@@ -6,6 +6,7 @@ use App\Services\Publishing\Lint\LintTarget;
 
 class SeoTitleLength extends VoiceRule
 {
+    use AppliesToBlogPosts;
     use MeasuresMetadataLength;
 
     public function id(): string

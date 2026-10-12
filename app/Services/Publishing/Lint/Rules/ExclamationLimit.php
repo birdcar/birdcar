@@ -4,7 +4,10 @@ namespace App\Services\Publishing\Lint\Rules;
 
 use App\Services\Publishing\Lint\LintTarget;
 
-/** At most one exclamation point in the body, and none in a heading, the title or the description. */
+/**
+ * At most one exclamation point in a blog post's body, and none in a heading, the title, the description or a distribution
+ * kit piece.
+ */
 class ExclamationLimit extends VoiceRule
 {
     public function id(): string
@@ -23,6 +26,7 @@ class ExclamationLimit extends VoiceRule
             }
         }
 
+        $allowed = $target->kind->isKit() ? 0 : 1;
         $bodyCount = 0;
         foreach ($target->blocks as $block) {
             foreach ($this->offsets($block['text']) as $offset) {
@@ -34,8 +38,10 @@ class ExclamationLimit extends VoiceRule
                 }
 
                 $bodyCount++;
-                if ($bodyCount > 1) {
-                    $hits[] = $this->blockHit($block['id'], $excerpt, 'Use at most one exclamation point in a post; rewrite "'.$excerpt.'".');
+                if ($bodyCount > $allowed) {
+                    $hits[] = $this->blockHit($block['id'], $excerpt, $allowed === 0
+                        ? 'Remove the exclamation point from "'.$excerpt.'"; a distribution piece takes none.'
+                        : 'Use at most one exclamation point in a post; rewrite "'.$excerpt.'".');
                 }
             }
         }

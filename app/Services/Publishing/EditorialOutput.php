@@ -20,6 +20,9 @@ class EditorialOutput
     /** The greatest-hits tag is a short internal label, never public prose. */
     public const GREATEST_HITS_TAG_LIMIT = 80;
 
+    /** What a kit reviewer may report. Only a claim outside the manifest blocks; register and channel stay advisory. */
+    public const KIT_FINDING_KINDS = ['claim_outside_manifest', 'register', 'channel'];
+
     /**
      * @param  array<string, mixed>  $payload
      * @param  list<int|string>  $knownEvidenceIds
@@ -43,6 +46,8 @@ class EditorialOutput
             EditorialActivityKind::Reconciliation => $this->validateReconciliation($payload),
             EditorialActivityKind::Recheck => $this->validateRecheck($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Package => $this->validatePackage($payload, $frozenInput),
+            EditorialActivityKind::DraftKit => $this->validateDraftKit($payload, $frozenInput),
+            EditorialActivityKind::ReviewKit => $this->validateKitFindings($payload, $knownEvidenceIds, $evidenceTextsById),
         };
     }
 
@@ -88,6 +93,8 @@ class EditorialOutput
             EditorialActivityKind::Reconciliation => ['groups', 'conflicts'],
             EditorialActivityKind::Recheck => ['resolved', 'unresolved', 'newBlockingFindings'],
             EditorialActivityKind::Package => ['titleOptions', 'title', 'seoTitle', 'description', 'slug', 'greatestHitsTag'],
+            EditorialActivityKind::DraftKit => array_values(array_unique(array_merge(...array_values(KitDocument::FIELDS)))),
+            EditorialActivityKind::ReviewKit => ['findings'],
         };
     }
 
@@ -384,6 +391,85 @@ class EditorialOutput
         if ($hits !== []) {
             throw new InvalidArgumentException(implode(' ', array_map(static fn (LintHit $hit): string => $hit->message, $hits)));
         }
+
+        return $payload;
+    }
+
+    /**
+     * A kit draft returns exactly the fields of its piece kind, each non-empty text; Bluesky returns a non-empty list of
+     * posts. Lengths, numbering and links are the linter's job, so a draft that breaks them still lands and is repaired.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $frozenInput
+     * @return array<string, mixed>
+     */
+    private function validateDraftKit(array $payload, array $frozenInput): array
+    {
+        $kind = PieceKind::tryFrom((string) ($frozenInput['piece_kind'] ?? ''));
+        if ($kind === null || ! $kind->isKit()) {
+            throw new InvalidArgumentException('Kit drafting needs a distribution piece kind in its input.');
+        }
+
+        $expected = KitDocument::fieldsFor($kind);
+        $returned = array_keys(array_filter($payload, static fn (mixed $value): bool => $value !== null));
+        $missing = array_diff($expected, $returned);
+        $unexpected = array_diff($returned, $expected);
+        if ($missing !== [] || $unexpected !== []) {
+            throw new InvalidArgumentException('A '.$kind->label().' draft must return exactly '.implode(', ', $expected).($missing !== [] ? '; missing '.implode(', ', $missing) : '').($unexpected !== [] ? '; unexpected '.implode(', ', $unexpected) : '').'.');
+        }
+
+        $fields = [];
+        foreach ($expected as $field) {
+            $value = $payload[$field];
+            if ($field === 'posts') {
+                if (! is_array($value) || ! array_is_list($value) || $value === []) {
+                    throw new InvalidArgumentException('A Bluesky thread draft must return a non-empty list of posts.');
+                }
+                foreach ($value as $post) {
+                    if (! is_string($post) || trim($post) === '') {
+                        throw new InvalidArgumentException('Every Bluesky post must be non-empty text.');
+                    }
+                }
+                $fields[$field] = array_map(static fn (string $post): string => trim($post), $value);
+
+                continue;
+            }
+
+            if (! is_string($value) || trim($value) === '') {
+                throw new InvalidArgumentException('The '.$kind->label().' field '.$field.' must be non-empty text.');
+            }
+            $fields[$field] = trim($value);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Kit review findings follow the review finding rules, cite no evidence (a kit piece has none), and carry one of the
+     * kit kinds. Severity follows the kind: a claim outside the manifest always blocks, register and channel never do.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  list<int|string>  $knownEvidenceIds
+     * @param  array<int|string, string|null>  $evidenceTextsById
+     * @return array<string, mixed>
+     */
+    private function validateKitFindings(array $payload, array $knownEvidenceIds, array $evidenceTextsById): array
+    {
+        $payload = $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById);
+        $findings = is_array($payload['findings'] ?? null) ? $payload['findings'] : [];
+
+        foreach ($findings as $index => $finding) {
+            $kind = is_array($finding) ? ($finding['kind'] ?? null) : null;
+            if (! is_array($finding) || ! is_string($kind) || ! in_array($kind, self::KIT_FINDING_KINDS, true)) {
+                throw new InvalidArgumentException('Each kit finding must have kind '.implode(', ', self::KIT_FINDING_KINDS).'.');
+            }
+
+            $finding['severity'] = $kind === 'claim_outside_manifest' ? 'blocking' : 'advisory';
+            $finding['proposed_patch'] = null;
+            $findings[$index] = $finding;
+        }
+
+        $payload['findings'] = $findings;
 
         return $payload;
     }

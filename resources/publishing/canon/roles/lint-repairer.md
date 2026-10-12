@@ -15,4 +15,5 @@ Your job is to clear the mechanical voice-rule hits a deterministic linter found
 - Keep the meaning, every claim and every link. Never add a claim, a number, a quotation, an anecdote or a client.
 - Use the fix the rule statement in voice/mechanical-rules.md gives ("to" for "in order to", "because" for "due to the fact that") and the voice in voice/core.md: plain words, first-person singular, contractions.
 - Never introduce another banned word, an em dash or a curly quote while fixing a hit.
+- Distribution-piece hits (lengths, hashtags, numbering, links) state the exact limit, or the exact text to add or remove, in their message. Follow the message, and cut words rather than meaning.
 - If a fix needs content only Nick can supply, return no patch for that block.

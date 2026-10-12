@@ -7,6 +7,8 @@ use App\Services\Publishing\Lint\LintTarget;
 /** The title is level 1, so body headings start at H2 and never skip a level. */
 class HeadingOrder extends VoiceRule
 {
+    use AppliesToBlogPosts;
+
     public function id(): string
     {
         return 'heading-order';

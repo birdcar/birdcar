@@ -7,6 +7,7 @@ use App\Services\Publishing\Lint\LintTarget;
 /** The on-page title follows the same sentence case as the body headings. The SEO title and description do not. */
 class TitleSentenceCase extends VoiceRule
 {
+    use AppliesToBlogPosts;
     use CountsCapitalizedWords;
 
     public function id(): string

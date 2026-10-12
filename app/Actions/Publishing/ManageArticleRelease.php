@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 class ManageArticleRelease
 {
@@ -353,7 +354,27 @@ class ManageArticleRelease
             return $approval;
         });
 
+        $this->spawnDistributionKit($actor, $approval);
+
         return $approval;
+    }
+
+    /**
+     * The approval has committed, so a kit that fails to spawn never rolls it back. The failure is reported, and the
+     * post's workspace offers to create the kit again, because the approval itself cannot be repeated.
+     */
+    private function spawnDistributionKit(User $actor, EditorialApproval $approval): void
+    {
+        try {
+            $release = ArticleRelease::query()->find($approval->release_id);
+            $flagship = $release === null ? null : Article::query()->find($release->article_id);
+            $kits = app(SpawnDistributionKit::class);
+            if ($release instanceof ArticleRelease && $flagship instanceof Article && $kits->spawnsFor($flagship)) {
+                $kits->spawn($actor, $flagship, $release);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function deliver(User $actor, ArticleRelease|int $release, ?int $expectedPreviousLiveReleaseId): ArticleRelease

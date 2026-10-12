@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Publishing\ApprovalKind;
 use Database\Factories\ArticleReleaseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -89,5 +90,19 @@ class ArticleRelease extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(EditorialApproval::class, 'release_id');
+    }
+
+    /**
+     * The release still stands as the source of a distribution kit: it was never withdrawn, and it is live or its exact
+     * approval has not been invalidated by a later edit.
+     */
+    public function standsApproved(): bool
+    {
+        if ($this->withdrawn_at !== null || $this->status === 'withdrawn') {
+            return false;
+        }
+
+        return $this->status === 'published'
+            || $this->approvals()->where('kind', ApprovalKind::Release->value)->whereNull('invalidated_at')->exists();
     }
 }

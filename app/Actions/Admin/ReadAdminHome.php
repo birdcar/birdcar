@@ -3,6 +3,7 @@
 namespace App\Actions\Admin;
 
 use App\Actions\Publishing\ApprovePublishingStage;
+use App\Actions\Publishing\StartEditorialActivity;
 use App\Authorization\Admin\Permission as AdminPermission;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
@@ -158,11 +159,8 @@ class ReadAdminHome
             return false;
         }
 
-        $prerequisite = match ($activity->getAttribute('kind')) {
-            EditorialActivityKind::Interview => null,
-            EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            default => ApprovalKind::Plan,
-        };
+        $kind = $activity->getAttribute('kind');
+        $prerequisite = $kind instanceof EditorialActivityKind ? StartEditorialActivity::prerequisiteApproval($kind, is_array($activity->input) ? $activity->input : []) : ApprovalKind::Plan;
 
         if ($prerequisite === null) {
             return true;

@@ -4,19 +4,23 @@ use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\RunEditorialActivity;
+use App\Actions\Publishing\SpawnDistributionKit;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
+use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\KitDocument;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\VoiceCanon;
 use Illuminate\Filesystem\Filesystem;
@@ -110,9 +114,56 @@ function inputContractCompletedActivity(User $actor, PublishingAttempt $attempt,
     ]);
 }
 
+/** The flagship claims the published release below freezes, which every kit input must carry. */
+const INPUT_CONTRACT_CLAIM_MANIFEST = [['statement' => 'A new hire often inherits the same chores.', 'supporting_source_ids' => []]];
+
+/**
+ * The LinkedIn piece of a flagship's distribution kit. The flagship's release is published directly, since the release
+ * path itself is covered elsewhere; spawning the kit while paused leaves its drafts pending.
+ */
+function inputContractKitPiece(User $actor): Article
+{
+    $write = app(WriteArticle::class);
+    $flagship = $write->captureIdea($actor, 'Why another admin hire will not fix the Friday report');
+    $revision = $write->save($actor, $flagship, null, inputContractDocument('A new hire often inherits the same chores.'), ['title' => 'Another admin hire will not fix it'], 'input-contract-flagship');
+    $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $flagship, $revision->id, ['goal' => 'Show owners what to check first', 'post_type' => 'essay', 'target_query' => 'do I need another admin hire']);
+    $payload = ['document' => $revision->document, 'metadata' => $revision->metadata, 'canonical_slug' => 'another-admin-hire-will-not-fix-it', 'claim_manifest' => INPUT_CONTRACT_CLAIM_MANIFEST];
+    $release = ArticleRelease::create([
+        'article_id' => $flagship->id,
+        'attempt_id' => $attempt->id,
+        'revision_id' => $revision->id,
+        'origin' => 'editorial',
+        'payload' => $payload,
+        'release_hash' => app(PublishingFingerprint::class)->hash($payload),
+        'status' => 'published',
+        'published_at' => now(),
+    ]);
+
+    return app(SpawnDistributionKit::class)->spawn($actor, $flagship->fresh() ?? $flagship, $release)[0];
+}
+
+/** Starts a kit kind on a fresh LinkedIn piece; a kit review follows a completed kit draft of the current revision. */
+function inputContractKitStart(User $actor, EditorialActivityKind $kind): EditorialActivity
+{
+    $piece = inputContractKitPiece($actor);
+    $attempt = PublishingAttempt::query()->findOrFail($piece->current_attempt_id);
+    if ($kind === EditorialActivityKind::ReviewKit) {
+        $revision = app(WriteArticle::class)->save($actor, $piece, null, KitDocument::document(PieceKind::LinkedinPost, inputContractResponse(EditorialActivityKind::DraftKit)), [], 'input-contract-kit', 'agent-initial');
+        inputContractCompletedActivity($actor, $attempt, EditorialActivityKind::DraftKit, $revision->id)
+            ->forceFill(['proposal' => ['applied_revision_id' => $revision->id]])
+            ->save();
+    }
+
+    return app(StartEditorialActivity::class)->start($actor, $attempt, $kind, [], 'input-contract');
+}
+
 /** Starts the kind through StartEditorialActivity with every prerequisite its eligibility rules require. */
 function inputContractStart(User $actor, EditorialActivityKind $kind): EditorialActivity
 {
+    if (in_array($kind, [EditorialActivityKind::DraftKit, EditorialActivityKind::ReviewKit], true)) {
+        return inputContractKitStart($actor, $kind);
+    }
+
     $start = app(StartEditorialActivity::class);
     $through = match ($kind) {
         EditorialActivityKind::Interview => 'developing',
@@ -195,6 +246,8 @@ function inputContractResponse(EditorialActivityKind $kind): array
             'slug' => 'check-the-chores-before-hiring',
             'greatestHitsTag' => 'the admin hire question',
         ],
+        EditorialActivityKind::DraftKit => ['text' => 'Do I need another admin hire? It is the question I hear most from owners whose team is full.', 'first_comment' => 'The full post: https://birdcar.test/writing/another-admin-hire-will-not-fix-it/'],
+        EditorialActivityKind::ReviewKit => ['findings' => []],
     };
 }
 
@@ -281,12 +334,51 @@ test('every kind sends its frozen goals and rubric in the system message and the
         'resources/publishing/canon/channels/blog.md',
         'resources/publishing/canon/roles/packager.md',
     ]],
+    'kit draft' => [EditorialActivityKind::DraftKit, '# Core voice', [
+        'resources/publishing/canon/voice/core.md',
+        'resources/publishing/canon/voice/mechanical-rules.md',
+        'resources/publishing/canon/voice/kit-rules.md',
+        'resources/publishing/canon/channels/kit.md',
+        'resources/publishing/canon/exemplars/short-form.md',
+        'resources/publishing/canon/roles/kit-drafter.md',
+    ]],
+    'kit review' => [EditorialActivityKind::ReviewKit, '# Core voice', [
+        'resources/publishing/canon/voice/core.md',
+        'resources/publishing/canon/channels/kit.md',
+        'resources/publishing/canon/roles/kit-reviewer.md',
+    ]],
 ]);
 
 test('the dataset covers every editorial activity kind', function () {
     expect(array_map(fn (EditorialActivityKind $kind): string => $kind->value, EditorialActivityKind::cases()))->toBe([
-        'interview', 'research_challenge', 'plan', 'draft', 'lint_repair', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck', 'package',
+        'interview', 'research_challenge', 'plan', 'draft', 'lint_repair', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck', 'package', 'draft_kit', 'review_kit',
     ]);
+});
+
+test('kit inputs carry the piece kind, the flagship text and the claim manifest its release froze', function (EditorialActivityKind $kind) {
+    $activity = inputContractStart(inputContractAuthor(), $kind);
+
+    $input = inputContractRun($activity)['input'];
+
+    expect($input['piece_kind'] ?? null)->toBe('linkedin_post')
+        ->and($input['flagship']['claim_manifest'] ?? null)->toBe(INPUT_CONTRACT_CLAIM_MANIFEST)
+        ->and($input['flagship']['text'] ?? null)->toBe('A new hire often inherits the same chores.')
+        ->and($input['flagship']['title'] ?? null)->toBe('Another admin hire will not fix it')
+        ->and($input['flagship']['canonical_url'] ?? null)->toBe('https://birdcar.test/writing/another-admin-hire-will-not-fix-it/')
+        ->and($input['flagship']['target_query'] ?? null)->toBe('do I need another admin hire')
+        ->and($input['canon']['exemplars'] ?? null)->toBe([])
+        ->and($input['canon'])->not->toHaveKeys(['retrieved_exemplars', 'retrieval_status'])
+        ->and($activity->fresh()?->status)->toBe(EditorialActivityStatus::Completed);
+})->with([EditorialActivityKind::DraftKit, EditorialActivityKind::ReviewKit]);
+
+test('a caller cannot replace the flagship a kit activity freezes', function () {
+    $actor = inputContractAuthor();
+    $piece = inputContractKitPiece($actor);
+
+    $activity = app(StartEditorialActivity::class)->start($actor, PublishingAttempt::query()->findOrFail($piece->current_attempt_id), EditorialActivityKind::DraftKit, ['flagship' => ['claim_manifest' => [['statement' => 'Forged.']]], 'piece_kind' => 'email_blurb'], 'input-contract-forged');
+
+    expect($activity->input['flagship']['claim_manifest'] ?? null)->toBe(INPUT_CONTRACT_CLAIM_MANIFEST)
+        ->and($activity->input['piece_kind'] ?? null)->toBe('linkedin_post');
 });
 
 test('the package input carries the final manuscript and the brief', function () {

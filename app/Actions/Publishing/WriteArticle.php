@@ -10,6 +10,7 @@ use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\Publishing\EditorialStage;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
@@ -153,7 +154,11 @@ class WriteArticle
             $lockedArticle->forceFill(['working_revision_id' => $revision->id])->save();
 
             if ($lockedAttempt instanceof PublishingAttempt) {
-                $this->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Release]);
+                $this->invalidateApprovals((int) $lockedAttempt->id, [ApprovalKind::Release, ApprovalKind::Kit]);
+                // An edited kit piece is no longer the text the owner approved, so it is not ready to post until approved again.
+                if ($lockedArticle->isKit() && $lockedAttempt->stage === EditorialStage::Approved) {
+                    $lockedAttempt->forceFill(['stage' => EditorialStage::InReview])->save();
+                }
                 $this->markReviewedRevisionStale((int) $lockedAttempt->id, (int) $lockedAttempt->review_cycle, $previousRevisionId, $origin);
                 app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $lockedAttempt->id);
             }
@@ -174,7 +179,7 @@ class WriteArticle
             ->where('attempt_id', $attemptId)
             ->where('review_cycle', $reviewCycle)
             ->where('revision_id', (int) $previousRevisionId)
-            ->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck'])
+            ->whereIn('kind', ['review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck', 'review_kit'])
             ->whereIn('status', [EditorialActivityStatus::Pending->value, EditorialActivityStatus::Running->value, EditorialActivityStatus::Failed->value])
             ->update([
                 'status' => EditorialActivityStatus::Stale->value,

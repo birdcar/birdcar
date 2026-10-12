@@ -4,6 +4,7 @@ namespace App\Actions\Publishing;
 
 use App\Models\Article;
 use App\Models\ArticleRelease;
+use App\Models\Publishing\PieceKind;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -17,6 +18,7 @@ class ReadPublishedWriting
     public function all(): Collection
     {
         return Article::query()
+            ->where('kind', PieceKind::BlogPost->value)
             ->whereNotNull('published_release_id')
             ->whereHas('publishedRelease', function ($query): void {
                 $query->where('status', 'published')->whereNotNull('published_at');
@@ -39,6 +41,7 @@ class ReadPublishedWriting
                         $query->where('payload->canonical_slug', $slug);
                     });
             })
+            ->where('kind', PieceKind::BlogPost->value)
             ->whereNotNull('published_release_id')
             ->whereHas('publishedRelease', function ($query): void {
                 $query->where('status', 'published')->whereNotNull('published_at');

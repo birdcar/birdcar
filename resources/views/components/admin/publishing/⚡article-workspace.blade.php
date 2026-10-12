@@ -4,15 +4,19 @@ use App\Actions\Publishing\AcceptPackageProposal;
 use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApplyEditorialProposal;
 use App\Actions\Publishing\ApprovePublishingStage;
+use App\Actions\Publishing\CreateSiblingPiece;
 use App\Actions\Publishing\FinishEditorialReview;
 use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\ManageArticleRelease;
+use App\Actions\Publishing\MarkKitPiecePosted;
 use App\Actions\Publishing\ResumeEditorialActivity;
 use App\Actions\Publishing\RetryEditorialActivity;
+use App\Actions\Publishing\SpawnDistributionKit;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
+use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
 use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
@@ -26,14 +30,17 @@ use App\Models\PublishingAttempt;
 use App\Models\Publishing\PieceKind;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\FrameworkCatalog;
+use App\Services\Publishing\KitDocument;
 use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\Lint\LintTarget;
 use App\Services\Publishing\Lint\VoiceLinter;
 use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -86,6 +93,13 @@ new #[Layout('layouts.admin')] class extends Component
     /** @var array<string, mixed> */
     public array $metadata = [];
 
+    /** @var array<string, mixed> a kit piece's fields as the owner edits them: text, first_comment, posts, subject, preview, body */
+    public array $kitFields = [];
+
+    public ?string $kitInputHash = null;
+    public string $postedUrl = '';
+    public string $siblingNote = '';
+
     public function mount(Article $article): void
     {
         Gate::authorize('view', $article);
@@ -100,6 +114,7 @@ new #[Layout('layouts.admin')] class extends Component
             $this->metadata = $revision->metadata ?? [];
         }
         $this->details = ['title' => (string) ($this->metadata['title'] ?? ''), 'description' => (string) ($this->metadata['description'] ?? ''), 'date' => (string) ($this->metadata['date'] ?? $article->first_published_at?->toDateString() ?? now()->toDateString())];
+        $this->loadKitFields();
         $this->hydrateAgentSelectionsFromAttempt();
         $this->hydratePackageFromLatestProposal();
         $this->refreshApprovalInputs();
@@ -550,6 +565,7 @@ new #[Layout('layouts.admin')] class extends Component
                     $this->details[$field] = (string) ($this->metadata[$field] ?? $fallback);
                 }
             }
+            $this->loadKitFields();
             $this->notifyEditor($baseRevisionId);
         }
         $this->hydrateStructureChoices();
@@ -1033,6 +1049,264 @@ new #[Layout('layouts.admin')] class extends Component
         return $excerpt === '' ? 'No text in this passage.' : ($limit === null ? $excerpt : str($excerpt)->limit($limit)->toString());
     }
 
+    private function loadKitFields(): void
+    {
+        if ($this->article->isKit()) {
+            $this->kitFields = KitDocument::fields($this->article->kind, $this->document);
+        }
+    }
+
+    /** Saves the owner's edits to a kit piece's fields as a human revision, then re-lints it. */
+    public function saveKitFields(): void
+    {
+        Gate::authorize('update', $this->article);
+        abort_unless($this->article->isKit(), 404);
+        $rules = [];
+        foreach (KitDocument::fieldsFor($this->article->kind) as $field) {
+            if ($field === 'posts') {
+                $rules['kitFields.posts'] = ['required', 'array', 'min:1', 'max:25'];
+                $rules['kitFields.posts.*'] = ['nullable', 'string', 'max:2000'];
+            } else {
+                $rules['kitFields.'.$field] = ['nullable', 'string', 'max:10000'];
+            }
+        }
+        $validated = $this->validate($rules);
+
+        $result = $this->saveDocument($this->currentRevisionId, 'kit-'.Str::uuid(), KitDocument::document($this->article->kind, $validated['kitFields'] ?? []), $this->metadata);
+        if ($result['ok']) {
+            $this->loadKitFields();
+            session()->flash('status', 'Your edits to this piece are saved.');
+        }
+    }
+
+    public function addKitPost(): void
+    {
+        Gate::authorize('update', $this->article);
+        $posts = is_array($this->kitFields['posts'] ?? null) ? array_values($this->kitFields['posts']) : [];
+        $posts[] = '';
+        $this->kitFields['posts'] = $posts;
+    }
+
+    public function removeKitPost(int $index): void
+    {
+        Gate::authorize('update', $this->article);
+        $posts = is_array($this->kitFields['posts'] ?? null) ? array_values($this->kitFields['posts']) : [];
+        unset($posts[$index]);
+        $this->kitFields['posts'] = array_values($posts);
+    }
+
+    public function approveKit(string $expectedInputHash = '', ?ApprovePublishingStage $approver = null): void
+    {
+        Gate::authorize('approve', $this->article);
+        $approver ??= app(ApprovePublishingStage::class);
+        $attempt = $this->article->currentAttempt;
+        if ($attempt === null) {
+            $this->saveError = 'No active publishing attempt exists.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            $approver->approve(auth()->user(), $attempt, ApprovalKind::Kit, $expectedInputHash !== '' ? $expectedInputHash : (string) $this->kitInputHash);
+            $this->article = $this->article->fresh(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            $this->refreshApprovalInputs();
+            session()->flash('status', 'Approved as written. Copy it out and post it once the post is live.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function decideKitFinding(int $findingId, string $disposition, ?ApprovePublishingStage $approver = null): void
+    {
+        Gate::authorize('approve', $this->article);
+        $finding = EditorialFinding::query()
+            ->where('article_id', $this->article->id)
+            ->where('attempt_id', $this->article->current_attempt_id)
+            ->where('lens', EditorialActivityKind::ReviewKit->value)
+            ->findOrFail($findingId);
+
+        try {
+            ($approver ?? app(ApprovePublishingStage::class))->decideKitFinding(auth()->user(), $finding, $disposition, $this->findingReasons[$findingId] ?? '');
+            $this->resetErrorBag('findingReasons.'.$findingId);
+            unset($this->findingReasons[$findingId]);
+            $this->saveError = null;
+            $this->refreshApprovalInputs();
+        } catch (ValidationException $exception) {
+            $this->addError('findingReasons.'.$findingId, $exception->getMessage());
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function markPosted(?MarkKitPiecePosted $posts = null): void
+    {
+        Gate::authorize('publish', $this->article);
+
+        try {
+            $this->saveError = null;
+            ($posts ?? app(MarkKitPiecePosted::class))->mark(auth()->user(), $this->article, $this->postedUrl);
+            $this->resetErrorBag('postedUrl');
+            $this->article = $this->article->fresh(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+            session()->flash('status', 'Marked posted.');
+        } catch (ValidationException $exception) {
+            $this->addError('postedUrl', $exception->getMessage());
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function startKitDraft(?SpawnDistributionKit $kits = null): void
+    {
+        Gate::authorize('develop', $this->article);
+        abort_unless($this->article->isKit(), 404);
+
+        try {
+            $this->saveError = null;
+            ($kits ?? app(SpawnDistributionKit::class))->draft(auth()->user(), $this->article);
+            $this->refreshAgentWork();
+            session()->flash('status', 'The kit draft is queued.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function useKitDraft(int $activityId, ?SpawnDistributionKit $kits = null): void
+    {
+        Gate::authorize('update', $this->article);
+        Gate::authorize('develop', $this->article);
+        $draft = EditorialActivity::query()->where('article_id', $this->article->id)->where('kind', EditorialActivityKind::DraftKit->value)->findOrFail($activityId);
+
+        try {
+            $this->saveError = null;
+            ($kits ?? app(SpawnDistributionKit::class))->useDraft(auth()->user(), $draft);
+            $this->refreshAgentWork();
+            session()->flash('status', 'The new draft replaced your edited text. Review has started.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    /** The fallback when a kit did not spawn after release approval: approval cannot be repeated, so this spawns it. */
+    public function createDistributionKit(?SpawnDistributionKit $kits = null): void
+    {
+        Gate::authorize('approve', $this->article);
+        $kits ??= app(SpawnDistributionKit::class);
+        $release = $this->kitSourceRelease();
+        if ($release === null) {
+            $this->saveError = 'A distribution kit needs an approved release of this post.';
+            return;
+        }
+
+        try {
+            $this->saveError = null;
+            $kits->spawn(auth()->user(), $this->article, $release);
+            session()->flash('status', 'Distribution kit created.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function createSibling(?CreateSiblingPiece $siblings = null): void
+    {
+        Gate::authorize('develop', $this->article);
+        abort_if($this->article->isKit(), 404);
+        $validated = $this->validate(['siblingNote' => ['nullable', 'string', 'max:'.CreateSiblingPiece::NOTE_LIMIT]]);
+
+        try {
+            $piece = ($siblings ?? app(CreateSiblingPiece::class))->create(auth()->user(), $this->article->contentIdea, $validated['siblingNote'] ?? null);
+            $this->siblingNote = '';
+            session()->flash('status', 'A new post from this idea is started. The interview has been queued.');
+            $this->redirectRoute('admin.publishing.articles.show', ['article' => $piece], navigate: false);
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    /** The newest release of this post that still stands approved, the one a kit is cut from. */
+    private function kitSourceRelease(): ?ArticleRelease
+    {
+        return ArticleRelease::query()
+            ->where('article_id', $this->article->id)
+            ->whereIn('status', ['approved', 'scheduled', 'published'])
+            ->whereNull('withdrawn_at')
+            ->latest('id')
+            ->get()
+            ->first(fn (ArticleRelease $release): bool => $release->standsApproved());
+    }
+
+    /**
+     * Everything the kit panel shows: each field to copy out, the flagship it was cut from and whether that changed,
+     * kit review findings, and why it cannot be approved or marked posted yet.
+     *
+     * @return array<string, mixed>
+     */
+    private function kitPanel(?PublishingAttempt $attempt, Collection $findings, Collection $activities): array
+    {
+        if (! $this->article->isKit()) {
+            return ['isKit' => false];
+        }
+
+        $kind = $this->article->kind;
+        $fields = [];
+        foreach (KitDocument::roles($kind, $this->document) as $blockId => $role) {
+            $node = collect(is_array($this->document['content'] ?? null) ? $this->document['content'] : [])->first(fn (mixed $node): bool => is_array($node) && data_get($node, 'attrs.id') === $blockId);
+            $text = KitDocument::text(is_array($node) ? $node : []);
+            $fields[] = ['role' => $role, 'label' => KitDocument::label($kind, $role), 'text' => $text, 'length' => mb_strlen($text)];
+        }
+
+        $flagship = $this->article->parent_article_id === null ? null : Article::query()->with('publishedRelease')->find($this->article->parent_article_id);
+        $frozenReleaseId = (int) data_get($attempt?->brief, 'flagship_release_id');
+        $latestReleaseId = $flagship === null ? null : ArticleRelease::query()
+            ->where('article_id', $flagship->id)
+            ->whereIn('status', ['approved', 'scheduled', 'published'])
+            ->whereNull('withdrawn_at')
+            ->latest('id')
+            ->get()
+            ->first(fn (ArticleRelease $release): bool => $release->standsApproved())?->id;
+        $frozenRelease = $frozenReleaseId === 0 ? null : ArticleRelease::query()->find($frozenReleaseId);
+        $stage = $attempt?->stage;
+        $posts = app(MarkKitPiecePosted::class);
+        $waitingDraft = $activities->first(fn (EditorialActivity $activity): bool => $activity->kind === EditorialActivityKind::DraftKit
+            && $activity->status === EditorialActivityStatus::Completed
+            && is_array(data_get($activity->proposal, 'document'))
+            && data_get($activity->proposal, 'applied_revision_id') === null);
+
+        return [
+            'isKit' => true,
+            'kitFieldBlocks' => $fields,
+            'kitFlagship' => $flagship,
+            'kitFlagshipTitle' => (string) (data_get($frozenRelease?->payload, 'metadata.title') ?: data_get($flagship?->publishedRelease?->payload, 'metadata.title') ?: 'the flagship post'),
+            'kitFlagshipChanged' => in_array($stage, [EditorialStage::Approved, EditorialStage::Published], true) && $latestReleaseId !== null && $latestReleaseId !== $frozenReleaseId,
+            'kitFlagshipStands' => $frozenRelease?->standsApproved() ?? false,
+            'kitFlagshipLive' => $flagship !== null && $posts->isLive($flagship),
+            'kitReviewFindings' => $findings->where('lens', EditorialActivityKind::ReviewKit->value)->sortBy('id')->values(),
+            'kitApprovalProblems' => $attempt !== null && $stage === EditorialStage::InReview ? app(ApprovePublishingStage::class)->kitApprovalProblems($attempt) : [],
+            'kitPostedProblem' => $stage === EditorialStage::Approved ? $posts->problem($this->article) : null,
+            'kitDrafting' => $activities->contains(fn (EditorialActivity $activity): bool => $activity->kind === EditorialActivityKind::DraftKit && in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Running], true)),
+            'kitWaitingDraft' => $waitingDraft,
+            'kitWaitingDraftFields' => $waitingDraft === null ? [] : KitDocument::fields($kind, (array) data_get($waitingDraft->proposal, 'document')),
+        ];
+    }
+
+    /**
+     * A blog post's distribution kit pieces, and whether the owner can create the kit by hand.
+     *
+     * @return array{distributionKit: Collection<int, Article>, canCreateKit: bool}
+     */
+    private function distributionKit(): array
+    {
+        if ($this->article->isKit()) {
+            return ['distributionKit' => collect(), 'canCreateKit' => false];
+        }
+
+        $kit = Article::query()->with('currentAttempt')->where('parent_article_id', $this->article->id)->orderBy('id')->get()->filter(fn (Article $piece): bool => $piece->isKit())->values();
+        $canCreate = $kit->count() < count(SpawnDistributionKit::KINDS)
+            && app(SpawnDistributionKit::class)->spawnsFor($this->article)
+            && $this->kitSourceRelease() !== null;
+
+        return ['distributionKit' => $kit, 'canCreateKit' => $canCreate];
+    }
+
     private function refreshApprovalInputs(): void
     {
         $attempt = $this->article->currentAttempt;
@@ -1040,6 +1314,7 @@ new #[Layout('layouts.admin')] class extends Component
             $this->angleInputHash = null;
             $this->planInputHash = null;
             $this->releaseInputHash = null;
+            $this->kitInputHash = null;
             return;
         }
 
@@ -1047,6 +1322,7 @@ new #[Layout('layouts.admin')] class extends Component
         $this->angleInputHash = $approver->inputHashFor($attempt, ApprovalKind::Angle);
         $this->planInputHash = $approver->inputHashFor($attempt, ApprovalKind::Plan);
         $this->releaseInputHash = $this->currentReleasePackage()?->release_hash;
+        $this->kitInputHash = $this->article->isKit() ? $approver->inputHashFor($attempt, ApprovalKind::Kit) : null;
     }
 
     private function currentReleasePackage(): ?\App\Models\ArticleRelease
@@ -1092,8 +1368,10 @@ new #[Layout('layouts.admin')] class extends Component
         };
 
         return [
+            ...$this->kitPanel($attempt, $findings, $activities),
+            ...$this->distributionKit(),
             'sessionMode' => $sessionMode,
-            'articleTitle' => trim((string) ($this->metadata['title'] ?? '')) ?: null,
+            'articleTitle' => $this->article->isKit() ? $this->article->kind->label() : (trim((string) ($this->metadata['title'] ?? '')) ?: null),
             'stage' => $stage,
             'working' => $working,
             'currentActivity' => $currentActivity,

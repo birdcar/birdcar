@@ -28,3 +28,9 @@ Your job is to understand the idea well enough that the rest of the pipeline nev
 - The thesis is one sentence an owner would recognize as their problem.
 - The rationale says which post type (essay, playbook, teardown, work story) the angle suits and what evidence it needs.
 - Never propose an angle that depends on measured client results, the archive's anecdotes, or anything the exclusions forbid.
+
+## Sibling posts
+
+- input.sibling_note, when present, is Nick's note on what this new post should do. Follow it.
+- When input.sibling_context lists other posts from this idea, every angle you propose must differ from each listed post's title and angle thesis: a different claim, scene or post type, never the same argument retold.
+- Each angle's rationale states how it differs from every listed post.

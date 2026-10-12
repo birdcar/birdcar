@@ -7,11 +7,12 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
 const VOICE_CANON_RULE_IDS = [
-    'ai-vocabulary', 'bold-limit', 'chatbot-artifacts', 'corporate-vocabulary', 'corporate-we', 'curly-quotes', 'em-dash',
-    'emoji', 'exclamation-limit', 'excluded-names', 'experience-claim', 'filler-phrases', 'heading-order',
-    'inline-header-list', 'label-headings', 'meta-description-length', 'negative-parallelism', 'public-vocabulary',
-    'sentence-case-headings', 'seo-title-length', 'slug-archive-reuse', 'slug-shape', 'stock-openers',
-    'title-sentence-case', 'unresolved-markers', 'walkthrough-link',
+    'ai-vocabulary', 'bluesky-numbering', 'bluesky-post-length', 'bold-limit', 'chatbot-artifacts', 'corporate-vocabulary',
+    'corporate-we', 'curly-quotes', 'em-dash', 'email-blurb-length', 'email-subject-length', 'emoji', 'exclamation-limit',
+    'excluded-names', 'experience-claim', 'filler-phrases', 'heading-order', 'inline-header-list', 'kit-links-post',
+    'kit-no-walkthrough-cta', 'label-headings', 'linkedin-hashtags', 'linkedin-length', 'linkedin-link-in-comment',
+    'meta-description-length', 'negative-parallelism', 'public-vocabulary', 'sentence-case-headings', 'seo-title-length',
+    'slug-archive-reuse', 'slug-shape', 'stock-openers', 'title-sentence-case', 'unresolved-markers', 'walkthrough-link',
 ];
 
 afterEach(function (): void {
@@ -188,12 +189,15 @@ test('exemplars are the four archive essays and the site copy without frontmatte
 test('each mechanical rule id is tagged exactly once and archive essays add no rule ids', function () {
     preg_match_all('/\[rule:([a-z0-9-]+)\]/', (string) file_get_contents(resource_path('publishing/canon/voice/mechanical-rules.md')), $tags);
     preg_match_all('/\[rule:([a-z0-9-]+)\]/', (string) file_get_contents(resource_path('publishing/canon/voice/metadata-rules.md')), $metadataTags);
+    preg_match_all('/\[rule:([a-z0-9-]+)\]/', (string) file_get_contents(resource_path('publishing/canon/voice/kit-rules.md')), $kitTags);
 
     expect(voiceCanonSnapshot()->ruleIds())->toBe(VOICE_CANON_RULE_IDS)
         ->and($tags[1])->toHaveCount(21)
         ->and(array_unique($tags[1]))->toHaveCount(21)
         ->and($metadataTags[1])->toBe(['seo-title-length', 'meta-description-length', 'slug-shape', 'slug-archive-reuse', 'title-sentence-case'])
-        ->and(array_intersect($tags[1], $metadataTags[1]))->toBe([]);
+        ->and($kitTags[1])->toBe(['linkedin-length', 'linkedin-hashtags', 'linkedin-link-in-comment', 'bluesky-post-length', 'bluesky-numbering', 'email-subject-length', 'email-blurb-length', 'kit-no-walkthrough-cta', 'kit-links-post'])
+        ->and(array_intersect($tags[1], $metadataTags[1]))->toBe([])
+        ->and(array_intersect([...$tags[1], ...$metadataTags[1]], $kitTags[1]))->toBe([]);
 
     $paths = voiceCanonTemporaryCopy();
     file_put_contents($paths['archive'].'/six-months-talking-to-a-machine.md', "\nAn essay that mentions [rule:archive-only].\n", FILE_APPEND);

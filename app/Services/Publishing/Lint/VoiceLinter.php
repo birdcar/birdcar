@@ -2,6 +2,7 @@
 
 namespace App\Services\Publishing\Lint;
 
+use App\Models\Publishing\PieceKind;
 use Illuminate\Container\Attributes\Tag;
 
 /**
@@ -59,6 +60,22 @@ final class VoiceLinter
         $ids = [];
         foreach ($this->rules as $rule) {
             $ids[] = $rule->id();
+        }
+
+        $ids = array_values(array_unique($ids));
+        sort($ids, SORT_STRING);
+
+        return $ids;
+    }
+
+    /** @return list<string> sorted unique ids of the rules that lint this kind of piece */
+    public function ruleIdsFor(PieceKind $kind): array
+    {
+        $ids = [];
+        foreach ($this->rules as $rule) {
+            if ($rule->appliesTo($kind)) {
+                $ids[] = $rule->id();
+            }
         }
 
         $ids = array_values(array_unique($ids));

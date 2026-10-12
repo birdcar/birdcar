@@ -6,6 +6,8 @@ use App\Services\Publishing\Lint\LintTarget;
 
 class LabelHeadings extends VoiceRule
 {
+    use AppliesToBlogPosts;
+
     /** @var list<string> */
     private const LABELS = [
         'introduction', 'conclusion', 'faq', 'frequently asked questions', 'pros', 'cons', 'verdict', 'overview', 'summary',

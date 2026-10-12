@@ -7,4 +7,5 @@ enum ApprovalKind: string
     case Angle = 'angle';
     case Plan = 'plan';
     case Release = 'release';
+    case Kit = 'kit';
 }

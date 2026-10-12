@@ -45,7 +45,8 @@ class LintRevision
     ) {}
 
     /**
-     * Archive essays stay exactly as published, so the voice canon never lints them.
+     * Archive essays stay exactly as published, so the voice canon never lints them. A kit piece is linted against the
+     * flagship URL and target phrase its attempt froze, so every lint of one revision sees the same context.
      *
      * @return list<LintHit>
      */
@@ -56,8 +57,26 @@ class LintRevision
         }
 
         $kind = $article->getAttribute('kind');
+        $kind = $kind instanceof PieceKind ? $kind : PieceKind::BlogPost;
 
-        return $this->linter->lint(LintTarget::fromRevision($revision, $kind instanceof PieceKind ? $kind : PieceKind::BlogPost));
+        return $this->linter->lint(LintTarget::fromRevision($revision, $kind, $kind->isKit() ? $this->kitContext($article) : []));
+    }
+
+    /**
+     * The flagship URL and target phrase frozen into a kit piece's attempt when it was spawned or restarted.
+     *
+     * @return array{canonical_url: string|null, target_query: string|null}
+     */
+    public function kitContext(Article $article): array
+    {
+        $brief = $article->current_attempt_id === null ? null : PublishingAttempt::query()->select(['id', 'brief'])->find($article->current_attempt_id)?->brief;
+        $canonicalUrl = is_array($brief) ? ($brief['canonical_url'] ?? null) : null;
+        $targetQuery = is_array($brief) ? ($brief['target_query'] ?? null) : null;
+
+        return [
+            'canonical_url' => is_string($canonicalUrl) ? $canonicalUrl : null,
+            'target_query' => is_string($targetQuery) ? $targetQuery : null,
+        ];
     }
 
     /**
@@ -201,15 +220,21 @@ class LintRevision
 
     /**
      * Ends the post-draft lint step: stores the revision's remaining hits as findings, with any unapplied repair patch,
-     * then queues the three review lenses on that revision.
+     * then queues review on that revision: the three lenses for a blog post, the kit reviewer for a kit piece.
      */
     public function finishAndQueueReviews(User $actor, PublishingAttempt $attempt, ArticleRevision $revision, ?int $draftActivityId = null): void
     {
         $article = Article::query()->findOrFail($attempt->article_id);
         $this->sync($attempt, $revision, $this->hits($article, $revision), $this->unappliedRepairPatches($attempt));
 
-        $batchKey = 'review-'.$attempt->review_cycle.'-'.$revision->id;
         $input = $draftActivityId === null ? [] : ['draft_activity_id' => $draftActivityId];
+        if ($article->isKit()) {
+            $this->activities->start($actor, $attempt, EditorialActivityKind::ReviewKit, $input, 'review-kit-'.$attempt->review_cycle.'-'.$revision->id);
+
+            return;
+        }
+
+        $batchKey = 'review-'.$attempt->review_cycle.'-'.$revision->id;
         foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer] as $kind) {
             $this->activities->start($actor, $attempt, $kind, $input, $batchKey);
         }
@@ -249,7 +274,7 @@ class LintRevision
 
             $draftId = EditorialActivity::query()
                 ->where('attempt_id', $locked->id)
-                ->where('kind', EditorialActivityKind::Draft->value)
+                ->whereIn('kind', [EditorialActivityKind::Draft->value, EditorialActivityKind::DraftKit->value])
                 ->where('status', EditorialActivityStatus::Completed->value)
                 ->latest('id')
                 ->value('id');

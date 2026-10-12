@@ -6,6 +6,8 @@ use App\Services\Publishing\Lint\LintTarget;
 
 class SlugShape extends VoiceRule
 {
+    use AppliesToBlogPosts;
+
     public function id(): string
     {
         return 'slug-shape';

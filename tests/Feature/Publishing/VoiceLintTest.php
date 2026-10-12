@@ -1,10 +1,12 @@
 <?php
 
 use App\Ai\Agents\Drafter;
+use App\Ai\Agents\KitDrafter;
 use App\Models\Article;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\PieceKind;
+use App\Services\Publishing\KitDocument;
 use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\Lint\LintTarget;
 use App\Services\Publishing\Lint\VoiceLinter;
@@ -49,6 +51,30 @@ function voiceLintWalkthrough(string $id = 'blk_00000000000000f1', string $href 
 function voiceLintDocument(array $content, array $metadata = []): LintTarget
 {
     return LintTarget::fromDocument(['version' => 1, 'type' => 'doc', 'content' => $content], $metadata, PieceKind::BlogPost);
+}
+
+const VOICE_LINT_POST_URL = 'https://birdcar.dev/writing/another-admin-hire/';
+
+/**
+ * A distribution kit piece built from its fields, linted against the flagship URL and target phrase its attempt froze.
+ *
+ * @param  array<string, mixed>  $fields
+ */
+function voiceLintKit(PieceKind $kind, array $fields): LintTarget
+{
+    return LintTarget::fromDocument(KitDocument::document($kind, $fields), [], $kind, null, ['canonical_url' => VOICE_LINT_POST_URL, 'target_query' => 'do I need another admin hire']);
+}
+
+/** @return array{text: string, first_comment: string} */
+function voiceLintLinkedin(string $text = 'Do I need another admin hire? It is the question I hear most from owners whose team is full.', string $comment = 'The full post: '.VOICE_LINT_POST_URL): array
+{
+    return ['text' => $text, 'first_comment' => $comment];
+}
+
+/** @return array{subject: string, preview: string, body: string} */
+function voiceLintEmail(string $body = 'A new hire often inherits the same chores. Check them first. Read the post: '.VOICE_LINT_POST_URL, string $subject = 'Another admin hire will not fix it'): array
+{
+    return ['subject' => $subject, 'preview' => 'Check the chores before you post the job.', 'body' => $body];
 }
 
 const VOICE_LINT_OWNER_DESCRIPTION = 'When the team is full and the work keeps coming back to you, a new hire often adds a person to the same chores. Here is what to check before you post the job.';
@@ -121,6 +147,16 @@ test('each voice rule fires on its seeded violation', function (string $ruleId, 
     'slug-shape' => ['slug-shape', voiceLintDocument([], ['slug' => 'Another_Admin_Hire']), 1],
     'slug-archive-reuse' => ['slug-archive-reuse', fn (): LintTarget => voiceLintArchiveSlugTarget(), 1],
     'title-sentence-case' => ['title-sentence-case', voiceLintDocument([], ['title' => "Why Another Hire Won't Fix It"]), 1],
+    'linkedin-length' => ['linkedin-length', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin('Do I need another admin hire? '.str_repeat('The report waits for Friday. ', 110))), 1],
+    'linkedin-length (target phrase)' => ['linkedin-length', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin('Every Friday someone opens five tabs. '.str_repeat('They paste and reconcile. ', 7).'Do I need another admin hire?')), 1],
+    'linkedin-hashtags' => ['linkedin-hashtags', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin('Do I need another admin hire? #hiring Check the chores first. #owners #admin #operations')), 2],
+    'linkedin-link-in-comment' => ['linkedin-link-in-comment', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin('Do I need another admin hire? Read www.birdcar.dev/writing/another-admin-hire first.', 'More on this soon.')), 2],
+    'bluesky-post-length' => ['bluesky-post-length', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/2 A new hire often inherits the same chores.', '2/2 '.trim(str_repeat('The report waits for Friday. ', 11)).' '.VOICE_LINT_POST_URL]]), 1],
+    'bluesky-numbering' => ['bluesky-numbering', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/3 A new hire often inherits the same chores.', '2/2 Check the chores first.', 'The full post: '.VOICE_LINT_POST_URL]]), 2],
+    'email-subject-length' => ['email-subject-length', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail(subject: 'Another admin hire will not fix the work on your desk')), 1],
+    'email-blurb-length' => ['email-blurb-length', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail('Read the post: '.VOICE_LINT_POST_URL)), 1],
+    'kit-no-walkthrough-cta' => ['kit-no-walkthrough-cta', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin(comment: 'The full post: '.VOICE_LINT_POST_URL.' and a Walkthrough at birdcar.dev/walkthrough')), 1],
+    'kit-links-post' => ['kit-links-post', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail('A new hire often inherits the same chores. Check them first.')), 1],
 ]);
 
 test('each voice rule stays quiet on clean owner prose and near misses', function (string $ruleId, LintTarget $target) {
@@ -166,6 +202,15 @@ test('each voice rule stays quiet on clean owner prose and near misses', functio
     'slug-shape' => ['slug-shape', voiceLintDocument([], ['slug' => 'another-admin-hire-what-to-check'])],
     'slug-archive-reuse' => ['slug-archive-reuse', voiceLintDocument([], ['slug' => 'another-admin-hire-what-to-check'])],
     'title-sentence-case' => ['title-sentence-case', voiceLintDocument([], ['title' => "Another admin hire won't fix it", 'seo_title' => 'Do You Need Another Admin Hire? What To Check First'])],
+    'linkedin-length' => ['linkedin-length', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin('Owners ask me one question more than any other: do I need another admin-hire? '.str_repeat('The report waits for Friday. ', 90)))],
+    'linkedin-hashtags' => ['linkedin-hashtags', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin("Do I need another admin hire? Point 1 is #1 for a reason, and it starts at /walkthrough#choose-a-time.\n\n#hiring #owners #operations"))],
+    'linkedin-link-in-comment' => ['linkedin-link-in-comment', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin(comment: 'The full post: http://www.birdcar.dev/writing/another-admin-hire'))],
+    'bluesky-post-length' => ['bluesky-post-length', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/1 '.trim(str_repeat('The report waits for Friday. ', 10))]])],
+    'bluesky-numbering' => ['bluesky-numbering', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/2 A new hire often inherits the same chores.', 'The full post: '.VOICE_LINT_POST_URL.' (2/2)']])],
+    'email-subject-length' => ['email-subject-length', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail(subject: 'Another admin hire will not fix the work you do'))],
+    'email-blurb-length' => ['email-blurb-length', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail('A new hire often inherits 3.5 hours of the same chores. Check them first, in the order on '.VOICE_LINT_POST_URL.'. Then decide.'))],
+    'kit-no-walkthrough-cta' => ['kit-no-walkthrough-cta', voiceLintKit(PieceKind::EmailBlurb, voiceLintEmail('A new hire often inherits the same chores, and a Walkthrough is where I look at them. Read the post: '.VOICE_LINT_POST_URL))],
+    'kit-links-post' => ['kit-links-post', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/2 A new hire often inherits the same chores.', '2/2 The full post: birdcar.dev/writing/another-admin-hire/?utm_source=bluesky']])],
 ]);
 
 test('the walkthrough link fails without exactly one link in the closing section', function (LintTarget $target) {
@@ -263,10 +308,37 @@ test('a repeated word in one block is a hit per occurrence, so an override on th
         ->and($twice[1]->inputHash())->not->toBe($once[0]->inputHash());
 });
 
-test('only blog posts are linted in this phase', function () {
-    $target = LintTarget::fromDocument(['version' => 1, 'type' => 'doc', 'content' => [voiceLintParagraph('We leverage — crucially — everything.')]], [], PieceKind::LinkedinPost);
+test('body rules lint kit pieces, while heading, walkthrough and metadata rules stay with blog posts', function () {
+    $target = LintTarget::fromDocument(['version' => 1, 'type' => 'doc', 'content' => [
+        voiceLintHeading("Why Another Hire Won't Fix It"),
+        voiceLintParagraph('We leverage — crucially — everything!'),
+    ]], ['title' => "Why Another Hire Won't Fix It", 'seo_title' => 'Too short', 'description' => 'Too short.', 'slug' => 'Bad_Slug'], PieceKind::LinkedinPost);
 
-    expect(app(VoiceLinter::class)->lint($target))->toBe([]);
+    $ids = array_values(array_unique(array_map(fn (LintHit $hit): string => $hit->ruleId, app(VoiceLinter::class)->lint($target))));
+    $blogOnly = ['heading-order', 'label-headings', 'sentence-case-headings', 'walkthrough-link', 'seo-title-length', 'meta-description-length', 'slug-shape', 'slug-archive-reuse', 'title-sentence-case'];
+
+    expect($ids)->toContain('em-dash', 'corporate-vocabulary', 'corporate-we', 'exclamation-limit')
+        ->and(array_intersect($ids, $blogOnly))->toBe([])
+        ->and(array_intersect(app(VoiceLinter::class)->ruleIdsFor(PieceKind::EmailBlurb), $blogOnly))->toBe([])
+        ->and(app(VoiceLinter::class)->ruleIdsFor(PieceKind::BlogPost))->not->toContain('linkedin-length', 'kit-links-post');
+});
+
+test('a kit piece takes no exclamation point at all, where a blog post may use one', function () {
+    $paragraph = [voiceLintParagraph('The report is done!')];
+
+    expect(voiceLintHitsFor('exclamation-limit', voiceLintDocument($paragraph)))->toBe([])
+        ->and(voiceLintHitsFor('exclamation-limit', LintTarget::fromDocument(['content' => $paragraph], [], PieceKind::BlueskyThread))[0]->message ?? null)
+        ->toBe('Remove the exclamation point from "report is done!"; a distribution piece takes none.');
+});
+
+test('kit link rules name the post URL, so a single-passage fix can clear them', function () {
+    $linkedin = voiceLintHitsFor('linkedin-link-in-comment', voiceLintKit(PieceKind::LinkedinPost, voiceLintLinkedin(comment: 'More soon.')));
+    $twice = voiceLintHitsFor('kit-links-post', voiceLintKit(PieceKind::BlueskyThread, ['posts' => ['1/2 Read '.VOICE_LINT_POST_URL, '2/2 The full post: '.VOICE_LINT_POST_URL]]));
+
+    expect($linkedin[0]->message ?? null)->toBe('Put the link to the post, '.VOICE_LINT_POST_URL.', in the first comment.')
+        ->and($linkedin[0]->blockId ?? null)->toBe(KitDocument::blockId(PieceKind::LinkedinPost, 'first_comment'))
+        ->and(array_map(fn (LintHit $hit): string => $hit->message, $twice))->toBe(['Remove the link to the post here; it belongs once, in the last post.'])
+        ->and($twice[0]->blockId)->toBe(KitDocument::blockId(PieceKind::BlueskyThread, 'post:1'));
 });
 
 test('the registered rule ids are exactly the rule ids tagged in the voice canon', function () {
@@ -297,7 +369,36 @@ test('the drafter is sent every mechanical rule statement and every rule id', fu
     foreach ([...$statements[0], ...$metadataStatements[0]] as $statement) {
         expect($system)->toContain($statement);
     }
-    foreach (app(VoiceLinter::class)->ruleIds() as $ruleId) {
+    foreach (app(VoiceLinter::class)->ruleIdsFor(PieceKind::BlogPost) as $ruleId) {
         expect($documentDescription)->toContain($ruleId);
     }
+    expect($documentDescription)->not->toContain('linkedin-length')
+        ->and($documentDescription)->not->toContain('kit-links-post');
 });
+
+test('the kit drafter is sent every kit rule statement and the id of every rule its piece must pass', function (PieceKind $kind) {
+    $activity = new EditorialActivity(['kind' => EditorialActivityKind::DraftKit, 'input' => ['piece_kind' => $kind->value, 'canon' => app(VoiceCanon::class)->snapshot()->frozenFor(EditorialActivityKind::DraftKit)]]);
+    $agent = new KitDrafter($activity);
+    config()->set('ai.providers.openrouter.key', 'test-key');
+    Http::preventStrayRequests();
+    Http::fake(['https://openrouter.ai/api/v1/chat/completions' => Http::response([
+        'id' => 'gen-kit-lint',
+        'choices' => [['finish_reason' => 'stop', 'message' => ['role' => 'assistant', 'content' => '{}']]],
+    ])]);
+
+    $agent->prompt($agent->promptText());
+
+    $body = Http::recorded()->sole()[0]->data();
+    $system = (string) data_get($body, 'messages.0.content');
+    $schema = json_encode(data_get($body, 'response_format.json_schema.schema'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+    preg_match_all('/^.*\[rule:[a-z0-9-]+\].*$/m', (string) file_get_contents(resource_path('publishing/canon/voice/kit-rules.md')), $statements);
+
+    expect($statements[0])->toHaveCount(9)
+        ->and(array_keys((array) data_get($body, 'response_format.json_schema.schema.properties')))->toBe(KitDocument::fieldsFor($kind));
+    foreach ($statements[0] as $statement) {
+        expect($system)->toContain($statement);
+    }
+    foreach (app(VoiceLinter::class)->ruleIdsFor($kind) as $ruleId) {
+        expect($schema)->toContain($ruleId);
+    }
+})->with([PieceKind::LinkedinPost, PieceKind::BlueskyThread, PieceKind::EmailBlurb]);

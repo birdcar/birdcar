@@ -6,6 +6,7 @@ use App\Services\Publishing\Lint\LintTarget;
 
 class MetaDescriptionLength extends VoiceRule
 {
+    use AppliesToBlogPosts;
     use MeasuresMetadataLength;
 
     public function id(): string

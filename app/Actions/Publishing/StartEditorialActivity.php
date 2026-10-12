@@ -4,6 +4,7 @@ namespace App\Actions\Publishing;
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
+use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
@@ -20,6 +21,7 @@ use App\Services\Publishing\CanonSnapshot;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\ExemplarRetriever;
 use App\Services\Publishing\FrameworkCatalog;
+use App\Services\Publishing\Lint\LintTarget;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\VoiceCanon;
 use App\Settings\PublishingAgentSettings;
@@ -86,7 +88,7 @@ class StartEditorialActivity
                 'completed_research' => $this->completedResearchSnapshots($lockedAttempt),
                 'evidence_sources' => $this->eligibleEvidenceSources($lockedAttempt),
                 'canon' => $this->frozenCanon($lockedAttempt, $article, $kind, $input),
-            ], $this->reviewContext($lockedAttempt, $article, $kind, $revision, $input));
+            ], $this->reviewContext($lockedAttempt, $article, $kind, $revision, $input), $this->pieceContext($lockedAttempt, $article, $kind));
             $promptHash = $this->fingerprint->hash([
                 'version' => EditorialOutput::VERSION,
                 'kind' => $kind->value,
@@ -275,7 +277,144 @@ class StartEditorialActivity
             EditorialActivityKind::Reconciliation => $this->ensureReconciliationEligible($attempt, $article, $stageValue),
             EditorialActivityKind::Recheck => $this->ensureRecheckEligible($attempt, $article, $stageValue, $input),
             EditorialActivityKind::Package => $this->ensurePackageEligible($attempt, $article, $revision, $input),
+            EditorialActivityKind::DraftKit => $this->ensureDraftKitEligible($attempt, $article, $stageValue),
+            EditorialActivityKind::ReviewKit => $this->ensureReviewKitEligible($attempt, $article, $stageValue, $revision),
         };
+    }
+
+    /**
+     * What a piece's kind adds to every input, so no caller can forge it: a distribution kit piece's kind, and for its
+     * draft and review the approved flagship release it is cut from; for a blog post's interview, the idea's other posts.
+     *
+     * @return array<string, mixed>
+     */
+    private function pieceContext(PublishingAttempt $attempt, Article $article, EditorialActivityKind $kind): array
+    {
+        if ($article->isKit()) {
+            $context = ['piece_kind' => $article->kind->value];
+            if (in_array($kind, [EditorialActivityKind::DraftKit, EditorialActivityKind::ReviewKit], true)) {
+                $context['flagship'] = $this->flagshipContext($attempt, $article);
+            }
+
+            return $context;
+        }
+
+        if ($kind !== EditorialActivityKind::Interview) {
+            return [];
+        }
+
+        $siblings = $this->siblingContext($article);
+
+        return $siblings === [] ? [] : ['sibling_context' => $siblings];
+    }
+
+    /**
+     * The approved flagship release a kit piece is cut from: its text with headings marked, title, public URL, target
+     * phrase and the claim manifest that release approval froze.
+     *
+     * @return array{article_id: int, release_id: int, title: string|null, text: string, canonical_url: string|null, target_query: string|null, claim_manifest: list<mixed>}
+     */
+    private function flagshipContext(PublishingAttempt $attempt, Article $article): array
+    {
+        $release = $this->flagshipRelease($attempt, $article);
+        $payload = $release->payload;
+        $document = is_array($payload['document'] ?? null) ? $payload['document'] : [];
+        $title = data_get($payload, 'metadata.title');
+        $paragraphs = array_map(
+            static fn (array $block): string => ($block['type'] === 'heading' ? '## ' : '').trim($block['text']),
+            LintTarget::fromDocument($document, [], PieceKind::BlogPost)->blocks,
+        );
+        $canonicalUrl = data_get($attempt->brief, 'canonical_url');
+        $targetQuery = data_get($attempt->brief, 'target_query');
+
+        return [
+            'article_id' => (int) $release->article_id,
+            'release_id' => (int) $release->id,
+            'title' => is_string($title) ? $title : null,
+            'text' => implode("\n\n", array_filter($paragraphs, static fn (string $paragraph): bool => trim($paragraph, '# ') !== '')),
+            'canonical_url' => is_string($canonicalUrl) ? $canonicalUrl : null,
+            'target_query' => is_string($targetQuery) ? $targetQuery : null,
+            'claim_manifest' => is_array($payload['claim_manifest'] ?? null) ? array_values($payload['claim_manifest']) : [],
+        ];
+    }
+
+    /** The flagship release this kit attempt was spawned or restarted from. */
+    private function flagshipRelease(PublishingAttempt $attempt, Article $article): ArticleRelease
+    {
+        $releaseId = data_get($attempt->brief, 'flagship_release_id');
+        $release = is_numeric($releaseId) && $article->parent_article_id !== null
+            ? ArticleRelease::query()->whereKey((int) $releaseId)->where('article_id', $article->parent_article_id)->first()
+            : null;
+        if (! $release instanceof ArticleRelease) {
+            throw new RuntimeException('This kit piece has no flagship release to draft from.');
+        }
+
+        return $release;
+    }
+
+    /**
+     * The idea's other blog posts, so an interview proposes a distinct angle: each one's title (its own metadata title,
+     * else its angle's working title) and angle thesis. The idea's summary title names the idea, never a post.
+     *
+     * @return list<array{article_id: int, title: string|null, angle_thesis: string|null}>
+     */
+    private function siblingContext(Article $article): array
+    {
+        return array_values(Article::query()
+            ->with(['workingRevision:id,metadata', 'currentAttempt:id,angle'])
+            ->where('content_idea_id', $article->content_idea_id)
+            ->where('kind', PieceKind::BlogPost->value)
+            ->whereKeyNot($article->id)
+            ->orderBy('id')
+            ->get(['id', 'working_revision_id', 'current_attempt_id'])
+            ->map(function (Article $sibling): array {
+                $metadataTitle = data_get($sibling->workingRevision?->metadata, 'title');
+                $angleTitle = data_get($sibling->currentAttempt?->angle, 'title');
+                $thesis = data_get($sibling->currentAttempt?->angle, 'thesis');
+                $title = is_string($metadataTitle) && trim($metadataTitle) !== '' ? trim($metadataTitle) : (is_string($angleTitle) && trim($angleTitle) !== '' ? trim($angleTitle) : null);
+
+                return [
+                    'article_id' => (int) $sibling->id,
+                    'title' => $title,
+                    'angle_thesis' => is_string($thesis) && trim($thesis) !== '' ? trim($thesis) : null,
+                ];
+            })
+            ->all());
+    }
+
+    private function ensureDraftKitEligible(PublishingAttempt $attempt, Article $article, string $stageValue): void
+    {
+        if (! $article->isKit()) {
+            throw new RuntimeException('Kit drafting is only for distribution kit pieces.');
+        }
+
+        $this->ensureStage($stageValue, [EditorialStage::InReview], 'Kit drafting requires a kit piece that has not been approved.');
+        if (! $this->flagshipRelease($attempt, $article)->standsApproved()) {
+            throw new RuntimeException('Kit drafting requires the flagship post\'s approved release; it was withdrawn or edited since approval.');
+        }
+    }
+
+    private function ensureReviewKitEligible(PublishingAttempt $attempt, Article $article, string $stageValue, ?ArticleRevision $revision): void
+    {
+        if (! $article->isKit()) {
+            throw new RuntimeException('Kit review is only for distribution kit pieces.');
+        }
+
+        $this->ensureStage($stageValue, [EditorialStage::InReview], 'Kit review requires a kit piece that has not been approved.');
+        if (! $revision instanceof ArticleRevision || (int) ($article->working_revision_id ?? 0) !== (int) $revision->id) {
+            throw new RuntimeException('Kit review requires the current drafted revision.');
+        }
+
+        $produced = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->whereIn('kind', [EditorialActivityKind::DraftKit->value, EditorialActivityKind::LintRepair->value])
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->get(['id', 'proposal'])
+            ->contains(fn (EditorialActivity $activity): bool => (int) data_get($activity->getAttribute('proposal'), 'applied_revision_id', 0) === (int) $revision->id);
+        if (! $produced) {
+            throw new RuntimeException('Kit review can only start after the kit draft has completed for the current revision.');
+        }
     }
 
     /**
@@ -373,7 +512,11 @@ class StartEditorialActivity
     /** @param array<string, mixed> $input */
     private function ensureLintRepairEligible(PublishingAttempt $attempt, Article $article, string $stageValue, ?ArticleRevision $revision, array $input): void
     {
-        $this->ensureStageAndApproval($attempt, $stageValue, [EditorialStage::InReview], ApprovalKind::Plan, 'Voice-rule repair requires an approved plan and review stage.');
+        if ($article->isKit()) {
+            $this->ensureStage($stageValue, [EditorialStage::InReview], 'Voice-rule repair requires a kit piece that has not been approved.');
+        } else {
+            $this->ensureStageAndApproval($attempt, $stageValue, [EditorialStage::InReview], ApprovalKind::Plan, 'Voice-rule repair requires an approved plan and review stage.');
+        }
         if (! $revision instanceof ArticleRevision
             || (int) ($article->working_revision_id ?? 0) !== (int) $revision->id
             || (int) ($input['expected_revision_id'] ?? 0) !== (int) $revision->id) {
@@ -719,6 +862,7 @@ class StartEditorialActivity
             EditorialActivityKind::Reconciliation,
             EditorialActivityKind::Recheck,
             EditorialActivityKind::Package,
+            EditorialActivityKind::ReviewKit,
         ], true)) {
             $payload['revision_id'] = $revision?->id;
             $payload['revision_hash'] = $revision?->content_hash;
@@ -823,11 +967,7 @@ class StartEditorialActivity
 
     private function activityMatchesCurrentApproval(EditorialActivity $activity, PublishingAttempt $attempt, EditorialActivityKind $kind): bool
     {
-        $approval = match ($kind) {
-            EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
-            EditorialActivityKind::Interview => null,
-        };
+        $approval = self::prerequisiteApproval($kind, is_array($activity->input) ? $activity->input : []);
 
         if (! $approval instanceof ApprovalKind) {
             return true;
@@ -839,6 +979,26 @@ class StartEditorialActivity
         $currentHash = $this->activeApprovalHash($attempt, $approval);
 
         return is_string($activityHash) && is_string($currentHash) && hash_equals($currentHash, $activityHash);
+    }
+
+    /**
+     * The approval an activity's input must still match. Distribution kit work answers to the flagship release it was cut
+     * from, which RunEditorialActivity checks, so it carries no approval of its own attempt.
+     *
+     * @param  array<array-key, mixed>  $input
+     */
+    public static function prerequisiteApproval(EditorialActivityKind $kind, array $input): ?ApprovalKind
+    {
+        $piece = PieceKind::tryFrom(is_string($input['piece_kind'] ?? null) ? $input['piece_kind'] : '');
+        if ($piece?->isKit()) {
+            return null;
+        }
+
+        return match ($kind) {
+            EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
+            EditorialActivityKind::Interview, EditorialActivityKind::DraftKit, EditorialActivityKind::ReviewKit => null,
+        };
     }
 
     private function approvalInputHashFor(PublishingAttempt $attempt, ApprovalKind $kind): string
@@ -862,6 +1022,7 @@ class StartEditorialActivity
                 'input_version' => $attempt->input_version,
             ]),
             ApprovalKind::Release => throw new RuntimeException('Release approval does not start agent activity.'),
+            ApprovalKind::Kit => throw new RuntimeException('Kit approval does not start agent activity.'),
         };
     }
 

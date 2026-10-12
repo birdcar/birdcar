@@ -8,10 +8,10 @@ use App\Services\Publishing\Lint\LintRule;
 
 abstract class VoiceRule implements LintRule
 {
-    /** The canon's mechanical rules govern blog posts; distribution pieces get their own applicability. */
+    /** The body's vocabulary and punctuation rules govern every piece; heading, link and metadata rules narrow this. */
     public function appliesTo(PieceKind $kind): bool
     {
-        return $kind === PieceKind::BlogPost;
+        return true;
     }
 
     protected function blockHit(string $blockId, string $excerpt, string $message): LintHit

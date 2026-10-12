@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Services\Publishing\Lint\Rules\AiVocabulary;
+use App\Services\Publishing\Lint\Rules\BlueskyNumbering;
+use App\Services\Publishing\Lint\Rules\BlueskyPostLength;
 use App\Services\Publishing\Lint\Rules\BoldLimit;
 use App\Services\Publishing\Lint\Rules\ChatbotArtifacts;
 use App\Services\Publishing\Lint\Rules\CorporateVocabulary;
 use App\Services\Publishing\Lint\Rules\CorporateWe;
 use App\Services\Publishing\Lint\Rules\CurlyQuotes;
+use App\Services\Publishing\Lint\Rules\EmailBlurbLength;
+use App\Services\Publishing\Lint\Rules\EmailSubjectLength;
 use App\Services\Publishing\Lint\Rules\EmDash;
 use App\Services\Publishing\Lint\Rules\Emoji;
 use App\Services\Publishing\Lint\Rules\ExclamationLimit;
@@ -17,7 +21,12 @@ use App\Services\Publishing\Lint\Rules\ExperienceClaim;
 use App\Services\Publishing\Lint\Rules\FillerPhrases;
 use App\Services\Publishing\Lint\Rules\HeadingOrder;
 use App\Services\Publishing\Lint\Rules\InlineHeaderList;
+use App\Services\Publishing\Lint\Rules\KitLinksPost;
+use App\Services\Publishing\Lint\Rules\KitNoWalkthroughCta;
 use App\Services\Publishing\Lint\Rules\LabelHeadings;
+use App\Services\Publishing\Lint\Rules\LinkedinHashtags;
+use App\Services\Publishing\Lint\Rules\LinkedinLength;
+use App\Services\Publishing\Lint\Rules\LinkedinLinkInComment;
 use App\Services\Publishing\Lint\Rules\MetaDescriptionLength;
 use App\Services\Publishing\Lint\Rules\NegativeParallelism;
 use App\Services\Publishing\Lint\Rules\PublicVocabulary;
@@ -78,6 +87,15 @@ class AppServiceProvider extends ServiceProvider
             SlugShape::class,
             SlugArchiveReuse::class,
             TitleSentenceCase::class,
+            LinkedinLength::class,
+            LinkedinHashtags::class,
+            LinkedinLinkInComment::class,
+            BlueskyPostLength::class,
+            BlueskyNumbering::class,
+            EmailSubjectLength::class,
+            EmailBlurbLength::class,
+            KitNoWalkthroughCta::class,
+            KitLinksPost::class,
         ], VoiceLinter::TAG);
     }
 

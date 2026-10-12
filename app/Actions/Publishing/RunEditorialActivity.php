@@ -18,6 +18,7 @@ use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\DocumentBlocks;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\KitDocument;
 use App\Services\Publishing\PublicSourceFetcher;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Settings\PublishingAgentSettings;
@@ -450,6 +451,10 @@ class RunEditorialActivity implements ShouldQueue
                 $this->applyLintRepair($locked, $freshActor, $article, $payload, $writer);
             }
 
+            if ($kind === EditorialActivityKind::DraftKit) {
+                $this->applyDraftKit($locked, $freshActor, $article, $payload, $writer);
+            }
+
             if ($kind === EditorialActivityKind::ResearchChallenge) {
                 $this->storeEvidenceAnnotations($locked, $preparedEvidenceSources);
             }
@@ -466,7 +471,7 @@ class RunEditorialActivity implements ShouldQueue
                 $this->applyPackage($locked, $payload);
             }
 
-            if ($kind->isReviewLens() || $kind === EditorialActivityKind::Recheck) {
+            if ($kind->isReviewLens() || $kind === EditorialActivityKind::Recheck || $kind === EditorialActivityKind::ReviewKit) {
                 $this->storeFindings($locked, $payload, $kind);
             }
 
@@ -624,6 +629,27 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         $activity->forceFill(['proposal' => ['document' => $document, 'reason' => 'Current manuscript was not empty; human acceptance is required.']])->save();
+    }
+
+    /**
+     * A kit draft becomes the piece's text when nobody has edited the piece since an agent last wrote it. Otherwise it
+     * waits as a proposal, so a restart on a new flagship release never replaces the owner's words.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyDraftKit(EditorialActivity $activity, User $actor, Article $article, array $payload, WriteArticle $writer): void
+    {
+        $document = KitDocument::document($article->kind, $payload);
+        $current = $article->workingRevision()->first();
+        if ($current instanceof ArticleRevision && ! in_array((string) $current->origin, ['agent-initial', 'agent-repair'], true)) {
+            $activity->forceFill(['proposal' => ['document' => $document, 'reason' => 'The piece has your edits, so this draft from the flagship release waits for you to use it.']])->save();
+
+            return;
+        }
+
+        $metadata = $current?->getAttribute('metadata');
+        $revision = $writer->save($actor, $article, $article->working_revision_id, $document, is_array($metadata) ? $metadata : [], 'agent-initial-'.$activity->id, 'agent-initial');
+        $activity->forceFill(['proposal' => ['applied_revision_id' => $revision->id]])->save();
     }
 
     /**
@@ -1112,13 +1138,13 @@ class RunEditorialActivity implements ShouldQueue
             return false;
         }
 
-        return ! in_array($kind, [EditorialActivityKind::Draft, EditorialActivityKind::LintRepair], true) || $actor->can('publishing.write');
+        return ! in_array($kind, [EditorialActivityKind::Draft, EditorialActivityKind::DraftKit, EditorialActivityKind::LintRepair], true) || $actor->can('publishing.write');
     }
 
     /**
-     * After a draft lands in an empty manuscript, and after each repair pass, lint the working revision. Repairable hits
-     * get another repair while fewer than the cap have run and the last pass changed something; otherwise the remaining
-     * hits become findings and the three review lenses queue on the revision.
+     * After a draft lands in an empty manuscript (or a kit draft lands as the piece's text), and after each repair pass,
+     * lint the working revision. Repairable hits get another repair while fewer than the cap have run and the last pass
+     * changed something; otherwise the remaining hits become findings and review queues on the revision.
      */
     private function lintThenQueueReviews(EditorialActivity $activity, User $actor): void
     {
@@ -1130,7 +1156,7 @@ class RunEditorialActivity implements ShouldQueue
         $kind = $this->kind($fresh);
         $proposal = $fresh->getAttribute('proposal');
         $proposal = is_array($proposal) ? $proposal : [];
-        if ($kind === EditorialActivityKind::Draft) {
+        if ($kind === EditorialActivityKind::Draft || $kind === EditorialActivityKind::DraftKit) {
             if (! isset($proposal['applied_revision_id'])) {
                 return;
             }
@@ -1294,7 +1320,7 @@ class RunEditorialActivity implements ShouldQueue
 
         $activities = EditorialActivity::query()
             ->where('attempt_id', $repair->attempt_id)
-            ->whereIn('kind', [EditorialActivityKind::Draft->value, EditorialActivityKind::LintRepair->value])
+            ->whereIn('kind', [EditorialActivityKind::Draft->value, EditorialActivityKind::DraftKit->value, EditorialActivityKind::LintRepair->value])
             ->where('status', EditorialActivityStatus::Completed->value)
             ->orderBy('id')
             ->get(['id', 'kind', 'proposal']);
@@ -1307,7 +1333,7 @@ class RunEditorialActivity implements ShouldQueue
                 continue;
             }
 
-            if ($this->kind($activity) === EditorialActivityKind::Draft) {
+            if ($this->kind($activity) !== EditorialActivityKind::LintRepair) {
                 foreach (is_array($documentValue['content'] ?? null) ? $documentValue['content'] : [] as $node) {
                     if (is_array($node)) {
                         $record($node);
@@ -1443,7 +1469,12 @@ class RunEditorialActivity implements ShouldQueue
             }
         }
 
-        $approval = $this->prerequisiteApprovalFor($kind);
+        $flagshipReleaseId = data_get($input, 'flagship.release_id');
+        if ($flagshipReleaseId !== null && (int) $flagshipReleaseId !== (int) data_get($attempt->brief, 'flagship_release_id')) {
+            return 'The flagship release changed before the activity could run.';
+        }
+
+        $approval = StartEditorialActivity::prerequisiteApproval($kind, $input);
         if (! $approval instanceof ApprovalKind) {
             return null;
         }
@@ -1455,15 +1486,6 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         return null;
-    }
-
-    private function prerequisiteApprovalFor(EditorialActivityKind $kind): ?ApprovalKind
-    {
-        return match ($kind) {
-            EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
-            EditorialActivityKind::Interview => null,
-        };
     }
 
     private function activeApprovalHash(PublishingAttempt $attempt, ApprovalKind $kind): ?string
@@ -1524,6 +1546,7 @@ class RunEditorialActivity implements ShouldQueue
                 'input_version' => $attempt->input_version,
             ]),
             ApprovalKind::Release => throw new RuntimeException('Release approval does not run agent activity.'),
+            ApprovalKind::Kit => throw new RuntimeException('Kit approval does not run agent activity.'),
         };
     }
 

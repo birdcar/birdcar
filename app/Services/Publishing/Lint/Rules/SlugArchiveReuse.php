@@ -8,6 +8,8 @@ use App\Services\Publishing\Lint\LintTarget;
 /** Compares against every other piece, archive imports included; the piece's own slug is never a reuse. */
 class SlugArchiveReuse extends VoiceRule
 {
+    use AppliesToBlogPosts;
+
     public function id(): string
     {
         return 'slug-archive-reuse';

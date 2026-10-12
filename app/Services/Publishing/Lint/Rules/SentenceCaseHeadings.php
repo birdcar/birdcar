@@ -10,6 +10,7 @@ use App\Services\Publishing\Lint\LintTarget;
  */
 class SentenceCaseHeadings extends VoiceRule
 {
+    use AppliesToBlogPosts;
     use CountsCapitalizedWords;
 
     public function id(): string

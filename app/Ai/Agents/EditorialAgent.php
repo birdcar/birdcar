@@ -6,12 +6,19 @@ use App\Ai\Tools\AskAuthor;
 use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\Publishing\PieceKind;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\FrameworkCatalog;
+use App\Services\Publishing\Lint\Rules\BlueskyPostLength;
+use App\Services\Publishing\Lint\Rules\EmailBlurbLength;
+use App\Services\Publishing\Lint\Rules\EmailSubjectLength;
+use App\Services\Publishing\Lint\Rules\LinkedinHashtags;
+use App\Services\Publishing\Lint\Rules\LinkedinLength;
 use App\Services\Publishing\Lint\VoiceLinter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\ObjectType;
 use Illuminate\JsonSchema\Types\StringType;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -59,6 +66,8 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
             EditorialActivityKind::Reconciliation => new ReviewReconciler($activity, $modelOverride),
             EditorialActivityKind::Recheck => new RevisionRechecker($activity, $modelOverride),
             EditorialActivityKind::Package => new Packager($activity, $modelOverride),
+            EditorialActivityKind::DraftKit => new KitDrafter($activity, $modelOverride),
+            EditorialActivityKind::ReviewKit => new KitReviewer($activity, $modelOverride),
         };
     }
 
@@ -249,7 +258,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                 'framework' => $this->frameworkSchema($schema),
             ],
             EditorialActivityKind::Draft => [
-                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes. It must pass the mechanical rules in your rubric: '.implode(', ', app(VoiceLinter::class)->ruleIds()).'.')->required(),
+                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes. It must pass the mechanical rules in your rubric: '.implode(', ', app(VoiceLinter::class)->ruleIdsFor(PieceKind::BlogPost)).'.')->required(),
             ],
             EditorialActivityKind::LintRepair => [
                 'patches' => $schema->array()->description('At most one patch per block in input.blocks, all together under '.$this->maxFieldBytes().' bytes. Return an empty list when no block can be fixed safely.')->items($schema->object([
@@ -287,7 +296,52 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                 'slug' => $schema->string()->description('Four to six lowercase words of a to z and 0 to 9 joined by single hyphens [rule:slug-shape], never the slug of an archive essay or any other piece [rule:slug-archive-reuse].')->required(),
                 'greatestHitsTag' => $schema->string()->min(1)->max(EditorialOutput::GREATEST_HITS_TAG_LIMIT)->description('A short internal label in Nick\'s words for the problem this post answers, at most '.EditorialOutput::GREATEST_HITS_TAG_LIMIT.' characters. Never shown publicly.')->required(),
             ],
+            EditorialActivityKind::DraftKit => $this->kitSchema($schema),
+            EditorialActivityKind::ReviewKit => [
+                'findings' => $schema->array()->description('At most '.$this->maxFindings().' findings. A claim outside input.flagship.claim_manifest is kind "claim_outside_manifest" and severity "blocking"; register and channel findings are severity "advisory". A kit piece has no evidence sources, so supporting_source_ids and supporting_quotations are always empty lists: name the manifest statement you compared against in rationale. Never propose a patch.')->items($this->finding($schema, EditorialOutput::KIT_FINDING_KINDS))->required(),
+            ],
         };
+    }
+
+    /**
+     * The fields of the one piece input.piece_kind names, each with the limits the linter checks. Without a piece kind
+     * (a schema read outside a kit attempt) every kit field is listed, and the validator still requires the exact set.
+     *
+     * @return array<string, Type>
+     */
+    private function kitSchema(JsonSchema $schema): array
+    {
+        $kind = PieceKind::tryFrom((string) data_get($this->activity->input, 'piece_kind'));
+        $rules = $kind === null ? [] : app(VoiceLinter::class)->ruleIdsFor($kind);
+        $mechanical = $rules === [] ? '' : ' It must pass the rules in your rubric: '.implode(', ', $rules).'.';
+        $link = 'the post\'s URL, exactly input.flagship.canonical_url, written out once [rule:kit-links-post]; never a link to /walkthrough [rule:kit-no-walkthrough-cta]';
+        $fields = [
+            PieceKind::LinkedinPost->value => [
+                'text' => $schema->string()->min(1)->max(LinkedinLength::LIMIT)->description('The LinkedIn post text, plain text with a newline between paragraphs and never one sentence per line. At most '.number_format(LinkedinLength::LIMIT).' characters, with the target phrase input.flagship.target_query in the first '.LinkedinLength::PREVIEW.' characters [rule:linkedin-length]. No link or URL [rule:linkedin-link-in-comment]. At most '.LinkedinHashtags::LIMIT.' plain hashtags, only at the very end [rule:linkedin-hashtags].'.$mechanical)->required(),
+                'first_comment' => $schema->string()->min(1)->description('The first comment: '.$link.', with at most one short sentence before it [rule:linkedin-link-in-comment].')->required(),
+            ],
+            PieceKind::BlueskyThread->value => [
+                'posts' => $schema->array()->min(1)->items($schema->string()->min(1)->max(BlueskyPostLength::LIMIT)->description('One post, at most '.BlueskyPostLength::LIMIT.' characters including its number [rule:bluesky-post-length], numbered i/n at its start [rule:bluesky-numbering].'))->description('The thread in order, usually three to five posts, each readable alone. Post i of n starts with "i/n" [rule:bluesky-numbering]. The last post carries '.$link.'.'.$mechanical)->required(),
+            ],
+            PieceKind::EmailBlurb->value => [
+                'subject' => $schema->string()->min(1)->max(EmailSubjectLength::LIMIT)->description('The subject line, at most '.EmailSubjectLength::LIMIT.' characters [rule:email-subject-length].')->required(),
+                'preview' => $schema->string()->min(1)->description('One preview line: the sentence an inbox shows after the subject.')->required(),
+                'body' => $schema->string()->min(1)->description(EmailBlurbLength::MIN.' to '.EmailBlurbLength::MAX.' sentences [rule:email-blurb-length]: the claim from the post, why it matters to an owner, and '.$link.'.'.$mechanical)->required(),
+            ],
+        ];
+
+        if ($kind !== null && isset($fields[$kind->value])) {
+            return $fields[$kind->value];
+        }
+
+        $union = [];
+        foreach ($fields as $kindFields) {
+            foreach ($kindFields as $name => $type) {
+                $union[$name] = $type->nullable();
+            }
+        }
+
+        return $union;
     }
 
     /**
@@ -364,11 +418,12 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
         ]);
     }
 
-    private function finding(JsonSchema $schema): ObjectType
+    /** @param list<string>|null $kinds the finding kinds a role may report, when it is limited to a fixed set */
+    private function finding(JsonSchema $schema, ?array $kinds = null): ObjectType
     {
         return $schema->object([
             'statement' => $schema->string()->min(1)->required(),
-            'kind' => $schema->string()->nullable(),
+            'kind' => $kinds === null ? $schema->string()->nullable() : $schema->string()->enum($kinds)->description('One of: '.implode(', ', $kinds).'.')->required(),
             'severity' => $this->severity($schema),
             'block_id' => $schema->string()->description('The manuscript block (attrs.id) the finding concerns. Point at manuscript text here instead of quoting it.')->nullable(),
             'expected_subtree_hash' => $schema->string()->nullable(),

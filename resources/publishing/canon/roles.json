@@ -9,5 +9,7 @@
     "review_buyer": {"files": ["channels/blog.md", "roles/buyer-reviewer.md"], "exemplars": false},
     "reconciliation": {"files": ["roles/reconciler.md"], "exemplars": false},
     "recheck": {"files": ["roles/rechecker.md"], "exemplars": false},
-    "package": {"files": ["voice/core.md", "voice/metadata-rules.md", "channels/blog.md", "roles/packager.md"], "exemplars": false}
+    "package": {"files": ["voice/core.md", "voice/metadata-rules.md", "channels/blog.md", "roles/packager.md"], "exemplars": false},
+    "draft_kit": {"files": ["voice/core.md", "voice/mechanical-rules.md", "voice/kit-rules.md", "channels/kit.md", "exemplars/short-form.md", "roles/kit-drafter.md"], "exemplars": false},
+    "review_kit": {"files": ["voice/core.md", "channels/kit.md", "roles/kit-reviewer.md"], "exemplars": false}
 }

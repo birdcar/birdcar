@@ -147,6 +147,8 @@ new #[Layout('layouts.admin')] class extends Component
             EditorialActivityKind::ReviewBuyer => 'Buyer review',
             EditorialActivityKind::Reconciliation => 'Reconciliation',
             EditorialActivityKind::Recheck => 'Recheck',
+            EditorialActivityKind::DraftKit => 'Kit draft',
+            EditorialActivityKind::ReviewKit => 'Kit review',
             default => 'Editorial activity',
         };
 

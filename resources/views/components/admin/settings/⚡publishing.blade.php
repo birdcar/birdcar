@@ -224,6 +224,8 @@ new #[Layout('layouts.settings'), Title('Publishing settings')] class extends Co
             EditorialActivityKind::Reconciliation => 'Reconciliation',
             EditorialActivityKind::Recheck => 'Recheck',
             EditorialActivityKind::Package => 'Packaging',
+            EditorialActivityKind::DraftKit => 'Distribution kit draft',
+            EditorialActivityKind::ReviewKit => 'Distribution kit review',
         };
     }
 
@@ -241,6 +243,8 @@ new #[Layout('layouts.settings'), Title('Publishing settings')] class extends Co
             EditorialActivityKind::Reconciliation => 'Groups review findings and surfaces conflicts to resolve.',
             EditorialActivityKind::Recheck => 'Confirms whether revisions resolved the findings.',
             EditorialActivityKind::Package => 'Proposes ten titles, the SEO title, meta description, slug and greatest-hits tag after review.',
+            EditorialActivityKind::DraftKit => 'Cuts a LinkedIn post, Bluesky thread or email blurb from an approved post.',
+            EditorialActivityKind::ReviewKit => 'Checks a kit piece for claims outside the approved post and for voice; a different model family from the kit drafter.',
         };
     }
 };

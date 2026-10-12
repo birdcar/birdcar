@@ -15,6 +15,8 @@ enum EditorialActivityKind: string
     case Reconciliation = 'reconciliation';
     case Recheck = 'recheck';
     case Package = 'package';
+    case DraftKit = 'draft_kit';
+    case ReviewKit = 'review_kit';
 
     public function isReviewLens(): bool
     {

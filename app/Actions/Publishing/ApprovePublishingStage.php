@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
+use App\Models\EditorialFinding;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
@@ -15,10 +16,13 @@ use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ExemplarRetriever;
+use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Settings\PublishingAgentSettings;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class ApprovePublishingStage
@@ -63,7 +67,7 @@ class ApprovePublishingStage
                 'attempt_id' => $lockedAttempt->id,
                 'kind' => $kind,
                 'input_hash' => $actualHash,
-                'revision_id' => $revisionId,
+                'revision_id' => $kind === ApprovalKind::Kit ? Article::query()->whereKey($lockedAttempt->article_id)->value('working_revision_id') : $revisionId,
                 'release_id' => $releaseId,
                 'user_id' => $actor->id,
                 'approved_at' => now(),
@@ -142,7 +146,124 @@ class ApprovePublishingStage
                 'input_version' => $attempt->input_version,
             ]),
             ApprovalKind::Release => $this->releaseHash($attempt, $revisionId, $releaseId),
+            ApprovalKind::Kit => $this->kitHash($attempt),
         };
+    }
+
+    /**
+     * A kit approval covers the exact text, the flagship release it was cut from, every voice-rule hit with its override
+     * reason, and every kit review finding with its decision, so a change to any of them needs a new approval.
+     */
+    private function kitHash(PublishingAttempt $attempt): string
+    {
+        $article = Article::query()->findOrFail($attempt->article_id);
+        $revision = $article->workingRevision()->first();
+        $lint = app(LintRevision::class);
+        $overrides = $lint->overrides((int) $article->id);
+        $hits = $revision === null ? [] : $lint->hits($article, $revision);
+
+        return $this->fingerprint->hash([
+            'kind' => ApprovalKind::Kit->value,
+            'attempt_id' => $attempt->id,
+            'flagship_release_id' => data_get($attempt->brief, 'flagship_release_id'),
+            'revision_id' => $revision?->id,
+            'content_hash' => $revision?->content_hash,
+            'lint' => array_map(static fn (LintHit $hit): array => ['hash' => $hit->inputHash(), 'override' => $overrides[$hit->inputHash()]['reason'] ?? null], $hits),
+            'findings' => $this->kitFindings($attempt)
+                ->map(static fn (EditorialFinding $finding): array => ['id' => (int) $finding->id, 'severity' => $finding->severity, 'disposition' => $finding->disposition, 'reason' => $finding->disposition_reason])
+                ->all(),
+        ]);
+    }
+
+    /**
+     * Why a kit piece cannot be approved yet, in the order the owner fixes them; empty when it can.
+     *
+     * @return list<string>
+     */
+    public function kitApprovalProblems(PublishingAttempt $attempt): array
+    {
+        $article = Article::query()->find($attempt->article_id);
+        if (! $article instanceof Article || ! $article->isKit()) {
+            return ['Kit approval is only for distribution kit pieces.'];
+        }
+
+        if ($this->stageValue($attempt) !== EditorialStage::InReview->value) {
+            return ['Kit approval requires a kit piece that is still in review.'];
+        }
+
+        $revision = $article->workingRevision()->first();
+        if ($revision === null) {
+            return ['Kit approval needs a drafted piece.'];
+        }
+
+        $problems = [];
+        $reviewed = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::ReviewKit->value)
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->exists();
+        if (! $reviewed) {
+            $problems[] = 'Kit approval needs a completed kit review.';
+        }
+
+        $lint = app(LintRevision::class);
+        $overrides = $lint->overrides((int) $article->id);
+        $open = array_filter($lint->hits($article, $revision), static fn (LintHit $hit): bool => ! isset($overrides[$hit->inputHash()]));
+        if ($open !== []) {
+            $problems[] = count($open).' voice-rule '.(count($open) === 1 ? 'hit needs' : 'hits need').' a fix or an override with a reason.';
+        }
+
+        if ($this->kitFindings($attempt)->contains(static fn (EditorialFinding $finding): bool => $finding->severity === 'blocking' && $finding->disposition === null)) {
+            $problems[] = 'Decide every blocking kit review finding before approving.';
+        }
+
+        return $problems;
+    }
+
+    /**
+     * Records the owner's decision on a kit review finding at once; kit review has no finish step to buffer it for.
+     * Keeping the piece as written, or calling the finding a false positive, needs a reason.
+     */
+    public function decideKitFinding(User $actor, EditorialFinding $finding, string $disposition, string $reason = ''): void
+    {
+        $this->authorize($actor, PublishingPermission::Approve->value);
+
+        if ($finding->lens !== EditorialActivityKind::ReviewKit->value) {
+            throw new RuntimeException('Only kit review findings are decided here.');
+        }
+
+        if (! in_array($disposition, ['accepted', 'rejected', 'false_positive'], true)) {
+            throw new RuntimeException('Unknown kit review decision.');
+        }
+
+        $reason = trim($reason);
+        if ($disposition !== 'accepted' && $reason === '') {
+            throw ValidationException::withMessages(['reason' => 'Explain why the piece keeps this as written.']);
+        }
+
+        $finding->forceFill([
+            'disposition' => $disposition,
+            'disposition_reason' => $reason === '' ? null : $reason,
+            'disposition_actor_id' => $actor->id,
+            'disposed_at' => now(),
+        ])->save();
+    }
+
+    /**
+     * The current kit review cycle's live findings.
+     *
+     * @return Collection<int, EditorialFinding>
+     */
+    private function kitFindings(PublishingAttempt $attempt): Collection
+    {
+        return EditorialFinding::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('lens', EditorialActivityKind::ReviewKit->value)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->whereNull('stale_at')
+            ->orderBy('id')
+            ->get();
     }
 
     /** @return array<string, mixed> */
@@ -195,7 +316,7 @@ class ApprovePublishingStage
         return match ($kind) {
             ApprovalKind::Angle => EditorialStage::Drafting,
             ApprovalKind::Plan => EditorialStage::InReview,
-            ApprovalKind::Release => EditorialStage::Approved,
+            ApprovalKind::Release, ApprovalKind::Kit => EditorialStage::Approved,
         };
     }
 
@@ -209,7 +330,16 @@ class ApprovePublishingStage
             ApprovalKind::Angle => $this->ensureAngleApprovalRequirements($attempt),
             ApprovalKind::Plan => $this->ensurePlanApprovalRequirements($attempt),
             ApprovalKind::Release => $this->ensurePrerequisiteApproval($attempt, [EditorialStage::InReview, EditorialStage::Approved, EditorialStage::Scheduled], ApprovalKind::Plan, 'Release approval requires an active plan approval.'),
+            ApprovalKind::Kit => $this->ensureKitApprovalRequirements($attempt),
         };
+    }
+
+    private function ensureKitApprovalRequirements(PublishingAttempt $attempt): void
+    {
+        $problems = $this->kitApprovalProblems($attempt);
+        if ($problems !== []) {
+            throw new RuntimeException($problems[0]);
+        }
     }
 
     private function ensureAngleApprovalRequirements(PublishingAttempt $attempt): void
@@ -379,11 +509,7 @@ class ApprovePublishingStage
 
     private function activityMatchesCurrentApproval(EditorialActivity $activity, PublishingAttempt $attempt, EditorialActivityKind $kind): bool
     {
-        $approval = match ($kind) {
-            EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck, EditorialActivityKind::Package => ApprovalKind::Plan,
-            EditorialActivityKind::Interview => null,
-        };
+        $approval = StartEditorialActivity::prerequisiteApproval($kind, is_array($activity->input) ? $activity->input : []);
 
         if (! $approval instanceof ApprovalKind) {
             return true;

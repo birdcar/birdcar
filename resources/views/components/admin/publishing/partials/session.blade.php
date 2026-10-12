@@ -18,8 +18,20 @@
                     </form>
                 @endcan
             </div>
+            @if (! $isKit)
+                @can('develop', $article)
+                    <details class="publishing-disclosure w-fit max-w-xl text-sm" data-new-sibling>
+                        <summary>New post from this idea</summary>
+                        <form wire:submit="createSibling" class="mt-3 space-y-3">
+                            <flux:textarea wire:model="siblingNote" label="What should the new post do differently? (optional)" rows="2" maxlength="{{ \App\Actions\Publishing\CreateSiblingPiece::NOTE_LIMIT }}" />
+                            <flux:error name="siblingNote" />
+                            <flux:button type="submit" size="sm" variant="primary">Start the new post</flux:button>
+                        </form>
+                    </details>
+                @endcan
+            @endif
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
-                <span>{{ match ($stage?->value) { 'developing' => 'Finding the argument', 'drafting' => 'Building the plan', 'in_review' => 'Shaping the manuscript', 'approved' => 'Approved for release', 'scheduled' => 'Scheduled', 'published' => 'Published', 'abandoned' => 'Set aside', default => $article->published_release_id ? 'Published' : 'An idea for later' } }}</span>
+                <span>{{ $isKit ? match ($stage?->value) { 'approved' => 'Ready to post', 'published' => 'Posted', default => 'Shaping the piece' } : match ($stage?->value) { 'developing' => 'Finding the argument', 'drafting' => 'Building the plan', 'in_review' => 'Shaping the manuscript', 'approved' => 'Approved for release', 'scheduled' => 'Scheduled', 'published' => 'Published', 'abandoned' => 'Set aside', default => $article->published_release_id ? 'Published' : 'An idea for later' } }}</span>
                 @if ($article->published_release_id && $article->working_revision_id !== $article->publishedRelease?->revision_id)
                     <flux:badge size="sm">Unpublished changes</flux:badge>
                 @endif
@@ -49,7 +61,7 @@
                 <span class="publishing-activity-mark" data-publishing-activity aria-hidden="true"><span></span><span></span><span></span></span>
                 <div>
                     <p class="font-medium">{{ $agentsPaused ? 'Agent work is queued; publishing agents are paused' : ($currentActivity?->status === \App\Models\Publishing\EditorialActivityStatus::Running ? 'Your editorial partner is working' : 'Ready for the next available worker') }}</p>
-                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ match ($currentActivity?->kind?->value) { 'interview' => 'Making room for your perspective.', 'research_challenge' => 'Checking the evidence behind the argument.', 'plan' => 'Organizing the argument into a plan for your approval.', 'draft' => 'Drafting from your approved plan.', 'lint_repair' => 'Fixing mechanical voice rules in the passages it wrote.', 'package' => 'Drafting title options and the search details for your approval.', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck' => 'Reading carefully. Your manuscript remains yours.', default => 'You can leave this page and return to the same work.' } }}</p>
+                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ match ($currentActivity?->kind?->value) { 'interview' => 'Making room for your perspective.', 'research_challenge' => 'Checking the evidence behind the argument.', 'plan' => 'Organizing the argument into a plan for your approval.', 'draft' => 'Drafting from your approved plan.', 'lint_repair' => 'Fixing mechanical voice rules in the passages it wrote.', 'package' => 'Drafting title options and the search details for your approval.', 'draft_kit' => 'Cutting this piece from the approved post.', 'review_kit' => 'Checking this piece against the approved post.', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck' => 'Reading carefully. Your manuscript remains yours.', default => 'You can leave this page and return to the same work.' } }}</p>
                 </div>
             </div>
         @elseif (in_array($currentActivity?->status?->value, ['failed', 'paused'], true))
@@ -63,6 +75,9 @@
         @endif
     </div>
 
+    @if ($isKit)
+        @include('components.admin.publishing.partials.kit')
+    @else
     <flux:tab.group>
         <flux:tabs x-model="mode" aria-label="Article working mode">
             @foreach (['develop' => 'Develop', 'write' => 'Write & review', 'release' => 'Release'] as $modeKey => $modeLabel)
@@ -93,10 +108,12 @@
                 <aside class="space-y-8">
                     @include('components.admin.publishing.partials.details')
                     <x-admin.publishing.partials.release-checklist :article="$article" :attempt="$attempt" :release="$release" />
+                    @include('components.admin.publishing.partials.distribution-kit')
                 </aside>
             </div>
         </flux:tab.panel>
     </flux:tab.group>
+    @endif
 
     @include('components.admin.publishing.partials.activity')
     <noscript><p>Enable JavaScript to interview, edit, and approve work. Your saved articles remain unchanged.</p></noscript>

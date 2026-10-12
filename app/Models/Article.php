@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[RouteKey('slug')]
-#[Fillable(['slug', 'author_id', 'content_idea_id', 'kind', 'parent_article_id', 'working_revision_id', 'published_release_id', 'current_attempt_id', 'first_published_at'])]
+#[Fillable(['slug', 'author_id', 'content_idea_id', 'kind', 'parent_article_id', 'working_revision_id', 'published_release_id', 'current_attempt_id', 'first_published_at', 'posted_at', 'posted_url'])]
 class Article extends Model
 {
     /** @use HasFactory<ArticleFactory> */
@@ -26,7 +26,14 @@ class Article extends Model
         return [
             'kind' => PieceKind::class,
             'first_published_at' => 'datetime',
+            'posted_at' => 'datetime',
         ];
+    }
+
+    /** A LinkedIn post, Bluesky thread or email blurb drafted from a flagship post, never a public writing page. */
+    public function isKit(): bool
+    {
+        return $this->kind->isKit();
     }
 
     /**
