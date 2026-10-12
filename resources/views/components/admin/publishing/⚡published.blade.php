@@ -22,7 +22,7 @@ new #[Layout('layouts.admin')] class extends Component
             'articles' => Article::query()
                 ->where('author_id', auth()->id())
                 ->whereNotNull('published_release_id')
-                ->with(['publishedRelease', 'workingRevision', 'currentAttempt'])
+                ->with(['contentIdea', 'publishedRelease', 'workingRevision', 'currentAttempt'])
                 ->latest('first_published_at')
                 ->latest('id')
                 ->paginate(perPage: 12, pageName: 'publishedPage'),
@@ -33,7 +33,7 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $title = data_get($article->publishedRelease?->payload, 'metadata.title');
 
-        return is_string($title) && trim($title) !== '' ? $title : $article->idea;
+        return is_string($title) && trim($title) !== '' ? $title : 'Untitled';
     }
 
     public function originalDateFor(Article $article): ?CarbonImmutable
@@ -116,8 +116,8 @@ new #[Layout('layouts.admin')] class extends Component
                                 <flux:badge color="zinc" size="sm">Live</flux:badge>
                             @endif
                         </div>
-                        @if ($this->liveTitleFor($article) !== $article->idea)
-                            <flux:text class="wrap-anywhere">Idea: {{ $article->idea }}</flux:text>
+                        @if ($this->liveTitleFor($article) !== $article->contentIdea->summary_title)
+                            <x-admin.publishing.idea-label :summary="$article->contentIdea->summary_title" class="text-sm text-zinc-600 dark:text-zinc-300" />
                         @endif
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">

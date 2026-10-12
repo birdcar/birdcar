@@ -12,6 +12,7 @@ use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\EditorialFinding;
 use App\Models\EvidenceSource;
@@ -45,6 +46,7 @@ new #[Layout('layouts.admin')] class extends Component
     public string $sourceUrl = '';
     public string $voiceSample = '';
     public string $interviewAnswers = '';
+    public string $ideaTitle = '';
 
     /** @var array<int, string> */
     public array $agentAnswers = [];
@@ -77,7 +79,8 @@ new #[Layout('layouts.admin')] class extends Component
     public function mount(Article $article): void
     {
         Gate::authorize('view', $article);
-        $this->article = $article->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+        $this->article = $article->load(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+        $this->ideaTitle = $article->contentIdea->summary_title;
         $this->currentRevisionId = $article->working_revision_id;
         $this->releaseSlug = (string) $article->slug;
         $this->releaseScheduledTimezone = (string) (auth()->user()?->timezone ?? config('app.timezone', 'UTC'));
@@ -97,7 +100,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         try {
             DB::transaction(function (): void {
-                $attempt = app(AdvancePublishingAttempt::class)->develop(auth()->user(), $this->article, $this->currentRevisionId, ['idea' => $this->article->idea]);
+                $attempt = app(AdvancePublishingAttempt::class)->develop(auth()->user(), $this->article, $this->currentRevisionId, ['idea' => $this->article->contentIdea->body]);
                 app(StartEditorialActivity::class)->start(auth()->user(), $attempt, EditorialActivityKind::Interview, $this->voiceActivityInput(), 'interview-'.$attempt->review_cycle);
             });
             $this->saveError = null;
@@ -121,6 +124,15 @@ new #[Layout('layouts.admin')] class extends Component
         if ($result['ok']) {
             $this->notifyEditor($baseRevisionId);
         }
+    }
+
+    public function renameIdea(WriteArticle $articles): void
+    {
+        Gate::authorize('update', $this->article);
+        $validated = $this->validate(['ideaTitle' => ['required', 'string', 'max:'.ContentIdea::TITLE_LIMIT]]);
+        $articles->renameIdea(auth()->user(), $this->article->contentIdea, $validated['ideaTitle']);
+        $this->ideaTitle = $this->article->contentIdea->summary_title;
+        $this->dispatch('idea-renamed');
     }
 
     #[On('publishing-editor-conflict')]
@@ -410,7 +422,7 @@ new #[Layout('layouts.admin')] class extends Component
     {
         Gate::authorize('view', $this->article);
         $baseRevisionId = $this->currentRevisionId;
-        $this->article->refresh()->load(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
+        $this->article->refresh()->load(['contentIdea', 'workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'publishedRelease']);
         if ($this->article->working_revision_id !== $baseRevisionId) {
             $previousMetadata = $this->metadata;
             $this->currentRevisionId = $this->article->working_revision_id;
@@ -908,7 +920,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         return [
             'sessionMode' => $sessionMode,
-            'articleTitle' => trim((string) ($this->metadata['title'] ?? '')) ?: str($this->article->idea)->limit(100)->toString(),
+            'articleTitle' => trim((string) ($this->metadata['title'] ?? '')) ?: null,
             'stage' => $stage,
             'working' => $working,
             'currentActivity' => $currentActivity,

@@ -2,7 +2,22 @@
     <header class="publishing-session-header" data-publishing-enter>
         <div class="flex min-w-0 flex-1 flex-col gap-3">
             <flux:link :href="route('admin.publishing.dashboard')" wire:navigate class="w-fit text-sm" icon="arrow-left">All writing</flux:link>
-            <flux:heading level="1" size="xl" class="max-w-4xl break-words text-balance">{{ $articleTitle }}</flux:heading>
+            <flux:heading level="1" size="xl" class="max-w-4xl break-words text-balance">{{ $articleTitle ?? 'Untitled '.mb_strtolower($article->kind->label()) }}</flux:heading>
+            <div class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300" x-data="{ renaming: false }" x-on:idea-renamed.window="renaming = false" data-idea-summary>
+                <x-admin.publishing.idea-label :summary="$article->contentIdea->summary_title" x-show="! renaming" />
+                @can('update', $article)
+                    <flux:button size="xs" variant="ghost" icon="pencil-square" x-show="! renaming" x-on:click="renaming = true; $nextTick(() => $refs.ideaTitle.focus())" aria-label="Rename idea" tooltip="Rename idea" />
+                    <form wire:submit="renameIdea" x-show="renaming" x-cloak x-on:keydown.escape="renaming = false" class="flex min-w-0 flex-1 flex-wrap items-start gap-2" data-idea-rename>
+                        <flux:field class="min-w-0 flex-1">
+                            <flux:label class="sr-only">Idea name</flux:label>
+                            <flux:input wire:model="ideaTitle" x-ref="ideaTitle" maxlength="{{ \App\Models\ContentIdea::TITLE_LIMIT }}" size="sm" />
+                            <flux:error name="ideaTitle" />
+                        </flux:field>
+                        <flux:button type="submit" size="sm" variant="primary">Save</flux:button>
+                        <flux:button type="button" size="sm" variant="ghost" x-on:click="renaming = false">Cancel</flux:button>
+                    </form>
+                @endcan
+            </div>
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
                 <span>{{ match ($stage?->value) { 'developing' => 'Finding the argument', 'drafting' => 'Building the plan', 'in_review' => 'Shaping the manuscript', 'approved' => 'Approved for release', 'scheduled' => 'Scheduled', 'published' => 'Published', 'abandoned' => 'Set aside', default => $article->published_release_id ? 'Published' : 'An idea for later' } }}</span>
                 @if ($article->published_release_id && $article->working_revision_id !== $article->publishedRelease?->revision_id)

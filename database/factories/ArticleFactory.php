@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Article;
+use App\Models\ContentIdea;
+use App\Models\Publishing\PieceKind;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -19,17 +21,24 @@ class ArticleFactory extends Factory
      */
     public function definition(): array
     {
-        $title = fake()->unique()->sentence(4);
-
         return [
-            'slug' => Str::slug($title).'-'.fake()->unique()->numberBetween(1000, 9999),
+            'slug' => 'idea-'.Str::lower(Str::random(12)),
             'author_id' => User::factory(),
-            'idea' => fake()->paragraph(),
+            'content_idea_id' => fn (array $attributes): ContentIdeaFactory => ContentIdea::factory()->state(['author_id' => $attributes['author_id']]),
+            'kind' => PieceKind::BlogPost,
+            'parent_article_id' => null,
             'working_revision_id' => null,
             'published_release_id' => null,
             'current_attempt_id' => null,
             'first_published_at' => null,
         ];
+    }
+
+    public function idea(string $body): static
+    {
+        return $this->state([
+            'content_idea_id' => fn (array $attributes): ContentIdeaFactory => ContentIdea::factory()->body($body)->state(['author_id' => $attributes['author_id']]),
+        ]);
     }
 
     public function published(): static

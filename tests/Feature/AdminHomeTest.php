@@ -42,7 +42,7 @@ function adminHomeUser(): User
 /** @param array<string, mixed> $attributes */
 function adminHomeAttempt(User $user, string $idea, array $attributes = []): PublishingAttempt
 {
-    $article = Article::factory()->for($user, 'author')->create(['idea' => $idea]);
+    $article = Article::factory()->for($user, 'author')->idea($idea)->create();
     $attempt = PublishingAttempt::factory()->for($article)->for($user, 'initiator')->create($attributes);
     $article->update(['current_attempt_id' => $attempt->id]);
 
@@ -89,7 +89,7 @@ test('home is a real destination with owner scoped attention and ongoing work', 
 test('home distinguishes an empty attention list from empty active work', function (): void {
     $user = adminHomeUser();
     adminHomeAttempt($user, 'An unfinished brief');
-    Article::factory()->for($user, 'author')->create(['idea' => 'Passive idea']);
+    Article::factory()->for($user, 'author')->idea('Passive idea')->create();
 
     $response = $this->actingAs($user)->get('http://admin.birdcar.test/');
     $response->assertSee('Nothing needs your attention')

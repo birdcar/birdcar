@@ -5,10 +5,12 @@ namespace App\Actions\Publishing;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityStatus;
+use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
@@ -16,6 +18,7 @@ use App\Services\Publishing\PublishingFingerprint;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -26,14 +29,56 @@ class WriteArticle
         private ArticleDocument $articleDocument,
     ) {}
 
-    public function capture(User $actor, string $idea, ?string $slug = null): Article
+    /**
+     * Captures a new idea with its flagship blog post piece and returns that piece.
+     */
+    public function captureIdea(User $actor, string $body): Article
     {
         $this->authorize($actor, PublishingPermission::Write->value);
 
-        return Article::create([
-            'author_id' => $actor->id,
-            'idea' => $idea,
-            'slug' => Str::slug($slug ?: 'idea-'.Str::lower(Str::random(12))) ?: 'article',
+        /** @var Article $article */
+        $article = DB::transaction(function () use ($actor, $body): Article {
+            $idea = ContentIdea::create([
+                'author_id' => $actor->id,
+                'summary_title' => ContentIdea::deriveSummaryTitle($body),
+                'summary_title_source' => ContentIdea::SOURCE_DERIVED,
+                'body' => $body,
+            ]);
+
+            return $this->createPiece($actor, $idea, PieceKind::BlogPost, null);
+        });
+
+        return $article;
+    }
+
+    public function addPiece(User $actor, ContentIdea $idea, PieceKind $kind, ?Article $parent = null): Article
+    {
+        $this->authorize($actor, PublishingPermission::Write->value);
+
+        if ($parent !== null && (int) $parent->content_idea_id !== (int) $idea->id) {
+            throw new InvalidArgumentException('A parent piece must belong to the same idea.');
+        }
+
+        return $this->createPiece($actor, $idea, $kind, $parent);
+    }
+
+    public function renameIdea(User $actor, ContentIdea $idea, string $title): void
+    {
+        $this->authorize($actor, PublishingPermission::Write->value);
+
+        $title = trim($title);
+
+        if ($title === '') {
+            throw ValidationException::withMessages(['summary_title' => 'Give the idea a name.']);
+        }
+
+        if (mb_strlen($title) > ContentIdea::TITLE_LIMIT) {
+            throw ValidationException::withMessages(['summary_title' => 'Keep the idea name to '.ContentIdea::TITLE_LIMIT.' characters or fewer.']);
+        }
+
+        $idea->update([
+            'summary_title' => $title,
+            'summary_title_source' => ContentIdea::SOURCE_OWNER,
         ]);
     }
 
@@ -157,6 +202,17 @@ class WriteArticle
             ->whereKey($articleId)
             ->lockForUpdate()
             ->firstOrFail();
+    }
+
+    private function createPiece(User $actor, ContentIdea $idea, PieceKind $kind, ?Article $parent): Article
+    {
+        return Article::create([
+            'author_id' => $actor->id,
+            'content_idea_id' => $idea->id,
+            'kind' => $kind,
+            'parent_article_id' => $parent?->id,
+            'slug' => 'idea-'.Str::lower(Str::random(12)),
+        ]);
     }
 
     private function lockedCurrentAttempt(Article $article): PublishingAttempt
@@ -303,7 +359,7 @@ class WriteArticle
                 throw new RuntimeException('Agent edits cannot remove protected blocks.');
             }
 
-            if ($incomingBlocks[$id] !== $block) {
+            if ($this->fingerprint->canonicalJson($incomingBlocks[$id]) !== $this->fingerprint->canonicalJson($block)) {
                 throw new RuntimeException('Agent edits cannot modify protected blocks.');
             }
         }

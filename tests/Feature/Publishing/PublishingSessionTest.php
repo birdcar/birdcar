@@ -38,7 +38,7 @@ function sessionDocument(string $text = 'The work stays yours.'): array
 
 test('a saved idea can begin interviewing from its session without duplicate work', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'An idea worth developing');
+    $article = app(WriteArticle::class)->captureIdea($author, 'An idea worth developing');
 
     Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article])
         ->call('startDevelopment')
@@ -51,7 +51,7 @@ test('a saved idea can begin interviewing from its session without duplicate wor
 
 test('starting an interview rejects a stage that changed after the workspace opened', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'A changed stage');
+    $article = app(WriteArticle::class)->captureIdea($author, 'A changed stage');
     $attempt = app(AdvancePublishingAttempt::class)->develop($author, $article);
     $component = Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article->fresh()]);
     $attempt->forceFill(['stage' => EditorialStage::Drafting])->save();
@@ -62,7 +62,7 @@ test('starting an interview rejects a stage that changed after the workspace ope
 
 test('session navigation renders readable brief content without exposing its json structure', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'Less chasing');
+    $article = app(WriteArticle::class)->captureIdea($author, 'Less chasing');
     app(AdvancePublishingAttempt::class)->develop($author, $article, brief: ['reader' => 'An owner doing too much follow-up', 'argument' => 'Make the next action visible']);
 
     $this->actingAs($author)->get(route('admin.publishing.articles.show', $article))
@@ -77,7 +77,7 @@ test('session navigation renders readable brief content without exposing its jso
 
 test('saving article details preserves the manuscript and synchronizes the editor revision', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'Original idea');
+    $article = app(WriteArticle::class)->captureIdea($author, 'Original idea');
     $base = app(WriteArticle::class)->save($author, $article, null, sessionDocument(), ['title' => 'Old title', 'date' => '2024-01-01'], 'session-details');
 
     Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
@@ -88,14 +88,14 @@ test('saving article details preserves the manuscript and synchronizes the edito
         ->assertDispatched('publishing-document-updated', fn ($event, $data): bool => $data['baseRevisionId'] === $base->id && $data['revisionId'] !== $base->id);
 
     $saved = $article->fresh()->workingRevision;
-    expect($saved->document)->toBe($base->document);
+    expect($saved->document)->toEqual($base->document);
     expect($saved->metadata)->toMatchArray(['title' => 'A finished argument', 'description' => 'What changes when the next step is clear.', 'date' => '2024-01-01']);
 });
 
 test('a stale details form cannot replace a newer manuscript', function (): void {
     $author = sessionAuthor();
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($author, 'Concurrent work');
+    $article = $writer->captureIdea($author, 'Concurrent work');
     $base = $writer->save($author, $article, null, sessionDocument(), ['title' => 'Original'], 'details-base');
     $component = Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article->fresh()]);
     $newer = $writer->save($author, $article->fresh(), $base->id, sessionDocument('A newer manuscript'), ['title' => 'Newer'], 'details-newer');
@@ -109,7 +109,7 @@ test('a stale details form cannot replace a newer manuscript', function (): void
 
 test('protected passage changes notify a clean browser of the exact replacement revision', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'A protected thought');
+    $article = app(WriteArticle::class)->captureIdea($author, 'A protected thought');
     $base = app(WriteArticle::class)->save($author, $article, null, sessionDocument(), [], 'protect-session');
 
     Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
@@ -119,7 +119,7 @@ test('protected passage changes notify a clean browser of the exact replacement 
 
 test('release preview displays frozen content rather than rendering the latest working revision', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'A release preview');
+    $article = app(WriteArticle::class)->captureIdea($author, 'A release preview');
     $base = app(WriteArticle::class)->save($author, $article, null, sessionDocument('Exactly what was approved.'), ['title' => 'Frozen title'], 'release-preview');
     $release = ArticleRelease::factory()->create([
         'article_id' => $article->id,
@@ -135,7 +135,7 @@ test('release preview displays frozen content rather than rendering the latest w
 test('refreshing an agent revision preserves unfinished article details', function (): void {
     $author = sessionAuthor();
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($author, 'Concurrent details');
+    $article = $writer->captureIdea($author, 'Concurrent details');
     $base = $writer->save($author, $article, null, sessionDocument(), ['title' => 'Original', 'description' => 'Original summary'], 'refresh-base');
     $component = Livewire::actingAs($author)->test('admin.publishing.article-workspace', ['article' => $article->fresh()])
         ->set('details.title', 'Still writing this title');
@@ -150,7 +150,7 @@ test('refreshing an agent revision preserves unfinished article details', functi
 
 test('a release preview cannot select another articles release', function (): void {
     $author = sessionAuthor();
-    $article = app(WriteArticle::class)->capture($author, 'My article');
+    $article = app(WriteArticle::class)->captureIdea($author, 'My article');
     $foreign = ArticleRelease::factory()->create();
 
     $this->actingAs($author)->get(route('admin.publishing.articles.preview', ['article' => $article, 'release' => $foreign->id]))

@@ -98,7 +98,7 @@
     </div>
     <aside class="publishing-brief space-y-7">
         <div><flux:heading level="2" size="lg">The living brief</flux:heading><flux:text class="mt-2">The thought behind the work, kept close.</flux:text></div>
-        <details class="publishing-disclosure" @if (mb_strlen($article->idea) < 260) open @endif><summary>The original idea</summary><p class="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $article->idea }}</p></details>
+        <details class="publishing-disclosure" @if (mb_strlen($article->contentIdea->body) < 260) open @endif><summary>The original idea</summary><p class="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $article->contentIdea->body }}</p></details>
         @if ($displayBrief !== [])<x-admin.publishing.partials.editorial-content :value="array_diff_key($displayBrief, ['idea' => true])" />@else<flux:text>Your brief will take shape during the interview. You don’t need to fill out a specification first.</flux:text>@endif
         <details class="publishing-disclosure">
             <summary>Voice and source material</summary>
@@ -106,7 +106,7 @@
                 <flux:input wire:model="sourceUrl" label="A source to research" placeholder="https://…" type="url" />
                 <div><p class="mb-3 text-sm font-medium">Voice samples from published archive</p><div class="space-y-3">
                     @forelse ($voiceSampleOptions as $sampleArticle)
-                        <flux:checkbox wire:key="voice-{{ $sampleArticle->id }}" wire:model="selectedVoiceSampleArticleIds" value="{{ $sampleArticle->id }}" label="{{ $sampleArticle->publishedRelease?->payload['metadata']['title'] ?? $sampleArticle->idea }}" />
+                        <flux:checkbox wire:key="voice-{{ $sampleArticle->id }}" wire:model="selectedVoiceSampleArticleIds" value="{{ $sampleArticle->id }}" label="{{ $sampleArticle->publishedRelease?->payload['metadata']['title'] ?? 'Untitled' }}" />
                     @empty<flux:text>Published articles will be available as voice references here.</flux:text>@endforelse
                 </div></div>
                 <div><p class="mb-3 text-sm font-medium">Retained owner sources</p><div class="space-y-3">

@@ -72,7 +72,7 @@ class ReadPublishedWriting
 
         return [
             'slug' => is_string($payload['canonical_slug'] ?? null) ? $payload['canonical_slug'] : (string) $article->slug,
-            'title' => (string) ($metadata['title'] ?? $article->idea ?? 'Untitled'),
+            'title' => (string) ($metadata['title'] ?? 'Untitled'),
             'description' => (string) ($metadata['description'] ?? ''),
             'date' => $date,
             'tags' => is_array($tags) ? array_values(array_filter($tags, 'is_string')) : [],

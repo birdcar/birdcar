@@ -91,7 +91,7 @@ function publicWritingAuthor(): User
 function publicWritingArticle(string $slug, string $title, string $body, string $date): Article
 {
     $actor = publicWritingAuthor();
-    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => $slug, 'idea' => $title, 'first_published_at' => CarbonImmutable::parse($date)]);
+    $article = Article::factory()->idea($title)->create(['author_id' => $actor->id, 'slug' => $slug, 'first_published_at' => CarbonImmutable::parse($date)]);
     $revision = ArticleRevision::factory()->create([
         'article_id' => $article->id,
         'created_by' => $actor->id,
@@ -113,7 +113,7 @@ function publicWritingArticle(string $slug, string $title, string $body, string 
 function publicWritingDraft(string $slug, string $title): Article
 {
     $actor = publicWritingAuthor();
-    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => $slug, 'idea' => $title]);
+    $article = Article::factory()->idea($title)->create(['author_id' => $actor->id, 'slug' => $slug]);
     $revision = ArticleRevision::factory()->create([
         'article_id' => $article->id,
         'created_by' => $actor->id,

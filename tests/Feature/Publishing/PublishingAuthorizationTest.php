@@ -21,12 +21,17 @@ test('publishing author grants direct domain action access', function (): void {
     $actor = publishingAuthorizedUser();
     $write = app(WriteArticle::class);
 
-    $article = $write->capture($actor, 'Authorized capture.', 'authorized-capture');
+    $article = $write->captureIdea($actor, 'Authorized capture.');
 
     $this->assertDatabaseHas('articles', [
         'id' => $article->id,
         'author_id' => $actor->id,
-        'slug' => 'authorized-capture',
+        'slug' => $article->slug,
+    ]);
+    $this->assertDatabaseHas('content_ideas', [
+        'id' => $article->content_idea_id,
+        'author_id' => $actor->id,
+        'body' => 'Authorized capture.',
     ]);
 });
 
@@ -34,7 +39,7 @@ test('admin admission alone cannot read or mutate manuscripts', function (): voi
     $actor = User::factory()->create();
     $actor->assignRole(AdminRole::Access->value);
 
-    expect(fn () => app(WriteArticle::class)->capture($actor, 'Admin only.', 'admin-only'))
+    expect(fn () => app(WriteArticle::class)->captureIdea($actor, 'Admin only.'))
         ->toThrow(AuthorizationException::class);
 });
 
@@ -47,7 +52,7 @@ test('organization membership never bypasses global publishing capability checks
     ]);
     $membership->assignRole(OrganizationRole::Editor->value);
 
-    expect(fn () => app(WriteArticle::class)->capture($actor, 'Tenant only.', 'tenant-only'))
+    expect(fn () => app(WriteArticle::class)->captureIdea($actor, 'Tenant only.'))
         ->toThrow(AuthorizationException::class);
 });
 
@@ -55,7 +60,7 @@ test('revoked actors fail closed at the mutation boundary', function (): void {
     $actor = publishingAuthorizedUser();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($actor, 'Revoked.', 'revoked');
+    $article = $write->captureIdea($actor, 'Revoked.');
     $revision = $write->save($actor, $article, null, publishingAuthorizationDocument('Draft'), ['title' => 'Revoked'], 'draft-1');
     $actor->removeRole(PublishingRole::Author->value);
     app(PermissionRegistrar::class)->forgetCachedPermissions();

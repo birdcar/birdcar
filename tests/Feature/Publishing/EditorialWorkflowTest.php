@@ -31,7 +31,7 @@ test('captured ideas stay idle until deliberate develop creates one attempt', fu
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
 
-    $article = $write->capture($actor, 'Investigate agent publishing.', 'agent-publishing');
+    $article = $write->captureIdea($actor, 'Investigate agent publishing.');
     $revision = $write->save($actor, $article, null, editorialDocument('First draft'), editorialMetadata('Agent Publishing'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Publish safely']);
     $duplicateAttempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Publish safely']);
@@ -49,7 +49,7 @@ test('develop after publication creates a fresh working attempt without replacin
     $approve = app(ApprovePublishingStage::class);
     $releases = app(ManageArticleRelease::class);
 
-    $article = $write->capture($actor, 'Published revisions keep going.', 'published-revisions');
+    $article = $write->captureIdea($actor, 'Published revisions keep going.');
     $revision = $write->save($actor, $article, null, editorialDocument('Published body'), editorialMetadata('Published'), 'draft-1');
     $publishedAttempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Ship it']);
     $approve->approve($actor, $publishedAttempt, ApprovalKind::Angle, $approve->inputHashFor($publishedAttempt, ApprovalKind::Angle));
@@ -76,7 +76,7 @@ test('human approvals advance gates and context changes invalidate downstream ga
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
 
-    $article = $write->capture($actor, 'Approval gates.', 'approval-gates');
+    $article = $write->captureIdea($actor, 'Approval gates.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Approval Gates'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Gate automatic work']);
 
@@ -133,7 +133,7 @@ test('rethink resets invalidated gates so brief angle and plan changes can be re
 test('stale saves and conflicting mutation keys do not change the current manuscript', function (): void {
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Concurrent edits.', 'concurrent-edits');
+    $article = $write->captureIdea($actor, 'Concurrent edits.');
     $firstRevision = $write->save($actor, $article, null, editorialDocument('First'), editorialMetadata('First'), 'edit-1');
     $sameMutation = $write->save($actor, $article, $firstRevision->id, editorialDocument('Second'), editorialMetadata('Second'), 'edit-2');
 
@@ -154,7 +154,7 @@ test('approvals cannot skip angle plan or current stage gates', function (): voi
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
 
-    $article = $write->capture($actor, 'Denied gates.', 'denied-gates');
+    $article = $write->captureIdea($actor, 'Denied gates.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Denied Gates'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
 
@@ -180,7 +180,7 @@ test('plan approval requires current cycle research and a non empty outline visu
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
 
-    $article = $write->capture($actor, 'Plan prerequisites.', 'plan-prerequisites');
+    $article = $write->captureIdea($actor, 'Plan prerequisites.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Plan prerequisites'), 'plan-prerequisites-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
@@ -220,7 +220,7 @@ test('plan approval requires research bound to the exact approved brief and angl
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
 
-    $article = $write->capture($actor, 'Exact research binding.', 'exact-research-binding');
+    $article = $write->captureIdea($actor, 'Exact research binding.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Exact research binding'), 'exact-research-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Angle A']);
     $approve->approve($actor, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
@@ -334,7 +334,7 @@ test('agent generated plan is persisted displayed approved by human and gates dr
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($actor, 'Agent plan pipeline.', 'agent-plan-pipeline');
+    $article = $write->captureIdea($actor, 'Agent plan pipeline.');
     $revision = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], editorialMetadata('Agent Plan Pipeline'), 'agent-plan-empty-draft');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => 'Show the pipeline']);
     $attempt->forceFill(['interview_context' => [
@@ -407,7 +407,7 @@ test('pause resume park and abandon retain the attempt identity without creating
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($actor, 'Interruptions.', 'interruptions');
+    $article = $write->captureIdea($actor, 'Interruptions.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Interruptions'), 'draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
 
@@ -440,7 +440,7 @@ test('interruption transitions reject non current and terminal attempts', functi
     expect(fn () => $advance->pause($actor, $publishedAttempt, 'Too late.'))
         ->toThrow(RuntimeException::class, 'Terminal publishing attempts cannot be changed');
 
-    $abandonedArticle = $write->capture($actor, 'Abandoned terminal.', 'abandoned-terminal');
+    $abandonedArticle = $write->captureIdea($actor, 'Abandoned terminal.');
     $abandonedRevision = $write->save($actor, $abandonedArticle, null, editorialDocument('Draft'), editorialMetadata('Abandoned'), 'abandoned-draft-1');
     $abandonedAttempt = $advance->develop($actor, $abandonedArticle, $abandonedRevision->id);
     $advance->abandon($actor, $abandonedAttempt, 'Killed.');
@@ -448,7 +448,7 @@ test('interruption transitions reject non current and terminal attempts', functi
     expect(fn () => $advance->resume($actor, $abandonedAttempt))
         ->toThrow(RuntimeException::class, 'Terminal publishing attempts cannot be changed');
 
-    $currentArticle = $write->capture($actor, 'Current guard.', 'current-guard');
+    $currentArticle = $write->captureIdea($actor, 'Current guard.');
     $currentRevision = $write->save($actor, $currentArticle, null, editorialDocument('Draft'), editorialMetadata('Current Guard'), 'current-guard-draft-1');
     $oldAttempt = $advance->develop($actor, $currentArticle, $currentRevision->id);
     $replacementAttempt = PublishingAttempt::factory()->create([
@@ -465,7 +465,7 @@ test('develop never reuses attempts marked with the abandoned stage', function (
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($actor, 'Stage abandoned.', 'stage-abandoned');
+    $article = $write->captureIdea($actor, 'Stage abandoned.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Stage Abandoned'), 'stage-abandoned-draft-1');
     $abandonedAttempt = $advance->develop($actor, $article, $revision->id);
     $abandonedAttempt->forceFill([
@@ -501,7 +501,7 @@ function approvedEditorialAttempt(User $actor, string $idea, string $slug): Publ
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
 
-    $article = $write->capture($actor, $idea, $slug);
+    $article = $write->captureIdea($actor, $idea);
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata($idea), $slug.'-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id, ['goal' => $idea]);
 
@@ -606,7 +606,7 @@ test('pause and resume move pending agent activities without resetting their wor
     $actor = editorialAuthor();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($actor, 'Agent pause resume.', 'agent-pause-resume');
+    $article = $write->captureIdea($actor, 'Agent pause resume.');
     $revision = $write->save($actor, $article, null, editorialDocument('Draft'), editorialMetadata('Agent Pause'), 'agent-pause-draft-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
     $activity = app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::Interview, [], 'pause-resume');

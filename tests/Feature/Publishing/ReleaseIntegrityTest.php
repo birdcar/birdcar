@@ -30,7 +30,7 @@ test('prepared release packages are immutable while new working revisions stay i
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Live isolation.', 'live-isolation');
+    $article = $write->captureIdea($actor, 'Live isolation.');
     $revision = $write->save($actor, $article, null, releaseDocument('Published draft'), releaseMetadata('Published Draft'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'live-isolation');
@@ -40,6 +40,7 @@ test('prepared release packages are immutable while new working revisions stay i
     $newRevision = $write->save($actor, $article, $revision->id, releaseDocument('Working replacement'), releaseMetadata('Replacement'), 'draft-2');
 
     expect($delivered->published_at)->not->toBeNull()
+        ->and($article->fresh()?->slug)->toBe('live-isolation')
         ->and($article->fresh()?->published_release_id)->toBe($release->id)
         ->and($article->fresh()?->working_revision_id)->toBe($newRevision->id)
         ->and($release->fresh()?->payload['document']['content'][0]['text'])->toBe('Published draft');
@@ -50,7 +51,7 @@ test('revision and release package snapshots reject direct mutation', function (
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Immutable snapshots.', 'immutable-snapshots');
+    $article = $write->captureIdea($actor, 'Immutable snapshots.');
     $revision = $write->save($actor, $article, null, releaseDocument('Frozen'), releaseMetadata('Frozen'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'immutable-snapshots');
@@ -66,9 +67,9 @@ test('release preparation rejects cross article revisions', function (): void {
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'First.', 'first-release');
+    $article = $write->captureIdea($actor, 'First.');
     $revision = $write->save($actor, $article, null, releaseDocument('First'), releaseMetadata('First'), 'first-1');
-    $otherArticle = $write->capture($actor, 'Second.', 'second-release');
+    $otherArticle = $write->captureIdea($actor, 'Second.');
     $otherRevision = $write->save($actor, $otherArticle, null, releaseDocument('Second'), releaseMetadata('Second'), 'second-1');
     $attempt = $advance->develop($actor, $article, $revision->id);
 
@@ -81,7 +82,7 @@ test('release approval is closed outside release management and requires a prepa
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($actor, 'Bare revision release.', 'bare-revision-release');
+    $article = $write->captureIdea($actor, 'Bare revision release.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
 
@@ -96,7 +97,7 @@ test('editing an approved scheduled package invalidates release approval and wit
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Schedule withdrawal.', 'schedule-withdrawal');
+    $article = $write->captureIdea($actor, 'Schedule withdrawal.');
     $revision = $write->save($actor, $article, null, releaseDocument('Scheduled'), releaseMetadata('Scheduled'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $schedule = releaseSchedule($releases, now()->addMinute());
@@ -115,7 +116,7 @@ test('approving a replacement scheduled release withdraws the older schedule for
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Schedule replacement.', 'schedule-replacement');
+    $article = $write->captureIdea($actor, 'Schedule replacement.');
     $revision = $write->save($actor, $article, null, releaseDocument('Scheduled'), releaseMetadata('Scheduled'), 'schedule-replacement-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $oldSchedule = releaseSchedule($releases, now()->addHour());
@@ -138,7 +139,7 @@ test('approved unscheduled packages cannot be reapproved or delivered after a ne
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Stale package.', 'stale-package');
+    $article = $write->captureIdea($actor, 'Stale package.');
     $revision = $write->save($actor, $article, null, releaseDocument('Approved'), releaseMetadata('Approved'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'stale-package');
@@ -169,7 +170,7 @@ test('approved packages cannot be manually delivered after evidence manifests ch
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Evidence stale delivery.', 'evidence-stale-delivery');
+    $article = $write->captureIdea($actor, 'Evidence stale delivery.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'evidence-stale-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $source = EvidenceSource::create([
@@ -212,7 +213,7 @@ test('scheduled delivery refuses approved packages after finding dispositions ch
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Finding stale due.', 'finding-stale-due');
+    $article = $write->captureIdea($actor, 'Finding stale due.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'finding-stale-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $finding = EditorialFinding::create([
@@ -253,7 +254,7 @@ test('write current attempt guard fails before revision or release invalidation 
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
 
-    $article = $write->capture($actor, 'Current attempt save guard.', 'current-attempt-save-guard');
+    $article = $write->captureIdea($actor, 'Current attempt save guard.');
     $revision = $write->save($actor, $article, null, releaseDocument('Approved'), releaseMetadata('Approved'), 'guard-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'current-attempt-save-guard');
@@ -280,7 +281,7 @@ test('release preparation rejects a release revision that only has an older pres
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Stale review release.', 'stale-review-release');
+    $article = $write->captureIdea($actor, 'Stale review release.');
     $revision = $write->save($actor, $article, null, releaseDocument('Reviewed'), releaseMetadata('Reviewed'), 'stale-review-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     EditorialFinding::create([
@@ -309,7 +310,7 @@ test('release preparation accepts completed targeted recheck tied to a reviewed 
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Targeted recheck release.', 'targeted-recheck-release');
+    $article = $write->captureIdea($actor, 'Targeted recheck release.');
     $reviewedRevision = $write->save($actor, $article, null, releaseDocument('Reviewed'), releaseMetadata('Reviewed'), 'targeted-recheck-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $reviewedRevision->id));
     $acceptedBaseFinding = EditorialFinding::create([
@@ -373,7 +374,7 @@ test('release preparation rejects unresolved preserved base blockers after targe
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Preserved blocker release.', 'preserved-blocker-release');
+    $article = $write->captureIdea($actor, 'Preserved blocker release.');
     $reviewedRevision = $write->save($actor, $article, null, releaseDocument('Reviewed claim stays unchanged'), releaseMetadata('Reviewed'), 'preserved-blocker-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $reviewedRevision->id));
     EditorialFinding::create([
@@ -400,7 +401,7 @@ test('release approval rejects unsuccessful targeted rechecks', function (): voi
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Unsuccessful recheck release.', 'unsuccessful-recheck-release');
+    $article = $write->captureIdea($actor, 'Unsuccessful recheck release.');
     $reviewedRevision = $write->save($actor, $article, null, releaseDocument('Reviewed'), releaseMetadata('Reviewed'), 'unsuccessful-recheck-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $reviewedRevision->id));
     $targetRevision = $write->save($actor, $article, $reviewedRevision->id, releaseDocument('Edited'), releaseMetadata('Edited'), 'unsuccessful-recheck-2');
@@ -415,7 +416,7 @@ test('release approval rejects new blocking findings reported by recheck until r
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'New blocker recheck release.', 'new-blocker-recheck-release');
+    $article = $write->captureIdea($actor, 'New blocker recheck release.');
     $reviewedRevision = $write->save($actor, $article, null, releaseDocument('Reviewed'), releaseMetadata('Reviewed'), 'new-blocker-recheck-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $reviewedRevision->id));
     $targetRevision = $write->save($actor, $article, $reviewedRevision->id, releaseDocument('Edited'), releaseMetadata('Edited'), 'new-blocker-recheck-2');
@@ -449,7 +450,7 @@ test('delivery compares the live pointer to the frozen package expectation befor
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Frozen compare and swap.', 'frozen-compare-swap');
+    $article = $write->captureIdea($actor, 'Frozen compare and swap.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'frozen-cas-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'frozen-compare-swap');
@@ -475,7 +476,7 @@ test('delivery is idempotent for the same package and cannot let older jobs repl
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Compare and swap.', 'compare-swap');
+    $article = $write->captureIdea($actor, 'Compare and swap.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $oldSchedule = releaseSchedule($releases, now()->addDay());
@@ -504,7 +505,7 @@ test('delivery rejects blocked and non deliverable attempts inside the transacti
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Blocked delivery.', 'blocked-delivery');
+    $article = $write->captureIdea($actor, 'Blocked delivery.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'draft-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $release = $releases->prepare($actor, $attempt, $revision->id, 'blocked-delivery');
@@ -528,7 +529,7 @@ test('explicit schedule timezone resolves wall time to UTC and freezes the offse
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Timezone schedule.', 'timezone-schedule');
+    $article = $write->captureIdea($actor, 'Timezone schedule.');
     $revision = $write->save($actor, $article, null, releaseDocument('Timezone body'), releaseMetadata('Timezone Body'), 'timezone-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $newYork = $releases->resolveSchedule('2026-07-01 09:30:00', 'America/New_York');
@@ -571,7 +572,7 @@ test('scheduled release preparation requires explicit matching schedule intent w
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Explicit schedule intent.', 'explicit-schedule-intent');
+    $article = $write->captureIdea($actor, 'Explicit schedule intent.');
     $revision = $write->save($actor, $article, null, releaseDocument('Draft'), releaseMetadata('Draft'), 'explicit-schedule-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $existingRelease = $releases->prepare($actor, $attempt, $revision->id, 'explicit-schedule-intent');
@@ -600,7 +601,7 @@ test('publish due command delivers scheduled releases with stored actor authoriz
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Due command.', 'due-command');
+    $article = $write->captureIdea($actor, 'Due command.');
     $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Due Body'), 'due-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $schedule = releaseSchedule($releases, now()->addMinute());
@@ -621,7 +622,7 @@ test('publish due command leaves live content unchanged when the approving actor
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $releases = app(ManageArticleRelease::class);
-    $article = $write->capture($actor, 'Revoked due command.', 'revoked-due-command');
+    $article = $write->captureIdea($actor, 'Revoked due command.');
     $revision = $write->save($actor, $article, null, releaseDocument('Due body'), releaseMetadata('Revoked Due Body'), 'revoked-due-1');
     $attempt = approveReleasePrerequisites($actor, $advance->develop($actor, $article, $revision->id));
     $schedule = releaseSchedule($releases, now()->addMinute());

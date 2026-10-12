@@ -2,6 +2,7 @@
 
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Role as PublishingRole;
+use App\Models\Publishing\PieceKind;
 use App\Models\User;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -10,32 +11,39 @@ beforeEach(function (): void {
     $this->artisan('authorization:sync')->assertSuccessful();
 });
 
-test('captured articles normalize the requested slug and suffix collisions', function (): void {
+test('captured ideas get provisional slugs that never derive from the idea', function (): void {
     $actor = articleSlugAuthor();
     $write = app(WriteArticle::class);
 
-    $first = $write->capture($actor, 'First idea.', 'Shared Slug');
-    $second = $write->capture($actor, 'Second idea.', 'shared-slug');
+    $first = $write->captureIdea($actor, 'Shared Slug');
+    $second = $write->captureIdea($actor, 'Shared Slug');
 
-    expect($first->slug)->toBe('shared-slug')
-        ->and($second->slug)->toBe('shared-slug-1');
+    expect($first->slug)->toMatch('/^idea-[a-z0-9]{12}$/')
+        ->and($second->slug)->toMatch('/^idea-[a-z0-9]{12}$/')
+        ->and($first->slug)->not->toBe($second->slug)
+        ->and($first->slug)->not->toContain('shared');
 });
 
-test('captured articles without a usable slug fall back to a generated one', function (?string $requested, string $pattern): void {
-    $article = app(WriteArticle::class)->capture(articleSlugAuthor(), 'An idea.', $requested);
+test('added pieces get their own provisional slug', function (): void {
+    $actor = articleSlugAuthor();
+    $write = app(WriteArticle::class);
+    $flagship = $write->captureIdea($actor, 'An idea with a kit.');
 
-    expect($article->slug)->toMatch($pattern);
-})->with([
-    'no slug' => [null, '/^idea-[a-z0-9]{12}$/'],
-    'punctuation only' => ['!!!', '/^article$/'],
-]);
+    $piece = $write->addPiece($actor, $flagship->contentIdea, PieceKind::LinkedinPost, $flagship);
 
-test('updating an article keeps its slug instead of regenerating it from the idea', function (): void {
-    $article = app(WriteArticle::class)->capture(articleSlugAuthor(), 'Original idea.', 'stable-slug');
+    expect($piece->slug)->toMatch('/^idea-[a-z0-9]{12}$/')
+        ->and($piece->slug)->not->toBe($flagship->slug);
+});
 
-    $article->update(['idea' => 'A completely different idea.']);
+test('renaming the idea keeps the piece slug', function (): void {
+    $actor = articleSlugAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'Original idea.');
+    $slug = $article->slug;
 
-    expect($article->fresh()?->slug)->toBe('stable-slug');
+    $write->renameIdea($actor, $article->contentIdea, 'A completely different idea');
+
+    expect($article->fresh()?->slug)->toBe($slug);
 });
 
 function articleSlugAuthor(): User

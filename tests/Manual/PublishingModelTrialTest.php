@@ -40,7 +40,8 @@ use Tests\TestCase;
  *     PUBLISHING_LIVE_TRIAL=1 vendor/bin/pest tests/Manual/PublishingModelTrialTest.php --compact
  *
  * One run makes one initial request per role, one AskAuthor continuation and one Auto Router probe, using
- * synthetic data in an in-memory database. It records every attempt, including failures, and never retries.
+ * synthetic data in a freshly migrated birdcar_test database. It records every attempt, including failures,
+ * and never retries.
  * PUBLISHING_LIVE_TRIAL=auto-probe or =recheck-replay repeats one request (the Auto Router probe, or the
  * RevisionRechecker) against the most recent recorded input for that role.
  */
@@ -87,10 +88,10 @@ function liveTrialRefuseUnlessIsolated(): void
     $unsafe = array_values(array_filter([
         app()->environment('testing') ? null : 'The application is not running in the testing environment.',
         app()->configurationIsCached() ? 'Cached configuration is present.' : null,
-        $connection === 'sqlite' ? null : 'The default database connection is not SQLite.',
-        config("database.connections.{$connection}.database") === ':memory:' ? null : 'The configured database is not in-memory.',
+        $connection === 'pgsql' ? null : 'The default database connection is not Postgres.',
+        config("database.connections.{$connection}.database") === 'birdcar_test' ? null : 'The configured database is not birdcar_test.',
         filled(config("database.connections.{$connection}.url")) ? 'A database URL is configured.' : null,
-        DB::connection()->getDriverName() === 'sqlite' && DB::connection()->getConfig('database') === ':memory:' ? null : 'The active connection is not an in-memory SQLite database.',
+        DB::connection()->getDriverName() === 'pgsql' && DB::connection()->getConfig('database') === 'birdcar_test' ? null : 'The active connection is not the birdcar_test Postgres database.',
     ]));
 
     if ($unsafe !== []) {
@@ -107,7 +108,7 @@ function liveTrialPrepareApplication(): void
         throw new RuntimeException('Refusing the live trial: the OpenRouter base URL is not the intended public API.');
     }
 
-    Artisan::call('migrate', ['--force' => true]);
+    Artisan::call('migrate:fresh', ['--force' => true]);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     Artisan::call('authorization:sync');
 
@@ -137,7 +138,7 @@ function liveTrialJourney(string $evidencePath, string $runId): array
     $owner->assignRole([AdminRole::Access->value, PublishingRole::Author->value]);
     $writer = app(WriteArticle::class);
 
-    $voiceArticle = $writer->capture($owner, 'Synthetic published voice sample', 'live-trial-voice-sample');
+    $voiceArticle = $writer->captureIdea($owner, 'Synthetic published voice sample');
     $voiceRevision = $writer->save($owner, $voiceArticle, null, liveTrialDocument(['blk_0000000000000a01' => $fixture['voice_sample']]), ['title' => 'Boring fixes for small service teams'], 'live-trial-voice-sample');
     $voiceRelease = ArticleRelease::factory()->imported()->create([
         'article_id' => $voiceArticle->id,
@@ -146,7 +147,7 @@ function liveTrialJourney(string $evidencePath, string $runId): array
     ]);
     $voiceArticle->forceFill(['published_release_id' => $voiceRelease->id, 'first_published_at' => $voiceRelease->published_at])->save();
 
-    $article = $writer->capture($owner, 'How a small service team stopped dropping customer follow-ups', 'live-trial-follow-ups');
+    $article = $writer->captureIdea($owner, 'How a small service team stopped dropping customer follow-ups');
     $emptyRevision = $writer->save($owner, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Dropped follow-ups'], 'live-trial-empty');
     $attempt = app(AdvancePublishingAttempt::class)->develop($owner, $article, $emptyRevision->id, ['goal' => 'Explain how a small service team stopped dropping customer follow-ups.']);
     $ownerEvidence = EvidenceSource::create([

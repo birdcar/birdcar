@@ -34,7 +34,7 @@ function settingsAttempt(): array
     $author = User::factory()->create();
     $author->assignRole(PublishingRole::Author->value);
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($author, 'Settings-controlled agent work.', 'settings-agent-work-'.uniqid());
+    $article = $writer->captureIdea($author, 'Settings-controlled agent work.');
     $revision = $writer->save($author, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Settings'], 'settings-draft-'.uniqid());
 
     return [$author, app(AdvancePublishingAttempt::class)->develop($author, $article, $revision->id, ['goal' => 'Settings'])];
@@ -428,7 +428,7 @@ test('saving settings never dispatches jobs or sends requests for existing work'
     Http::assertNothingSent();
     expect($pending->fresh()->status)->toBe(EditorialActivityStatus::Pending)
         ->and($awaiting->fresh()->status)->toBe(EditorialActivityStatus::AwaitingApproval)
-        ->and($awaiting->fresh()->model_snapshot)->toBe($snapshot);
+        ->and($awaiting->fresh()->model_snapshot)->toEqual($snapshot);
 });
 
 test('revoked configuration access cannot save pause or reset settings', function (string $revokedRole): void {

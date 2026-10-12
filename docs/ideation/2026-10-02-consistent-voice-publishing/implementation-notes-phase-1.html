@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 1 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Content ideas and pieces —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 1</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 1</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Content ideas and pieces</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Step A — Postgres session timezone pinned to UTC</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec step A said to fix application code when Postgres exposes a real bug. Two release tests failed by 7–8 hours: Herd's Postgres server runs in <code>America/Los_Angeles</code>, and Laravel writes <code>timestampTz</code> values without an offset, so the server read UTC values as Pacific time.</dd>
+          <dt>Decision</dt>
+          <dd>Added <code>'timezone' =&gt; 'UTC'</code> to the <code>pgsql</code> connection in <code>config/database.php</code>, matching <code>app.timezone</code>. The bug also affects local development, which uses the same server.</dd>
+          <dt>Alternative</dt>
+          <dd>Changing the server timezone in Herd (machine-local and invisible to the repo), or adjusting the test expectations (that would hide a real bug).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Step A — jsonb key order</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Postgres <code>jsonb</code> reorders object keys. Four tests compared jsonb-read arrays with <code>toBe</code>, and <code>WriteArticle</code>'s protected-block guard compared blocks with strict <code>!==</code>, which depends on key order.</dd>
+          <dt>Decision</dt>
+          <dd>The guard now compares <code>PublishingFingerprint::canonicalJson()</code> of both sides, an app fix. The four assertions (AdminPublishingEditorTest, PublishingSessionTest, AgentBudgetTest, PublishingAgentSettingsTest) now use <code>toEqual</code> because they encoded SQLite's key-order preservation.</dd>
+          <dt>Alternative</dt>
+          <dd>Switching the columns to <code>json</code>, which keeps key order. Rejected as a schema change made only to suit the tests.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Step A — CI 'Load published writing' step left unchanged</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks that this step keep working, assuming an archive data migration stays applied. No such migration exists, and the step calls <code>App\Actions\ReadWriting::all()</code>, a method that does not exist, so the step is already broken (scout risk).</dd>
+          <dt>Decision</dt>
+          <dd>Added only the Postgres service and job env. The step itself is unchanged, and the owner should decide its fate.</dd>
+          <dt>Alternative</dt>
+          <dd>Pointing it at <code>ReadPublishedWriting::all()</code>. That would turn it into a real failure, because <code>birdcar_test</code> holds no published rows after the suite.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Step A — Manual live trial guard</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>tests/Manual/PublishingModelTrialTest.php</code> refused to run unless the connection was SQLite <code>:memory:</code>, so after Step A it would always refuse. The spec's grep check does not cover it.</dd>
+          <dt>Decision</dt>
+          <dd>The guard now requires <code>pgsql</code> with the <code>birdcar_test</code> database and no URL, and runs <code>migrate:fresh</code> instead of <code>migrate</code>. The trial keeps an isolated, freshly migrated database. Its <code>capture()</code> calls moved to <code>captureIdea()</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>Leaving the guard as it was, which would make the trial permanently unusable.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Data model — content_ideas.author_id nullable, null on delete</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec has <code>content_ideas.author_id NOT NULL … ON DELETE CASCADE</code> and <code>articles.content_idea_id … ON DELETE RESTRICT</code>. <code>articles.author_id</code> is already nullable with null-on-delete. With the spec's constraints, deleting a user who has articles cascades to their ideas, the restrict foreign key on <code>articles</code> then fails, and the user cannot be deleted.</dd>
+          <dt>Decision</dt>
+          <dd><code>content_ideas.author_id</code> is nullable and nulled on delete, matching <code>articles</code>. This also lets the backfill carry over legacy articles with a null author. A test in ContentIdeaTest covers deleting an author.</dd>
+          <dt>Alternative</dt>
+          <dd>Following the spec literally. That would make user deletion fail for every author who has writing.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Model — ContentIdea shape</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec sketch says <code>final class ContentIdea</code> and gives no type for <code>summary_title_source</code>.</dd>
+          <dt>Decision</dt>
+          <dd>The class is non-final like every sibling model. <code>summary_title_source</code> is a string column with <code>SOURCE_DERIVED/OWNER/INTERVIEWER</code> constants, plus <code>TITLE_LIMIT</code> (120), <code>DERIVED_TITLE_LIMIT</code> (80) and <code>UNTITLED</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>A <code>SummaryTitleSource</code> enum. Rejected because the spec lists no such file; Phase 4 can promote the constants to an enum.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Summary derivation — inline Markdown stripped</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The Technical Approach says 'Markdown stripped', but the sketch strips only leading markers.</dd>
+          <dt>Decision</dt>
+          <dd><code>deriveSummaryTitle</code> also removes link and image syntax (keeping the text), plus <code>**</code>, <code>__</code>, <code>~~</code> and backticks. It removes single <code>*</code>/<code>_</code> only at word edges, so <code>user_id</code> survives. A line that is only a marker is skipped. A word longer than 80 characters is hard-cut. CRLF and multibyte text are handled with <code>\R</code> and the <code>mb_*</code> functions.</dd>
+          <dt>Alternative</dt>
+          <dd>Stripping leading markers only. That would put raw <code>**bold**</code> into the labels.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Workspace header — untitled heading</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>articleTitle</code> may no longer fall back to the idea, but the h1 still needs text before a title exists.</dd>
+          <dt>Decision</dt>
+          <dd>The h1 shows the metadata title, or 'Untitled blog post' (from <code>PieceKind::label()</code>). The idea appears on its own labeled line below, with an inline rename (Alpine toggle, <code>Gate::authorize('update')</code>, then <code>validate</code>, then <code>WriteArticle::renameIdea</code>) shown only to users who can update the article.</dd>
+          <dt>Alternative</dt>
+          <dd>Putting the labeled idea inside the h1. Rejected because the manual check asks that the idea not read as the title.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Labels — shared Blade components</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks for the same 'Idea' label on the dashboard (both lists), workspace, published list and Admin index, and mentions a separate <code>ideaLabelFor()</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Added anonymous components <code>x-admin.publishing.idea-label</code> (badge plus summary, <code>data-idea-label</code>) and <code>x-admin.publishing.piece-heading</code> (title or labeled idea, with the labeled idea underneath when a title exists). The dashboard's <code>titleFor()</code> returns <code>?string</code>. No <code>ideaLabelFor()</code> wrapper was added, since the component reads <code>contentIdea-&gt;summary_title</code> directly.</dd>
+          <dt>Alternative</dt>
+          <dd>Copying the badge markup into each of the five sites.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Files outside the spec's list</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Scout identified four sites the spec missed.</dd>
+          <dt>Decision</dt>
+          <dd><code>ReadAdminHome</code> eager-loads <code>contentIdea:id,summary_title</code>. The voice-sample label in <code>develop.blade.php</code> falls back to 'Untitled' instead of the idea. The release checklist falls back to the payload title, then the working metadata title, then 'Untitled'. <code>session.blade.php</code> holds the header changes.</dd>
+          <dt>Alternative</dt>
+          <dd>None.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Tests — release slug canonicalization</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks ArticleSlugTest to show that 'release still canonicalizes', but release preparation needs the approval and review fixtures that live in ReleaseIntegrityTest. Those are global helpers that are not loaded when ArticleSlugTest runs alone.</dd>
+          <dt>Decision</dt>
+          <dd>ArticleSlugTest now covers provisional slugs for captures and added pieces, and slug stability across a rename. The canonicalization assertion (<code>slug</code> becomes <code>live-isolation</code> after prepare) went into ReleaseIntegrityTest's first test.</dd>
+          <dt>Alternative</dt>
+          <dd>Duplicating about 100 lines of release-prerequisite helpers into ArticleSlugTest.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Process — Step A not committed separately</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to commit Step A on its own as <code>test(publishing): Run the suite on Postgres</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Under the engine overrides the builder never commits, so all changes are left unstaged. The Step A files are <code>phpunit.xml</code>, <code>.github/workflows/tests.yml</code>, <code>config/database.php</code>, the canonical comparison in <code>WriteArticle.php</code>, the four <code>toEqual</code> test edits and the Manual trial guard. The commit stage can split them out if it wants two commits; note that <code>WriteArticle.php</code> and the Manual trial file also carry Step B changes.</dd>
+          <dt>Alternative</dt>
+          <dd>None (constrained by the workflow).</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

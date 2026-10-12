@@ -41,6 +41,7 @@ class ReadAdminHome
                 ->whereNull('abandoned_at')
                 ->whereNotIn('stage', [EditorialStage::Published, EditorialStage::Abandoned]))
             ->with([
+                'contentIdea:id,summary_title',
                 'workingRevision:id,article_id,content_hash,metadata,updated_at',
                 'currentAttempt' => fn ($query) => $query->withExists([
                     'editorialFindings as has_open_findings' => fn ($findings) => $findings

@@ -6,6 +6,7 @@ use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
@@ -54,7 +55,7 @@ function articleRevisionWithTitle(Article $article, User $user, string $title): 
 
 function activeArticleFor(User $user, string $idea, EditorialStage $stage = EditorialStage::Developing, ?string $title = null): Article
 {
-    $article = Article::factory()->create(['author_id' => $user->id, 'idea' => $idea]);
+    $article = Article::factory()->idea($idea)->create(['author_id' => $user->id]);
     if ($title !== null) {
         articleRevisionWithTitle($article, $user, $title);
     }
@@ -95,7 +96,7 @@ function workspaceXpathElement(DOMXPath $xpath, string $expression): DOMElement
 
 function publishedArticleFor(User $user, string $idea, string $title = 'Live title', ?EditorialStage $activeStage = null): Article
 {
-    $article = Article::factory()->create(['author_id' => $user->id, 'idea' => $idea, 'slug' => Str::slug($idea)]);
+    $article = Article::factory()->idea($idea)->create(['author_id' => $user->id, 'slug' => Str::slug($idea)]);
     $revision = articleRevisionWithTitle($article, $user, $title);
     $release = ArticleRelease::factory()->create([
         'article_id' => $article->id,
@@ -123,7 +124,7 @@ function publishedArticleFor(User $user, string $idea, string $title = 'Live tit
 test('admission only users see shell but no editorial data', function (): void {
     $user = User::factory()->create();
     $user->assignRole(AdminRole::Access->value);
-    Article::factory()->create(['idea' => 'Secret editorial title']);
+    Article::factory()->idea('Secret editorial title')->create();
 
     $this->actingAs($user)
         ->get('http://admin.birdcar.test/')
@@ -209,7 +210,7 @@ test('revoked publishing permission fails closed during livewire updates', funct
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     $component->call('saveForLater')->assertForbidden();
-    expect(Article::query()->where('idea', 'Should not save after revoke')->exists())->toBeFalse();
+    expect(Article::query()->whereRelation('contentIdea', 'body', 'Should not save after revoke')->exists())->toBeFalse();
 });
 
 test('revoked admin admission fails closed during livewire updates', function (): void {
@@ -222,7 +223,7 @@ test('revoked admin admission fails closed during livewire updates', function ()
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     $component->call('saveForLater')->assertForbidden();
-    expect(Article::query()->where('idea', 'Should not save after admin revoke')->exists())->toBeFalse();
+    expect(Article::query()->whereRelation('contentIdea', 'body', 'Should not save after admin revoke')->exists())->toBeFalse();
 });
 
 test('publishing authors can reach dashboard and create passive ideas without starting an interview', function (): void {
@@ -240,7 +241,7 @@ test('publishing authors can reach dashboard and create passive ideas without st
         ->assertHasNoErrors()
         ->assertSee('Idea saved for later.');
 
-    $article = Article::query()->where('idea', 'A passive idea')->firstOrFail();
+    $article = Article::query()->whereRelation('contentIdea', 'body', 'A passive idea')->firstOrFail();
     expect($article->current_attempt_id)->toBeNull()
         ->and(EditorialActivity::query()->where('article_id', $article->id)->exists())->toBeFalse();
 });
@@ -255,7 +256,7 @@ test('develop idea starts one pending interview and redirects to the workspace',
         ->assertHasNoErrors()
         ->assertRedirect();
 
-    $article = Article::query()->where('idea', 'An active idea')->firstOrFail();
+    $article = Article::query()->whereRelation('contentIdea', 'body', 'An active idea')->firstOrFail();
     expect($article->current_attempt_id)->not->toBeNull();
 
     $activities = EditorialActivity::query()
@@ -303,16 +304,16 @@ test('develop idea is forbidden without develop permission', function (): void {
         ->call('developIdea')
         ->assertForbidden();
 
-    expect(Article::query()->where('idea', 'No develop permission')->exists())->toBeFalse();
+    expect(Article::query()->whereRelation('contentIdea', 'body', 'No develop permission')->exists())->toBeFalse();
 });
 
 test('dashboard lists owner-scoped ideas and active writing with titles and full idea access', function (): void {
     $user = publishingUser();
     $other = publishingUser();
     $longIdea = str_repeat('Long idea sentence. ', 80).'Final accessible sentence.';
-    Article::factory()->create(['author_id' => $user->id, 'idea' => $longIdea]);
+    Article::factory()->idea($longIdea)->create(['author_id' => $user->id]);
     activeArticleFor($user, 'Active idea body', EditorialStage::InReview, 'Working active title');
-    Article::factory()->create(['author_id' => $other->id, 'idea' => 'Other author idea']);
+    Article::factory()->idea('Other author idea')->create(['author_id' => $other->id]);
     activeArticleFor($other, 'Other active idea', EditorialStage::Developing, 'Other active title');
 
     $this->actingAs($user)
@@ -320,7 +321,7 @@ test('dashboard lists owner-scoped ideas and active writing with titles and full
         ->assertOk()
         ->assertSee('Ideas')
         ->assertSee('Active writing')
-        ->assertSee(Str::limit($longIdea, 100))
+        ->assertSee(ContentIdea::deriveSummaryTitle($longIdea))
         ->assertSee('Final accessible sentence.')
         ->assertSee('Working active title')
         ->assertSee('In review')
@@ -331,9 +332,8 @@ test('dashboard lists owner-scoped ideas and active writing with titles and full
 test('dashboard paginates ideas and active writing independently', function (): void {
     $user = publishingUser();
     foreach (range(1, 13) as $index) {
-        Article::factory()->create([
+        Article::factory()->idea(sprintf('Backlog idea %02d', $index))->create([
             'author_id' => $user->id,
-            'idea' => sprintf('Backlog idea %02d', $index),
             'created_at' => now()->subMinutes($index),
         ]);
         $this->travelTo(now()->subMinutes($index), fn (): Article => activeArticleFor($user, sprintf('Active writing %02d', $index)));
@@ -354,7 +354,7 @@ test('dashboard pages break created_at ties by newest id so no article repeats o
     $this->freezeTime();
     $user = publishingUser();
     foreach (range(1, 13) as $index) {
-        Article::factory()->create(['author_id' => $user->id, 'idea' => sprintf('Backlog idea %02d', $index)]);
+        Article::factory()->idea(sprintf('Backlog idea %02d', $index))->create(['author_id' => $user->id]);
         activeArticleFor($user, sprintf('Active writing %02d', $index));
     }
 

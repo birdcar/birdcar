@@ -88,7 +88,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
 
     $actor = journeyUser();
     $write = app(WriteArticle::class);
-    $archive = $write->capture($actor, 'Published archive voice', 'published-archive-voice');
+    $archive = $write->captureIdea($actor, 'Published archive voice');
     $publishedArchive = $write->save($actor, $archive, null, journeyDocument('Archive voice sample with direct, concrete editorial language.', 'archive-voice'), ['title' => 'Archive voice sample'], 'journey-archive');
     $publishedRelease = ArticleRelease::factory()->imported()->create([
         'article_id' => $archive->id,
@@ -98,7 +98,7 @@ test('displayed interview to recheck journey uses real workspace actions and fro
     $archive->forceFill(['published_release_id' => $publishedRelease->id, 'first_published_at' => $publishedRelease->published_at])->save();
     $write->save($actor, $archive, $publishedArchive->id, journeyDocument('Private working draft voice must not enter prompts.', 'archive-private'), ['title' => 'Private archive draft'], 'journey-archive-private');
 
-    $article = $write->capture($actor, 'Journey article', 'journey-article');
+    $article = $write->captureIdea($actor, 'Journey article');
     $seed = $write->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Journey article'], 'journey-seed');
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $seed->id, ['goal' => 'Initial owner brief']);
     $ownerSource = EvidenceSource::create([

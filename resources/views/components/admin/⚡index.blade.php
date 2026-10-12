@@ -84,10 +84,16 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                                         </div>
                                         <div class="mt-3 flex flex-col items-start gap-4 sm:flex-row sm:justify-between sm:gap-6">
                                             <div class="min-w-0 space-y-1">
-                                                <flux:heading level="3" class="wrap-anywhere">{{ data_get($item['article']->workingRevision?->metadata, 'title') ?: $item['article']->idea }}</flux:heading>
+                                                <flux:heading level="3" class="wrap-anywhere">
+                                                    @if ($title = data_get($item['article']->workingRevision?->metadata, 'title'))
+                                                        {{ $title }}
+                                                    @else
+                                                        <x-admin.publishing.idea-label :summary="$item['article']->contentIdea->summary_title" />
+                                                    @endif
+                                                </flux:heading>
                                                 <flux:text>{{ $item['reason'] }}</flux:text>
                                             </div>
-                                            <flux:button :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate size="sm" icon:trailing="arrow-up-right" class="shrink-0" :aria-label="$item['action'].': '.$item['article']->idea">{{ $item['action'] }}</flux:button>
+                                            <flux:button :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate size="sm" icon:trailing="arrow-up-right" class="shrink-0" :aria-label="$item['action'].': '.(data_get($item['article']->workingRevision?->metadata, 'title') ?: 'Idea: '.$item['article']->contentIdea->summary_title)">{{ $item['action'] }}</flux:button>
                                         </div>
                                     </li>
                                 @endforeach
@@ -107,7 +113,13 @@ new #[Layout('layouts.admin'), Title('Home')] class extends Component
                 <ul class="mt-3 divide-y divide-zinc-200 dark:divide-zinc-700">
                     @forelse ($continuing as $item)
                         <li wire:key="home-continue-{{ $item['article']->id }}" class="py-4">
-                            <flux:link :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate class="block font-medium wrap-anywhere">{{ data_get($item['article']->workingRevision?->metadata, 'title') ?: $item['article']->idea }}</flux:link>
+                            <flux:link :href="route('admin.publishing.articles.show', $item['article'])" wire:navigate class="block font-medium wrap-anywhere">
+                                @if ($title = data_get($item['article']->workingRevision?->metadata, 'title'))
+                                    {{ $title }}
+                                @else
+                                    <x-admin.publishing.idea-label :summary="$item['article']->contentIdea->summary_title" />
+                                @endif
+                            </flux:link>
                             <flux:text class="mt-1" size="sm">{{ $item['reason'] }}</flux:text>
                             <flux:text class="mt-2" size="sm">Publishing · <time datetime="{{ $item['updated_at']->toIso8601String() }}">{{ $item['updated_at']->diffForHumans() }}</time></flux:text>
                         </li>

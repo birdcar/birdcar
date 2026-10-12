@@ -557,7 +557,7 @@ function reviewAuthor(): User
 function reviewAttempt(User $actor, array $content): PublishingAttempt
 {
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($actor, 'Review agent work.', 'review-agent-work-'.uniqid());
+    $article = $writer->captureIdea($actor, 'Review agent work.');
     $revision = $writer->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => $content], ['title' => 'Review'], 'review-draft-'.uniqid());
 
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Review']);

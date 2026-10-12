@@ -74,7 +74,7 @@ test('valid output completes without cost metadata or a billing lookup and dupli
     expect($activity->status)->toBe(EditorialActivityStatus::Completed)
         ->and($activity->run_count)->toBe(1)
         ->and($activity->generation_id)->toBe('gen-test')
-        ->and($activity->model_snapshot)->toBe([
+        ->and($activity->model_snapshot)->toEqual([
             'requested_model' => 'google/gemini-3.8-flash',
             'model' => 'google/gemini-3.8-flash',
             'reasoning_effort' => 'low',
@@ -396,7 +396,7 @@ function agentBudgetAuthor(): User
 function agentBudgetAttempt(User $actor): PublishingAttempt
 {
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($actor, 'Agent execution work.', 'agent-execution-work-'.uniqid());
+    $article = $writer->captureIdea($actor, 'Agent execution work.');
     $revision = $writer->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Execution'], 'execution-draft-'.uniqid());
 
     return app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Execution']);

@@ -265,7 +265,7 @@ function pendingAuthorInterview(string $question = 'Who is the reader?', string 
     ]);
     $author = User::factory()->create();
     $author->assignRole([AdminRole::Access->value, PublishingRole::Author->value]);
-    $article = app(WriteArticle::class)->capture($author, 'A support guide', 'capture-interview-'.uniqid());
+    $article = app(WriteArticle::class)->captureIdea($author, 'A support guide');
     $revision = app(WriteArticle::class)->save($author, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'A support guide'], 'initial-interview-'.uniqid());
     $attempt = app(AdvancePublishingAttempt::class)->develop($author, $article, $revision->id, ['goal' => 'Explain support operations']);
     $activity = app(StartEditorialActivity::class)->start($author, $attempt, EditorialActivityKind::Interview);

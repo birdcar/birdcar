@@ -27,7 +27,7 @@ beforeEach(function (): void {
 test('release readiness reports blocking package completeness findings before preparation', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Missing metadata.', 'missing-metadata');
+    $article = $write->captureIdea($actor, 'Missing metadata.');
     $revision = $write->save($actor, $article, null, readinessDocument('Body with enough public text.'), ['title' => 'Missing metadata'], 'missing-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
@@ -43,7 +43,7 @@ test('release readiness reports blocking package completeness findings before pr
 test('safe article packages include a current readiness hash and stale findings stop approval', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Stale readiness.', 'stale-readiness');
+    $article = $write->captureIdea($actor, 'Stale readiness.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Stale Readiness'), 'stale-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $release = app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'stale-readiness');
@@ -71,7 +71,7 @@ test('safe article packages include a current readiness hash and stale findings 
 test('release freshness hashes evidence contents', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Evidence freshness.', 'evidence-freshness');
+    $article = $write->captureIdea($actor, 'Evidence freshness.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Evidence Freshness'), 'evidence-freshness-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $source = EvidenceSource::create([
@@ -113,7 +113,7 @@ test('release freshness hashes evidence contents', function (): void {
 test('release freshness hashes evidence with blank resolved restrictions', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Blank restriction freshness.', 'blank-restriction-freshness');
+    $article = $write->captureIdea($actor, 'Blank restriction freshness.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Blank Restriction Freshness'), 'blank-restriction-freshness-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $source = EvidenceSource::create([
@@ -147,7 +147,7 @@ test('release freshness hashes evidence with blank resolved restrictions', funct
 test('release readiness blocks evidence without publication rights or unresolved restrictions', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Evidence rights.', 'evidence-rights');
+    $article = $write->captureIdea($actor, 'Evidence rights.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Evidence Rights'), 'evidence-rights-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     EvidenceSource::create([
@@ -177,7 +177,7 @@ test('release readiness blocks evidence without publication rights or unresolved
 test('release freshness hashes in-place finding dispositions and reasons', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Finding freshness.', 'finding-freshness');
+    $article = $write->captureIdea($actor, 'Finding freshness.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('Finding Freshness'), 'finding-freshness-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $finding = readinessFinding($attempt, $revision, [
@@ -197,7 +197,7 @@ test('release freshness hashes in-place finding dispositions and reasons', funct
 test('incomplete same-revision reviews are structured blocking readiness findings', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Incomplete reviews.', 'incomplete-reviews');
+    $article = $write->captureIdea($actor, 'Incomplete reviews.');
     $revision = $write->save($actor, $article, null, readinessDocument('Review prerequisites body.'), readinessMetadata('Incomplete Reviews'), 'incomplete-review-1');
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id);
 
@@ -210,7 +210,7 @@ test('incomplete same-revision reviews are structured blocking readiness finding
 test('completed review lineage is blocked by active same-revision review work', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Active review work.', 'active-review-work');
+    $article = $write->captureIdea($actor, 'Active review work.');
     $revision = $write->save($actor, $article, null, readinessDocument('Review work body.'), readinessMetadata('Active Review Work'), 'active-review-work-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
@@ -247,7 +247,7 @@ test('completed review lineage is blocked by active same-revision review work', 
 test('scheduled release preparation rejects past schedule instants', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Past schedule.', 'past-schedule');
+    $article = $write->captureIdea($actor, 'Past schedule.');
     $revision = $write->save($actor, $article, null, readinessDocument('Past schedule body.'), readinessMetadata('Past Schedule'), 'past-schedule-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
@@ -262,7 +262,7 @@ test('scheduled release preparation rejects past schedule instants', function ()
 test('malformed public metadata dates are structured blocking readiness findings', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Invalid date.', 'invalid-date');
+    $article = $write->captureIdea($actor, 'Invalid date.');
     $metadata = readinessMetadata('Invalid Date');
     $metadata['date'] = 'not a real date';
     $revision = $write->save($actor, $article, null, readinessDocument('Invalid date body.'), $metadata, 'invalid-date-1');
@@ -278,7 +278,7 @@ test('malformed public metadata dates are structured blocking readiness findings
 test('first publication packages and delivery use the validated metadata public date', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'First public date.', 'first-public-date');
+    $article = $write->captureIdea($actor, 'First public date.');
     $revision = $write->save($actor, $article, null, readinessDocument('First public body.'), readinessMetadata('First Public Date'), 'first-public-date-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
@@ -293,7 +293,7 @@ test('first publication packages and delivery use the validated metadata public 
 test('safe chart and svg assets can be packaged while invalid assets block readiness', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Safe assets.', 'safe-assets');
+    $article = $write->captureIdea($actor, 'Safe assets.');
     $revision = $write->save($actor, $article, null, readinessAssetDocument(), readinessMetadata('Safe Assets'), 'safe-assets-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
 
@@ -311,7 +311,7 @@ test('safe chart and svg assets can be packaged while invalid assets block readi
 test('reasoned false-positive dispositions clear blockers but bare false positives and accepted blockers do not', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'False positive blockers.', 'false-positive-blockers');
+    $article = $write->captureIdea($actor, 'False positive blockers.');
     $revision = $write->save($actor, $article, null, readinessDocument('Supported body.'), readinessMetadata('False Positive Blockers'), 'false-positive-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     $finding = readinessFinding($attempt, $revision, ['disposition' => 'false_positive']);
@@ -330,7 +330,7 @@ test('reasoned false-positive dispositions clear blockers but bare false positiv
 test('advisory findings do not block exact package approval', function (): void {
     $actor = readinessAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Advisory only.', 'advisory-only');
+    $article = $write->captureIdea($actor, 'Advisory only.');
     $revision = $write->save($actor, $article, null, readinessDocument('Publishable body.'), readinessMetadata('Advisory Only'), 'advisory-1');
     $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
     EditorialFinding::create([
@@ -470,7 +470,7 @@ function readinessInvalidAssetDocument(): array
  */
 function readinessRevisionBypassingSave(User $actor, string $slug, array $document, array $metadata): ArticleRevision
 {
-    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => $slug, 'idea' => $metadata['title'] ?? $slug]);
+    $article = Article::factory()->create(['author_id' => $actor->id, 'slug' => $slug]);
     $revision = ArticleRevision::factory()->create([
         'article_id' => $article->id,
         'created_by' => $actor->id,

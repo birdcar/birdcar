@@ -5,6 +5,8 @@ use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
+use App\Models\Publishing\PieceKind;
 use App\Models\User;
 use App\Services\Publishing\ArchiveMarkdownImporter;
 use App\Services\Publishing\ArticleDocument;
@@ -116,7 +118,19 @@ test('write creates import revisions and releases once without clobbering repeat
         ->and($release->origin)->toBe('import')
         ->and($release->attempt_id)->toBeNull()
         ->and($release->payload['archive']['baseline'])->toBe('baseline')
-        ->and($article->published_release_id)->toBe($release->id);
+        ->and($article->published_release_id)->toBe($release->id)
+        ->and(ContentIdea::query()->count())->toBe(1)
+        ->and($article->kind)->toBe(PieceKind::BlogPost)
+        ->and($article->parent_article_id)->toBeNull()
+        ->and($article->contentIdea->only(['author_id', 'summary_title', 'summary_title_source', 'body']))->toBe([
+            'author_id' => $actor->id,
+            'summary_title' => 'Minimal archive',
+            'summary_title_source' => ContentIdea::SOURCE_DERIVED,
+            'body' => 'Minimal archive',
+        ])
+        ->and($release->payload['metadata']['title'])->toBe('Minimal archive')
+        ->and($release->payload['canonical_slug'])->toBe('minimal')
+        ->and($article->first_published_at?->toDateString())->toBe($release->payload['metadata']['date']);
 });
 
 test('write refuses unrelated slug collisions and command requires an actor', function (): void {

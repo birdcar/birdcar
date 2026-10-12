@@ -27,7 +27,7 @@
         @if ($scheduleConfirmation)
             <div class="publishing-release-intent"><p class="text-sm font-medium">{{ $release->status === 'scheduled' ? 'Scheduled, not yet published' : 'Schedule to approve' }}</p><p class="mt-2 break-words text-sm leading-relaxed">{{ $scheduleConfirmation }}</p></div>
         @elseif ($release)
-            <div class="publishing-release-intent"><p class="text-sm font-medium">Publish manually after approval</p><p class="mt-2 text-sm leading-relaxed">{{ $payload['metadata']['title'] ?? $article->idea }}</p><p class="mt-1 break-all text-xs">/writing/{{ $payload['canonical_slug'] ?? $article->slug }}/</p></div>
+            <div class="publishing-release-intent"><p class="text-sm font-medium">Publish manually after approval</p><p class="mt-2 text-sm leading-relaxed">{{ $payload['metadata']['title'] ?? $metadata['title'] ?? 'Untitled' }}</p><p class="mt-1 break-all text-xs">/writing/{{ $payload['canonical_slug'] ?? $article->slug }}/</p></div>
         @endif
         @if ($eligible)
             @can('approve', $article)<flux:button class="w-full" variant="primary" wire:click="approveRelease('{{ $release?->release_hash }}')" data-publishing-editor-action>{{ $scheduleConfirmation ? 'Approve and schedule this release' : 'Approve this exact release' }}</flux:button>@endcan

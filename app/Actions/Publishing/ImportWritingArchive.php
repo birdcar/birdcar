@@ -6,6 +6,8 @@ use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRelease;
 use App\Models\ArticleRevision;
+use App\Models\ContentIdea;
+use App\Models\Publishing\PieceKind;
 use App\Models\User;
 use App\Services\Publishing\ArchiveMarkdownImporter;
 use App\Services\Publishing\ArticleDocument;
@@ -72,9 +74,17 @@ class ImportWritingArchive
                 $document = $entry['document'];
                 $date = CarbonImmutable::parse((string) $metadata['date']);
 
+                $title = (string) $metadata['title'];
+                $idea = ContentIdea::create([
+                    'author_id' => $operator->id,
+                    'summary_title' => ContentIdea::summaryTitleFromPublishedTitle($title),
+                    'summary_title_source' => ContentIdea::SOURCE_DERIVED,
+                    'body' => $title,
+                ]);
                 $article = Article::create([
                     'author_id' => $operator->id,
-                    'idea' => $metadata['title'],
+                    'content_idea_id' => $idea->id,
+                    'kind' => PieceKind::BlogPost,
                     'slug' => $entry['slug'],
                     'first_published_at' => $date,
                 ]);

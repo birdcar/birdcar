@@ -29,7 +29,7 @@ new #[Layout('layouts.admin')] class extends Component
         Gate::authorize(PublishingPermission::Write->value);
 
         $validated = $this->validate(['idea' => ['required', 'string', 'max:5000']]);
-        $articles->capture(auth()->user(), $validated['idea']);
+        $articles->captureIdea(auth()->user(), $validated['idea']);
 
         $this->idea = '';
         $this->resetPage('ideasPage');
@@ -47,9 +47,10 @@ new #[Layout('layouts.admin')] class extends Component
 
         DB::transaction(function () use ($articles, $attempts, $activities, $validated, &$article): void {
             $actor = auth()->user();
-            $article = $articles->capture($actor, $validated['idea']);
-            $attempt = $attempts->develop($actor, $article, null, ['idea' => $validated['idea']]);
-            $activities->start($actor, $attempt, EditorialActivityKind::Interview, ['idea' => $validated['idea']], 'initial-interview');
+            $article = $articles->captureIdea($actor, $validated['idea']);
+            $body = $article->contentIdea->body;
+            $attempt = $attempts->develop($actor, $article, null, ['idea' => $body]);
+            $activities->start($actor, $attempt, EditorialActivityKind::Interview, ['idea' => $body], 'initial-interview');
         });
 
         $this->idea = '';
@@ -61,7 +62,7 @@ new #[Layout('layouts.admin')] class extends Component
     public function with(): array
     {
         $ideas = Article::query()
-            ->with(['workingRevision', 'currentAttempt'])
+            ->with(['contentIdea', 'workingRevision', 'currentAttempt'])
             ->where('author_id', auth()->id())
             ->whereNull('current_attempt_id')
             ->whereNull('published_release_id')
@@ -70,7 +71,7 @@ new #[Layout('layouts.admin')] class extends Component
             ->paginate(perPage: 12, pageName: 'ideasPage');
 
         $active = Article::query()
-            ->with(['workingRevision', 'currentAttempt.editorialActivities'])
+            ->with(['contentIdea', 'workingRevision', 'currentAttempt.editorialActivities'])
             ->where('author_id', auth()->id())
             ->whereNotNull('current_attempt_id')
             ->whereHas('currentAttempt', function ($query): void {
@@ -84,11 +85,16 @@ new #[Layout('layouts.admin')] class extends Component
         return ['ideas' => $ideas, 'active' => $active];
     }
 
-    public function titleFor(Article $article): string
+    public function titleFor(Article $article): ?string
     {
         $title = data_get($article->workingRevision?->metadata, 'title');
 
-        return is_string($title) && trim($title) !== '' ? $title : Str::limit($article->idea, 100);
+        return is_string($title) && trim($title) !== '' ? $title : null;
+    }
+
+    public function ideaHasMoreThanItsSummary(Article $article): bool
+    {
+        return trim($article->contentIdea->body) !== $article->contentIdea->summary_title;
     }
 
     public function previewFor(string $value, int $limit = 220): string
@@ -203,12 +209,11 @@ new #[Layout('layouts.admin')] class extends Component
                     <article wire:key="idea-{{ $article->id }}" data-publishing-enter class="border-t border-zinc-200 py-5 dark:border-white/10">
                         <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 space-y-2">
-                                <flux:heading size="sm" class="wrap-anywhere">{{ $this->titleFor($article) }}</flux:heading>
-                                @if (filled(data_get($article->workingRevision?->metadata, 'title')))<flux:text class="wrap-anywhere">{{ $this->previewFor($article->idea) }}</flux:text>@endif
-                                @if (mb_strlen($article->idea) > 100)
+                                <x-admin.publishing.piece-heading :title="$this->titleFor($article)" :summary="$article->contentIdea->summary_title" />
+                                @if ($this->ideaHasMoreThanItsSummary($article))
                                     <details class="text-sm text-zinc-600 dark:text-zinc-300">
                                         <summary class="cursor-pointer font-medium text-teal-700 dark:text-cyan-300">View full idea</summary>
-                                        <p class="mt-2 whitespace-pre-wrap wrap-anywhere">{{ $article->idea }}</p>
+                                        <p class="mt-2 whitespace-pre-wrap wrap-anywhere">{{ $article->contentIdea->body }}</p>
                                     </details>
                                 @endif
                             </div>
@@ -241,8 +246,8 @@ new #[Layout('layouts.admin')] class extends Component
                     <article wire:key="active-{{ $article->id }}" data-publishing-enter class="border-t border-zinc-200 py-5 dark:border-white/10">
                         <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 space-y-2">
-                                <flux:heading size="sm" class="wrap-anywhere">{{ $this->titleFor($article) }}</flux:heading>
-                                <flux:text class="wrap-anywhere">{{ $this->previewFor($article->idea) }}</flux:text>
+                                <x-admin.publishing.piece-heading :title="$this->titleFor($article)" :summary="$article->contentIdea->summary_title" />
+                                @if ($this->ideaHasMoreThanItsSummary($article))<flux:text class="wrap-anywhere">{{ $this->previewFor($article->contentIdea->body) }}</flux:text>@endif
                                 <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                                     <flux:badge color="teal" size="sm">{{ $this->statusFor($article->currentAttempt) }}</flux:badge>
                                     @if ($this->activityFor($article->currentAttempt))

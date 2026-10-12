@@ -129,7 +129,7 @@ function adminAttemptWithCompletedReviews(User $actor, PublishingAttempt $attemp
 
 test('article workspace authorizes and renders preview iframe after a revision exists', function (): void {
     $user = editorUser();
-    $article = app(WriteArticle::class)->capture($user, 'Workspace idea');
+    $article = app(WriteArticle::class)->captureIdea($user, 'Workspace idea');
     $revision = app(WriteArticle::class)->save($user, $article, null, simpleDocument(), [], 'mut_first');
 
     $response = $this->actingAs($user)
@@ -147,14 +147,14 @@ test('article workspace authorizes and renders preview iframe after a revision e
     @$document->loadHTML($response->content());
     $editor = editorXpathElement(new DOMXPath($document), '//*[@data-admin-editor]');
 
-    expect(json_decode($editor->getAttribute('data-document'), true))->toBe($revision->document)
-        ->and(json_decode($editor->getAttribute('data-metadata'), true))->toBe($revision->metadata);
+    expect(json_decode($editor->getAttribute('data-document'), true))->toEqual($revision->document)
+        ->and(json_decode($editor->getAttribute('data-metadata'), true))->toEqual($revision->metadata);
 });
 
 test('article workspace denies cross author access by slug', function (): void {
     $owner = editorUser();
     $other = editorUser();
-    $article = app(WriteArticle::class)->capture($owner, 'Other author workspace idea');
+    $article = app(WriteArticle::class)->captureIdea($owner, 'Other author workspace idea');
     app(WriteArticle::class)->save($owner, $article, null, simpleDocument(), [], 'mut_owner_workspace');
 
     $this->actingAs($other)
@@ -165,7 +165,7 @@ test('article workspace denies cross author access by slug', function (): void {
 test('preview denies cross author access by slug', function (): void {
     $owner = editorUser();
     $other = editorUser();
-    $article = app(WriteArticle::class)->capture($owner, 'Other author preview idea');
+    $article = app(WriteArticle::class)->captureIdea($owner, 'Other author preview idea');
     $revision = app(WriteArticle::class)->save($owner, $article, null, simpleDocument(), [], 'mut_owner_preview');
 
     $this->actingAs($other)
@@ -175,7 +175,7 @@ test('preview denies cross author access by slug', function (): void {
 
 test('livewire save document uses cas and mutation ids', function (): void {
     $user = editorUser();
-    $article = app(WriteArticle::class)->capture($user, 'CAS idea');
+    $article = app(WriteArticle::class)->captureIdea($user, 'CAS idea');
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article])
@@ -194,7 +194,7 @@ test('livewire save document uses cas and mutation ids', function (): void {
 test('two stale editor components expose latest revision without rebasing the losing tab', function (): void {
     $user = editorUser();
     $write = app(WriteArticle::class);
-    $article = $write->capture($user, 'Two tabs');
+    $article = $write->captureIdea($user, 'Two tabs');
     $base = $write->save($user, $article, null, simpleDocument('Base'), ['title' => 'Base'], 'mut_base_two_tabs');
 
     $firstTab = Livewire\Livewire::actingAs($user)
@@ -218,8 +218,8 @@ test('two stale editor components expose latest revision without rebasing the lo
 
 test('preview refuses revisions from other articles', function (): void {
     $user = editorUser();
-    $first = app(WriteArticle::class)->capture($user, 'First');
-    $second = app(WriteArticle::class)->capture($user, 'Second');
+    $first = app(WriteArticle::class)->captureIdea($user, 'First');
+    $second = app(WriteArticle::class)->captureIdea($user, 'Second');
     $revision = app(WriteArticle::class)->save($user, $second, null, simpleDocument(), [], 'mut_second');
 
     $this->actingAs($user)
@@ -229,7 +229,7 @@ test('preview refuses revisions from other articles', function (): void {
 
 test('duplicate mutation id with different payload surfaces conflict', function (): void {
     $user = editorUser();
-    $article = app(WriteArticle::class)->capture($user, 'Mutation idea');
+    $article = app(WriteArticle::class)->captureIdea($user, 'Mutation idea');
     app(WriteArticle::class)->save($user, $article, null, simpleDocument('One'), [], 'mut_repeat');
 
     Livewire\Livewire::actingAs($user)
@@ -240,7 +240,7 @@ test('duplicate mutation id with different payload surfaces conflict', function 
 
 test('workspace exposes review empty state and persists protected passage controls to canonical json', function (): void {
     $user = editorUser();
-    $article = app(WriteArticle::class)->capture($user, 'Protected idea');
+    $article = app(WriteArticle::class)->captureIdea($user, 'Protected idea');
     app(WriteArticle::class)->save($user, $article, null, simpleDocument('Protect me'), [], 'mut_protect_seed');
 
     Livewire\Livewire::actingAs($user)
@@ -267,7 +267,7 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     $approve = app(ApprovePublishingStage::class);
     $releases = app(ManageArticleRelease::class);
 
-    $angleArticle = $write->capture($user, 'Angle stale');
+    $angleArticle = $write->captureIdea($user, 'Angle stale');
     $angleRevision = $write->save($user, $angleArticle, null, simpleDocument('Angle'), [], 'mut_angle_seed');
     $angleAttempt = $advance->develop($user, $angleArticle, $angleRevision->id, ['summary' => 'Rendered brief']);
     $angleComponent = Livewire\Livewire::actingAs($user)->test('admin.publishing.article-workspace', ['article' => $angleArticle->fresh()]);
@@ -276,7 +276,7 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     $angleComponent->call('approveAngle', $oldAngleHash)->assertSet('saveError', 'The approval input is stale.');
     expect(EditorialApproval::query()->where('attempt_id', $angleAttempt->id)->where('kind', ApprovalKind::Angle)->exists())->toBeFalse();
 
-    $planArticle = $write->capture($user, 'Plan stale');
+    $planArticle = $write->captureIdea($user, 'Plan stale');
     $planRevision = $write->save($user, $planArticle, null, simpleDocument('Plan'), [], 'mut_plan_seed');
     $planAttempt = $advance->develop($user, $planArticle, $planRevision->id, ['summary' => 'Brief']);
     $approve->approve($user, $planAttempt, ApprovalKind::Angle, $approve->inputHashFor($planAttempt, ApprovalKind::Angle));
@@ -288,7 +288,7 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     $planComponent->call('approvePlan', $oldPlanHash)->assertSet('saveError', 'The approval input is stale.');
     expect(EditorialApproval::query()->where('attempt_id', $planAttempt->id)->where('kind', ApprovalKind::Plan)->exists())->toBeFalse();
 
-    $releaseArticle = $write->capture($user, 'Release stale');
+    $releaseArticle = $write->captureIdea($user, 'Release stale');
     $releaseRevision = $write->save($user, $releaseArticle, null, simpleDocument('Release'), adminReleaseMetadata('Release'), 'mut_release_seed');
     $releaseAttempt = $advance->develop($user, $releaseArticle, $releaseRevision->id, ['summary' => 'Brief']);
     $approve->approve($user, $releaseAttempt, ApprovalKind::Angle, $approve->inputHashFor($releaseAttempt, ApprovalKind::Angle));
@@ -309,7 +309,7 @@ test('workspace prepares scheduled releases with an explicit timezone confirmati
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($user, 'Workspace scheduled release', 'workspace-scheduled-release');
+    $article = $write->captureIdea($user, 'Workspace scheduled release');
     $revision = $write->save($user, $article, null, simpleDocument('Scheduled release'), adminReleaseMetadata('Scheduled Release'), 'mut_workspace_schedule');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $approve->approve($user, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
@@ -334,7 +334,7 @@ test('workspace prepares scheduled releases with an explicit timezone confirmati
 test('scheduling defaults to the author\'s saved timezone', function (?string $timezone, string $expected): void {
     $user = editorUser();
     $user->forceFill(['timezone' => $timezone])->save();
-    $article = app(WriteArticle::class)->capture($user, 'Timezone default', 'timezone-default');
+    $article = app(WriteArticle::class)->captureIdea($user, 'Timezone default');
 
     Livewire\Livewire::actingAs($user)
         ->test('admin.publishing.article-workspace', ['article' => $article])
@@ -346,7 +346,7 @@ test('scheduling defaults to the author\'s saved timezone', function (?string $t
 
 test('imported published articles show historical published release readiness without a current attempt', function (): void {
     $user = editorUser();
-    $article = app(WriteArticle::class)->capture($user, 'Imported published idea');
+    $article = app(WriteArticle::class)->captureIdea($user, 'Imported published idea');
     $revision = app(WriteArticle::class)->save($user, $article, null, simpleDocument('Published'), [], 'mut_imported_release_seed');
     $release = ArticleRelease::factory()->imported()->create([
         'article_id' => $article->id,
@@ -373,10 +373,10 @@ test('workspace wires agent activity source voice and interview answer actions w
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($user, 'Agent UI wiring');
+    $article = $write->captureIdea($user, 'Agent UI wiring');
     $revision = $write->save($user, $article, null, simpleDocument('Agent UI'), [], 'mut_agent_ui_seed');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
-    $archive = $write->capture($user, 'Published voice sample', 'published-voice-sample');
+    $archive = $write->captureIdea($user, 'Published voice sample');
     $archiveRevision = $write->save($user, $archive, null, simpleDocument('Published archive voice.'), ['title' => 'Published voice sample'], 'mut_agent_ui_archive');
     $archiveRelease = ArticleRelease::factory()->imported()->create([
         'article_id' => $archive->id,
@@ -414,7 +414,7 @@ test('view only workspace caller cannot start agent work or persist context sele
     $user = editorUser();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($user, 'View only agent denial');
+    $article = $write->captureIdea($user, 'View only agent denial');
     $revision = $write->save($user, $article, null, simpleDocument('View only'), [], 'mut_view_only_seed');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $user = makePublishingViewOnly($user);
@@ -443,7 +443,7 @@ test('stale workspace component after attempt replacement cannot persist source 
     $user = editorUser();
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
-    $article = $write->capture($user, 'Stale attempt agent denial');
+    $article = $write->captureIdea($user, 'Stale attempt agent denial');
     $revision = $write->save($user, $article, null, simpleDocument('Stale attempt'), [], 'mut_stale_attempt_seed');
     $oldAttempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $source = EvidenceSource::create([
@@ -483,7 +483,7 @@ test('changing a selected angle after approval invalidates downstream gates with
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($user, 'Changed approved angle');
+    $article = $write->captureIdea($user, 'Changed approved angle');
     $revision = $write->save($user, $article, null, simpleDocument('Changed angle'), [], 'mut_changed_angle_seed');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $attempt->forceFill(['interview_context' => [
@@ -520,7 +520,7 @@ test('workspace wires proposal decisions and finish review to persisted disposit
     $write = app(WriteArticle::class);
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
-    $article = $write->capture($user, 'Review UI wiring');
+    $article = $write->captureIdea($user, 'Review UI wiring');
     $revision = $write->save($user, $article, null, simpleDocument('Review UI'), [], 'mut_review_ui_seed');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $approve->approve($user, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));

@@ -292,7 +292,7 @@ function evidenceAuthor(): User
 function evidenceAttempt(User $actor): PublishingAttempt
 {
     $writer = app(WriteArticle::class);
-    $article = $writer->capture($actor, 'Evidence agent work.', 'evidence-agent-work-'.uniqid());
+    $article = $writer->captureIdea($actor, 'Evidence agent work.');
     $revision = $writer->save($actor, $article, null, ['version' => 1, 'type' => 'doc', 'content' => []], ['title' => 'Evidence'], 'evidence-draft-'.uniqid());
 
     $attempt = app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id, ['goal' => 'Evidence']);

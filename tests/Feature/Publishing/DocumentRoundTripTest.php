@@ -83,7 +83,7 @@ test('documents reject duplicate ids unsafe links string chart numbers and activ
 test('saves require stable ids and persist canonical documents with matching hashes', function (): void {
     $actor = drtAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Canonical save.', 'canonical-save');
+    $article = $write->captureIdea($actor, 'Canonical save.');
     $document = drtDocument();
     $document['content'][1]['attrs']['protected'] = null;
 
@@ -111,7 +111,7 @@ test('saves require stable ids and persist canonical documents with matching has
 test('failed saves and protected agent edits do not mutate the working revision', function (): void {
     $actor = drtAuthor();
     $write = app(WriteArticle::class);
-    $article = $write->capture($actor, 'Protected blocks.', 'protected-blocks');
+    $article = $write->captureIdea($actor, 'Protected blocks.');
     $first = $write->save($actor, $article, null, drtDocument(), ['title' => 'Protected'], 'first');
 
     $invalid = drtDocument();
