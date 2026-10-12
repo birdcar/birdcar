@@ -334,7 +334,7 @@ class WriteArticle
      */
     private function ensureProtectedBlocksAreUnchanged(string $origin, Article $article, array $document): void
     {
-        if (! in_array($origin, ['agent', 'agent-initial', 'agent-accepted'], true) || $article->working_revision_id === null) {
+        if (! in_array($origin, ['agent', 'agent-initial', 'agent-accepted', 'agent-repair'], true) || $article->working_revision_id === null) {
             return;
         }
 

@@ -3,6 +3,28 @@
 namespace App\Providers;
 
 use App\Actions\Publishing\RunEditorialActivity;
+use App\Services\Publishing\Lint\Rules\AiVocabulary;
+use App\Services\Publishing\Lint\Rules\BoldLimit;
+use App\Services\Publishing\Lint\Rules\ChatbotArtifacts;
+use App\Services\Publishing\Lint\Rules\CorporateVocabulary;
+use App\Services\Publishing\Lint\Rules\CorporateWe;
+use App\Services\Publishing\Lint\Rules\CurlyQuotes;
+use App\Services\Publishing\Lint\Rules\EmDash;
+use App\Services\Publishing\Lint\Rules\Emoji;
+use App\Services\Publishing\Lint\Rules\ExclamationLimit;
+use App\Services\Publishing\Lint\Rules\ExcludedNames;
+use App\Services\Publishing\Lint\Rules\ExperienceClaim;
+use App\Services\Publishing\Lint\Rules\FillerPhrases;
+use App\Services\Publishing\Lint\Rules\HeadingOrder;
+use App\Services\Publishing\Lint\Rules\InlineHeaderList;
+use App\Services\Publishing\Lint\Rules\LabelHeadings;
+use App\Services\Publishing\Lint\Rules\NegativeParallelism;
+use App\Services\Publishing\Lint\Rules\PublicVocabulary;
+use App\Services\Publishing\Lint\Rules\SentenceCaseHeadings;
+use App\Services\Publishing\Lint\Rules\StockOpeners;
+use App\Services\Publishing\Lint\Rules\UnresolvedMarkers;
+use App\Services\Publishing\Lint\Rules\WalkthroughLink;
+use App\Services\Publishing\Lint\VoiceLinter;
 use App\Services\Publishing\VoiceCanon;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +45,30 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(VoiceCanon::class);
+
+        $this->app->tag([
+            EmDash::class,
+            CurlyQuotes::class,
+            AiVocabulary::class,
+            CorporateVocabulary::class,
+            PublicVocabulary::class,
+            FillerPhrases::class,
+            NegativeParallelism::class,
+            ChatbotArtifacts::class,
+            StockOpeners::class,
+            SentenceCaseHeadings::class,
+            LabelHeadings::class,
+            HeadingOrder::class,
+            InlineHeaderList::class,
+            BoldLimit::class,
+            ExclamationLimit::class,
+            Emoji::class,
+            CorporateWe::class,
+            ExcludedNames::class,
+            ExperienceClaim::class,
+            WalkthroughLink::class,
+            UnresolvedMarkers::class,
+        ], VoiceLinter::TAG);
     }
 
     /**

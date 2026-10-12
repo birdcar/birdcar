@@ -5,6 +5,7 @@ namespace App\Ai\Agents;
 use App\Ai\Tools\AskAuthor;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Services\Publishing\Lint\VoiceLinter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\ObjectType;
 use Illuminate\JsonSchema\Types\StringType;
@@ -48,6 +49,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
             EditorialActivityKind::ResearchChallenge => new Researcher($activity, $modelOverride),
             EditorialActivityKind::Plan => new Planner($activity, $modelOverride),
             EditorialActivityKind::Draft => new Drafter($activity, $modelOverride),
+            EditorialActivityKind::LintRepair => new LintRepairer($activity, $modelOverride),
             EditorialActivityKind::ReviewFacts => new FactReviewer($activity, $modelOverride),
             EditorialActivityKind::ReviewVoice => new VoiceReviewer($activity, $modelOverride),
             EditorialActivityKind::ReviewBuyer => new BuyerReviewer($activity, $modelOverride),
@@ -239,12 +241,20 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                 ]))->required(),
             ],
             EditorialActivityKind::Draft => [
-                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes.')->required(),
+                'document' => $schema->string()->description('JSON-encoded canonical Tiptap document: {"version":1,"type":"doc","content":[...]}. Each block needs a unique attrs.id and attrs.protected boolean. Use only paragraph, heading (attrs.level 2 or 3; the title is metadata, never a level-1 heading), blockquote, bulletList and orderedList containing listItem, codeBlock and horizontalRule blocks, with text marks limited to bold, italic, strike, code and link (https or relative href). The encoded string must stay under '.$this->maxFieldBytes().' bytes. It must pass the mechanical rules in your rubric: '.implode(', ', app(VoiceLinter::class)->ruleIds()).'.')->required(),
                 'metadataProposals' => $schema->object([
                     'title' => $schema->string()->nullable(),
                     'description' => $schema->string()->nullable(),
                     'slug' => $schema->string()->nullable(),
                 ])->required(),
+            ],
+            EditorialActivityKind::LintRepair => [
+                'patches' => $schema->array()->description('At most one patch per block in input.blocks, all together under '.$this->maxFieldBytes().' bytes. Return an empty list when no block can be fixed safely.')->items($schema->object([
+                    'hit_id' => $schema->string()->description('A hit_id from input.hits whose block_id is this patch\'s block_id.')->required(),
+                    'block_id' => $schema->string()->description('The block_id of one block in input.blocks; never a block outside input.blocks.')->required(),
+                    'expected_hash' => $schema->string()->description('The hash of that block in input.blocks, copied exactly.')->required(),
+                    'replacement' => $schema->string()->description('JSON-encoded replacement for the whole block: its node from input.blocks with only the flagged spans changed. Keep the same type and attrs, including attrs.id and attrs.protected; text marks are limited to bold, italic, strike, code and link. The encoded string must stay under '.$this->maxFieldBytes().' bytes.')->required(),
+                ]))->required(),
             ],
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => [
                 'findings' => $schema->array()->description('At most '.$this->maxFindings().' findings.')->items($this->finding($schema))->required(),

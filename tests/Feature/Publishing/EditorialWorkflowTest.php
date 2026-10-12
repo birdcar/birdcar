@@ -306,7 +306,7 @@ test('agent generated plan is persisted displayed approved by human and gates dr
         [
             'id' => 'gen-draft-pipeline',
             'choices' => [['message' => ['content' => json_encode([
-                'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'Agent drafted manuscript.']]],
+                'document' => editorialDocument('Agent drafted manuscript.'),
                 'metadataProposals' => [],
             ])]]],
         ],
@@ -588,7 +588,11 @@ function editorialMetadata(string $title): array
     ];
 }
 
-/** @return array<string, mixed> */
+/**
+ * Every release-ready blog post closes with exactly one Walkthrough link, so fixtures stay clear of the voice rules.
+ *
+ * @return array<string, mixed>
+ */
 function editorialDocument(string $text): array
 {
     return [
@@ -596,6 +600,11 @@ function editorialDocument(string $text): array
         'type' => 'doc',
         'content' => [
             ['type' => 'paragraph', 'text' => $text],
+            ['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+                ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+                ['type' => 'text', 'text' => '.'],
+            ]],
         ],
     ];
 }

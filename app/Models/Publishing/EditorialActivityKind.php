@@ -8,6 +8,7 @@ enum EditorialActivityKind: string
     case ResearchChallenge = 'research_challenge';
     case Plan = 'plan';
     case Draft = 'draft';
+    case LintRepair = 'lint_repair';
     case ReviewFacts = 'review_facts';
     case ReviewVoice = 'review_voice';
     case ReviewBuyer = 'review_buyer';

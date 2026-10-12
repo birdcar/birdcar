@@ -141,6 +141,7 @@ new #[Layout('layouts.admin')] class extends Component
             EditorialActivityKind::ResearchChallenge => 'Research challenge',
             EditorialActivityKind::Plan => 'Plan',
             EditorialActivityKind::Draft => 'Draft',
+            EditorialActivityKind::LintRepair => 'Voice-rule repair',
             EditorialActivityKind::ReviewFacts => 'Fact review',
             EditorialActivityKind::ReviewVoice => 'Voice review',
             EditorialActivityKind::ReviewBuyer => 'Buyer review',

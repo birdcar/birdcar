@@ -3,6 +3,7 @@
 use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\CheckArticleRelease;
+use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\ManageArticleRelease;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Publishing\Role as PublishingRole;
@@ -16,7 +17,9 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\PublishingFingerprint;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -352,6 +355,69 @@ test('advisory findings do not block exact package approval', function (): void 
     expect($approval->release_id)->toBe($release->id);
 });
 
+test('an unresolved voice-rule hit blocks release at its passage', function (): void {
+    $actor = readinessAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'Voice rule blocker.');
+    $revision = $write->save($actor, $article, null, readinessDocument('The report takes an afternoon — every week.'), readinessMetadata('Voice rule blocker'), 'voice-rule-1');
+    $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
+    $blockId = $revision->document['content'][0]['attrs']['id'];
+
+    $check = app(CheckArticleRelease::class)->check($actor, $attempt, $revision->id, 'voice-rule-blocker');
+
+    expect($check['blocking'])->toBeTrue()
+        ->and(collect($check['findings'])->where('code', 'lint.em-dash')->values()->all())->toBe([[
+            'severity' => 'blocking',
+            'code' => 'lint.em-dash',
+            'location' => $blockId,
+            'message' => 'Replace the em dash in "an afternoon — every week." with a comma, parentheses, a colon or a new sentence.',
+            'resolution' => 'Fix the passage, accept the proposed fix, or override the voice rule with a recorded reason.',
+        ]]);
+    expect(fn () => app(ManageArticleRelease::class)->prepare($actor, $attempt, $revision->id, 'voice-rule-blocker'))
+        ->toThrow(RuntimeException::class, 'lint.em-dash');
+});
+
+test('a reasoned voice-rule override clears the hit on later revisions until its text changes', function (): void {
+    $actor = readinessAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'Voice rule override.');
+    $revision = $write->save($actor, $article, null, readinessDocument('The client called it "a dash — of hope" in the brief.'), readinessMetadata('Voice rule override'), 'voice-override-1');
+    $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
+    $hit = collect(app(LintRevision::class)->hits($article->fresh(), $revision))->first(fn (LintHit $hit): bool => $hit->ruleId === 'em-dash') ?? throw new RuntimeException('The em dash was not flagged.');
+    $override = readinessFinding($attempt, $revision, ['lens' => 'lint', 'kind' => 'lint:em-dash', 'block_id' => $hit->blockId, 'input_hash' => $hit->inputHash(), 'disposition' => 'false_positive']);
+    $codes = fn (ArticleRevision $revision): array => array_column(app(CheckArticleRelease::class)->check($actor, $attempt->fresh(), $revision->id, 'voice-rule-override')['findings'], 'code');
+
+    $bare = app(CheckArticleRelease::class)->check($actor, $attempt, $revision->id, 'voice-rule-override');
+    $override->forceFill(['disposition_reason' => 'The dash is inside the client\'s quoted words.', 'disposition_actor_id' => $actor->id, 'disposed_at' => now()])->save();
+    $reasoned = app(CheckArticleRelease::class)->check($actor, $attempt->fresh(), $revision->id, 'voice-rule-override');
+    $unchanged = $revision->document;
+    $unchanged['content'][] = ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'One more plain sentence.']]];
+    $nextRevision = $write->save($actor, $article, $revision->id, $unchanged, readinessMetadata('Voice rule override'), 'voice-override-2');
+    $unchangedCodes = $codes($nextRevision);
+    $changed = $nextRevision->document;
+    $changed['content'][0]['content'][0]['text'] = 'The client called it "a dash — of real hope" in the brief.';
+    $changedRevision = $write->save($actor, $article, $nextRevision->id, $changed, readinessMetadata('Voice rule override'), 'voice-override-3');
+    $changedCodes = $codes($changedRevision);
+
+    expect(array_column($bare['findings'], 'code'))->toContain('lint.em-dash')
+        ->and($reasoned['blocking'])->toBeFalse()
+        ->and($unchangedCodes)->not->toContain('lint.em-dash')
+        ->and($changedCodes)->toContain('lint.em-dash');
+});
+
+test('a voice-rule override without a reason is rejected and writes nothing', function (): void {
+    $actor = readinessAuthor();
+    $write = app(WriteArticle::class);
+    $article = $write->captureIdea($actor, 'Voice rule reason.');
+    $revision = $write->save($actor, $article, null, readinessDocument('The report takes an afternoon — every week.'), readinessMetadata('Voice rule reason'), 'voice-reason-1');
+    $attempt = readinessPrerequisites($actor, app(AdvancePublishingAttempt::class)->develop($actor, $article, $revision->id));
+    $finding = readinessFinding($attempt, $revision, ['lens' => 'lint', 'kind' => 'lint:em-dash']);
+
+    expect(fn () => app(LintRevision::class)->override($actor, $finding, '   '))->toThrow(ValidationException::class, 'Explain why this voice rule does not apply here.')
+        ->and($finding->fresh()?->disposition)->toBeNull()
+        ->and($finding->fresh()?->disposition_reason)->toBeNull();
+});
+
 function readinessAuthor(): User
 {
     $user = User::factory()->create();
@@ -434,6 +500,7 @@ function readinessAssetDocument(): array
                 'caption' => 'Safe diagram.',
                 'source' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><title>Safe</title><desc>Safe</desc><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" /></svg>',
             ]],
+            readinessClosingParagraph(),
         ],
     ];
 }
@@ -511,7 +578,11 @@ function readinessMetadata(string $title): array
     ];
 }
 
-/** @return array<string, mixed> */
+/**
+ * Every release-ready blog post closes with exactly one Walkthrough link, so fixtures stay clear of the voice rules.
+ *
+ * @return array<string, mixed>
+ */
 function readinessDocument(string $text): array
 {
     return [
@@ -519,6 +590,17 @@ function readinessDocument(string $text): array
         'type' => 'doc',
         'content' => [
             ['type' => 'paragraph', 'text' => $text],
+            readinessClosingParagraph(),
         ],
     ];
+}
+
+/** @return array<string, mixed> */
+function readinessClosingParagraph(): array
+{
+    return ['type' => 'paragraph', 'content' => [
+        ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+        ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+        ['type' => 'text', 'text' => '.'],
+    ]];
 }

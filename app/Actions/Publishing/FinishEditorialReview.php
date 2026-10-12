@@ -84,10 +84,12 @@ class FinishEditorialReview
                 return $this->activities->start($actor, $lockedAttempt->refresh(), EditorialActivityKind::Reconciliation, ['expected_revision_id' => $expectedRevisionId], 'reconciliation-'.$lockedAttempt->review_cycle.'-'.$expectedRevisionId);
             }
 
+            // Voice-rule findings are re-linted and enforced at release, so they never hold up finishing review.
             $blocking = EditorialFinding::query()
                 ->where('attempt_id', $lockedAttempt->id)
                 ->where('review_cycle', $lockedAttempt->review_cycle)
                 ->where('revision_id', $expectedRevisionId)
+                ->where('lens', '!=', LintRevision::LENS)
                 ->where('severity', 'blocking')
                 ->whereNull('stale_at')
                 ->whereNull('disposition')

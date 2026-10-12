@@ -130,7 +130,7 @@ test('review lenses are queued only after draft completion on the drafted revisi
         'https://openrouter.ai/api/v1/chat/completions' => Http::response([
             'id' => 'gen-draft-review',
             'choices' => [['message' => ['content' => json_encode([
-                'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'Draft for review']]],
+                'document' => ['version' => 1, 'type' => 'doc', 'content' => [['type' => 'paragraph', 'text' => 'Draft for review'], reviewClosingParagraph()]],
                 'metadataProposals' => ['title' => 'Proposed'],
             ])]]],
         ]),
@@ -543,6 +543,20 @@ function reviewAttemptWithReviewedPlan(User $actor, PublishingAttempt $attempt):
     ]);
 
     return app(AdvancePublishingAttempt::class)->rethink($actor, $attempt, plan: ['outline' => ['intro', 'body'], 'visualPlan' => ['hero image']]);
+}
+
+/**
+ * A lint-clean draft closes with exactly one Walkthrough link, so it goes straight to the review lenses.
+ *
+ * @return array<string, mixed>
+ */
+function reviewClosingParagraph(): array
+{
+    return ['type' => 'paragraph', 'content' => [
+        ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+        ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+        ['type' => 'text', 'text' => '.'],
+    ]];
 }
 
 function reviewAuthor(): User

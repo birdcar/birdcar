@@ -13,9 +13,10 @@ class EditorialOutput
      * @param  array<string, mixed>  $payload
      * @param  list<int|string>  $knownEvidenceIds
      * @param  array<int|string, string|null>  $evidenceTextsById
+     * @param  array<string, mixed>  $frozenRepairInput  the hits and blocks a lint repair was frozen with
      * @return array<string, mixed>
      */
-    public function validate(EditorialActivityKind $kind, array $payload, array $knownEvidenceIds = [], array $evidenceTextsById = []): array
+    public function validate(EditorialActivityKind $kind, array $payload, array $knownEvidenceIds = [], array $evidenceTextsById = [], array $frozenRepairInput = []): array
     {
         $payload = $this->normalizeJsonEncodedFields($payload);
         $this->rejectUnknownOversized($payload, $this->allowedKeys($kind));
@@ -25,6 +26,7 @@ class EditorialOutput
             EditorialActivityKind::ResearchChallenge => $this->validateResearch($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Plan => $this->validatePlan($payload),
             EditorialActivityKind::Draft => $this->validateDraft($payload),
+            EditorialActivityKind::LintRepair => $this->validateLintRepair($payload, $frozenRepairInput),
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => $this->validateFindings($payload, $knownEvidenceIds, $evidenceTextsById),
             EditorialActivityKind::Reconciliation => $this->validateReconciliation($payload),
             EditorialActivityKind::Recheck => $this->validateRecheck($payload, $knownEvidenceIds, $evidenceTextsById),
@@ -56,6 +58,7 @@ class EditorialOutput
             EditorialActivityKind::ResearchChallenge => ['claims', 'sourceReferences', 'contradictions', 'gaps'],
             EditorialActivityKind::Plan => ['outline', 'argument', 'visualPlan'],
             EditorialActivityKind::Draft => ['document', 'metadataProposals'],
+            EditorialActivityKind::LintRepair => ['patches'],
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => ['findings'],
             EditorialActivityKind::Reconciliation => ['groups', 'conflicts'],
             EditorialActivityKind::Recheck => ['resolved', 'unresolved', 'newBlockingFindings'],
@@ -254,6 +257,97 @@ class EditorialOutput
         if (! is_array($payload['document'] ?? null) || ! is_array($payload['metadataProposals'] ?? null)) {
             throw new InvalidArgumentException('Draft output must include document and metadata proposals.');
         }
+
+        return $payload;
+    }
+
+    /**
+     * A repair may only patch a block it was asked to fix, keeping that block's id, type and protection. A stale
+     * expected hash is not an error here: the application skips that patch and keeps the hit.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $frozen
+     * @return array<string, mixed>
+     */
+    private function validateLintRepair(array $payload, array $frozen): array
+    {
+        $patches = $payload['patches'] ?? null;
+        if (! is_array($patches) || ! array_is_list($patches)) {
+            throw new InvalidArgumentException('Lint repair output must include a list of patches.');
+        }
+
+        $hitBlocks = [];
+        foreach (is_array($frozen['hits'] ?? null) ? $frozen['hits'] : [] as $hit) {
+            if (is_array($hit) && is_string($hit['hit_id'] ?? null) && is_string($hit['block_id'] ?? null)) {
+                $hitBlocks[$hit['hit_id']] = $hit['block_id'];
+            }
+        }
+
+        $nodes = [];
+        foreach (is_array($frozen['blocks'] ?? null) ? $frozen['blocks'] : [] as $block) {
+            if (is_array($block) && is_string($block['block_id'] ?? null) && is_array($block['node'] ?? null)) {
+                $nodes[$block['block_id']] = $block['node'];
+            }
+        }
+
+        $maxBytes = (int) config('publishing_agents.limits.max_field_bytes', 32768);
+        $patched = [];
+        $validated = [];
+        foreach ($patches as $patch) {
+            if (! is_array($patch)) {
+                throw new InvalidArgumentException('Lint repair patches must be objects.');
+            }
+
+            foreach (array_keys($patch) as $key) {
+                if (! in_array($key, ['hit_id', 'block_id', 'expected_hash', 'replacement'], true)) {
+                    throw new InvalidArgumentException('Lint repair patch contained an unknown field: '.$key);
+                }
+            }
+
+            $hitId = $patch['hit_id'] ?? null;
+            $blockId = $patch['block_id'] ?? null;
+            if (! is_string($hitId) || ! array_key_exists($hitId, $hitBlocks)) {
+                throw new InvalidArgumentException('Lint repair patch referenced a hit that was not in its input.');
+            }
+
+            if (! is_string($blockId) || ! array_key_exists($blockId, $nodes) || $hitBlocks[$hitId] !== $blockId) {
+                throw new InvalidArgumentException('Lint repair patch targeted a block that is not in its hit list.');
+            }
+
+            if (isset($patched[$blockId])) {
+                throw new InvalidArgumentException('Lint repair output patched the same block twice.');
+            }
+            $patched[$blockId] = true;
+
+            if (! is_string($patch['expected_hash'] ?? null) || trim($patch['expected_hash']) === '') {
+                throw new InvalidArgumentException('Lint repair patches must echo the block hash.');
+            }
+
+            $replacement = $patch['replacement'] ?? null;
+            if (is_string($replacement)) {
+                $replacement = json_decode($replacement, true);
+            }
+            if (! is_array($replacement)) {
+                throw new InvalidArgumentException('Lint repair replacement must be a JSON-encoded block.');
+            }
+
+            $original = $nodes[$blockId];
+            if (($replacement['type'] ?? null) !== ($original['type'] ?? null) || data_get($replacement, 'attrs.id') !== $blockId) {
+                throw new InvalidArgumentException('Lint repair replacement must keep the block id and type.');
+            }
+
+            if ((data_get($replacement, 'attrs.protected') === true) !== (data_get($original, 'attrs.protected') === true)) {
+                throw new InvalidArgumentException('Lint repair replacement must keep the block protection.');
+            }
+
+            if (strlen(json_encode($replacement, JSON_THROW_ON_ERROR)) > $maxBytes) {
+                throw new InvalidArgumentException('Lint repair replacement is too large.');
+            }
+
+            $validated[] = ['hit_id' => $hitId, 'block_id' => $blockId, 'expected_hash' => $patch['expected_hash'], 'replacement' => $replacement];
+        }
+
+        $payload['patches'] = $validated;
 
         return $payload;
     }

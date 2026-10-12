@@ -4,6 +4,7 @@ namespace App\Actions\Publishing;
 
 use App\Ai\Agents\EditorialAgent;
 use App\Models\Article;
+use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\EditorialFinding;
@@ -13,6 +14,7 @@ use App\Models\Publishing\EditorialActivityKind;
 use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\DocumentBlocks;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\PublicSourceFetcher;
 use App\Services\Publishing\PublishingFingerprint;
@@ -143,7 +145,7 @@ class RunEditorialActivity implements ShouldQueue
                 // Retrieved page text now lives in the prepared sources; keeping it would push the model's own field past its size limit.
                 $payload = $this->withoutRetrievedContent($payload);
             }
-            $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts);
+            $validated = $prompts->validate($kind, $payload, $knownEvidenceIds, $evidenceTexts, $kind === EditorialActivityKind::LintRepair ? ($activity->input ?? []) : []);
             if ($kind === EditorialActivityKind::Recheck) {
                 $this->ensureRecheckAssessedEveryFinding($activity, $validated);
             }
@@ -442,6 +444,10 @@ class RunEditorialActivity implements ShouldQueue
                 $this->applyDraft($locked, $freshActor, $article, $payload, $writer);
             }
 
+            if ($kind === EditorialActivityKind::LintRepair) {
+                $this->applyLintRepair($locked, $freshActor, $article, $payload, $writer);
+            }
+
             if ($kind === EditorialActivityKind::ResearchChallenge) {
                 $this->storeEvidenceAnnotations($locked, $preparedEvidenceSources);
             }
@@ -472,7 +478,7 @@ class RunEditorialActivity implements ShouldQueue
                 'completed_at' => now(),
             ])->save();
 
-            $this->queueReviewLensesAfterCompletedDraft($locked, $freshActor);
+            $this->lintThenQueueReviews($locked, $freshActor);
             $this->queuePlanAfterCompletedResearch($locked, $freshActor);
             $this->queueReconciliationAfterCompletedReviewLens($locked, $freshActor);
         });
@@ -968,6 +974,10 @@ class RunEditorialActivity implements ShouldQueue
         }
 
         $this->failOrPause($activity, $throwable->getMessage());
+
+        if ($this->kind($activity) === EditorialActivityKind::LintRepair) {
+            $this->finishLintAfterUnusableRepair($activity);
+        }
     }
 
     private function providerStatus(Throwable $throwable): ?int
@@ -1036,30 +1046,221 @@ class RunEditorialActivity implements ShouldQueue
             return false;
         }
 
-        return $kind !== EditorialActivityKind::Draft || $actor->can('publishing.write');
+        return ! in_array($kind, [EditorialActivityKind::Draft, EditorialActivityKind::LintRepair], true) || $actor->can('publishing.write');
     }
 
-    private function queueReviewLensesAfterCompletedDraft(EditorialActivity $activity, User $actor): void
+    /**
+     * After a draft lands in an empty manuscript, and after each repair pass, lint the working revision. Repairable hits
+     * get another repair while fewer than the cap have run and the last pass changed something; otherwise the remaining
+     * hits become findings and the three review lenses queue on the revision.
+     */
+    private function lintThenQueueReviews(EditorialActivity $activity, User $actor): void
     {
         $fresh = $activity->fresh();
-        if (! $fresh instanceof EditorialActivity || $this->kind($fresh) !== EditorialActivityKind::Draft || $this->status($fresh) !== EditorialActivityStatus::Completed) {
+        if (! $fresh instanceof EditorialActivity || $this->status($fresh) !== EditorialActivityStatus::Completed) {
             return;
         }
 
+        $kind = $this->kind($fresh);
         $proposal = $fresh->getAttribute('proposal');
-        if (! is_array($proposal) || ! isset($proposal['applied_revision_id'])) {
+        $proposal = is_array($proposal) ? $proposal : [];
+        if ($kind === EditorialActivityKind::Draft) {
+            if (! isset($proposal['applied_revision_id'])) {
+                return;
+            }
+            $draftActivityId = (int) $fresh->id;
+        } elseif ($kind === EditorialActivityKind::LintRepair) {
+            $draftId = data_get($fresh->input, 'draft_activity_id');
+            $draftActivityId = is_numeric($draftId) ? (int) $draftId : null;
+        } else {
             return;
         }
 
         $attempt = $fresh->attempt()->first();
-        if (! $attempt instanceof PublishingAttempt) {
+        $article = $fresh->article()->first();
+        $revision = $article?->workingRevision()->first();
+        if (! $attempt instanceof PublishingAttempt || ! $article instanceof Article || ! $revision instanceof ArticleRevision) {
             return;
         }
 
-        $batchKey = 'review-'.$attempt->review_cycle.'-'.$proposal['applied_revision_id'];
-        foreach ([EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer] as $kind) {
-            app(StartEditorialActivity::class)->start($actor, $attempt, $kind, ['draft_activity_id' => $fresh->id], $batchKey);
+        $lint = app(LintRevision::class);
+        $repairInput = $lint->repairInput($revision, $lint->repairable($lint->hits($article, $revision)));
+        $passChangedNothing = $kind === EditorialActivityKind::LintRepair && ! isset($proposal['applied_revision_id']);
+        if ($repairInput['hits'] !== [] && ! $passChangedNothing && $lint->completedRepairs($attempt) < LintRevision::REPAIR_CAP) {
+            app(StartEditorialActivity::class)->start($actor, $attempt, EditorialActivityKind::LintRepair, [...$repairInput, 'draft_activity_id' => $draftActivityId], 'lint-repair-'.$attempt->review_cycle.'-'.$revision->id);
+
+            return;
         }
+
+        $lint->finishAndQueueReviews($actor, $attempt, $revision, $draftActivityId);
+    }
+
+    /**
+     * A repair whose output could not be used still ends the lint step: its revision's hits become findings and review
+     * starts. The repair goes stale with its reason, so it is neither retried under the running review nor shown as
+     * waiting. A provider failure does not reach here; the owner retries or skips that repair.
+     */
+    private function finishLintAfterUnusableRepair(EditorialActivity $activity): void
+    {
+        try {
+            DB::transaction(function () use ($activity): void {
+                $locked = EditorialActivity::query()->whereKey($activity->id)->lockForUpdate()->first();
+                if (! $locked instanceof EditorialActivity || ! in_array($this->status($locked), [EditorialActivityStatus::Failed, EditorialActivityStatus::Paused], true)) {
+                    return;
+                }
+
+                $attempt = PublishingAttempt::query()->whereKey($locked->attempt_id)->lockForUpdate()->firstOrFail();
+                $article = Article::query()->whereKey($locked->article_id)->lockForUpdate()->firstOrFail();
+                $revision = $article->workingRevision()->first();
+                $actor = $locked->initiator()->first();
+                if ((int) ($article->current_attempt_id ?? 0) !== (int) $attempt->id
+                    || $attempt->paused_at !== null || $attempt->parked_at !== null || $attempt->abandoned_at !== null
+                    || ! $revision instanceof ArticleRevision || (int) $revision->id !== (int) $locked->revision_id
+                    || ! $actor instanceof User || ! $this->actorCanRunKind($actor, EditorialActivityKind::LintRepair)) {
+                    return;
+                }
+
+                $draftId = data_get($locked->input, 'draft_activity_id');
+                app(LintRevision::class)->finishAndQueueReviews($actor, $attempt, $revision, is_numeric($draftId) ? (int) $draftId : null);
+
+                $locked->forceFill([
+                    'status' => EditorialActivityStatus::Stale,
+                    'completed_at' => now(),
+                    'paused_at' => null,
+                    'pause_reason' => null,
+                    'error_reason' => trim(((string) $locked->error_reason).' Review started without this repair.'),
+                ])->save();
+            });
+        } catch (Throwable $throwable) {
+            report($throwable);
+        }
+    }
+
+    /**
+     * Applies repair patches only to blocks an agent wrote and nobody protected. A patch whose expected hash no longer
+     * matches is skipped and its hit stays; a patch for an owner-written or protected block is kept for the owner.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyLintRepair(EditorialActivity $activity, User $actor, Article $article, array $payload, WriteArticle $writer): void
+    {
+        $base = $article->workingRevision()->first();
+        if (! $base instanceof ArticleRevision) {
+            throw new RuntimeException('Voice-rule repair needs the current revision.');
+        }
+
+        $blocks = app(DocumentBlocks::class);
+        $fingerprint = app(PublishingFingerprint::class);
+        $documentValue = $base->getAttribute('document');
+        $metadataValue = $base->getAttribute('metadata');
+        $document = is_array($documentValue) ? $documentValue : [];
+        $agentWritten = $this->agentWrittenBlockHashes($activity);
+        $applied = [];
+        $unapplied = [];
+        $skipped = [];
+
+        foreach (is_array($payload['patches'] ?? null) ? $payload['patches'] : [] as $patch) {
+            if (! is_array($patch) || ! is_string($patch['block_id'] ?? null) || ! is_string($patch['expected_hash'] ?? null) || ! is_array($patch['replacement'] ?? null)) {
+                continue;
+            }
+
+            $blockId = $patch['block_id'];
+            $match = $blocks->find($document, $blockId);
+            $currentHash = $match === null ? null : $fingerprint->hash($match['node']);
+            if ($match === null || $currentHash === null || ! hash_equals($patch['expected_hash'], $currentHash)) {
+                $skipped[] = $blockId;
+
+                continue;
+            }
+
+            $record = ['block_id' => $blockId, 'expected_hash' => $currentHash, 'replacement' => $patch['replacement']];
+            $agentAuthored = ! $match['protected'] && ($agentWritten[$blockId] ?? null) === $currentHash;
+            $overlapsApplied = collect($applied)->contains(fn (array $other): bool => $blocks->overlaps($other['path'], $match['path']));
+            if (! $agentAuthored || $overlapsApplied) {
+                $unapplied[$blockId] = $record;
+
+                continue;
+            }
+
+            $applied[] = ['block_id' => $blockId, 'path' => $match['path'], 'replacement' => $patch['replacement']];
+        }
+
+        $appliedRevisionId = null;
+        if ($applied !== []) {
+            foreach ($applied as $patch) {
+                $document = $blocks->replace($document, $patch['path'], $patch['replacement']);
+            }
+            $revision = $writer->save($actor, $article, (int) $base->id, $document, is_array($metadataValue) ? $metadataValue : [], 'agent-repair-'.$activity->id, 'agent-repair');
+            $appliedRevisionId = (int) $revision->id;
+        }
+
+        $activity->forceFill(['proposal' => [
+            'applied_revision_id' => $appliedRevisionId,
+            'applied_block_ids' => array_column($applied, 'block_id'),
+            'unapplied_patches' => $unapplied,
+            'skipped_block_ids' => $skipped,
+        ]])->save();
+    }
+
+    /**
+     * Each block's subtree hash as an agent last wrote it in this attempt: the whole applied draft, then each block a
+     * completed repair changed, later writes replacing earlier ones. A block whose hash differs was written by the
+     * owner, including an owner who restored text an agent wrote before its latest pass.
+     *
+     * @return array<string, string>
+     */
+    private function agentWrittenBlockHashes(EditorialActivity $repair): array
+    {
+        $fingerprint = app(PublishingFingerprint::class);
+        $blocks = app(DocumentBlocks::class);
+        $written = [];
+        $record = function (array $node) use (&$record, &$written, $fingerprint): void {
+            $id = data_get($node, 'attrs.id');
+            if (is_string($id)) {
+                $written[$id] = $fingerprint->hash($node);
+            }
+            foreach (is_array($node['content'] ?? null) ? $node['content'] : [] as $child) {
+                if (is_array($child)) {
+                    $record($child);
+                }
+            }
+        };
+
+        $activities = EditorialActivity::query()
+            ->where('attempt_id', $repair->attempt_id)
+            ->whereIn('kind', [EditorialActivityKind::Draft->value, EditorialActivityKind::LintRepair->value])
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->orderBy('id')
+            ->get(['id', 'kind', 'proposal']);
+
+        foreach ($activities as $activity) {
+            $revisionId = data_get($activity->getAttribute('proposal'), 'applied_revision_id');
+            $revision = is_numeric($revisionId) ? ArticleRevision::query()->where('article_id', $repair->article_id)->whereKey((int) $revisionId)->first() : null;
+            $documentValue = $revision?->getAttribute('document');
+            if (! is_array($documentValue)) {
+                continue;
+            }
+
+            if ($this->kind($activity) === EditorialActivityKind::Draft) {
+                foreach (is_array($documentValue['content'] ?? null) ? $documentValue['content'] : [] as $node) {
+                    if (is_array($node)) {
+                        $record($node);
+                    }
+                }
+
+                continue;
+            }
+
+            $changed = data_get($activity->getAttribute('proposal'), 'applied_block_ids');
+            foreach (is_array($changed) ? $changed : [] as $blockId) {
+                $match = is_string($blockId) ? $blocks->find($documentValue, $blockId) : null;
+                if ($match !== null) {
+                    $record($match['node']);
+                }
+            }
+        }
+
+        return $written;
     }
 
     private function queuePlanAfterCompletedResearch(EditorialActivity $activity, User $actor): void
@@ -1169,7 +1370,7 @@ class RunEditorialActivity implements ShouldQueue
     {
         return match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
     }

@@ -327,7 +327,7 @@ class ApprovePublishingStage
     {
         $approval = match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
 

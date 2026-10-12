@@ -130,6 +130,7 @@ class StartEditorialActivity
             EditorialActivityKind::ResearchChallenge => $this->ensureStageAndApproval($attempt, $stageValue, [EditorialStage::Drafting], ApprovalKind::Angle, 'Research requires an approved angle and drafting stage.'),
             EditorialActivityKind::Plan => $this->ensurePlanEligible($attempt, $stageValue),
             EditorialActivityKind::Draft => $this->ensureDraftEligible($attempt, $stageValue),
+            EditorialActivityKind::LintRepair => $this->ensureLintRepairEligible($attempt, $article, $stageValue, $revision, $input),
             EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => $this->ensureReviewEligible($attempt, $article, $stageValue, $revision),
             EditorialActivityKind::Reconciliation => $this->ensureReconciliationEligible($attempt, $article, $stageValue),
             EditorialActivityKind::Recheck => $this->ensureRecheckEligible($attempt, $article, $stageValue, $input),
@@ -165,6 +166,29 @@ class StartEditorialActivity
     private function ensureDraftEligible(PublishingAttempt $attempt, string $stageValue): void
     {
         $this->ensureStageAndApproval($attempt, $stageValue, [EditorialStage::InReview], ApprovalKind::Plan, 'Drafting requires an approved plan and review stage.');
+    }
+
+    /** @param array<string, mixed> $input */
+    private function ensureLintRepairEligible(PublishingAttempt $attempt, Article $article, string $stageValue, ?ArticleRevision $revision, array $input): void
+    {
+        $this->ensureStageAndApproval($attempt, $stageValue, [EditorialStage::InReview], ApprovalKind::Plan, 'Voice-rule repair requires an approved plan and review stage.');
+        if (! $revision instanceof ArticleRevision
+            || (int) ($article->working_revision_id ?? 0) !== (int) $revision->id
+            || (int) ($input['expected_revision_id'] ?? 0) !== (int) $revision->id) {
+            throw new RuntimeException('Voice-rule repair must target the current revision.');
+        }
+        if (! is_array($input['hits'] ?? null) || $input['hits'] === []) {
+            throw new RuntimeException('Voice-rule repair needs at least one hit to fix.');
+        }
+        $completedRepairs = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::LintRepair->value)
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->count();
+        if ($completedRepairs >= LintRevision::REPAIR_CAP) {
+            throw new RuntimeException('Voice-rule repair already ran '.LintRevision::REPAIR_CAP.' times in this review cycle.');
+        }
     }
 
     private function ensureReviewEligible(PublishingAttempt $attempt, Article $article, string $stageValue, ?ArticleRevision $revision): void
@@ -239,7 +263,8 @@ class StartEditorialActivity
 
     /**
      * Current-cycle lens findings for one revision. Reconciliation sees open findings; recheck also sees superseded
-     * ones, but not reconciled duplicates or findings the owner dismissed.
+     * ones, but not reconciled duplicates or findings the owner dismissed. Lint findings are deterministic and
+     * re-checked at release, so neither agent judges them.
      *
      * @return list<array<string, mixed>>
      */
@@ -249,6 +274,7 @@ class StartEditorialActivity
             ->where('attempt_id', $attempt->id)
             ->where('review_cycle', (int) $attempt->review_cycle)
             ->where('revision_id', $revisionId)
+            ->where('lens', '!=', LintRevision::LENS)
             ->when(! $includeResolved, fn ($query) => $query->whereNull('stale_at'))
             ->when($includeResolved, fn ($query) => $query
                 ->whereNull('reconciled_into_finding_id')
@@ -502,7 +528,27 @@ class StartEditorialActivity
         return $payload;
     }
 
+    /**
+     * The drafted revision, or the revision a same-cycle voice-rule repair produced from it.
+     */
     private function completedDraftExistsForRevision(PublishingAttempt $attempt, int $revisionId): bool
+    {
+        return $this->completedDraftTargetsRevision($attempt, $revisionId) || $this->completedLintRepairProducedRevision($attempt, $revisionId);
+    }
+
+    private function completedLintRepairProducedRevision(PublishingAttempt $attempt, int $revisionId): bool
+    {
+        return EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('review_cycle', (int) $attempt->review_cycle)
+            ->where('kind', EditorialActivityKind::LintRepair->value)
+            ->where('status', EditorialActivityStatus::Completed->value)
+            ->get()
+            ->contains(fn (EditorialActivity $activity): bool => (int) data_get($activity->getAttribute('proposal'), 'applied_revision_id', 0) === $revisionId
+                && $this->activityMatchesCurrentApproval($activity, $attempt, EditorialActivityKind::LintRepair));
+    }
+
+    private function completedDraftTargetsRevision(PublishingAttempt $attempt, int $revisionId): bool
     {
         return EditorialActivity::query()
             ->where('attempt_id', $attempt->id)
@@ -576,7 +622,7 @@ class StartEditorialActivity
     {
         $approval = match ($kind) {
             EditorialActivityKind::ResearchChallenge, EditorialActivityKind::Plan => ApprovalKind::Angle,
-            EditorialActivityKind::Draft, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
+            EditorialActivityKind::Draft, EditorialActivityKind::LintRepair, EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer, EditorialActivityKind::Reconciliation, EditorialActivityKind::Recheck => ApprovalKind::Plan,
             EditorialActivityKind::Interview => null,
         };
 

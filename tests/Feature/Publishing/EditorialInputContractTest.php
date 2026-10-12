@@ -2,12 +2,14 @@
 
 use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApprovePublishingStage;
+use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Article;
+use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\Publishing\ApprovalKind;
 use App\Models\Publishing\EditorialActivityKind;
@@ -15,6 +17,7 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
+use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\VoiceCanon;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Http;
@@ -120,7 +123,7 @@ function inputContractStart(User $actor, EditorialActivityKind $kind): Editorial
     $attempt = inputContractAttempt($actor, $through);
     $revisionId = (int) Article::query()->whereKey($attempt->article_id)->value('working_revision_id');
 
-    if ($kind->isReviewLens()) {
+    if ($kind->isReviewLens() || $kind === EditorialActivityKind::LintRepair) {
         inputContractCompletedActivity($actor, $attempt, EditorialActivityKind::Draft, $revisionId);
     }
     if ($kind === EditorialActivityKind::Reconciliation || $kind === EditorialActivityKind::Recheck) {
@@ -133,9 +136,26 @@ function inputContractStart(User $actor, EditorialActivityKind $kind): Editorial
         $attempt->forceFill(['recheck_used' => true])->save();
     }
 
-    $input = $kind === EditorialActivityKind::Recheck ? ['reviewed_revision_id' => $revisionId, 'expected_revision_id' => $revisionId] : [];
+    $input = match ($kind) {
+        EditorialActivityKind::Recheck => ['reviewed_revision_id' => $revisionId, 'expected_revision_id' => $revisionId],
+        EditorialActivityKind::LintRepair => inputContractRepairInput($revisionId),
+        default => [],
+    };
 
     return $start->start($actor, $attempt, $kind, $input, 'input-contract');
+}
+
+/**
+ * The repair input the post-draft lint step builds: the manuscript's repairable hits and the blocks they touch.
+ *
+ * @return array<string, mixed>
+ */
+function inputContractRepairInput(int $revisionId): array
+{
+    $revision = ArticleRevision::query()->findOrFail($revisionId);
+    $lint = app(LintRevision::class);
+
+    return $lint->repairInput($revision, $lint->repairable($lint->hits($revision->article()->firstOrFail(), $revision)));
 }
 
 /** @return array<string, mixed> */
@@ -156,6 +176,7 @@ function inputContractResponse(EditorialActivityKind $kind): array
         EditorialActivityKind::ResearchChallenge => ['claims' => [], 'sourceReferences' => [], 'contradictions' => [], 'gaps' => []],
         EditorialActivityKind::Plan => ['outline' => [['heading' => 'Why another hire will not fix it', 'evidence_refs' => []]], 'argument' => 'Check the chores first.', 'visualPlan' => [['slot' => 'hero', 'description' => 'The Friday report']]],
         EditorialActivityKind::Draft => ['document' => json_encode(inputContractDocument('A drafted paragraph.'), JSON_THROW_ON_ERROR), 'metadataProposals' => ['title' => 'Check the chores first']],
+        EditorialActivityKind::LintRepair => ['patches' => []],
         EditorialActivityKind::ReviewFacts, EditorialActivityKind::ReviewVoice, EditorialActivityKind::ReviewBuyer => ['findings' => []],
         EditorialActivityKind::Reconciliation => ['groups' => [], 'conflicts' => []],
         EditorialActivityKind::Recheck => ['resolved' => [], 'unresolved' => [], 'newBlockingFindings' => []],
@@ -226,6 +247,11 @@ test('every kind sends its frozen goals and rubric in the system message and the
         'resources/publishing/canon/channels/blog.md',
         'resources/publishing/canon/roles/drafter.md',
     ]],
+    'lint repair' => [EditorialActivityKind::LintRepair, '# Core voice', [
+        'resources/publishing/canon/voice/core.md',
+        'resources/publishing/canon/voice/mechanical-rules.md',
+        'resources/publishing/canon/roles/lint-repairer.md',
+    ]],
     'fact review' => [EditorialActivityKind::ReviewFacts, '# Fact reviewer rubric', ['resources/publishing/canon/roles/fact-reviewer.md']],
     'voice review' => [EditorialActivityKind::ReviewVoice, '# Core voice', ['resources/publishing/canon/voice/core.md', 'resources/publishing/canon/roles/voice-reviewer.md']],
     'buyer review' => [EditorialActivityKind::ReviewBuyer, '# Blog channel', ['resources/publishing/canon/channels/blog.md', 'resources/publishing/canon/roles/buyer-reviewer.md']],
@@ -235,8 +261,32 @@ test('every kind sends its frozen goals and rubric in the system message and the
 
 test('the dataset covers every editorial activity kind', function () {
     expect(array_map(fn (EditorialActivityKind $kind): string => $kind->value, EditorialActivityKind::cases()))->toBe([
-        'interview', 'research_challenge', 'plan', 'draft', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck',
+        'interview', 'research_challenge', 'plan', 'draft', 'lint_repair', 'review_facts', 'review_voice', 'review_buyer', 'reconciliation', 'recheck',
     ]);
+});
+
+test('the lint repair input holds its hits and the blocks they touch', function () {
+    $activity = inputContractStart(inputContractAuthor(), EditorialActivityKind::LintRepair);
+    $manuscript = $activity->input['manuscript']['document'] ?? [];
+
+    $input = inputContractRun($activity)['input'];
+    $hits = is_array($input['hits'] ?? null) ? $input['hits'] : [];
+    $blocks = collect(is_array($input['blocks'] ?? null) ? $input['blocks'] : [])->keyBy('block_id');
+
+    expect($hits)->not->toBeEmpty()
+        ->and($input['expected_revision_id'] ?? null)->toBe($activity->revision_id)
+        ->and(array_column($hits, 'rule_id'))->toContain('walkthrough-link');
+
+    foreach ($hits as $hit) {
+        $block = $blocks->get($hit['block_id']);
+        $node = collect(is_array($manuscript['content'] ?? null) ? $manuscript['content'] : [])->firstWhere('attrs.id', $hit['block_id']);
+
+        expect($hit)->toHaveKeys(['hit_id', 'rule_id', 'block_id', 'excerpt', 'message'])
+            ->and($block)->not->toBeNull()
+            ->and($block['hit_ids'] ?? [])->toContain($hit['hit_id'])
+            ->and($block['node'] ?? null)->toEqual($node)
+            ->and($block['hash'] ?? null)->toBe(app(PublishingFingerprint::class)->hash($node));
+    }
 });
 
 test('only the drafter and voice reviewer receive the labeled exemplar canon', function (EditorialActivityKind $kind, bool $receivesExemplars) {

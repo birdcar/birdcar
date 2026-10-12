@@ -14,6 +14,7 @@ use App\Models\PublishingAttempt;
 use App\Models\User;
 use App\Services\Publishing\ArticleDocument;
 use App\Services\Publishing\ArticleDocumentValidationException;
+use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\PublishingFingerprint;
 use App\Services\Publishing\ReleaseFreshnessManifest;
 use Carbon\CarbonImmutable;
@@ -30,6 +31,7 @@ class CheckArticleRelease
         private readonly ArticleDocument $articleDocument,
         private readonly PublishingFingerprint $fingerprint,
         private readonly ReleaseFreshnessManifest $releaseFreshness,
+        private readonly LintRevision $lint,
     ) {}
 
     /**
@@ -120,6 +122,13 @@ class CheckArticleRelease
             $findings[] = $finding;
         }
 
+        $lintState = $this->voiceRuleState($article, $revision);
+        foreach ($lintState as $hit) {
+            if ($hit['override'] === null) {
+                $findings[] = $this->finding('blocking', 'lint.'.$hit['rule'], $hit['location'], $hit['message'], 'Fix the passage, accept the proposed fix, or override the voice rule with a recorded reason.');
+            }
+        }
+
         $inputHash = $this->fingerprint->hash([
             'attempt_id' => $attempt->id,
             'article_id' => $article->id,
@@ -133,6 +142,7 @@ class CheckArticleRelease
             'delivery_intent' => $deliveryIntent,
             'supporting_evidence_manifest' => $this->releaseFreshness->evidenceManifest((int) $attempt->id),
             'review_manifest' => $this->releaseFreshness->reviewManifest((int) $attempt->id, (int) $revision->id),
+            'voice_rules' => array_map(static fn (array $hit): array => array_diff_key($hit, ['message' => true]), $lintState),
         ]);
 
         return [
@@ -405,6 +415,25 @@ class CheckArticleRelease
     }
 
     /**
+     * Re-lints the exact revision. A hit is cleared only by a reasoned override recorded for the same hit hash, so
+     * changed flagged text blocks again.
+     *
+     * @return list<array{rule: string, location: string, input_hash: string, message: string, override: string|null}>
+     */
+    private function voiceRuleState(Article $article, ArticleRevision $revision): array
+    {
+        $overrides = $this->lint->overrides((int) $article->id);
+
+        return array_map(static fn (LintHit $hit): array => [
+            'rule' => $hit->ruleId,
+            'location' => $hit->location(),
+            'input_hash' => $hit->inputHash(),
+            'message' => $hit->message,
+            'override' => $overrides[$hit->inputHash()]['reason'] ?? null,
+        ], $this->lint->hits($article, $revision));
+    }
+
+    /**
      * @return list<array{severity: string, code: string, location: string, message: string, resolution: string}>
      */
     private function materialEditorialBlockers(PublishingAttempt $attempt, ArticleRevision $revision): array
@@ -417,6 +446,7 @@ class CheckArticleRelease
             ->where('attempt_id', $attempt->id)
             ->where('review_cycle', $attempt->review_cycle)
             ->whereIn('revision_id', $revisionIds)
+            ->where('lens', '!=', LintRevision::LENS)
             ->whereNull('stale_at')
             ->where(function ($query): void {
                 $query->where('severity', 'blocking')->orWhere('reconciliation_state', 'conflict');

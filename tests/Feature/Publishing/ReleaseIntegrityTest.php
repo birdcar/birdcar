@@ -790,7 +790,11 @@ function releaseMetadata(string $title): array
     ];
 }
 
-/** @return array<string, mixed> */
+/**
+ * Every release-ready blog post closes with exactly one Walkthrough link, so fixtures stay clear of the voice rules.
+ *
+ * @return array<string, mixed>
+ */
 function releaseDocument(string $text): array
 {
     return [
@@ -798,6 +802,11 @@ function releaseDocument(string $text): array
         'type' => 'doc',
         'content' => [
             ['type' => 'paragraph', 'text' => $text],
+            ['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+                ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+                ['type' => 'text', 'text' => '.'],
+            ]],
         ],
     ];
 }

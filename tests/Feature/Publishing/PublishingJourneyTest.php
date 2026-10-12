@@ -58,6 +58,14 @@ test('displayed interview to recheck journey uses real workspace actions and fro
                         'type' => 'paragraph',
                         'attrs' => ['id' => 'blk_0000000000000002'],
                         'content' => [['type' => 'text', 'text' => 'Agent draft says the loop needs one clearer sentence.']],
+                    ], [
+                        'type' => 'paragraph',
+                        'attrs' => ['id' => 'blk_0000000000000003'],
+                        'content' => [
+                            ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+                            ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+                            ['type' => 'text', 'text' => '.'],
+                        ],
                     ]]],
                     'metadataProposals' => [],
                 ]),

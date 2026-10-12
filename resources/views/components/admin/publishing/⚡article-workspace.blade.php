@@ -4,6 +4,7 @@ use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApplyEditorialProposal;
 use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\FinishEditorialReview;
+use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\ManageArticleRelease;
 use App\Actions\Publishing\ResumeEditorialActivity;
 use App\Actions\Publishing\RetryEditorialActivity;
@@ -188,6 +189,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         try {
             $revision = $writer->save(auth()->user(), $this->article, $expectedRevisionId === null ? null : (int) $expectedRevisionId, is_array($document) ? $document : [], is_array($metadata) ? $metadata : [], (string) $clientMutationId, 'human');
+            $this->refreshVoiceRuleFindings();
             $this->currentRevisionId = (int) $revision->id;
             $this->document = $revision->document ?? [];
             $this->metadata = $revision->metadata ?? [];
@@ -544,6 +546,7 @@ new #[Layout('layouts.admin')] class extends Component
         try {
             $baseRevisionId = $this->currentRevisionId;
             $revision = $proposals->apply(auth()->user(), $attempt, [$findingId], $baseRevisionId);
+            $this->refreshVoiceRuleFindings();
             $this->currentRevisionId = (int) $revision->id;
             $this->document = $revision->document ?? $this->document;
             $this->metadata = $revision->metadata ?? $this->metadata;
@@ -554,6 +557,64 @@ new #[Layout('layouts.admin')] class extends Component
             session()->flash('status', 'Suggested change applied to your manuscript.');
         } catch (Throwable $exception) {
             $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function overrideVoiceRule(int $findingId, ?LintRevision $lint = null): void
+    {
+        Gate::authorize('approve', $this->article);
+        $lint ??= app(LintRevision::class);
+        $finding = EditorialFinding::query()
+            ->where('article_id', $this->article->id)
+            ->where('attempt_id', $this->article->current_attempt_id)
+            ->where('lens', LintRevision::LENS)
+            ->findOrFail($findingId);
+        $reason = trim($this->findingReasons[$findingId] ?? '');
+        if ($reason === '') {
+            $this->addError('findingReasons.'.$findingId, 'Explain why this voice rule does not apply here.');
+            return;
+        }
+
+        try {
+            $lint->override(auth()->user(), $finding, $reason);
+            $this->resetErrorBag('findingReasons.'.$findingId);
+            unset($this->findingReasons[$findingId]);
+            $this->saveError = null;
+            session()->flash('status', 'Voice rule overridden. Your reason is recorded with the release.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    public function skipVoiceRuleRepair(?LintRevision $lint = null): void
+    {
+        Gate::authorize('develop', $this->article);
+        $lint ??= app(LintRevision::class);
+        $attempt = $this->article->currentAttempt;
+        if ($attempt === null) {
+            $this->saveError = 'No active publishing attempt exists.';
+            return;
+        }
+
+        try {
+            $lint->skipRepair(auth()->user(), $attempt);
+            $this->saveError = null;
+            $this->article = $this->article->fresh(['workingRevision', 'currentAttempt.approvals', 'currentAttempt.releases', 'currentAttempt.editorialActivities', 'publishedRelease']);
+            session()->flash('status', 'Voice-rule repair skipped. Review has started.');
+        } catch (Throwable $exception) {
+            $this->saveError = $exception->getMessage();
+        }
+    }
+
+    /**
+     * Saves never fail over lint: a problem refreshing voice-rule findings is reported, and release re-lints anyway.
+     */
+    private function refreshVoiceRuleFindings(): void
+    {
+        try {
+            app(LintRevision::class)->refresh($this->article);
+        } catch (Throwable $exception) {
+            report($exception);
         }
     }
 
@@ -706,6 +767,7 @@ new #[Layout('layouts.admin')] class extends Component
                 'protected-block-'.uniqid('', true),
                 'human',
             );
+            $this->refreshVoiceRuleFindings();
             $this->currentRevisionId = (int) $revision->id;
             $this->document = $revision->document ?? $document;
             $this->metadata = $revision->metadata ?? $this->metadata;
@@ -865,6 +927,8 @@ new #[Layout('layouts.admin')] class extends Component
             'interviewQuestions' => is_array($interviewContext['questions'] ?? null) ? $interviewContext['questions'] : [],
             'releasePreviewUrl' => $release === null ? null : route('admin.publishing.articles.preview', ['article' => $this->article, 'release' => $release->id]),
             'proposalTexts' => $findings->mapWithKeys(fn ($finding) => [$finding->id => $this->documentExcerpt(['content' => [$finding->proposed_patch['replacement'] ?? []]], null)])->all(),
+            'voiceRuleFindings' => $findings->where('lens', LintRevision::LENS)->sortBy('id')->values(),
+            'voiceRuleRepairWaiting' => $activities->contains(fn ($activity) => $activity->kind === EditorialActivityKind::LintRepair && in_array($activity->status, [EditorialActivityStatus::Pending, EditorialActivityStatus::Paused, EditorialActivityStatus::Failed], true)),
             'attempt' => $attempt,
             'previewUrl' => $previewUrl,
             'release' => $release,
@@ -878,7 +942,7 @@ new #[Layout('layouts.admin')] class extends Component
                 ->where('review_cycle', $attempt->review_cycle)
                 ->where('revision_id', $this->article->working_revision_id)
                 ->oldest('id')->get(),
-            'editorialFindings' => $findings,
+            'editorialFindings' => $findings->where('lens', '!=', LintRevision::LENS)->values(),
             'evidenceSources' => $sources,
             'voiceCanonVersion' => Str::substr(app(VoiceCanon::class)->snapshot()->version, 0, 12),
             'interviewContext' => $interviewContext,

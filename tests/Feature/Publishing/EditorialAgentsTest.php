@@ -5,6 +5,7 @@ use App\Ai\Agents\Drafter;
 use App\Ai\Agents\EditorialAgent;
 use App\Ai\Agents\FactReviewer;
 use App\Ai\Agents\Interviewer;
+use App\Ai\Agents\LintRepairer;
 use App\Ai\Agents\Planner;
 use App\Ai\Agents\Researcher;
 use App\Ai\Agents\ReviewReconciler;
@@ -38,6 +39,7 @@ test('it selects the role-specific SDK agent for each editorial activity kind', 
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ResearchChallenge)))->toBeInstanceOf(Researcher::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Plan)))->toBeInstanceOf(Planner::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::Draft)))->toBeInstanceOf(Drafter::class)
+        ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::LintRepair)))->toBeInstanceOf(LintRepairer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewFacts)))->toBeInstanceOf(FactReviewer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewVoice)))->toBeInstanceOf(VoiceReviewer::class)
         ->and(EditorialAgent::forActivity(editorialActivity(EditorialActivityKind::ReviewBuyer)))->toBeInstanceOf(BuyerReviewer::class)
@@ -149,6 +151,7 @@ test('each role sends its explicit native recommendation without price or provid
     'researcher' => [EditorialActivityKind::ResearchChallenge, 'google/gemini-3.8-flash', 'medium', 16000],
     'planner' => [EditorialActivityKind::Plan, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
     'drafter' => [EditorialActivityKind::Draft, 'google/gemini-3.8-flash', 'medium', 32000],
+    'lint repairer' => [EditorialActivityKind::LintRepair, 'google/gemini-3.8-flash', 'low', 16000],
     'fact reviewer' => [EditorialActivityKind::ReviewFacts, 'deepseek/deepseek-v4-pro-0813', 'high', 32000],
     'voice reviewer' => [EditorialActivityKind::ReviewVoice, 'google/gemini-3.8-flash', 'medium', 16000],
     'buyer reviewer' => [EditorialActivityKind::ReviewBuyer, 'deepseek/deepseek-v4-pro-0813', 'medium', 24000],

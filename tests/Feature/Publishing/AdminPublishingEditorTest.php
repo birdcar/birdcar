@@ -54,6 +54,23 @@ function simpleDocument(string $text = 'Hello'): array
     ]];
 }
 
+/**
+ * Every release-ready blog post closes with exactly one Walkthrough link, so release fixtures stay clear of the voice rules.
+ *
+ * @return array<string, mixed>
+ */
+function adminReleaseDocument(string $text): array
+{
+    $document = simpleDocument($text);
+    $document['content'][] = ['type' => 'paragraph', 'attrs' => ['id' => 'blk_00000000000000aa'], 'content' => [
+        ['type' => 'text', 'text' => 'If this sounds like your week, bring it to '],
+        ['type' => 'text', 'text' => 'a Walkthrough', 'marks' => [['type' => 'link', 'attrs' => ['href' => '/walkthrough']]]],
+        ['type' => 'text', 'text' => '.'],
+    ]];
+
+    return $document;
+}
+
 /** @return array{title: string, description: string, date: string, tags: array<int, string>} */
 function adminReleaseMetadata(string $title): array
 {
@@ -291,7 +308,7 @@ test('gate approvals submit rendered stale hashes rather than recomputing fresh 
     expect(EditorialApproval::query()->where('attempt_id', $planAttempt->id)->where('kind', ApprovalKind::Plan)->exists())->toBeFalse();
 
     $releaseArticle = $write->captureIdea($user, 'Release stale');
-    $releaseRevision = $write->save($user, $releaseArticle, null, simpleDocument('Release'), adminReleaseMetadata('Release'), 'mut_release_seed');
+    $releaseRevision = $write->save($user, $releaseArticle, null, adminReleaseDocument('Release'), adminReleaseMetadata('Release'), 'mut_release_seed');
     $releaseAttempt = $advance->develop($user, $releaseArticle, $releaseRevision->id, ['summary' => 'Brief']);
     $approve->approve($user, $releaseAttempt, ApprovalKind::Angle, $approve->inputHashFor($releaseAttempt, ApprovalKind::Angle));
     $releaseAttempt = adminAttemptWithReviewedPlan($user, $releaseAttempt->fresh(), ['outline' => ['Plan'], 'visualPlan' => ['Visual plan']]);
@@ -312,7 +329,7 @@ test('workspace prepares scheduled releases with an explicit timezone confirmati
     $advance = app(AdvancePublishingAttempt::class);
     $approve = app(ApprovePublishingStage::class);
     $article = $write->captureIdea($user, 'Workspace scheduled release');
-    $revision = $write->save($user, $article, null, simpleDocument('Scheduled release'), adminReleaseMetadata('Scheduled Release'), 'mut_workspace_schedule');
+    $revision = $write->save($user, $article, null, adminReleaseDocument('Scheduled release'), adminReleaseMetadata('Scheduled Release'), 'mut_workspace_schedule');
     $attempt = $advance->develop($user, $article, $revision->id, ['summary' => 'Brief']);
     $approve->approve($user, $attempt, ApprovalKind::Angle, $approve->inputHashFor($attempt, ApprovalKind::Angle));
     $attempt = adminAttemptWithReviewedPlan($user, $attempt->fresh(), ['outline' => ['Plan'], 'visualPlan' => ['Visual plan']]);

@@ -8,6 +8,7 @@ use App\Models\ArticleRevision;
 use App\Models\EditorialFinding;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\DocumentBlocks;
 use App\Services\Publishing\PublishingFingerprint;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,11 @@ use RuntimeException;
 
 class ApplyEditorialProposal
 {
-    public function __construct(private readonly WriteArticle $writer, private readonly PublishingFingerprint $fingerprint) {}
+    public function __construct(
+        private readonly WriteArticle $writer,
+        private readonly PublishingFingerprint $fingerprint,
+        private readonly DocumentBlocks $blocks,
+    ) {}
 
     /**
      * @param  list<int>  $findingIds
@@ -65,7 +70,9 @@ class ApplyEditorialProposal
                 if ((int) $finding->attempt_id !== (int) $lockedAttempt->id || (int) $finding->article_id !== (int) $article->id) {
                     throw new RuntimeException('Editorial proposals cannot cross attempts.');
                 }
-                if ((int) ($finding->revision_id ?? 0) !== $expectedRevisionId || $finding->input_hash !== $baseRevision->content_hash || $finding->stale_at !== null) {
+                // A lint finding's input hash identifies its hit, not the revision; the patch's expected hash guards drift.
+                $reviewedOtherContent = $finding->lens !== LintRevision::LENS && $finding->input_hash !== $baseRevision->content_hash;
+                if ((int) ($finding->revision_id ?? 0) !== $expectedRevisionId || $reviewedOtherContent || $finding->stale_at !== null) {
                     throw new RuntimeException('Editorial proposal output is stale.');
                 }
                 $patchValue = $finding->getAttribute('proposed_patch');
@@ -94,7 +101,7 @@ class ApplyEditorialProposal
 
             $this->rejectOverlappingPatches($patches);
             foreach ($patches as $patch) {
-                $document = $this->replaceBlockAtPath($document, $patch['path'], $patch['replacement']);
+                $document = $this->blocks->replace($document, $patch['path'], $patch['replacement']);
             }
 
             $revision = $this->writer->save($actor, $article, $expectedRevisionId, $document, $metadata, 'agent-accepted-'.implode('-', $findingIds), 'agent-accepted');
@@ -147,7 +154,7 @@ class ApplyEditorialProposal
             return true;
         }
 
-        $match = $this->findBlockInNodes($content, $blockId);
+        $match = $this->blocks->find(['content' => $content], $blockId);
         if ($match === null) {
             return false;
         }
@@ -167,13 +174,12 @@ class ApplyEditorialProposal
      */
     private function validatedPatchForBase(array $document, string $blockId, ?string $expectedHash, array $replacement): array
     {
-        $content = is_array($document['content'] ?? null) ? $document['content'] : [];
-        $match = $this->findBlockInNodes($content, $blockId);
+        $match = $this->blocks->find($document, $blockId);
         if ($match === null) {
             throw new RuntimeException('Patch target block was not found.');
         }
 
-        if (data_get($match['node'], 'attrs.protected') === true) {
+        if ($match['protected']) {
             throw new RuntimeException('Protected passages must be unlocked before accepting this proposal.');
         }
         if ($expectedHash !== null && ! hash_equals($expectedHash, $this->fingerprint->hash($match['node']))) {
@@ -193,100 +199,11 @@ class ApplyEditorialProposal
                 if ($leftIndex >= $rightIndex) {
                     continue;
                 }
-                if ($this->pathsOverlap($left['path'], $right['path'])) {
+                if ($this->blocks->overlaps($left['path'], $right['path'])) {
                     throw new RuntimeException('Selected patches overlap.');
                 }
             }
         }
-    }
-
-    /**
-     * @param  list<int>  $left
-     * @param  list<int>  $right
-     */
-    private function pathsOverlap(array $left, array $right): bool
-    {
-        $limit = min(count($left), count($right));
-        for ($index = 0; $index < $limit; $index++) {
-            if ($left[$index] !== $right[$index]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param  array<string, mixed>  $document
-     * @param  list<int>  $path
-     * @param  array<string, mixed>  $replacement
-     * @return array<string, mixed>
-     */
-    private function replaceBlockAtPath(array $document, array $path, array $replacement): array
-    {
-        $nodes = is_array($document['content'] ?? null) ? $document['content'] : [];
-        $document['content'] = $this->replaceNodeAtPath($nodes, $path, $replacement);
-
-        return $document;
-    }
-
-    /**
-     * @param  array<int, mixed>  $nodes
-     * @param  list<int>  $path
-     * @param  array<string, mixed>  $replacement
-     * @return array<int, mixed>
-     */
-    private function replaceNodeAtPath(array $nodes, array $path, array $replacement): array
-    {
-        $index = array_shift($path);
-        if ($index === null || ! array_key_exists($index, $nodes)) {
-            throw new RuntimeException('Patch target block was not found.');
-        }
-
-        if ($path === []) {
-            $nodes[$index] = $replacement;
-
-            return $nodes;
-        }
-
-        $node = $nodes[$index];
-        if (! is_array($node) || ! is_array($node['content'] ?? null)) {
-            throw new RuntimeException('Patch target block was not found.');
-        }
-
-        $node['content'] = $this->replaceNodeAtPath($node['content'], $path, $replacement);
-        $nodes[$index] = $node;
-
-        return $nodes;
-    }
-
-    /**
-     * @param  array<int, mixed>  $nodes
-     * @param  list<int>  $path
-     * @return array{path: list<int>, node: array<string, mixed>}|null
-     */
-    private function findBlockInNodes(array $nodes, string $blockId, array $path = []): ?array
-    {
-        foreach ($nodes as $index => $node) {
-            if (! is_array($node)) {
-                continue;
-            }
-
-            /** @var array<string, mixed> $node */
-            $currentPath = [...$path, (int) $index];
-            if (data_get($node, 'attrs.id') === $blockId) {
-                return ['path' => $currentPath, 'node' => $node];
-            }
-
-            if (is_array($node['content'] ?? null)) {
-                $match = $this->findBlockInNodes($node['content'], $blockId, $currentPath);
-                if ($match !== null) {
-                    return $match;
-                }
-            }
-        }
-
-        return null;
     }
 
     private function lockedAttempt(PublishingAttempt|int $attempt): PublishingAttempt
