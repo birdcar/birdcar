@@ -1,0 +1,177 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: {N} (phase number, twice), {PROJECT}, {DATE}, {PHASE DESCRIPTION} —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 9</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 9</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Drift trial harness and edit distance</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Voice finding kinds — an enforced enum, not only a description</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec changes only the rubric and the VoiceReviewer <code>kind</code> description. A description alone lets the model return any string, but the trial's <code>drift_flagged</code> matches <code>voice_drift</code> exactly, and the contract's validator-to-schema audit expects every schema rule to be enforced.</dd>
+          <dt>Decision</dt>
+          <dd>ReviewVoice has its own schema arm: <code>kind</code> is a required enum of <code>EditorialOutput::VOICE_FINDING_KINDS</code> (<code>voice_drift</code>, <code>clarity</code>, <code>framework</code>, <code>register</code>), and the findings description defines each one the way <code>roles/voice-reviewer.md</code> does. <code>EditorialOutput</code> rejects any other kind through a helper shared with kit findings; the reviewer's severity stands. Facts and buyer findings are unchanged, so FactReviewer's description stays exactly "At most 25 findings.". <code>ReviewRubricTest::reviewRubricFinding</code> now sends <code>kind: clarity</code>, which the facts and buyer lenses accept as any string.</dd>
+          <dt>Alternative</dt>
+          <dd>Description only: a model that writes "voice" or "style" would never count as drift, and the stored kind would be free text.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Golden set — passages are linted without walkthrough-link, through one shared builder</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>walkthrough-link</code> hits the last block of any blog post with no /walkthrough link, which every 1-3 paragraph excerpt is. It would make every real passage "flagged" (failing G3's limit of 2) and fake catches on slopped passages whose last block is injected.</dd>
+          <dt>Decision</dt>
+          <dd><code>tests/Fixtures/Publishing/DriftGoldenSet.php</code> (not in the spec's file list) loads and narrows <code>passages.json</code>, builds each passage document with stable <code>blk_</code> ids from <code>sha256('drift:&lt;id&gt;:&lt;index&gt;')</code>, and lints it as a blog post with no metadata, minus <code>EXCERPT_EXEMPT_RULES = ['walkthrough-link']</code>. DriftFixtureTest and the paid trial both use it, so the free check and the paid run see the same manuscript and the same lint.</dd>
+          <dt>Alternative</dt>
+          <dd>Appending the same closing invitation to every passage: the reviewer would see one shared paragraph in all 20 manuscripts, and a <code>voice_drift</code> finding on it would flag a real passage.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Golden set — four slopped passages carry no mechanical tell, and each attempt records who caught it</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>A slopped passage counts as caught when lint or the reviewer hits an injected block. If every slopped passage also carried a mechanical tell, lint alone could pass G3 even if the reviewer caught nothing, which contradicts the spec's "measures the VoiceReviewer and not only the linter".</dd>
+          <dt>Decision</dt>
+          <dd>Six slopped passages carry one mechanical tell (each a different rule: stock-openers, filler-phrases, negative-parallelism, ai-vocabulary, chatbot-artifacts, corporate-we) plus non-mechanical tells; four (slop-03, slop-05, slop-08, slop-10) carry only non-mechanical tells, so at least four catches must come from the reviewer. Each attempt also records <code>caught_by_lint</code> and <code>caught_by_reviewer</code> (extra keys the jq check ignores). DriftFixtureTest asserts that every lint hit on a slopped passage is exactly an injected mechanical tell on its block, so the records stay honest. Owner's call whether to shift that balance.</dd>
+          <dt>Alternative</dt>
+          <dd>A mechanical tell in every slopped passage: the gate would mostly measure the linter.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Golden set — passage choice, and the reviewer sees the originals in its own exemplars</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks for lint-clean passages without "10x", "kinda", profanity or practitioner-only jargon. The real passages come verbatim from the four canon essays and the site copy, and <code>review_voice</code> receives those texts in full as <code>input.canon.exemplars</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Seven essay passages (two each from three essays, one from the fourth) and three site-copy passages, chosen without links, Markdown emphasis, "we/our", or developer jargon such as middleware, endpoints or refactoring; DriftFixtureTest asserts each real block appears verbatim in its source exemplar. For the owner: the real-flagged count is partly a recognition test, and each slopped variant sits next to its original in the reviewer's exemplars. This follows G3 ("canon or site-copy passages") and does not contradict the decision log.</dd>
+          <dt>Alternative</dt>
+          <dd>Passages from outside the exemplar canon: G3 names canon or site-copy passages.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Paid trial — one neutral brief and plan for every passage</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Retrieval needs query text (brief summary, target query, angle thesis, plan argument), and nothing should hint whether a passage is real or slopped. The rubric's framework-adherence section would report structural gaps on a 1-3 paragraph excerpt.</dd>
+          <dt>Decision</dt>
+          <dd>Every passage gets its own idea and piece but the same constant brief, idea text and human-written plan, with no <code>post_type</code> and no <code>framework</code>, so <code>input.canon.framework</code> is absent and the reviewer skips framework adherence. The angle is approved and a completed research row is created while agents are paused; the plan is approved unpaused, so retrieval runs and freezes exemplars for the Draft, which is force-completed without a paid request because the passage is the manuscript. The trial asserts all 20 reviews completed and leaves the G3 thresholds to the contract's jq check, which recomputes them from the attempts.</dd>
+          <dt>Alternative</dt>
+          <dd>A per-passage topic brief: it would need a field the spec's fixture shape does not have, and it would vary the context between real and slopped variants.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Paid trial — canon hash after Phase 8</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The trial runs <code>migrate:fresh</code> on <code>birdcar_test</code>. Once Phase 8 makes the snapshot read the active Admin canon version, the jq check's <code>php artisan publishing:canon-hash</code> runs against development and returns that version.</dd>
+          <dt>Decision</dt>
+          <dd><code>canon_hash</code> comes from <code>app(VoiceCanon::class)-&gt;snapshot()-&gt;version</code>, the same source the command prints, and the trial's header comment states the limitation: the two match only while the active canon is the repository canon.</dd>
+          <dt>Alternative</dt>
+          <dd>Copying the development canon versions into the test database: not possible from an isolated run, and outside this phase.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Edit distance — autosave makes "the owner's next saved revision" a small number</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The editor autosaves after 250 ms idle, and every save is a revision. The first owner revision after an agent revision is usually the first burst of typing, and later owner saves have an owner parent, so they record nothing.</dd>
+          <dt>Decision</dt>
+          <dd>Implemented exactly as G6 and the spec say (the owner's next saved revision). Flag for the owner: most recorded distances will be a few words, not the owner's total edit. Changing the baseline (for example, measuring the latest agent revision against the current working revision in the command) is a contract change.</dd>
+          <dt>Alternative</dt>
+          <dd>Measuring to the latest owner revision or summing a run of owner saves: not what the contract records.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Edit distance — which saves measure, and how words are read</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec names <code>agent-initial</code>, <code>agent-repair</code> and <code>agent-accepted</code>. The legacy <code>agent</code> origin is still listed in the protected-block guard but nothing writes it. The spec does not say which text counts or how punctuation is treated.</dd>
+          <dt>Decision</dt>
+          <dd><code>ArticleRevision::AGENT_ORIGINS</code> holds the three named origins only. <code>WriteArticle::save</code> dispatches <code>RecordEditDistance</code> after commit, inside the transaction after the revision is created, only for a <code>human</code> save whose parent has one of those origins, so mutation-id replays and rolled-back saves dispatch nothing. Words are lowercase runs of letters and digits (an inner straight or curly apostrophe keeps "it's" one word) from every text node plus note and callout titles and chart and diagram captions; blocks and hard breaks separate words, and a word split across marks stays one word. Punctuation-, case- and formatting-only edits measure 0. The distance trims the shared opening and closing words, then runs a two-row dynamic program over integer word ids; a full 4,000-word rewrite stays well under 16 MB in the test.</dd>
+          <dt>Alternative</dt>
+          <dd>Character-level distance, or counting formatting: the spec asks for word-level, and formatting is not the owner's prose.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Edit distance — the job never fails a save, and the guard needs the column loaded</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Tests run the queue synchronously, so a job exception would surface from <code>WriteArticle::save</code> (and workspace autosaves) after the revision committed. The spec says the guard permits setting the two columns once from null, only from the job.</dd>
+          <dt>Decision</dt>
+          <dd>The job returns early for a missing revision, a non-owner revision, a parent no agent wrote, or a distance already recorded; it writes with <code>whereNull('agent_edit_distance')-&gt;update(...)</code> on the revision it was queued for, so a second run is a no-op; any unexpected error is reported, not thrown. The model guard throws "An edit distance is recorded once and cannot be changed." when either column changes from a non-null value, or when a model that never loaded the column tries to set it. "Only from the job" is a convention stated in the docblocks.</dd>
+          <dt>Alternative</dt>
+          <dd>Letting the job throw: a measurement failure would read as a failed save to the owner.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Edit-distance command — one value per piece, plus every recorded distance</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's shape has one <code>edit_distance</code> per piece, but a piece can record several (an initial draft edited by the owner, then an accepted proposal edited again).</dd>
+          <dt>Decision</dt>
+          <dd><code>edit_distance</code> is the latest recorded distance, or null when none was recorded; each piece also lists <code>distances: [{revision_id, baseline_revision_id, edit_distance}]</code> in revision order. Every piece of the idea is listed (flagship, siblings and kit pieces) with its kind's enum value, so the owner picks the four the acceptance record needs. A missing or non-numeric idea prints an error and fails.</dd>
+          <dt>Alternative</dt>
+          <dd>Summing all distances: it would mix measurements against different agent baselines into one number.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

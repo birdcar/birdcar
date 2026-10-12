@@ -1,0 +1,231 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 3 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Deterministic voice lint —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 3</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 3</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Deterministic voice lint</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Lint rules &mdash; canon over spec: every rule that departs from the spec's detection table</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's detection table differs from the statements the Drafter is told in <code>voice/mechanical-rules.md</code>; the two-way test compares ids only. The Drafter is held to the canon, so where the two disagree the linter follows the canon. This entry is the one place the acceptance review of the word lists should read.</dd>
+          <dt>Decision</dt>
+          <dd>Word lists are the union of both, minus items that need judgment (bare "stack" and "scale" as a hype verb stay with the voice reviewer). Per rule, against the spec table:
+            <code>filler-phrases</code> adds "it is important to note";
+            <code>chatbot-artifacts</code> adds "here is an overview of", "while details are limited", "based on available information";
+            <code>stock-openers</code> adds "In this article", "Let's dive in", "In conclusion", "Ultimately,";
+            <code>label-headings</code> adds "bottom line", "key takeaways";
+            <code>corporate-we</code> adds "ourselves";
+            <code>experience-claim</code> adds "over fifteen years";
+            <code>bold-limit</code> allows one bold span per H2 section instead of two per piece (see its own entry);
+            <code>exclamation-limit</code> also flags every "!" in a heading, the title and the description;
+            <code>sentence-case-headings</code> also exempts "Nick", "I" and its contractions, and words inside straight quotes.
+            Matching is exact on word boundaries, case-insensitive, with straight and curly apostrophes; inflections such as "leveraging" are not caught. "align with" fires both ai-vocabulary and corporate-vocabulary ("align"); the repairer fixes both in one patch. These are spec deviations. Owner: review the lists at acceptance, as the spec's failure-mode table suggests.</dd>
+          <dt>Alternative</dt>
+          <dd>Inflection matching (more recall, more false positives), or the spec lists alone (the Drafter would be told rules the linter does not enforce).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>bold-limit &mdash; the canon's per-section reading, not the spec's per-piece count</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says more than two bold spans per piece; the canon tells the Drafter "use bold at most once per H2 section".</dd>
+          <dt>Decision</dt>
+          <dd>At most one bold span per H2 section (text before the first H2 is a section); one hit per extra span. Enforcing the spec's count would repair or block drafts that follow the rule the Drafter was given. This is a spec deviation.</dd>
+          <dt>Alternative</dt>
+          <dd>The spec's more-than-two-per-piece count.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>exclamation-limit, heading-order, walkthrough-link &mdash; readings</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The canon also bans "!" in headings, titles and descriptions; a level-1 heading cannot be saved; the canon puts the link "in the closing invitation paragraph".</dd>
+          <dt>Decision</dt>
+          <dd>Every "!" in a heading, title or description is a hit, and the body allows one. heading-order flags a level-1 heading or a skipped level, so in practice an H3 before any H2. walkthrough-link follows the spec: exactly one /walkthrough link (relative or birdcar.dev, with or without www, slash, query or fragment) after the final H2, or in the last three blocks when there is no H2. With no link, the hit points at the last block so a repair can add the invitation link; misplaced and extra links are hit at their own block.</dd>
+          <dt>Alternative</dt>
+          <dd>Locating the "closing invitation paragraph" by its wording, which is not deterministic.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>LintTarget &mdash; what counts as a block</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec lists block fields but not attribute text or legacy text.</dd>
+          <dt>Decision</dt>
+          <dd>One block per paragraph and heading, plus note/callout titles and chart/diagram captions as their own blocks (all body rules apply to that visible text). Code blocks and code-marked text are skipped, with a space left so words do not fuse. Protection and blockquote flags are inherited from ancestors. Adjacent bold nodes and same-href link nodes merge. Blocks without an id (only possible for revisions written around <code>WriteArticle</code>) fall back to their JSON path. Metadata gets the character rules only (em dash, curly quotes, emoji, excluded names, unresolved markers, "!"), never sentence case; Phase 4 owns title rules.</dd>
+          <dt>Alternative</dt>
+          <dd>Ignoring attribute text, which would let an em dash in a caption reach release.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>LintHit &mdash; excerpts and hash collisions</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The hash is <code>sha256(rule | block | excerpt)</code>; repeated excerpts in one block collide.</dd>
+          <dt>Decision</dt>
+          <dd>Word and phrase rules use the matched words as the excerpt, so an override survives edits elsewhere in the block. Character rules (em dash, curly quotes, emoji, "!") use about two words either side, so two dashes in one block are two hits. A repeat of the same rule, location and excerpt is numbered in reading order (<code>LintHit::$occurrence</code>), and occurrences after the first add their number to the hash, so each is its own finding and needs its own override; an override recorded on one "leverage" no longer clears a second "leverage" added to that block later. The first occurrence keeps the plain hash. Known trade-off: removing an earlier occurrence renumbers the later ones, so an override can move to, or fall off, a neighbouring identical hit; the failure that matters for release (a new occurrence passing silently) is closed. Metadata hits hash with <code>$.metadata.{field}</code> in place of the block id. Changed after review cycle 1, which flagged the earlier merge of identical hits.</dd>
+          <dt>Alternative</dt>
+          <dd>Merging identical hits into one finding (the cycle-1 behaviour: one override covered every occurrence in the block), or a wider excerpt for word rules (overrides would break on nearby edits).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Repair loop &mdash; what is repairable, and when the loop stops</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec sends every hit to repair; the Drafter is told to write <code>[NEED: proof]</code> markers.</dd>
+          <dt>Decision</dt>
+          <dd>Unresolved markers and metadata hits are never sent to the repairer (fixing them would mean inventing proof or there is no block to patch); they are stored as findings at the end of the step. Hits are grouped by block in the frozen input (<code>blocks[]</code> carries each node and its subtree hash for the model to echo), and the output allows one patch per block. The loop stops at two completed repairs per review cycle, or early when a pass applied nothing.</dd>
+          <dt>Alternative</dt>
+          <dd>Sending markers to the repairer, or one patch per hit (later patches would fail their expected hash and burn the cap).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Repair &mdash; "agent-authored" is tracked per block, not by the latest agent revision</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec defines agent-authored as "the block's subtree hash equals its hash in the most recent agent-initial or agent-repair revision".</dd>
+          <dt>Decision</dt>
+          <dd>A repair revision carries owner-edited blocks forward unchanged, so the literal definition (compare against the whole latest agent revision) would let the second repair pass rewrite owner text. Instead each block keeps the hash an agent last wrote for it in this attempt: every block of the applied draft, then each block a completed repair changed, later writes replacing earlier ones. A block is agent-authored only when its current hash equals that latest write, so an owner who restores text an agent wrote before its latest pass is treated as the author. Protected blocks (including through an ancestor) are never patched. Unapplied patches are kept on the repair's proposal and attached to the matching finding when the step ends, if the block still matches. This is a spec deviation, narrowed after review cycle 1 (which flagged that any earlier agent write counted).</dd>
+          <dt>Alternative</dt>
+          <dd>The spec's literal definition (the owner-edited workflow test fails under it), or any agent write in the attempt (an owner restoring earlier agent text got auto-repaired).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Repair failures &mdash; unusable output ends the step, provider failures do not</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The error table says invalid repair output fails the activity and the lenses still queue; nothing hooked failures before.</dd>
+          <dt>Decision</dt>
+          <dd>When the provider answered but the output could not be used (validation or apply error), the repair fails with that reason and the step finishes: findings are stored, the lenses queue on the repair's revision, and the repair is then marked Stale with its reason plus "Review started without this repair." Stale work cannot be retried (so no repair revision lands under the running lens batch) and does not show "Skip repair and review". When the step cannot finish (attempt blocked, revision moved), the repair stays Failed or Paused for the owner. When the request itself failed, the repair pauses or fails with no lenses, and the owner retries or uses "Skip repair and review". The Stale marking was added after review cycle 1.</dd>
+          <dt>Alternative</dt>
+          <dd>Leaving every failure to the owner, which stalls review after a bad model answer.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Protected passages &mdash; a fix survives the unlock that makes it acceptable</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>A patch for a protected block can only be accepted after the owner unlocks it, but unlocking saves a new revision whose block hash differs (only <code>attrs.protected</code> changed), and the repair output had to keep <code>protected: true</code> in the replacement. Review cycle 1 found "Accept fix" was a dead end for protected hits.</dd>
+          <dt>Decision</dt>
+          <dd>When <code>LintRevision</code> carries a patch to a new revision, it accepts a block that is unchanged or differs only in its own <code>attrs.protected</code>, and rebases the patch: <code>expected_hash</code> becomes the block's current hash and the replacement's <code>attrs.protected</code> mirrors the block's current value. Unlock then "Accept fix" applies the fix and leaves the passage unlocked; any other change to the block still drops the patch. <code>EditorialOutput</code> still requires the repairer to keep the lock it was given.</dd>
+          <dt>Alternative</dt>
+          <dd>Normalizing protection everywhere in the subtree (a replacement would then overwrite a descendant's newer lock), or letting accept bypass the lock (breaks "agents never silently change protected prose").</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Skip repair and review &mdash; added to the workspace</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The failure-modes table names the action, but File Changes does not.</dd>
+          <dt>Decision</dt>
+          <dd><code>LintRevision::skipRepair</code> behind the workspace's <code>skipVoiceRuleRepair</code> (develop gate). It refuses while a repair is running, marks pending, paused and failed repairs in the cycle stale, stores findings on the current revision and queues the lenses. It shows only while a repair is waiting. After an owner edit the lenses still need a drafted or repaired revision, as the existing "Start three-lens review" button does.</dd>
+          <dt>Alternative</dt>
+          <dd>Letting skip start lenses on owner-edited revisions, which would change review eligibility beyond this phase.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Files outside the spec's list</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The scout found exhaustive matches and readers of findings the spec misses.</dd>
+          <dt>Decision</dt>
+          <dd>Changed: <code>ApprovePublishingStage</code> and the settings and dashboard labels (LintRepair arms); <code>StartEditorialActivity</code> review eligibility accepts a revision a same-cycle repair produced, and reconciliation/recheck input excludes lint findings; <code>CheckArticleRelease::materialEditorialBlockers</code> excludes lint so a hit blocks once as <code>lint.&lt;id&gt;</code>; <code>ApplyEditorialProposal</code> skips the revision-hash staleness check for lint findings (the patch's expected hash guards drift) and now refuses blocks protected through an ancestor; <code>RunEditorialActivity::actorCanRunKind</code> requires <code>publishing.write</code> for repairs. The block find/replace/overlap code moved to <code>App\Services\Publishing\DocumentBlocks</code>, shared by proposals and repairs. <code>EditorialInputContractTest</code> is not automatic: its dataset gained an explicit lint-repair row and an input assertion.</dd>
+          <dt>Alternative</dt>
+          <dd>Copying the patch helpers into RunEditorialActivity.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Overrides &mdash; immediate, article-wide, part of the release hash</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>decideFinding</code> only buffers until finish review, but release reads the database.</dd>
+          <dt>Decision</dt>
+          <dd>"Override with reason" writes the false-positive disposition immediately (approve gate, trimmed non-empty reason). Release matches overrides by hit hash across the whole article, ignoring stale_at, cycle and attempt, and <code>LintRevision</code> copies an override (and a still-valid proposed patch) forward to the new revision's finding. The release input hash now includes each hit and its override reason, so changing an override stales a prepared release. Side effect at deploy: releases prepared before this change re-prepare once, because the hash shape changed.</dd>
+          <dt>Alternative</dt>
+          <dd>Scoping overrides to one attempt, which would force the owner to repeat them after a new attempt.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Archive essays are never linted &mdash; owner decision to confirm</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>All ten archive essays use "we" or "our" and two contain em dashes; <code>channels/blog.md</code> says nothing in the canon applies to them.</dd>
+          <dt>Decision</dt>
+          <dd>Articles with an import-origin release return no hits, so a new revision of an archive essay is not blocked by the canon. Owner: confirm, or remove the <code>isArchiveImport</code> check in <code>LintRevision</code> if archive revisions should meet the new rules.</dd>
+          <dt>Alternative</dt>
+          <dd>Linting archive essays, which would require a reasoned override for each historic sentence.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Smaller choices</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Unspecified details.</dd>
+          <dt>Decision</dt>
+          <dd><code>LintRepair</code> sits after <code>Draft</code> in the enum. <code>EditorialOutput::VERSION</code> is unchanged. Owner saves re-lint at any stage with a current attempt, and never fail the save (errors are reported). After a review restart the panel shows lint findings again on the next save; release always re-lints. The Drafter's <code>document</code> schema description names every registered rule id, and its rubric already carries every rule statement. Release fixtures in the release, review and workflow tests gained one closing paragraph with a /walkthrough link, and the draft fixtures that test the lens path are now lint-clean.</dd>
+          <dt>Alternative</dt>
+          <dd>—</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

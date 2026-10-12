@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 6 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Distribution kit and sibling pieces —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 6</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 6</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Distribution kit and sibling pieces</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Kit document — where the kit fields live</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The File Changes row says LintTarget maps kit payloads to blocks; the Data Model says the document holds one paragraph per field or post and the metadata holds subject, preview and first_comment.</dd>
+          <dt>Decision</dt>
+          <dd>Every field (LinkedIn text and first comment, each Bluesky post, email subject, preview and body) is one paragraph in the document, and nothing is copied into metadata. Each block id is derived from its role (<code>blk_</code> plus 16 hex of <code>sha256('kit:&lt;kind&gt;:&lt;role&gt;')</code>) by the new <code>App\Services\Publishing\KitDocument</code>, so LintTarget, the repair agent and the copy-out all find a field by id. A line break is a hard break; URLs stay plain text so a copied field keeps them.</dd>
+          <dt>Alternative</dt>
+          <dd>Subject, preview and first comment in metadata: their lint hits would have no block id, so the repair loop could never patch them and Accept fix could not apply. Storing the text in both places would drift on edit.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Kit lint context — flagship URL and target phrase</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>linkedin-length needs the flagship's target query and the link rules need its canonical URL; LintRevision::hits builds a target only from the revision.</dd>
+          <dt>Decision</dt>
+          <dd>SpawnDistributionKit freezes <code>flagship_article_id</code>, <code>flagship_release_id</code>, <code>canonical_url</code> (built the way the sitemap builds it, with MarketingSite) and <code>target_query</code> into the kit attempt's brief, and a restart updates them. <code>LintRevision::hits</code> passes that brief to an optional LintTarget context, so the save-time lint, the post-draft lint and kit approval all see the same context. A null target query skips the target-phrase half of linkedin-length.</dd>
+          <dt>Alternative</dt>
+          <dd>Reading the flagship live at lint time: hit hashes (and so overrides) would change whenever the flagship changed, outside the kit's own approval.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Kit rules — repair and double hits</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The scout map flagged rules a single block patch might not fix (numbering, splitting a post, a link in two places).</dd>
+          <dt>Decision</dt>
+          <dd>Every kit hit points at the one block where one patch fixes it, and its message carries the exact fix ("Number this post 2/3 at its start.", "Link the post once in the last post: URL", "Remove the link to the post here"). So none is added to UNREPAIRABLE_RULES, and lint_repair keeps its rubric files: one bullet in <code>roles/lint-repairer.md</code> tells the repairer to follow a distribution hit's message. A LinkedIn piece with no link in its first comment gets both linkedin-link-in-comment and kit-links-post, as the spec table defines both; one patch clears both.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding <code>voice/kit-rules.md</code> to lint_repair (every blog repair would carry LinkedIn rules), or marking the cross-block kit rules unrepairable (owners would fix mechanics the repairer can do).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Kit rules — counting</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Bluesky counts graphemes; URLs contain dots and slashes; the target phrase rarely appears verbatim with the same punctuation.</dd>
+          <dt>Decision</dt>
+          <dd>Lengths count Unicode code points (<code>mb_strlen</code>), like the packaging panel; the canon bans emoji, so this matches Bluesky for any text a kit may hold. URLs are found as bare text (scheme, <code>www.</code> or domain plus path) and as link marks, and two URLs name the same page ignoring scheme, <code>www.</code>, case, a trailing slash, query and fragment, so a tracked link to the post still counts. Sentences end at . ? ! followed by space or end, with URLs set aside first. The target phrase matches ignoring case and punctuation within the first 210 characters. Hashtags are # at a word start followed by a letter, so <code>#choose-a-time</code> in a URL and <code>#1</code> never count.</dd>
+          <dt>Alternative</dt>
+          <dd>grapheme_strlen (depends on intl, and identical for emoji-free text).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Lint applicability</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says body rules apply to every kind and heading rules and walkthrough-link apply to blog posts only; it does not mention the Phase 4 metadata rules, BoldLimit or InlineHeaderList.</dd>
+          <dt>Decision</dt>
+          <dd><code>VoiceRule::appliesTo</code> now returns true. A new <code>AppliesToBlogPosts</code> trait narrows the heading rules, walkthrough-link and all five metadata rules back to blog posts. BoldLimit and InlineHeaderList apply to kits (harmless on plain paragraphs). exclamation-limit allows none in a kit piece, as voice/mechanical-rules.md already says. The Drafter's document description now lists only the rules that apply to blog posts (<code>VoiceLinter::ruleIdsFor</code>).</dd>
+          <dt>Alternative</dt>
+          <dd>Leaving the metadata rules on every kind: kit revisions carry no packaging metadata, so they could only ever be noise.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Kit drafting — paused agents and owner edits</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec: pieces spawn and drafts wait for unpause. Restarting an unapproved kit on a new release could overwrite owner edits.</dd>
+          <dt>Decision</dt>
+          <dd>Spawn always creates the pieces and a Pending draft_kit (dispatched only when unpaused; publishing:recover-activities runs it later), the same as other started work. A kit draft lands only when the working revision was written by an agent (or there is none); otherwise it is stored as a proposal and the kit panel offers "Replace my text with this draft" (<code>SpawnDistributionKit::useDraft</code>, which lints and queues review). A restart moves the attempt to a new review cycle, stales its pending, paused, failed and awaiting work, and RunEditorialActivity stales any running kit work whose frozen flagship release no longer matches the attempt brief.</dd>
+          <dt>Alternative</dt>
+          <dd>Creating no activity while paused, as ApprovePublishingStage does for research and drafts; the spec wording favours drafts that wait.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Kit review and approval</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec: claim_outside_manifest blocks, register is advisory; channel severity, which review counts and how findings are decided were open.</dd>
+          <dt>Decision</dt>
+          <dd>The validator sets severity from the kind: claim_outside_manifest is always blocking, register and channel always advisory (LLM style findings stay advisory). Kit findings cite no evidence; a source id fails the activity, and the rubric says to name the manifest statement in rationale. Kit findings are decided at once (<code>ApprovePublishingStage::decideKitFinding</code>; a reason is required to keep the text or call it a false positive), because kit review has no finish step. Kit approval requires a completed review_kit in the current cycle, no lint hit without a reasoned override on the current revision, and no undecided blocking kit finding; its hash covers the text, flagship release, lint state and finding decisions. A save after approval invalidates it and moves an approved piece back to in review, so Phase 7's "Ready to post" column stays true.</dd>
+          <dt>Alternative</dt>
+          <dd>Requiring a fresh kit review after every owner edit: a paid review per typo fix, while lint re-runs on the exact revision anyway and the owner reads the piece before approving.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Mark posted — the flagship check</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec: flagship published_release_id not null and flagship attempt stage published.</dd>
+          <dt>Decision</dt>
+          <dd>MarkKitPiecePosted checks the flagship's published release is live (status published, published_at set) and that release's own attempt reached Published, not the flagship's current attempt. develop() starts a new current attempt after publication, which would otherwise refuse posting forever. It also requires an active Kit approval on the working revision, refuses a second mark, and accepts only https posted URLs of at most 2,048 characters (never fetched).</dd>
+          <dt>Alternative</dt>
+          <dd>The literal current-attempt check (fails after any post-publication develop).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Which posts spawn a kit, and the fallback</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The scout asked whether siblings and archive essays spawn kits, and what happens if spawning fails after the approval commits.</dd>
+          <dt>Decision</dt>
+          <dd>Every parentless blog post that is not an archive import spawns its own kit on release approval, siblings included (the blog channel says each finished post yields a kit). Spawning runs after the approval transaction; a failure is reported, never rolled into the approval, and the post's release tab lists its kit with a "Create distribution kit" button when pieces are missing. Kit pieces belong to the post's author.</dd>
+          <dt>Alternative</dt>
+          <dd>Kits for the flagship only (a sibling would ship without one), or spawning inside the approval transaction (a kit error would undo the approval).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Canon — the short-form exemplar</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec: use the register's LinkedIn-length line and CTA examples; kit-no-walkthrough-cta forbids the CTA in kit pieces.</dd>
+          <dt>Decision</dt>
+          <dd><code>exemplars/short-form.md</code> keeps the LinkedIn-length line and three short register lines, and says the Walkthrough invitation is deliberately missing because the post carries it. The file is listed only in draft_kit, never in the exemplar manifest, so the blog drafter's exemplars are unchanged. roles.json gives draft_kit and review_kit the files the spec names, and the interviewer rubric gains a Sibling posts section (and reads the owner's optional note as <code>sibling_note</code>).</dd>
+          <dt>Alternative</dt>
+          <dd>Including the CTA labelled "do not copy": a short-form exemplar invites imitation.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Spec premise — EditorialInputContractTest</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says the input contract test extends itself to the new kinds.</dd>
+          <dt>Decision</dt>
+          <dd>It does not: its dataset, response match, prerequisites and exact-case list are explicit. They now cover draft_kit and review_kit, with a kit piece spawned from a directly published flagship release, plus tests that kit inputs carry the piece kind, flagship text, URL, target phrase and claim manifest, and that a caller cannot forge them.</dd>
+          <dt>Alternative</dt>
+          <dd>None; this is a correction of a test claim, not a design choice.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Workspace — the kit panel</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec: a compact kit panel with no develop or plan tabs.</dd>
+          <dt>Decision</dt>
+          <dd>Kit pieces render <code>partials/kit.blade.php</code> instead of the tab group: each field with a character count and an Alpine copy button, an edit form (Bluesky posts can be added and removed), the shared voice-rules section (extracted to <code>partials/voice-rules.blade.php</code> so the blog layout renders the same markup), kit review findings, approval with the reasons it is blocked, and Mark posted with its refusal reason. Blog posts gain "New post from this idea" in the header and a distribution kit list in the release tab. The dashboard and Admin home still list kit pieces as ordinary work in progress; Phase 7 owns the board.</dd>
+          <dt>Alternative</dt>
+          <dd>Reusing the Tiptap editor for kit fields: it would let the owner add blocks that have no kit role.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Codebase surprise — Livewire hydrate hooks</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>A private workspace method named <code>hydrateKitFields</code> failed with "Method ... does not exist".</dd>
+          <dt>Decision</dt>
+          <dd>Livewire treats <code>hydrate{Property}</code> as a lifecycle hook for the <code>kitFields</code> property, so the method is named <code>loadKitFields</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>None.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

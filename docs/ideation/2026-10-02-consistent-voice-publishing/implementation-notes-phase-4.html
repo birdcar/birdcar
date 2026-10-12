@@ -1,0 +1,232 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 4 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Frameworks, sharper reviewers and packaging —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 4</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 4</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Frameworks, sharper reviewers and packaging</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Process — context map not rewritten</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The engine asked for the scout's Phase 4 context map to be written verbatim to context-map.md before building.</dd>
+          <dt>Decision</dt>
+          <dd>The write was interrupted partway, and the map was not re-sent; context-map.md still holds the Phase 3 map. The build used the Phase 4 map from the prompt directly.</dd>
+          <dt>Alternative</dt>
+          <dd>Retrying the verbatim write.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Plan gate — hand-written plans need no framework choice</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says plan approval requires <code>plan.framework.chosen</code>. Nine test helpers build plans by hand through <code>rethink(plan:)</code>, and no UI does.</dd>
+          <dt>Decision</dt>
+          <dd>Only agent plans (<code>source = agent</code>) must carry a chosen framework that equals the primary. A plan the owner wrote carries its own structure. Since <code>chosen</code> sits inside <code>attempt.plan</code>, all four plan-hash copies cover it with no other change.</dd>
+          <dt>Alternative</dt>
+          <dd>Requiring a framework on every plan, which would mean editing nine helpers for a path no owner uses.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Plan gate — re-plans and repeat choices</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec does not say whether a re-plan records the choice, and two edge cases contradicted each other: choosing the same slug twice should return one activity, yet choosing is refused while a plan runs.</dd>
+          <dt>Decision</dt>
+          <dd>A completed re-plan stores <code>framework_choice</code> as <code>chosen</code> (validation already forces it to be the primary), so no extra click is needed. Choosing the same slug while its re-plan is pending returns that activity; choosing a different one is refused. Picking another framework clears <code>chosen</code> first, so the old plan cannot be approved while the re-plan runs.</dd>
+          <dt>Alternative</dt>
+          <dd>Requiring one more click after the re-plan.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Brief — post type can be null; owner picks before angle approval</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>A null <code>postType</code> from the Interviewer breaks six fixtures if rejected, and setting the post type after angle approval invalidates the angle.</dd>
+          <dt>Decision</dt>
+          <dd>The schema enum is nullable. A null keeps any post type the owner already chose. The workspace offers a post-type select before angle approval and disables Approve angle until one is saved. <code>choosePostType</code> goes through <code>rethink(brief:)</code>, so later changes withdraw the approvals as any brief change does. Angle approval does not hard-require a post type; a plan without one fails validation with a clear reason.</dd>
+          <dt>Alternative</dt>
+          <dd>Hard-gating angle approval, which would break most existing approval fixtures.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Catalog — departures from the spec sketch</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's avoid pair <code>["reverse-chronology","kishotenketsu"]</code> names a framework with no file. The guide says short pieces allow low complexity only, yet <code>post-types/work-story.md</code> lists Story Circle (medium).</dd>
+          <dt>Decision</dt>
+          <dd>The kishotenketsu pair was dropped. Work stories keep Story Circle: the spec's rule excludes only high complexity at 1,500 words or fewer. Every framework has <code>min_words</code> 800 (each file has a short form), except the Jeremiad at 1,500. With this catalog, length exclusion never removes a listed framework, so a test builds its own catalog to prove the rule. <code>frameworks/guide.md</code> was added to the Planner rubric, and the catalog is frozen into Interview and Plan input as <code>canon.catalog</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>Keeping the unknown slug and letting the validator ignore it.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Canon — metadata rules also go to the Drafter</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec adds <code>voice/metadata-rules.md</code> only to <code>package</code>, but contract G2 and Phase 8 need every lint id stated in a draft-role file.</dd>
+          <dt>Decision</dt>
+          <dd>The file is listed under <code>draft</code> too. The Drafter test now checks the five metadata statements reach the Drafter's system message, and the Drafter rubric no longer asks for metadata proposals.</dd>
+          <dt>Alternative</dt>
+          <dd>Listing it only for package, which breaks Phase 8's save check.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Packager — what fails the paid activity</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec hard-fails the five metadata rules; it is silent on character rules and on whether the title must be one of the ten options.</dd>
+          <dt>Decision</dt>
+          <dd>Any metadata lint hit fails the package, character rules included (em dash, curly quotes, emoji, exclamation point), so the owner never gets a package release would block. The title need not be one of the options. The greatest-hits tag is capped at 80 characters.</dd>
+          <dt>Alternative</dt>
+          <dd>Failing on the five metadata rules only, and leaving character-rule hits to block at release.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Packaging trigger — rechecks and idempotency</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>"Review finished" is not stored, and finishing review again with accepted dispositions can start a recheck after a package exists.</dd>
+          <dt>Decision</dt>
+          <dd>Eligibility is derived: the reviewed revision has a completed reconciliation, no undisposed blocking or conflicting finding outside lint, and either a completed recheck on the current revision or none used. Any completed recheck starts packaging; unresolved items still block release. A recheck that starts after packaging marks earlier packages stale, and acceptance refuses a package older than a recheck. The post-recheck package uses batch key <code>package-{cycle}-{revision}-after-recheck</code>, and Package idempotency is revision-based like the review kinds.</dd>
+          <dt>Alternative</dt>
+          <dd>Packaging only after a fully resolved recheck.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Release lineage — one implementation</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>ManageArticleRelease::approve</code> had its own copy of the lineage logic, which the spec did not mention. Without changing it, approval threw after packaging.</dd>
+          <dt>Decision</dt>
+          <dd><code>ManageArticleRelease</code> now delegates to <code>ReleaseFreshnessManifest::reviewLineage</code>, using its <code>revision_ids</code> and <code>recheck_activity_ids</code>. The duplicate helpers were deleted. A new <code>metadata_only</code> mode walks parent revisions while the document fingerprint stays identical, so a run of metadata-only saves stays covered.</dd>
+          <dt>Alternative</dt>
+          <dd>Patching both implementations separately.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Release — SEO title, slugs, archive essays</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Edited archive essays would be blocked by <code>metadata.seo_title.required</code>, and slug rules read <code>metadata.slug</code> rather than the slug typed into the release dialog.</dd>
+          <dt>Decision</dt>
+          <dd>The SEO title is required only for blog posts that are not archive imports. The workspace release slug now defaults to <code>metadata.slug</code> and follows an accepted package; a different slug typed in the dialog bypasses <code>slug-shape</code>, though <code>slug.unique</code> still guards collisions. Accepting a package never writes <code>articles.slug</code>; prepare does that, as before.</dd>
+          <dt>Alternative</dt>
+          <dd>Applying the SEO-title requirement to archive essays.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>For the owner — the SEO title is not rendered yet</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>ReadPublishedWriting</code> and <code>pages/writing/[slug].blade.php</code> use <code>metadata.title</code> for the page title.</dd>
+          <dt>Decision</dt>
+          <dd>Out of scope for this phase and not changed. <code>metadata.seo_title</code> is stored, linted and required, but the public page does not use it yet.</dd>
+          <dt>Alternative</dt>
+          <dd>Changing the public page in this phase.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Claim manifest — which research counts</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to use the latest completed research of the attempt. Restarting review bumps the review cycle, which would leave the research behind if the manifest required the current cycle.</dd>
+          <dt>Decision</dt>
+          <dd>The manifest uses the attempt's latest completed research in any cycle. A claim is kept when it has a statement and a quotation, no quotation contradicts it, and it is not marked unresolved (by <code>unresolved</code>, a reason, or an unresolved or unsupported status). Source ids merge integer ids, response-local refs (matched through the research's evidence <code>origin_metadata</code> or URL) and quotation sources, sorted. No research gives <code>[]</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>Requiring the current cycle and angle approval.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Idea title — archive essays</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>An archive idea's summary title holds the published title with source <code>derived</code>, so a new interview would overwrite it.</dd>
+          <dt>Decision</dt>
+          <dd>The interviewer's <code>ideaTitle</code> is skipped for articles with an import-origin release, as well as for owner-renamed ideas. A blank title changes nothing; one over 80 characters fails the interview.</dd>
+          <dt>Alternative</dt>
+          <dd>Applying it to archive ideas too.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Lens markers — buyer sections</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec names the buyer markers but not which sections they label.</dd>
+          <dt>Decision</dt>
+          <dd><code>buyer</code> marks the value equation, <code>discovery</code> marks the publishing test, and <code>commercial-structure</code> marks answer-first and the invitation. The voice rubric gains a Framework adherence section that reads <code>input.canon.framework</code> and <code>input.canon.post_type</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding new sections just to carry the markers.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Workspace — naming and counts</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>"Release package" already means a prepared release in the workspace.</dd>
+          <dt>Decision</dt>
+          <dd>The new panel is called "Titles and search" and its action is <code>acceptPackageProposal</code>. Live counts use <code>[...str].length</code>, so they count code points like <code>mb_strlen</code>. The panel re-lints the fields as typed and lists the hits before the owner saves.</dd>
+          <dt>Alternative</dt>
+          <dd>Calling it "package" in the UI.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

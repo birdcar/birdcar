@@ -1,10 +1,40 @@
 # Context Map: Consistent Voice Publishing
 
-**Phase**: 2 (Voice and goals canon in every prompt)
+**Phase**: 9 (Drift trial harness and edit distance)
 **Gates**: 5/5 ready
 **Verdict**: GO
 
-## Gates (Phase 2)
+## Gates (Phase 9)
+
+| Gate                 | Status | Evidence |
+| -------------------- | ------ | -------- |
+| Scope clarity        | ready  | The spec names 8 new and 4 modified files. This map adds the rest and the change each needs: (1) `EditorialOutput.php:24,46`: a `VOICE_FINDING_KINDS` constant and a ReviewVoice validator arm, if the voice `kind` becomes an enforced enum (the validator-to-schema audit, contract line 154); (2) `ReviewRubricTest.php:167-170`: `reviewRubricFinding` sends voice findings with no `kind` (used at 187 and 215), so it goes red under an enforced enum; (3) `EditorialAgentsTest.php:100-121`: add a VoiceReviewer `kind` assertion, because no spec test covers the kinds change; (4) optionally `tests/Fixtures/Publishing/DriftGoldenSet.php` (namespace `Tests\Fixtures\Publishing`, precedent `tests/Fixtures/Mail/*.php`), so DriftFixtureTest and the trial build and lint passages the same way; (5) the shared review arm in `EditorialAgent::schema` 271-273 must split for ReviewVoice, because `EditorialAgentsTest:113` pins the shared description to exactly 'At most 25 findings.'. Every other file and its change is concrete in the spec. |
+| Pattern familiarity  | ready  | Read the spec's pattern `tests/Manual/PublishingModelTrialTest.php` in full: the guard at 85-100 already requires pgsql and birdcar_test; prepare 102-124; exchanges 485-511; record 531-538; run 417-427. Also read the only job (`app/Jobs/IndexPublishedExemplar.php`), the commands `PublishingCanonHash`, `PublishingIndexExemplars` and `PublishingImportArchive` (JSON output), the Phase 6 migration, the immutability guards in `ArticleRevision` and `ArticleRelease`, the fixed finding-kind pattern (`EditorialAgent::finding($schema, $kinds)` 421-435 and `EditorialOutput::validateKitFindings`), and the retrieval-then-voice-review chain in `ExemplarRetrievalTest.php:183-226,318-364`. |
+| Dependency awareness | ready  | `WriteArticle::save` has 10 callers. Four save as `human`: the workspace `saveDocument`, `saveDetails`, `saveKitFields` and the protection toggle. Six save with agent origins: RunEditorialActivity 625, 651 and 1285, ApplyEditorialProposal 107, AcceptPackageProposal 77 and SpawnDistributionKit 135. Under `QUEUE_CONNECTION=sync` the new job runs inline at commit in every Feature test that saves as a human after an agent revision. The tests that assert nothing was pushed or dispatched (AdminPublishingEditorTest 467/506/535/546, AdminHomeTest:84, PublishingAgentSettingsTest:427) save only first revisions or nothing, so they stay green. No app code hashes whole revision rows. Only `RunEditorialActivity::storeFindings:914` reads the voice finding `kind` (default `editorial`). The canon edit changes the version that every new activity freezes, which is expected. |
+| Edge case coverage   | ready  | The list below covers: passage lint false positives (`walkthrough-link` hits the last block of any bare passage; `title-sentence-case` hits a Title Case title); catches that come from lint alone; the reviewer seeing the real passages in its own exemplars; findings caused by reviewing an excerpt as if it were a whole post; retrieval, which needs query text and a plan approval made while unpaused; failure recording with `max_retries` 0; the canon-hash source after Phase 8; autosave granularity; mutation-id replays; which origins count as agent; job idempotency; guard semantics; tokenization; prefix and suffix trimming; several distances on one piece; and a missing idea. |
+| Test strategy        | ready  | Commands, fixtures, fakes and setup are below. `birdcar_test` and `birdcar_development` were confirmed on 127.0.0.1:5433 with `psql -l` this session; Laravel is 13.33.0. The scout did not run the suite. |
+
+### Phase 6 gates (reference)
+
+| Gate                 | Status | Evidence |
+| -------------------- | ------ | -------- |
+| Scope clarity        | ready  | The spec names most files. This map adds the ones it misses and the change each needs: (1) `EditorialOutput.php:31-47,79-92`, the exhaustive `validate`/`allowedKeys` arms (DraftKit per piece kind, ReviewKit findings); (2) `LintRevision.php:206-219`, where `finishAndQueueReviews` starts the three lenses, and `skipRepair` (221-262), which looks only for a Draft; (3) `Lint/Rules/VoiceRule.php:12-15`, the one `appliesTo()` every Phase 3 and Phase 4 rule inherits; (4) every exhaustive `match` on EditorialActivityKind and ApprovalKind, including `admin/settings/⚡publishing.blade.php:213,230`; (5) LintRepair is tied to Plan approval (`StartEditorialActivity:374-394`, `RunEditorialActivity:1460-1467`), so kit repairs are refused or go stale; (6) `RunEditorialActivity::agentWrittenBlockHashes:1297`, which ignores DraftKit, so no kit patch would ever apply; (7) `WriteArticle::save:155` invalidates only Release approvals; (8) the hard-coded test lists in `VoiceCanonTest:9-15`, `EditorialAgentsTest:38-50,150-162` and `EditorialInputContractTest:174-290`, plus the `VoiceLintTest:266-270` "only blog posts" test, which breaks; (9) `ReadPublishedWriting.php:20,42` has no kind filter (the spec's open item). |
+| Pattern familiarity  | ready  | Read the lint base classes (`VoiceRule`, `PatternRule`, `MeasuresMetadataLength`), `EmDash`, `WalkthroughLink`, `SeoTitleLength`, `LintTarget`, `VoiceLinter`, `LintHit` and the tag registration (`AppServiceProvider:50-79`). Read the Drafter, FactReviewer, LintRepairer and Interviewer agents, `EditorialAgent::schema/finding`, the EditorialOutput validators, `LintRevision`, the RunEditorialActivity post-draft chain, `StartEditorialActivity`, `ApprovePublishingStage`, and `ManageArticleRelease` (prepare, claimManifest, approve, deliver). Also read `WriteArticle::addPiece/save`, `AdvancePublishingAttempt::develop`, the workspace and `write.blade.php`, `VoiceCanon`/`CanonSnapshot`/`roles.json`, and the bat-kol sources: `channels/blog.md:185-194` (distribution kit), `channels/bluesky.md:17-22,92-103` and `registers/public.md:205-212`. Test templates are listed below. |
+| Dependency awareness | ready  | Mapped below: 9 exhaustive kind matches in app and 3 in tests, 6 ApprovalKind matches, the 5 places LintRepair is tied to Plan approval, the Draft-only post-draft chain (lintThenQueueReviews, agentWrittenBlockHashes, actorCanRunKind, finishAndQueueReviews, skipRepair), the linter consumers (LintRevision, CheckArticleRelease, validatePackage, IndexExemplarSections), the callers of `ManageArticleRelease::approve` (workspace plus 5 test files, all approving while agents are paused), and the public readers (ReadPublishedWriting, sitemap, RSS). |
+| Edge case coverage   | ready  | Concrete list below. It covers where kit fields are stored and what role each block has, the lint context kit rules need (flagship URL, target query), kit rules a single-block patch cannot fix, URL and sentence counting, `#` inside URLs, protected blocks on a restart, owner edits on a restart, edits after kit approval, the "posted" check after develop-after-publish, which blog posts spawn a kit (sibling, archive), kit author, spawn failing after the approval commit, paused spawn, claim manifest false blocks, KitReviewer evidence ids, sibling context without titles, and schema calls without a piece kind. |
+| Test strategy        | ready  | Commands, setup, fake routing and fixture builders are below. `birdcar_test` was confirmed on 127.0.0.1:5433 with `psql -l` this session; Laravel is v13.33.0. The scout did not run the suite. |
+
+### Phase 3 gates (reference)
+
+| Gate                 | Status | Evidence |
+| -------------------- | ------ | -------- |
+| Scope clarity        | ready  | The spec names most files. This map adds the ones it misses and the change each needs: (1) exhaustive `match` arms for `LintRepair` in `ApprovePublishingStage.php:328` and in the settings page `admin/settings/⚡publishing.blade.php:215,230`; (2) `ApplyEditorialProposal.php:68` rejects any finding whose `input_hash` differs from the revision content hash, so "Accept fix" on a lint finding (which stores the hit hash) always throws "stale"; (3) `StartEditorialActivity::completedDraftExistsForRevision` (505-524) refuses review lenses on a repair revision, and `reviewFindings` (246-273) would feed lint findings to reconciliation and recheck; (4) `CheckArticleRelease::materialEditorialBlockers` (410-435) would block lint findings a second time; (5) fixtures in 8 test files go red because every blog post now needs exactly one /walkthrough link. |
+| Pattern familiarity  | ready  | Read the spec's pattern files: the walkers in `CheckArticleRelease.php:231-297` and the node, mark and attr rules in `ArticleDocument.php` (headings can only be level 2 or 3). Also read the `Drafter` and `ReviewReconciler` role agents, `EditorialAgent::schema`, `EditorialOutput`, the patch pipeline in `ApplyEditorialProposal`, the origin guards in `WriteArticle`, and the workspace actions plus the finding card in `write.blade.php`. `#[Tag]` exists in Laravel 13.33 (`Container/Attributes/Tag.php` calls `tagged()`). Test templates: `EditorialReviewTest:122-150`, `PublishingJourneyTest:30-84`, `EditorialInputContractTest:166-186`, `ReleaseReadinessTest:363-524`. |
+| Dependency awareness | ready  | Adding the enum case touches 8 exhaustive matches plus the explicit dataset in EditorialInputContractTest. Lint findings are read by FinishEditorialReview, `StartEditorialActivity::reviewFindings`, `CheckArticleRelease::materialEditorialBlockers`, ApplyEditorialProposal, `ReleaseFreshnessManifest::reviewManifest` and the workspace `with()`. CheckArticleRelease is called by `ManageArticleRelease:128,375` and `PublishDueArticles`. Release-path tests: ReleaseIntegrityTest (53 sites), ReleaseReadinessTest (21), EditorialWorkflowTest, AdminPublishingEditorTest, PublicWritingTest. Draft-to-lens tests: EditorialReviewTest, EditorialWorkflowTest, PublishingJourneyTest. |
+| Edge case coverage   | ready  | Concrete list below. It covers where the spec's word lists differ from the canon, the pronoun "I" in headings, bold and link marks split across text nodes, protection inherited from an ancestor, repeated excerpts sharing a hash, metadata hits that cannot be patched, `[NEED:`/`[TODO:` markers the repairer must not touch, several hits in one block, archive essays, saves with no attempt, review-cycle restarts, and override scope. |
+| Test strategy        | ready  | Commands, setup and fixture changes are below. `birdcar_test` was confirmed on 127.0.0.1:5433 (`psql -l`). The scout did not run the suite. |
+
+### Phase 2 gates (reference)
 
 | Gate                 | Status | Evidence |
 | -------------------- | ------ | -------- |
@@ -23,6 +53,958 @@
 | Dependency awareness | ready  | 13 `articles.idea` readers, 100 `capture()` calls, 6 nested factories, and the import and published-writing consumers. |
 | Edge case coverage   | ready  | Summary derivation, backfill nulls, the in-memory `kind` default, jsonb key order, the FK conflict, strict lazy loading and running the import twice. |
 | Test strategy        | ready  | birdcar_test on Herd PG 18 and the inner, phase and final commands. |
+
+### Phases 4 and 5 (no persisted map)
+
+The scout maps for Phases 4 and 5 were never written to this file; the Phase 4 notes say the write was interrupted. These are the facts from their implementation notes and the current code that Phase 6 depends on:
+
+- **Claim manifest**
+  - Frozen at `ManageArticleRelease::prepare()` into `payload.claim_manifest` (line 157; built by `claimManifest()` at 193-263) as `list<{statement, supporting_source_ids}>`. The statements carry no quotation text.
+  - Release approval approves that payload's hash, so in effect the manifest is frozen at approval.
+  - With no completed research the manifest is `[]` (PackagingTest:466-475).
+- **Brief keys**: the attempt brief stores `post_type` and `target_query` in snake_case (`RunEditorialActivity::applyInterview` 500-539). `target_query` may be null.
+- **Retrieval skips kit kinds**
+  - Only blog-post Draft and ReviewVoice inputs carry `canon.retrieved_exemplars` and `canon.retrieval_status` (`StartEditorialActivity::frozenCanon` 145-160).
+  - `ApprovePublishingStage::exemplarContextFor` (98-118) returns null for anything that is not a blog post.
+  - `deliver()` dispatches `IndexPublishedExemplar` only for blog posts (ManageArticleRelease 423-425).
+- **Metadata lint**
+  - The Packager lints metadata through `LintTarget::fromDocument([], metadata, PieceKind::BlogPost)` (EditorialOutput 377-388).
+  - The SEO title is required only for blog posts that are not archive imports (CheckArticleRelease:74).
+- **Archive essays**: `LintRevision::isArchiveImport` (line 423) makes `hits()` return `[]` for articles with an import-origin release.
+
+### Phases 7 and 8 (not yet implemented)
+
+When this Phase 9 scout ran, Phases 7 and 8 had no commits and no map sections. Phase 9 depends on neither; the contract lists only Phases 4 and 5 as blockers.
+
+- Phase 8 adds `2026_10_02_400000_create_voice_canon_versions_table.php`, so Phase 9's `2026_10_02_500000_...` still sorts last.
+- Phase 8 makes `VoiceCanon::snapshot()` read the active database version (spec-phase-8.md:17). See the Phase 9 Risks section for how this affects the drift trial's canon hash.
+- Phase 7 (the board) touches no Phase 9 file.
+
+## Key Patterns (Phase 9)
+
+- **Paid trial** (spec pattern `tests/Manual/PublishingModelTrialTest.php`)
+  - **File setup**: the header comment documents the env flag and the cost. `pest()->extend(TestCase::class)` (line 49) binds Manual tests to `Tests\TestCase`; Pest.php applies RefreshDatabase only to `Feature`. The PHPStan extension already binds `$this` for `tests/Manual` (`tests/PHPStan/PestClosureThisExtension.php:23`).
+  - **Skip first**: `getenv(...)`, then `$this->markTestSkipped(...)` (52-55).
+  - **`liveTrialRefuseUnlessIsolated()` (85-100)**: already refuses unless the environment is testing, config is not cached, the connection is `pgsql` on database `birdcar_test`, and no DB URL is set. Phase 1 fixed it. Copy it as `driftTrialRefuseUnlessIsolated`.
+  - **`liveTrialPrepareApplication()` (102-124)**:
+    - Refuses without `ai.providers.openrouter.key`, or with a non-public URL.
+    - Runs `migrate:fresh --force` and `authorization:sync`.
+    - Fakes Queue, Mail and Notification, and sets `publishing_agents.limits.max_retries = 0`.
+    - Unpauses agents and clears model overrides.
+    - The drift trial must also check `ai.providers.openrouter-embeddings.key` and `url` (config/ai.php:148-156; same `OPENROUTER_API_KEY` env var).
+  - **HTTP**: `Http::preventStrayRequests(); Http::allowStrayRequests(['https://openrouter.ai/api/v1/*']); Http::record();` (65-67). The wildcard covers `/embeddings`.
+  - **`liveTrialRun` (417-427)**: runs one activity with `app()->call([new RunEditorialActivity($id), 'handle'])` and returns the fresh row and the duration.
+  - **`liveTrialNewProviderExchanges` (485-511)**: reads only the new entries of `Http::recorded()`, tracking a `static $consumed` count. Copy it under the new prefix if you record usage or the model.
+  - **`liveTrialRecord` (531-538)**: writes JSON with `JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR` and a trailing newline. The drift file is one run object, not a list of appended trials.
+  - **`liveTrialFlaggedBlocks` (544-549)**: reads `EditorialFinding::where('activity_id', ...)->pluck('block_id')`. The same query gives the reviewer's flagged blocks.
+  - **`liveTrialDocument` (555-562)**: builds paragraphs from `block id => text`. Use explicit ids so injected block indexes map to known ids.
+- **Per-passage chain** (ExemplarRetrievalTest is the closest template)
+  - **`exemplarRetrievalAttempt` (183-218)**:
+    - `captureIdea`, then save the revision **before** `develop(actor, article, revisionId, brief)`.
+    - Approve Angle, then create a completed ResearchChallenge row that carries the matching angle hash.
+    - `rethink(plan: [...])` with a human-written plan. No framework is needed: `ensureFrameworkChosen` applies only to `source = agent` (ApprovePublishingStage:427-433).
+  - **The chain test (318-364)**:
+    - Unpause, `Queue::fake()`, then approve Plan. `exemplarContextFor` embeds the query, and the approval creates a Pending Draft (ApprovePublishingStage:83-90) whose frozen canon carries `retrieved_exemplars`.
+    - Force-complete the Draft (`status`, `completed_at`).
+    - Start `ReviewVoice` with `['draft_activity_id' => $draft->id]`. It copies the Draft's canon (`StartEditorialActivity::draftCanon` 246-263).
+  - **Eligibility**: the Draft's `revision_id` is the working revision, which satisfies `completedDraftTargetsRevision` (898-917).
+  - **Don't copy ReviewRubricTest's pause handling**: `reviewRubricDraftedAttempt` (~93-130) builds the same chain but approves the plan while paused, so it never retrieves.
+- **Job** (`app/Jobs/IndexPublishedExemplar.php`, the only job)
+  - **Shape**:
+    - `implements ShouldQueue`, `use Dispatchable, InteractsWithQueue, Queueable, SerializesModels`.
+    - `public int $tries = 1`, `public int $timeout = 120`, and a constructor that takes the row id (`public int $articleId`).
+    - `handle()` takes its dependencies by injection, finds the row, and returns early when it is missing.
+  - **Dispatch after commit**: `IndexPublishedExemplar::dispatch($id)->afterCommit()` (ManageArticleRelease:445) and `RunEditorialActivity::dispatch($id)->afterCommit()` (StartEditorialActivity:125).
+  - **Tests**:
+    - `Queue::fake()`, then `Queue::assertPushedTimes(Job::class, 1)` or `assertPushed(Job::class, fn ($job) => $job->articleId === ...)` (ExemplarRetrievalTest:432-433).
+    - Run the job directly: `(new Job($id))->handle(app(...))` (ExemplarRetrievalTest:442).
+- **Command**
+  - Shape: `protected $signature`, `$description`, an injected `handle()`, and `self::SUCCESS`/`FAILURE` (PublishingIndexExemplars, PublishingCanonHash).
+  - JSON output: `$this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR))` (PublishingImportArchive:53).
+  - A missing target calls `$this->error(...)` and returns `self::FAILURE` (PublishingIndexExemplars:36-40).
+  - Tests use `$this->artisan(...)->assertSuccessful()` or `assertFailed()`. For JSON, call `Artisan::call(...)`, then `json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR)`.
+  - Generate files with `php artisan make:command PublishingEditDistances --no-interaction`, `php artisan make:job RecordEditDistance --no-interaction` and `php artisan make:class Services/Publishing/EditDistance --no-interaction`. Check the generated namespace.
+- **Migration**
+  - Copy `2026_10_02_300000_add_posted_fields_to_articles_table.php`: anonymous class, a class docblock, `Schema::table`, and a `down()` that drops what `up()` added.
+  - `up()`: `$table->integer('agent_edit_distance')->nullable(); $table->foreignId('agent_baseline_revision_id')->nullable()->constrained('article_revisions')->nullOnDelete();`
+  - `down()`: `dropConstrainedForeignId('agent_baseline_revision_id')`, then `dropColumn('agent_edit_distance')`.
+  - Use a single-column FK, not the composite `(article_id, x) → (article_id, id)` used elsewhere. Postgres `ON DELETE SET NULL` on a composite FK would also null the NOT NULL `article_id`.
+  - `article_revisions` (2026_09_22_201057:30-46) has no DB triggers; immutability is enforced only in the model.
+- **Immutability guard** (`ArticleRevision.php:22-41`, mirroring `ArticleRelease.php:23-41`)
+  - The `updating` hook throws `RuntimeException('Article revisions are append-only and cannot be mutated.')` when any `IMMUTABLE_ATTRIBUTES` column is dirty.
+  - The new columns are not in that list, so today they would be freely mutable.
+  - ReleaseIntegrityTest:59-60 asserts the existing message (`'append-only'`).
+- **Fixed finding kinds** (Phase 6 precedent)
+  - `EditorialOutput::KIT_FINDING_KINDS` (24).
+  - Schema: `$this->finding($schema, EditorialOutput::KIT_FINDING_KINDS)` (EditorialAgent:301) makes `kind` a required enum described "One of: ..." (426).
+  - `validateKitFindings` (~456-476) rejects any other kind.
+  - Test precedent: `EditorialAgentsTest:121` asserts `['items']['properties']['kind']['enum']`.
+- **Rubric file**: `roles/voice-reviewer.md` must keep its `<!-- lens-section: voice -->`, `craft` and `framework-adherence` markers (ReviewRubricTest:30-34, 59-71). Add the kind definitions to its closing "How to report" section.
+
+## Dependencies (Phase 9)
+
+- **`WriteArticle::save` (90-170)**
+  - **Parent revision**: it is `$lockedArticle->working_revision_id` (144, read again as `$previousRevisionId` at 153). Its origin is not loaded today. Read it inside the transaction with `ArticleRevision::query()->whereKey($previousRevisionId)->value('origin')`.
+  - **Replays**: a mutation-id replay returns the existing revision early (110-123). Dispatch only after `ArticleRevision::create` (141), never on a replay.
+  - **Callers with origin `human`**: the workspace `saveDocument` (353-379, autosave), `saveDetails` (139-148, through saveDocument), `saveKitFields` (1060-1075, through saveDocument) and the protection toggle (~954).
+  - **Callers with agent origins**:
+    - `agent-initial`: `RunEditorialActivity::applyDraft` (625) and `applyDraftKit` (651).
+    - `agent-repair`: RunEditorialActivity:1285.
+    - `agent-accepted`: `ApplyEditorialProposal:107`, `AcceptPackageProposal:77-85` (a metadata-only change) and `SpawnDistributionKit:135` (a kit proposal the owner accepted).
+  - **Imports**: `ImportWritingArchive:92-97` creates `origin = 'import'` revisions directly with `ArticleRevision::create`, bypassing `save()`, so imports never dispatch.
+  - **Legacy `'agent'` origin**: still listed in the protected-block guard (342), but nothing writes it. Include it in the agent set or not, and record the choice.
+  - **Nested transactions**: SpawnDistributionKit, AcceptPackageProposal and ApplyEditorialProposal wrap `save()` in their own `DB::transaction`. `afterCommit` waits for the outermost commit and drops the job on rollback.
+- **Queue behaviour**
+  - **Tests run the job inline**: `phpunit.xml` sets `QUEUE_CONNECTION=sync`. `SyncQueue::push` (vendor/laravel/framework/src/Illuminate/Queue/SyncQueue.php:195-207) registers `afterCommit` jobs on `db.transactions` and runs them at commit. An exception in the job propagates out of `save()` to the caller after the revision has committed.
+  - **Production does not**: the default connection is `database` (`.env.example:38`, config/queue.php:16). Use the default queue; `RunEditorialActivity::QUEUE` is `publishing-agents`, and `composer dev` runs workers for both queues.
+  - **Tests that will run the job inline** (human save after an agent revision): VoiceLintWorkflowTest (workspace saveDocument after an agent draft or repair), DistributionKitTest (kit field edits after `agent-initial`), PackagingTest and EditorialReviewTest (saves after `agent-accepted`), and AdminPublishingEditorTest's proposal flows. A buggy job turns them red.
+  - **Tests that stay green**:
+    - `Queue::assertNothingPushed()` (AdminPublishingEditorTest:467,506,535,546; AdminHomeTest:84) and `Bus::assertNothingDispatched()` (PublishingAgentSettingsTest:427) only save first revisions (null parent) or don't save.
+    - `ExemplarRetrievalTest:432` asserts `assertPushedTimes(IndexPublishedExemplar::class, 1)`, which counts only that class.
+- **`ArticleRevision`**
+  - `#[Fillable]` (13) excludes the new columns, and strict mode throws on mass-assigning them (`.ai/rules/app.md`). The job must write with `forceFill` or a query-builder update.
+  - No app code hashes or serializes whole revision rows: searching for `toArray`/`getAttributes` on revisions finds nothing. Content hashes cover only `document` and `metadata` (WriteArticle:101-104), so setting the new columns later changes no hash.
+  - There are 18 `ArticleRevision::query()` call sites, many with column-constrained selects. None reads the new columns.
+- **Voice finding kinds**
+  - **Schema**:
+    - `EditorialAgent::schema` 271-273 shares one arm for ReviewFacts, ReviewVoice and ReviewBuyer through `finding($schema)`, which makes `kind` a free, nullable string. `newBlockingFindings` (289) also uses `finding($schema)`.
+    - Split ReviewVoice into its own arm. Don't change the shared description: `EditorialAgentsTest:113` pins FactReviewer's to `'At most 25 findings.'`.
+  - **Validator**: `EditorialOutput::validate` (line 46) sends all three lenses to `validateFindings` (574-596), which ignores `kind`. If the schema becomes an enum, add a voice arm that mirrors `validateKitFindings` but keeps the returned severity.
+  - **Storage**: `RunEditorialActivity::storeFindings` (898-926) stores `kind` (default `editorial`) and `block_id`. It does not check `block_id` against the manuscript.
+  - **Faked voice findings in the suite**:
+    - Only `ReviewRubricTest::reviewRubricFinding` (167-170) returns a finding, with no `kind`. It is used at 187 and 215 for all three lenses.
+    - Every other faked voice payload returns `['findings' => []]`: EditorialInputContractTest:238, PublishingJourneyTest:94, VoiceLintWorkflowTest:122, EditorialWorkflowTest:320-328, AdminPublishingEditorTest:123 and ReleaseIntegrityTest:736.
+    - Rows created directly with `EditorialFinding::create` and `kind => 'style'`/`'voice'` (EditorialReviewTest, ReleaseReadinessTest) bypass the validator.
+- **Canon edit** (`roles/voice-reviewer.md`)
+  - It changes the canon version that every new activity freezes; no test pins a literal hash.
+  - `review_voice` freezes `voice/core.md` and `roles/voice-reviewer.md` (roles.json), so the EditorialInputContractTest row (rubric heading `# Core voice`) does not change.
+  - The edit must keep the three lens markers and add no `[rule:` tag, which would break the two-way lint check and the VoiceCanonTest tag counts.
+  - It must not mention any `*.md` path outside the canon, `~/.config`, `/Users/`, `FW/` or "voice sample" (VoiceCanonTest).
+- **Canon hash consumers**: `PublishingCanonHash` prints `app(VoiceCanon::class)->snapshot()->version`. Frozen inputs carry the same value as `canon.version` and `canon.hash` (`CanonSnapshot::frozenFor` 103-117). The trial must read `canon_hash` from the same service.
+- **Retrieval inside the trial**
+  - **When it runs**: `ApprovePublishingStage::exemplarContextFor` (104-121) returns null while agents are paused and for non-blog pieces.
+  - **The query**: `ExemplarRetriever::forAttempt` (34) embeds `queryText` (81-94), built from `brief.summary`, `brief.target_query`, `angle.thesis` and `plan.argument`. An empty query or an empty index gives status `insufficient`.
+  - **Indexing**: `publishing:index-exemplars` (PublishingIndexExemplars) indexes blog posts that have a `published_release_id`. `IndexExemplarSections::isEligible` (105-109) skips the four canon slugs.
+  - **Import**:
+    - `ImportWritingArchive::write(source, baseline, operator)` publishes each essay (sets `published_release_id`, 133-140) and needs an existing operator (`--actor`).
+    - A relative source path resolves through `base_path` (ArchiveMarkdownImporter:392). It runs no git commands, and the default baseline string works.
+  - **What the reviewer sees**: the four canon essays and the site copy, in full, as `input.canon.exemplars` (roles.json `review_voice.exemplars: true`; `CanonSnapshot::exemplars` 59-80).
+- **A voice review on its own**: `queueReconciliationAfterCompletedReviewLens` (RunEditorialActivity 1371-1412) returns unless the facts, voice and buyer reviews all completed on the revision. A trial voice review therefore starts nothing else.
+
+## Conventions (Phase 9 additions)
+
+- **Names**
+  - `App\Services\Publishing\EditDistance`. The spec sketches it as `final class`; `DocumentBlocks` and `KitDocument` are `final` service precedents.
+  - `App\Jobs\RecordEditDistance`.
+  - `App\Console\Commands\PublishingEditDistances`, signature `publishing:edit-distances {idea}`.
+- **Test helper prefixes**
+  - Helpers: `driftFixture*` (DriftFixtureTest), `driftTrial*` (VoiceDriftTrialTest; required by `.ai/rules/tests.md` and the spec), `editDistance*` (EditDistanceTest).
+  - Constants: `DRIFT_FIXTURE_*`, `DRIFT_TRIAL_*`, `EDIT_DISTANCE_*`.
+  - Names already taken include `liveTrial*`, `exemplarRetrieval*`, `reviewRubric*`, `distributionKit*`, `inputContract*`, `voiceLint*`, `lintWorkflow*` and `packaging*`, and the constants `REVIEW_RUBRIC_LENSES`, `EXEMPLAR_RETRIEVAL_ENDPOINT` and `VOICE_CANON_RULE_IDS`.
+- **Fixture location**
+  - `tests/Fixtures/Publishing/drift/passages.json`, beside the existing `tests/Fixtures/Publishing/archive/`.
+  - Read it with `json_decode((string) file_get_contents(base_path(...)), true, flags: JSON_THROW_ON_ERROR)`.
+  - Narrow the shape with guards that fail the test (PHPStan level 7; no `@phpstan-ignore`, no inline `@var`).
+- **Finding kinds**
+  - Values: `voice_drift`, `clarity`, `framework`, `register` (snake_case, like `claim_outside_manifest`).
+  - Keep them in one constant (for example `EditorialOutput::VOICE_FINDING_KINDS`) that the schema, the validator and the trial all use.
+- **Errors**
+  - Domain refusals throw `RuntimeException` with the reason. The trial's refusals start "Refusing the drift trial ...".
+  - The job reports nothing and never throws for a missing or already-measured revision.
+- **Strict Eloquent**: the command and the job must select every column they read, and write non-fillable columns with `forceFill` or a query-builder update.
+- **Run after PHP edits**: `vendor/bin/pint --dirty --format agent`, then `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress`. PHPStan runs at level 7 over app, config, database, routes and tests, including tests/Manual.
+
+## Risks (Phase 9)
+
+- **`walkthrough-link` makes every bare passage dirty and can fake a catch.**
+  - `WalkthroughLink::check` returns a hit on the **last block** of any BlogPost target with no /walkthrough link. A 1-3 paragraph passage never has one.
+  - **Real passages**: the fixture test's zero-hits assertion fails. The trial would also mark all 10 as `drift_flagged` (any lint hit counts), which fails G3's limit of 2.
+  - **Slopped passages**: the hit counts as `caught_at_injected_span` whenever the last block is injected, which it usually is for a "generic conclusion" tell. That inflates the caught count.
+  - **Fix**: lint passages without `walkthrough-link` (an excerpt cannot hold the whole post's closing invitation). Do it in both DriftFixtureTest and the trial, through one shared builder, and record the choice.
+  - **Why not append a CTA paragraph instead**: the reviewer would see the same added paragraph in all 20 manuscripts, and a `voice_drift` finding on it would flag a real passage.
+  - **Metadata**: most metadata rules return nothing when the field is missing (`MeasuresMetadataLength` and `SlugShape` on null), but `title-sentence-case` fires on a Title Case `title`. Save trial revisions with no title or a sentence-case one.
+- **Lint alone can pass G3.**
+  - A slopped passage counts as caught when lint or the reviewer hits an injected block.
+  - The spec requires 2-3 tells per passage with at least one non-mechanical, but nothing stops every slopped passage from also carrying a mechanical tell. Lint could then catch all 10, and the gate would pass even if the reviewer caught nothing.
+  - That matches G3's literal "lint plus VoiceReviewer", but not the spec's claim that the trial "measures the VoiceReviewer and not only the linter".
+  - Record `caught_by_lint` and `caught_by_reviewer` per attempt (extra keys don't affect the `jq` check), and consider giving several slopped passages only non-mechanical tells. This is the owner's call; record it.
+- **The reviewer sees each real passage in its own exemplars.**
+  - The real passages come verbatim from the four canon essays and the site copy, and `review_voice` receives those in full as `input.canon.exemplars`.
+  - So the real-flagged count is partly a recognition test, and each slopped variant sits next to its original.
+  - This follows the contract (G3 says "canon or site-copy passages"), so it does not contradict the decision log. Note it in the implementation notes for the owner.
+- **Reviewing an excerpt as if it were a whole post.**
+  - The rubric judges sections, headings, first and last sentences, and frameworks. On a 1-3 paragraph excerpt the reviewer may report structural gaps. If those come back as `voice_drift`, they flag real passages.
+  - Leave `framework` out of the trial's plan and `post_type` out of its brief. Then `input.canon.framework` and `post_type` are absent, and the rubric skips framework adherence (voice-reviewer.md: "When input.canon.framework is absent ... skip this section"; `StartEditorialActivity::structureCanon` 172-208).
+  - Define `voice_drift` narrowly in the rubric (voice alignment, soul check, swap test, final audit), and give clarity, framework and register their own kinds.
+  - Don't tailor the rubric to the trial.
+- **Enforced enum or description only.**
+  - The spec changes only the rubric and the schema description. A description alone lets the model return other strings (stored as given, or as `editorial` when null), but `drift_flagged` matches `voice_drift` exactly.
+  - Recommended: a required enum for ReviewVoice through `finding($schema, VOICE_FINDING_KINDS)`, plus a validator arm (the validator-to-schema audit).
+  - That makes `ReviewRubricTest::reviewRubricFinding` (no `kind`) fail the voice runs at 187 and 215. Give it a `kind`: either one per lens, or `voice_drift` for all three, since the facts and buyer lenses accept any string.
+  - Either way, record the choice and add a schema assertion to EditorialAgentsTest.
+- **Autosave makes the G6 measurement nearly trivial.**
+  - The editor autosaves after 250 ms idle (`resources/js/admin/publishing/autosave.js:3`), and every save is a revision.
+  - So the "owner's next saved revision" after an agent revision is usually the first burst of typing, and later human saves have a human parent and record nothing. Most recorded distances will be 1-5 words, not the owner's total edit.
+  - The contract (G6) and the spec say exactly "the owner's next saved revision", so implement it as written. Flag this for the owner in the implementation notes; changing the baseline is a contract change.
+  - One option for the owner (not the builder): have the command report the distance from the latest agent revision to the current working revision.
+- **The job runs inline in tests.**
+  - Under the sync queue, any exception in `RecordEditDistance` propagates out of `WriteArticle::save`, and out of workspace autosaves as `saveError`, across many Feature files.
+  - Make the job never throw:
+    - Return when the revision is missing, its parent is not agent-authored, or the column is already set.
+    - Treat a malformed document as having no words.
+- **Canon hash after Phase 8.**
+  - The trial runs `migrate:fresh` on `birdcar_test`. After Phase 8, the versions table there is empty, so the snapshot falls back to the repo files.
+  - The `jq` check runs `php artisan publishing:canon-hash` against the development database, which returns the active Admin version once one exists. The two match only while the active version is the repo version.
+  - Read `canon_hash` through `app(VoiceCanon::class)->snapshot()->version` (the same source as the command), and note the limitation in the trial's header comment.
+- **Cost and spend.**
+  - One run makes about 20 VoiceReviewer calls, about 20 query embeddings, and the section embeddings for the 6 archive essays outside the canon.
+  - Per `.ai/rules/ai.md`, the app reserves no spend; the owner confirms the OpenRouter workspace first.
+  - Keep VoiceReviewer's `#[MaxTokens(16000)]` and medium effort; don't lower them.
+- **Decision log checked against the code; no contradictions.**
+  - "Recomputed from recorded attempts and pinned to the current canon hash": `publishing:canon-hash` exists and prints the same value activities freeze.
+  - "The drift trial runs against local Postgres": the suite already runs on `pgsql` and `birdcar_test`, and the trial guard already requires them (PublishingModelTrialTest:85-100). Retrieval needs vector columns, which SQLite cannot hold.
+  - "Learning from the owner's edits is out of scope": nothing in the app clusters edits or updates the canon from them, and the spec only measures.
+
+## Edge Cases (Phase 9)
+
+- **Golden-set fixture** (`passages.json`)
+  - **Counts and pairing**:
+    - Exactly 10 real and 10 slopped passages, with ids unique across both lists.
+    - Every slopped `real_id` names a real id, and each real id has exactly one slopped variant.
+  - **Real sources**:
+    - `source` is an exemplar id from `app(VoiceCanon::class)->snapshot()->exemplars()`: one of the four archive slugs, or `exemplars/site-copy-2026-10-02.md`.
+    - Seven come from the essays and three from the site copy (spec step 1).
+  - **Blocks**:
+    - Each passage has 1-3 blocks of non-empty plain text.
+    - Optionally assert that each real block appears verbatim in its source exemplar, after collapsing whitespace. The essays keep Markdown (1-3 `[text](url)` links each), so pick paragraphs without links or the check fails.
+  - **Injected tells (slopped)**:
+    - Every `block_index` is an in-range integer, every `tell` is non-empty, and `mechanical` is a boolean.
+    - Each passage has 2-3 injected tells, at least one with `mechanical: false` (spec step 2).
+    - Name non-mechanical tells from a fixed list: `flattened_rhythm`, `no_turn`, `synonym_cycling`, `generic_conclusion`, `neutral_reporting`.
+    - Name each mechanical tell after the lint rule id it injects, so the fixture test can assert that the rule fires on its block.
+  - **Honest records**: optionally assert that every lint hit on a slopped passage lands on an injected block.
+  - **Lint-clean real passages**:
+    - Real passages must be lint-clean under the shared passage builder, without `walkthrough-link` (see Risks).
+    - What the sources contain (checked this session): no em dashes or curly quotes in the four essays or the site copy; "we/our" appears 1-2 times in each; one "!" in `your-ai-wrote-a-bug`; and the site copy has "we agree on scope".
+    - Skip paragraphs with those, plus "10x", "kinda", profanity and practitioner jargon (spec).
+  - **Spec experiments**: a real passage containing "10x", a slopped passage with only mechanical tells, and an out-of-range block index each fail one assertion.
+- **Passage document**
+  - One paragraph per block, with id `blk_` plus the first 16 hex of `sha256('drift:<passage_id>:<index>')`.
+  - Ids must match `/^(blk|imp)_[0-9a-f]{16}$/` and be unique. Otherwise `WriteArticle::ensureNodeIds` (282-318) silently replaces them, and injected indexes no longer map to the right blocks.
+  - Save with metadata `[]` or a sentence-case `title`.
+- **Trial, per passage**
+  - **Build the attempt while paused**:
+    - `captureIdea(owner, <neutral idea>)`, then `save(owner, piece, null, passageDocument, metadata, 'drift-<passage_id>')`.
+    - `develop(owner, piece, revisionId, ['summary' => ..., 'target_query' => ...])`, then approve Angle and add a completed ResearchChallenge row.
+    - `rethink(plan: ['outline' => [...], 'visualPlan' => [...], 'argument' => ...])` with no `framework`.
+  - **Then unpause**:
+    - Approve Plan. Retrieval runs and a Pending Draft is created; `Queue::fake()` stops it from being dispatched.
+    - Force-complete that Draft.
+    - `start(owner, attempt, ReviewVoice, ['draft_activity_id' => $draft->id], 'drift-review')`, then run it.
+  - **Lint**: lint the working revision through the shared builder, or use `LintRevision::hits(article, revision)` and drop `walkthrough-link` hits.
+  - **Neutral text**: give the brief and plan neutral text, so retrieval has a query and nothing hints whether the passage is real or slopped.
+  - **Isolation**: each passage gets its own idea and piece, so no state leaks between passages. Retrieval also excludes the piece's own idea (`ExemplarRetriever::forAttempt` 43-44).
+- **Recording**
+  - **File shape**: one object, `{canon_hash, run_id, started_at, attempts}`. Rewrite the whole file after each attempt so a crash keeps the evidence so far. A partial run fails the `jq` check (it needs 20 distinct passage ids), as intended.
+  - **Each attempt**:
+    - Fields: `{passage_id, variant: real|slopped, caught_at_injected_span, drift_flagged, lint_hits: [{rule_id, block_id}], findings: [{kind, block_id, severity, statement}], model, status, error}`.
+    - Optional fields: `retrieval_status`, `caught_by_lint` and `caught_by_reviewer`.
+  - **Flags by variant**: set `caught_at_injected_span` only for slopped passages and `drift_flagged` only for real ones. Set the other flag to `false`; the `jq` check filters by variant.
+  - **Model**: take `model` from `model_snapshot.returned_model`, falling back to `requested_model`.
+  - **Failures**:
+    - `status = completed` only when the activity completed.
+    - A provider error, validation failure or pause records `failed`, with `pause_reason ?? error_reason` as the error. With `max_retries` 0 the first failure goes straight to `failOrPause` (RunEditorialActivity 1096-1104).
+    - A failed passage counts as not caught (slopped) or not flagged (real). No retries.
+  - **Error handling**:
+    - Wrap each passage in `try/catch (Throwable)` so one failure is recorded and the run continues (spec Error Handling).
+    - Refusals (isolation, either OpenRouter key, the URL) throw before `migrate:fresh` and before any request.
+  - **Evidence citations**: a reviewer finding that cites `supporting_source_ids` fails validation, because the trial attempts have no evidence. The activity then fails and is recorded as failed. The rubric already forbids citing.
+- **Edit-distance dispatch** (`WriteArticle::save`)
+  - **Condition**: dispatch only when `$origin === 'human'`, the parent (`$previousRevisionId`) is not null, and the parent's origin is in `['agent-initial', 'agent-repair', 'agent-accepted']`. Decide whether to include the legacy `'agent'`.
+  - **How**: call `RecordEditDistance::dispatch($revision->id)->afterCommit()` inside the transaction, after `create`. Never dispatch on a mutation-id replay or a rolled-back save.
+  - **Cases**:
+    - A human save after a human save dispatches nothing.
+    - A human save after `agent-initial` dispatches once.
+    - A human save after `agent-accepted` (the owner accepted a proposal) dispatches.
+    - An agent save after a human save dispatches nothing.
+- **Job** (`RecordEditDistance(int $revisionId)`)
+  - **Load**: the revision (`id, article_id, parent_revision_id, origin, document, agent_edit_distance`) and its parent (`id, origin, document`).
+  - **Return early** when either is missing, when the revision is not `human`, when the parent is not agent-authored, or when `agent_edit_distance` is already set. This makes the job idempotent.
+  - **Write**: use `ArticleRevision::query()->whereKey($id)->whereNull('agent_edit_distance')->update([...])`, which is atomic and safe if the job is dispatched twice. Alternatively, `forceFill()->save()` through the guard. An Eloquent builder update also bumps `updated_at`.
+  - **Scope**: write only to the revision it was dispatched for, even when later revisions exist (spec Error Handling).
+- **Guard** (`ArticleRevision::booted`)
+  - **Rule**: keep the existing immutable list. Add: if `agent_edit_distance` or `agent_baseline_revision_id` is dirty and its original value is not null, throw (for example "Edit distance is recorded once.").
+  - **"Only from the job"** is a convention: the job is the only writer. Say so in the docblock.
+  - **Tests**: the job sets both columns; a later `forceFill(['agent_edit_distance' => 1])->save()` throws; editing `document` still throws `append-only`.
+  - **Strict mode**: on a partially selected model, select both columns before calling `getOriginal`, or check `array_key_exists` on `getRawOriginal()`.
+- **`EditDistance::between(array $baseline, array $revised): int`**
+  - **Text**:
+    - Walk every text node in document order: paragraphs, headings, list items, blockquotes, code blocks, notes and callouts.
+    - Treat `hardBreak` and block boundaries as whitespace, so words in adjacent blocks don't fuse.
+    - Decide whether note and callout `attrs.title` and chart and diagram `attrs.caption` count, and record the choice.
+  - **Tokens**: lowercase with `mb_strtolower`, then match words as `[\p{L}\p{N}]+` with inner apostrophes (accept both ' and ’), using the `/u` flag. Punctuation-only edits then measure 0; record that.
+  - **Performance**: trim the common prefix and suffix, then run a two-row DP over the shorter middle part. Typical small edits become almost free, and a full 4,000-word rewrite is at most 16M cells with only two arrays in memory.
+  - **Experiments**:
+    - Identical documents give 0, and one replaced word gives 1.
+    - An inserted paragraph of n words gives n, and an empty document against n words gives n.
+    - The distance is symmetric.
+- **Command** (`publishing:edit-distances {idea}`)
+  - **Bad input**: a non-numeric or missing idea id prints an error and returns FAILURE.
+  - **Pieces**:
+    - Query: `Article::query()->select(['id', 'kind', 'content_idea_id'])->where('content_idea_id', $id)->orderBy('id')`.
+    - This includes siblings and kit pieces. acceptance.json needs exactly the four kinds, so the owner picks which pieces to copy.
+  - **`edit_distance` per piece**:
+    - The spec's shape has one value, but a piece can record several (for example `agent-initial` then human, and later `agent-accepted` then human).
+    - Pick one meaning (the latest recorded value is the simplest). Optionally add `distances: [{revision_id, baseline_revision_id, edit_distance}]`.
+    - The value is null when nothing was recorded. Record the choice.
+  - **Field values**: `kind` is the enum value (`blog_post`, `linkedin_post`, `bluesky_thread`, `email_blurb`), matching the acceptance `jq` check. `summary_title` comes from `content_ideas.summary_title`.
+  - **Access**: read-only, with no authorization, like the other owner-run publishing commands.
+
+## Test Strategy (Phase 9)
+
+- **Inner loop**: `php artisan test --compact tests/Feature/Publishing/EditDistanceTest.php tests/Feature/Publishing/DriftFixtureTest.php`
+- **Paid trial skip check**: `vendor/bin/pest tests/Manual/VoiceDriftTrialTest.php --compact` must report the test as skipped. Never set `DRIFT_TRIAL=1`.
+- **Regression files** (they consume the changed code):
+  ```
+  php artisan test --compact tests/Feature/Publishing/ReviewRubricTest.php tests/Feature/Publishing/EditorialAgentsTest.php tests/Feature/Publishing/EditorialInputContractTest.php tests/Feature/Publishing/VoiceCanonTest.php tests/Feature/Publishing/VoiceLintTest.php tests/Feature/Publishing/VoiceLintWorkflowTest.php tests/Feature/Publishing/DistributionKitTest.php tests/Feature/Publishing/PackagingTest.php tests/Feature/Publishing/EditorialReviewTest.php tests/Feature/Publishing/ReleaseIntegrityTest.php tests/Feature/Publishing/AdminPublishingEditorTest.php tests/Feature/Publishing/AdminPublishingWorkspaceTest.php tests/Feature/Publishing/PublishingSessionTest.php tests/Feature/Publishing/DocumentRoundTripTest.php tests/Feature/Publishing/PublishingJourneyTest.php tests/Feature/Publishing/ExemplarRetrievalTest.php tests/Feature/AdminHomeTest.php
+  ```
+- **Phase check**: `php artisan test --compact tests/Feature/Publishing`
+- **Final**: `vendor/bin/pint --dirty --format agent`, then `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress`, then `composer test`.
+- **DriftFixtureTest** (no HTTP; the database is touched only through RefreshDatabase)
+  - Load `passages.json` and assert the counts, pairing, sources (against the ids from `app(VoiceCanon::class)->snapshot()->exemplars()`), injected block indexes and non-mechanical tells.
+  - Lint each real passage through the shared builder and expect `[]`: `LintTarget::fromDocument($document, [], PieceKind::BlogPost)` passed to `VoiceLinter::lint`, without `walkthrough-link`. Use one dataset row per passage id so a failure names the passage.
+  - Optionally assert that each mechanical tell's rule fires on its injected block in the slopped variant.
+- **EditDistanceTest**
+  - **Math**: call `app(EditDistance::class)->between(...)` with the spec's experiments, plus a 4,000-word case built from a generated word list.
+  - **Setup**: `beforeEach` runs `forgetCachedPermissions()` and `authorization:sync`; the actor has the Author role.
+  - **Dispatch**:
+    - `Queue::fake([RecordEditDistance::class])`, `captureIdea`, then `save(..., 'agent-initial')` followed by `save(..., 'human')`.
+    - Assert `Queue::assertPushedTimes(RecordEditDistance::class, 1)` with the matching `revisionId`.
+    - Assert that a human save after a human save pushes nothing, and that a mutation-id replay pushes nothing more.
+    - A save with an agent origin needs only `publishing.write`; no attempt is needed.
+  - **Job**:
+    - Without a fake (sync queue), the human save runs the job at commit. Assert `agent_edit_distance` and `agent_baseline_revision_id` on the fresh revision.
+    - Assert that a second `handle()` changes nothing, and that the guard throws on a later change.
+  - **Command**:
+    - Build an idea with a flagship (`captureIdea`) and three kit pieces (`addPiece($actor, $idea, PieceKind::LinkedinPost|BlueskyThread|EmailBlurb, $flagship)`), each saved as `agent-initial` and then `human`.
+    - Run `Artisan::call('publishing:edit-distances', ['idea' => $idea->id])` and decode with `json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR)`. Assert the shape, the four kinds and that every distance is non-null.
+    - Cover a missing idea with `$this->artisan(...)->assertFailed()`.
+- **Voice finding kinds**
+  - Assert that the VoiceReviewer schema's `kind` (enum or description) lists the four values. Add this to EditorialAgentsTest beside line 121, or to DriftFixtureTest.
+  - Assert that `roles/voice-reviewer.md` names all four kinds.
+  - If the validator enforces them, add one rejection case: `EditorialOutput::validate(ReviewVoice, ['findings' => [['statement' => 'x', 'kind' => 'style', ...]]])` throws.
+- **Environment**
+  - `birdcar_test` and `birdcar_development` were confirmed on 127.0.0.1:5433 (`psql -l`) this session; Laravel is 13.33.0. No `--parallel`.
+  - Never run `tests/Manual` with its flag set. PHPStan still analyses it, so the trial must pass level 7: narrow the results of `json_decode`, `file_put_contents` and `getenv`.
+  - `QUEUE_CONNECTION=sync` runs the edit-distance job inline at commit unless it is faked.
+
+---
+
+## Key Patterns (Phase 6)
+
+- **Lint rule base** (spec pattern: "Phase 3 lint rules")
+  - `VoiceRule.php` gives `appliesTo()` (BlogPost only), `blockHit`, `metadataHit` and `excerptAround`.
+  - `PatternRule.php` handles regex rules and can also check metadata (`checksMetadata()`).
+  - `MeasuresMetadataLength.php` counts with `mb_strlen` and reports the measured length in the message ("SEO title is 48 characters; it must be 50-60."). Kit length rules should follow it.
+  - `WalkthroughLink.php` shows a structural rule that reads `$target->blocks` and `$block['links']`. Its HREF regex is `~^(?:https?://(?:www\.)?birdcar\.dev)?/walkthrough/?(?:[?#].*)?$~i`; reuse it for `kit-no-walkthrough-cta`.
+- **Registration**
+  - All 26 rules are tagged in `AppServiceProvider::register()` 52-79 with `VoiceLinter::TAG`. Add the 9 kit rules to that list.
+  - The two-way check compares `VoiceLinter::ruleIds()` with `CanonSnapshot::ruleIds()`, which scans every canon file for `[rule:id]` (CanonSnapshot.php ruleIds). Tags in `voice/kit-rules.md` therefore join the check automatically.
+  - `channels/kit.md` and `exemplars/short-form.md` must contain no `[rule:` tags.
+- **`LintTarget`** (`final readonly`)
+  - Signature: `fromDocument(array $document, array $metadata, PieceKind $kind, ?int $articleId)`.
+  - It produces one block per paragraph and heading, plus note and callout titles and chart and diagram captions.
+  - The LintBlock shape is `{id,type,level,text,bold_spans,links,in_blockquote,protected}`.
+  - `links` comes only from link marks; a bare URL typed as text is not a link. `hardBreak` becomes a space.
+  - `METADATA_FIELDS = ['title','seo_title','description']`.
+  - Kit rules need two things LintTarget lacks: a field role for each block (LinkedIn text or first comment; Bluesky post i; email subject, preview or body) and lint context (the flagship canonical URL and target query).
+- **`VoiceLinter::lint`**: orders hits by `METADATA_ORDER` and then block order, and numbers repeated hashes as occurrences.
+- **Canon files**
+  - `roles.json` entries have the shape `{"files": [...], "exemplars": bool}`. Setting `exemplars: true` adds the 4 essays and the site copy.
+  - For `draft_kit` and `review_kit`, keep `exemplars: false` and list `exemplars/short-form.md` under `files` for draft_kit, as the spec says.
+  - Never add short-form.md to `exemplars/manifest.json`: that would change `INPUT_CONTRACT_EXEMPLAR_IDS` (EditorialInputContractTest:28) and the VoiceCanonTest exemplar test (160-186).
+  - The rubric file model is `roles/lint-repairer.md` or `roles/fact-reviewer.md`: a `# X rubric` heading, a one-line job, then `##` sections. FactReviewer already says: "When a piece derives from a flagship post, any claim outside the flagship's approved claims is a blocking finding."
+- **Role agents**
+  - KitDrafter: copy `Drafter.php` (gemini-3.8-flash, medium).
+  - KitReviewer: copy `FactReviewer.php` (deepseek-v4-pro-0813, high).
+  - Both get `#[MaxTokens(16000)]` per the spec. Both models are allowlisted in `config/publishing_agents.php:9-10`.
+  - `.ai/rules/ai.md` says MaxTokens is a runaway guard, not a cost lever.
+- **Schema** (`EditorialAgent::schema` 204-301)
+  - Kit fields are plain strings and arrays, so they can be native schema types (`$schema->string()->max(n)->description(...)`, `$schema->array()->items(...)`). Only nested Tiptap JSON travels as an encoded string.
+  - Put every limit the validator enforces into the description; this is the validator-to-schema audit from contract line 154.
+  - Read the piece kind from frozen input (for example `input.piece_kind`). `recommendedModelFor()` (EditorialAgent:72-75) and EditorialAgentsTest's `editorialActivity()` build activities with no article, and `sentEditorialAgentRequest` sends the schema, so the schema must not throw when the piece kind is missing.
+  - For review_kit, the finding builder (`finding()` 367-380) needs a `kind` enum of `claim_outside_manifest`, `register` and `channel`.
+- **Output validation** (`EditorialOutput::validate(kind, payload, knownEvidenceIds, evidenceTexts, frozenInput)` 31-47)
+  - `allowedKeys(kind)` (79-92) cannot see the piece kind. Pass frozen input to it, or allow the union of keys and check the exact set in `validateDraftKit`.
+  - `validateFindings` (488-514) calls `ensureEvidenceIdsExist` against the frozen `evidence_sources`. Kit attempts have none, so KitReviewer must return `supporting_source_ids: []` and `supporting_quotations: []`. Any manifest source id it cites fails the activity.
+  - Keep EditorialOutput constructor-free (EditorialAgentsTest:247 calls `new EditorialOutput`).
+- **Post-draft chain** (RunEditorialActivity)
+  - `applyResult` 445-480 branches on kind.
+  - `applyDraft` 610-631 writes an `agent-initial` revision only into an empty document; otherwise it stores a proposal.
+  - Then `lintThenQueueReviews` (1123-1160), `finishLintAfterUnusableRepair` (1169-1205) and `applyLintRepair` (1211-1270).
+  - `agentWrittenBlockHashes` (1278-1330) treats the whole applied Draft as agent-written, then each block a repair changed.
+  - `storeFindings` (872-900) stores `lens` as the kind value and `input_hash` as the activity's `revision_hash`.
+- **Creating an attempt directly**
+  - `AdvancePublishingAttempt::develop` 28-69 shows the fields: `PublishingAttempt::create([... 'stage', 'input_version' => working_revision_id, 'brief', 'angle' => [], 'plan' => [], 'interview_context' => [], 'review_cycle' => 1, 'recheck_used' => false])`, then `current_attempt_id` is set on the locked article.
+  - SpawnDistributionKit does the same with `stage => InReview`. `input_version` is null because a kit has no revision yet.
+- **Adding a piece**: `WriteArticle::addPiece` 54-63 requires `publishing.write` and a parent from the same idea. `createPiece` (205-214) sets `author_id = $actor->id`, a provisional `idea-xxxxxxxxxxxx` slug and an explicit kind.
+- **Release approval and the flagship URL**
+  - `ManageArticleRelease::approve` 301-357 runs in one `DB::transaction`. Call the spawn after it returns ("after ... commits"); calling it inside would roll the approval back on a spawn error.
+  - The canonical slug is `payload.canonical_slug`. Build the public URL like the sitemap does (routes/web.php:77): `app(MarketingSite::class)->url(route('public.article', ['slug' => $slug], absolute: false))`. `/writing` paths get a trailing slash (MarketingSite.php:11-20).
+  - The host comes from `config('marketing.url')` (BIRDCAR_MARKETING_URL, falling back to APP_URL). Freeze the URL once at spawn time.
+- **Writing a disposition immediately**
+  - Precedents: the workspace `overrideVoiceRule` (740-764) with `LintRevision::override` (265-290).
+  - `decideFinding` (692-711) only buffers until `finishReview`, and `FinishEditorialReview` requires all three lenses (lines 66-77). Kit findings therefore need a decision action that writes at once (approve gate; a trimmed reason for rejected or false_positive).
+- **Starting an interview**
+  - `⚡dashboard.blade.php:39-59` (`developIdea`) and the workspace `startDevelopment` (108-122) both use the `['idea' => $body]` brief and input.
+  - CreateSiblingPiece should mirror them: `addPiece(BlogPost, no parent)`, then `develop(actor, piece, null, ['idea' => body])`, then `start(Interview, ['idea' => body, <note key> => note], 'interview-1')`.
+- **Workspace**
+  - `with()` is at 1061. `sessionMode` (1088-1092) maps InReview to `write` and Approved, Scheduled or Published to `release`.
+  - The tabs are in the template (`<flux:tab.group>` develop/write/release).
+  - Finding cards: `partials/write.blade.php` 50-118 (Voice rules group and editorial findings). Reuse them for the kit panel.
+  - `refreshVoiceRuleFindings()` (around 785) is the save-time lint hook. Every kit field save must call it.
+- **Test templates**
+  - Claim manifest research setup: `PackagingTest.php:443-464` (EvidenceSource rows plus `response.claims` with quotations).
+  - Release prerequisites: `ReleaseIntegrityTest.php:666-680` (`approveReleasePrerequisites`), 687-741, and `releaseDocument` and `releaseMetadata` (783-830). The SEO title must be 50-60 characters, the description 150-160, and the document must close with exactly one /walkthrough link.
+  - Fake responses routed by the decoded `messages.1.content.kind`: PublishingJourneyTest:30-105 and the `lintWorkflowFakeAgents` helper in VoiceLintWorkflowTest.
+  - Running one activity: `app(RunEditorialActivity::class, ['activityId' => $id])->handle(app(EditorialOutput::class), app(WriteArticle::class))`.
+  - Run-and-repause pattern: `packagingRun` (PackagingTest:162-176).
+- **Canon sources** (local, read)
+  - bat-kol `channels/blog.md:185-194`, "Distribution kit":
+    - LinkedIn: front-load the target phrase; about 210 characters show before "more" and 3,000 is the ceiling; the link goes in the first comment; no broetry, engagement bait, emoji or hype hook; at most three plain hashtags, at the end.
+    - Bluesky: the mechanics of 300 characters per post, `1/n` numbering and each post readable alone, written in the public register.
+    - Email: a subject of 50 characters or fewer, one preview line, and 2-4 sentences with the claim and a link to the post; the Walkthrough CTA lives in the post.
+    - "Do not link to a post in a social post before the post is published."
+  - `channels/bluesky.md:17-22,92-103` covers thread format.
+  - `registers/public.md:205-212` has "A short LinkedIn-length line" and "The CTA to The Walkthrough".
+  - The repo's `channels/blog.md` has no distribution kit section (Phase 2 left it out), and `voice/core.md:112-134` has the CTA example but not the LinkedIn line.
+
+## Dependencies (Phase 6)
+
+- **New `EditorialActivityKind` cases (`DraftKit`, `ReviewKit`)**: these exhaustive matches throw `UnhandledMatchError` and fail PHPStan level 7 until arms are added.
+  - `app/Ai/Agents/EditorialAgent.php:48-62` (`forActivity`) and `:204` (`schema`).
+  - `app/Services/Publishing/EditorialOutput.php:35-47` (`validate`) and `:81-92` (`allowedKeys`). **Not in the spec.**
+  - `app/Actions/Publishing/RunEditorialActivity.php:1460-1467` (`prerequisiteApprovalFor`).
+  - `app/Actions/Publishing/StartEditorialActivity.php:266-279` (`ensureEligible`) and `:824-831` (`activityMatchesCurrentApproval`).
+  - `app/Actions/Publishing/ApprovePublishingStage.php:380-386` (`activityMatchesCurrentApproval`).
+  - `resources/views/components/admin/settings/⚡publishing.blade.php:213-228` (`roleLabel`) and `:230-245` (`rolePurpose`). **Not in the spec.** The page iterates `cases()` (78, 92, 149, 188), so model overrides for the new kinds appear automatically.
+  - These have a `default` arm, but labels are worth adding: `⚡dashboard.blade.php:139-151`, `partials/session.blade.php:52` (working message), and `app/Actions/Admin/ReadAdminHome.php:161-165`. ReadAdminHome's `default => ApprovalKind::Plan` means kit activities are checked against a Plan approval that does not exist, so they never count as current on the Admin home.
+  - Tests, **not automatic despite the spec**:
+    - `EditorialInputContractTest.php:174-202`: `inputContractResponse` is an exhaustive match.
+    - The `->with([...])` dataset at 224-284 is an explicit list.
+    - 286-290 asserts the exact `cases()` list.
+    - `inputContractStart` (122-150) needs kit prerequisites: a flagship with an approved release, then a kit piece and its attempt.
+  - `EditorialAgentsTest.php:38-50` (the `forActivity` chain) and the model dataset at 150-162 are explicit lists. Add `'kit drafter' => [DraftKit, 'google/gemini-3.8-flash', 'medium', 16000]` and `'kit reviewer' => [ReviewKit, 'deepseek/deepseek-v4-pro-0813', 'high', 16000]`.
+  - `VoiceCanonTest.php:125-133` iterates `cases()`, so roles.json needs both entries, each starting with a file that begins with `# `. `voice/core.md` does.
+- **New `ApprovalKind::Kit`**: more exhaustive matches.
+  - `ApprovePublishingStage::snapshotInputHashFor` 124-145, `nextStage` 193-200 (Kit maps to Approved), and `ensureApprovalIsAllowed` 202-213. `approve()` rejects only Release (38-40), so Kit flows through `approve()`.
+  - `RunEditorialActivity::approvalInputHashFor` 1504-1528 and `StartEditorialActivity::approvalInputHashFor` 844-866. Their Release arms throw; add a Kit arm that throws.
+  - `WriteArticle::save:155`: `invalidateApprovals($attemptId, [ApprovalKind::Release])`. Add Kit so an edit after kit approval revokes the approval.
+- **LintRepair is tied to Plan approval, which blocks kit repairs.** Make each of these depend on the piece kind:
+  - `StartEditorialActivity::ensureLintRepairEligible` 374-394 requires an active Plan approval and the InReview stage, so it throws "Voice-rule repair requires an approved plan..." for kit attempts.
+  - `RunEditorialActivity::staleReason` 1414-1458 calls `prerequisiteApprovalFor(LintRepair)`, which returns Plan. A kit repair would go Stale with "The prerequisite approval changed before the activity could run."
+  - `StartEditorialActivity::completedLintRepairProducedRevision` 742-753 and `ApprovePublishingStage::activityMatchesCurrentApproval` use the same Plan mapping.
+  - The fix: freeze `piece_kind` (or read the article kind), and give kit kinds no prerequisite approval or a flagship-release check.
+- **The post-draft chain is Draft-only**
+  - `RunEditorialActivity::lintThenQueueReviews` 1123-1160 continues only after Draft or LintRepair.
+  - `agentWrittenBlockHashes` 1297 uses `whereIn('kind', [Draft, LintRepair])`, and the full-document branch is at 1310. Without DraftKit, every kit block looks owner-written, so repair patches are never applied and become findings instead.
+  - `actorCanRunKind` 1109-1116: add DraftKit to the kinds that require `publishing.write`.
+  - `applyResult` 445-480: add a DraftKit branch (applyDraftKit) and a ReviewKit branch (storeFindings).
+  - `LintRevision::finishAndQueueReviews` 206-219 always starts the three lenses (**not in the spec**). For kit kinds, start `review_kit` instead, with `draft_activity_id` and a batch key such as `review-kit-{cycle}-{revisionId}`. It is also reached from `finishLintAfterUnusableRepair` and `skipRepair`.
+  - `LintRevision::skipRepair` 221-262 looks up the latest Draft; include DraftKit.
+  - `LintRevision::UNREPAIRABLE_RULES` (38) holds only `unresolved-markers`. Add the kit rules no single-block patch can fix (see Risks).
+  - `StartEditorialActivity::idempotencyPayload` 706-735 makes review kinds revision-based. Add ReviewKit there. DraftKit keeps `prompt_hash`, with a batch key that includes the flagship release id.
+- **Where lint rules apply**
+  - Every rule inherits `VoiceRule::appliesTo` (BlogPost only, VoiceRule.php:12-15). Change that one method so body rules apply to every kind.
+  - Override it back to BlogPost in `HeadingOrder`, `LabelHeadings`, `SentenceCaseHeadings` and `WalkthroughLink`.
+  - The spec does not mention the Phase 4 metadata rules (`SeoTitleLength`, `MetaDescriptionLength`, `SlugShape`, `SlugArchiveReuse`, `TitleSentenceCase`); keep them blog-only too.
+  - Decide whether `BoldLimit` and `InlineHeaderList` apply to kits; either is harmless on plain paragraphs.
+  - Consumers of the linter:
+    - `LintRevision::hits` 52-61 (owner saves, the post-draft step, release).
+    - `CheckArticleRelease::voiceRuleState` 429-440.
+    - `EditorialOutput::validatePackage` 377-388 (BlogPost target).
+    - The workspace `packageLintMessages`.
+    - `IndexExemplarSections:131` (BlogPost, reads blocks only).
+- **Callers of `ManageArticleRelease::approve`**
+  - The workspace `approveRelease` (468-489).
+  - ReleaseIntegrityTest (many sites), ReleaseReadinessTest, `EditorialWorkflowTest:62,445`, `PackagingTest:343` and AdminPublishingEditorTest.
+  - From Phase 6 on, every flagship approval in these tests spawns 3 kit pieces and their attempts. Agents are paused by default (the PackagingTest helper re-pauses at line 175), so nothing is dispatched.
+  - No test counts Articles after approving. The approving users have the Author role, which holds every publishing permission (`app/Authorization/Publishing/Catalog.php`).
+- **Public readers**
+  - `ReadPublishedWriting.php:20,42` filters only on `whereNotNull('published_release_id')`. The spec's open item: add `where('kind', PieceKind::BlogPost->value)`.
+  - It feeds the sitemap and RSS (routes/web.php:69-83) and `pages/writing/*`.
+  - Exemplar indexing already filters to blog posts (`PublishingIndexExemplars:30`, `IndexExemplarSections:107`).
+  - `ExemplarRetrievalTest:412-434` delivers an *imported* release on a LinkedIn piece, so do not make `deliver()` refuse kit kinds.
+- **Article model** (`app/Models/Article.php`)
+  - The `#[Fillable]` attribute is at line 15; `casts()` at 24-30.
+  - Add `posted_at` (datetime) and `posted_url`.
+  - `isKit()` is `$this->kind->isKit()`. `kind` is always set explicitly (Phase 1 lesson).
+- **Workspace consumers**: AdminPublishingWorkspaceTest, AdminPublishingEditorTest, PublishingSessionTest, ContentIdeaTest, PublishingJourneyTest and PackagingTest:420 render the workspace. Keep the blog-post layout byte-for-byte where tests assert on it, and branch on `$article->kind->isKit()`.
+- **Interviewer rubric**: `roles/interviewer.md` is frozen into every interview; editing it changes the canon version (expected). `ReviewRubricTest` covers only the lens rubrics.
+- **Phase 7 and Phase 8 depend on this phase**
+  - Phase 7 (spec-phase-7.md:15-23) reads `draft_kit` status and the `approved`/`published` stages, labelled "Ready to post" and "Posted", and nests kit cards under `parent_article_id`.
+  - Phase 8 (spec-phase-8.md:101) expects kit ids tagged in the `draft_kit` rubric, so `voice/kit-rules.md` must be listed in `draft_kit`.
+
+## Conventions (Phase 6 additions)
+
+- **Ids and classes**
+  - Kit rule ids: `linkedin-length`, `linkedin-hashtags`, `linkedin-link-in-comment`, `bluesky-post-length`, `bluesky-numbering`, `email-subject-length`, `email-blurb-length`, `kit-no-walkthrough-cta` and `kit-links-post`.
+  - Classes go in `App\Services\Publishing\Lint\Rules\*` with no suffix (spec names).
+  - Tag each id exactly once, in `voice/kit-rules.md` only.
+- **Actions**
+  - `App\Actions\Publishing\{SpawnDistributionKit, MarkKitPiecePosted, CreateSiblingPiece}`.
+  - The spec sketches them as `final class`. Sibling actions are plain `class`, but either is acceptable.
+  - Resolve them with `app()`; nothing calls `new` on actions.
+- **Migration**
+  - Anonymous class: `$table->timestamp('posted_at')->nullable(); $table->string('posted_url', 2048)->nullable();`. `down()` drops both.
+  - Use the spec's filename `2026_10_02_300000_...`, which sorts after `2026_10_02_200000_create_exemplar_sections_table`. Phase 5 renamed its `make:migration` output to the spec name the same way.
+- **Hashing and errors**
+  - Kit approval hash: `PublishingFingerprint::hash([...])`. Never compare jsonb arrays with `===`.
+  - Domain errors throw `RuntimeException`.
+  - "Mark posted too early" must name the unmet condition. Use `ValidationException::withMessages(['posted_url' => ...])` for an https violation, matching the `renameIdea` precedent.
+- **Tests**
+  - Helper prefixes: `distributionKit*` and `siblingPiece*`. Constants: `DISTRIBUTION_KIT_*` and `SIBLING_PIECE_*`.
+  - Names already taken (global across files): `releaseDocument`, `releaseMetadata`, `approveReleasePrerequisites`, `editorialAuthor`, `inputContract*`, `voiceLint*`, `lintWorkflow*`, `packaging*` and `exemplarRetrieval*`. Copy what you need under the new prefix, because a file run alone does not load other files' helpers.
+- **Statuses and labels**: kit stage `approved` shows as "Ready to post" and `published` as "Posted". The kit attempt stays an ordinary `PublishingAttempt`.
+- **Run after PHP edits**: Pint `--dirty --format agent`, and PHPStan level 7 across `app`, `config`, `database`, `routes` and `tests`, with no `@phpstan-ignore`.
+
+## Risks (Phase 6)
+
+- **The spec is wrong that EditorialInputContractTest extends itself.**
+  - It needs dataset rows, `inputContractResponse` arms, kit prerequisites in `inputContractStart`, and an updated exact-cases list (see Dependencies).
+  - The spec also asks for assertions that kit inputs carry `flagship.claim_manifest` and the flagship text.
+- **Where kit fields live is ambiguous.**
+  - The LintTarget row says "map ... to blocks". The Data Model says "document (one paragraph block per field or post) and metadata (subject, preview, first_comment)".
+  - If subject, preview or first_comment live only in metadata, their hits have `blockId = null`. `LintRevision::repairable` (69-72) then never sends them to repair, and `ApplyEditorialProposal` cannot patch metadata.
+  - Recommendation: one paragraph block per field and per post, as the single source of truth for the text. Put a role map in metadata (for example `kit_fields: {block_id: role}`) or derive roles from deterministic block ids such as `blk_` plus 16 hex of `sha256('kit:<role>:<n>')`.
+  - `ArticleDocument::canonicalizeAttrs` (363-435) keeps only `id` and `protected` on a paragraph, so a custom attr cannot carry the role.
+  - Do not store the same text in both places; they would drift on edit. Record the choice.
+- **Kit rules need context the linter cannot see.**
+  - `linkedin-length` needs the flagship's `brief.target_query`.
+  - `kit-links-post` and `linkedin-link-in-comment` need the flagship canonical URL.
+  - `LintRevision::hits(Article, ArticleRevision)` builds a target only from the revision and the kind.
+  - Options: freeze the context into the kit attempt's `brief` at spawn and have `hits()` pass it into an optional `LintTarget` context property, or store it in kit revision metadata. Every lint call site (save-time, post-draft, kit approval) must see the same context, or hit hashes differ between them.
+  - When `target_query` is null, skip the target-query half of `linkedin-length`.
+- **Some kit rules cannot be fixed by one bounded block patch.**
+  - `bluesky-numbering` (n must equal the post count, which touches every post).
+  - `bluesky-post-length` when the fix is splitting a post (that needs a new block).
+  - `kit-links-post` with zero or two URLs spread across blocks.
+  - Either add them to `UNREPAIRABLE_RULES` or point the hit at the one block where a single patch fixes it (for example the final post or the first comment), with the needed URL in the hit message.
+  - The repair loop otherwise uses up the 2-pass cap. It does stop early when a pass applies nothing (`passChangedNothing`, RunEditorialActivity 1154).
+- **LintRepairer does not know the kit rules.**
+  - The `lint_repair` rubric files are `voice/core.md`, `voice/mechanical-rules.md` and `roles/lint-repairer.md`, and roles.json is keyed by activity kind, not piece kind.
+  - Either rely on hit messages carrying the exact fix, or add `voice/kit-rules.md` to `lint_repair`. The second option changes the EditorialInputContractTest "lint repair" row (264-268). Record the choice.
+- **The short-form exemplar conflicts with the no-CTA rule.**
+  - The spec says to use "the register's LinkedIn-length line and CTA examples". The CTA example (public.md:211-212) is a Walkthrough invitation, but `kit-no-walkthrough-cta` forbids that in kit pieces.
+  - Label it in `short-form.md` as the post's closing invitation that kits link to and never repeat, or leave it out. Record the choice.
+- **The Drafter schema and test now list kit ids.**
+  - The Drafter's `document` description lists all of `VoiceLinter::ruleIds()` (EditorialAgent:240-245), so after Phase 6 it tells the blog Drafter about LinkedIn rules.
+  - Filter it to rules that apply to `PieceKind::BlogPost`, and change `VoiceLintTest:276-303`, which asserts every registered id appears, to filter the same way.
+  - Add the equivalent KitDrafter audit (spec-phase-8.md:101 expects kit ids in the `draft_kit` rubric).
+- **`VoiceLintTest:266-270` goes red.** "only blog posts are linted in this phase" asserts a LinkedIn target returns no hits; under Phase 6 it hits em-dash, corporate-we and the vocabulary rules. Replace it with an applicability test (body rules fire on kits; heading, walkthrough and metadata rules do not).
+- **VoiceCanonTest needs updates.**
+  - `VOICE_CANON_RULE_IDS` (9-15) must add the 9 kit ids.
+  - The mechanical (21) and metadata (5) tag counts at 189-196 stay correct only if kit tags live solely in `kit-rules.md`.
+  - Canon files must not mention `channels/bluesky.md`, `registers/public.md` or any `*.md` that is not in the canon (115-123 regex), nor `~/.config`, `/Users/`, `FW/` or "voice sample" (109-113).
+- **Restarting a kit on a new flagship release can overwrite owner edits.**
+  - The spec restarts unapproved kit pieces with a new `draft_kit`. If the owner has edited the kit, an `agent-initial` save would replace their text, which breaks the contract's "agents never silently change the owner's prose".
+  - Mirror `applyDraft`: save directly only when no human revision follows the last agent revision; otherwise store a proposal.
+  - Also stale pending or running `draft_kit`, `lint_repair` and `review_kit` work from the old release.
+  - `agent-initial` saves throw "Agent edits cannot remove/modify protected blocks." (WriteArticle 332-366) if the owner protected a kit block. That surfaces after a paid request.
+- **Kit approval after edits**
+  - `WriteArticle::save` (155) must also invalidate Kit approvals.
+  - Decide whether a kit save after approval moves the stage back to InReview. The Phase 7 board columns come from the stage.
+  - `MarkKitPiecePosted` should require an active, non-invalidated Kit approval whose `revision_id` is the working revision, not just `stage = approved`.
+- **"Flagship attempt stage published" is the wrong check.**
+  - After publishing, `develop()` creates a new current attempt for the flagship (EditorialWorkflowTest:46-72), while `published_release_id` still points at the live release.
+  - Check `published_release_id` not null, that release `status = published`, and that release's own attempt (`release.attempt_id`) at the published stage, not the current attempt.
+- **Which blog posts spawn a kit?**
+  - `ContentIdea::flagship()` is the oldest parentless `blog_post`, but siblings are also parentless blog posts.
+  - Decide whether a sibling's release approval also spawns a kit (parent = sibling) and record it. Phase 7 nests kits under "their flagship".
+  - Decide whether a new release of an *archive* essay (`LintRevision::isArchiveImport`) spawns a kit; the canon does not apply to archive essays.
+- **Kit author**: `createPiece` sets `author_id = $actor` (WriteArticle:208). ArticlePolicy (22-60) is owner-only, so spawn with the flagship's author. In practice the approver is the author, but be explicit.
+- **No retry if spawning fails after the approval commits.** The approval cannot be repeated (it is already approved). Make `spawn()` idempotent and callable again (for example a "Create distribution kit" fallback, or calling it on workspace load for approved flagships with missing kit kinds), or report the failure without hiding it.
+- **Paused spawn: decide whether to create activities.**
+  - The spec says "pieces spawn, drafts wait for unpause".
+  - `StartEditorialActivity::start` creates a Pending activity and skips dispatch while paused (110-112); `publishing:recover-activities` dispatches it after unpause (RecoverEditorialActivities 50-61).
+  - `ApprovePublishingStage` (82-89) instead creates nothing while paused.
+  - Either satisfies experiment (f). Pending activities are closer to "drafts wait for unpause". Record the choice.
+- **The claim check can block falsely.**
+  - The manifest holds only research-grounded claims with quotations (often few; `[]` with no research), while the flagship text carries opinions, hypothetical scenes and approved offer facts.
+  - The KitReviewer rubric must limit `claim_outside_manifest` to factual claims, and treat offer facts and the approved proof list from `fact-reviewer.md` consistently. The owner can decide the finding (spec mitigation).
+- **Common rules contradict the kit reviewer's job.** The shared instructions say "Reviewers cite only input.evidence_sources" (EditorialAgent:139-152), but kit attempts have no evidence sources. The KitReviewer rubric must say to cite the manifest by statement text in `rationale` and keep `supporting_source_ids` empty, or the activity fails validation.
+- **Dashboard labels**: `⚡dashboard.blade.php::statusFor` shows "Approved for release" for an approved kit. Phase 7 owns the board, so this is cosmetic here.
+- **Decision log checked against the code; no contradictions.**
+  - Pieces, `addPiece` and `parent_article_id` exist (Phase 1).
+  - The claim manifest exists and is frozen into the release payload at prepare, and approval approves that exact payload, which matches "release approval freezes the claim manifest".
+  - `agentWrittenBlockHashes` already restricts repairs to agent-authored blocks; it only needs DraftKit added.
+  - Overrides are article-wide (`LintRevision::overrides` 294-317), so kit approval can reuse them.
+  - Nothing posts automatically.
+  - Retrieval already excludes kit pieces (`frozenCanon`, `exemplarContextFor`), which matches "retrieved short-form exemplars are Stretch".
+  - The one spec premise that does not hold, "EditorialInputContractTest extended automatically", is a test claim, not a decision-log entry.
+
+## Edge Cases (Phase 6)
+
+- **Spawn** (`SpawnDistributionKit::spawn(actor, flagship, release)`)
+  - Idempotent per flagship and kind: look up `Article::where('parent_article_id', $flagship->id)->where('kind', $kind)`. Lock the flagship row so a retried approval cannot create duplicates; there is no unique index (`(content_idea_id, kind)` is a plain index).
+  - Return all three pieces in LinkedIn, Bluesky, Email order, and return existing ones unchanged.
+  - A second release: restart unapproved kits (new `draft_kit` with the new `flagship.release_id`). Leave approved or posted kits alone, and flag them "flagship changed since approval" by comparing the frozen release id with the flagship's latest approved release.
+  - Only for parentless `blog_post` flagships. Decide siblings and archive essays (see Risks).
+  - Scheduled approvals (status `scheduled`, stage Scheduled) spawn too, because approval committed.
+  - The kit attempt starts at `InReview` with `input_version` null and `review_cycle` 1. Set `current_attempt_id`.
+- **Frozen kit input** (StartEditorialActivity)
+  - Set `piece_kind` and `flagship` in the second `array_merge` argument (69-87) so a caller cannot override them.
+  - `flagship` holds `{article_id, release_id, text, title, canonical_url, claim_manifest, target_query}`. Take `text` from `payload.document`, for example the joined `LintTarget::fromDocument(...)->blocks` text (Phase 5 reused that walker). Take `title` from `payload.metadata.title`.
+  - Eligibility for `draft_kit`: a kit piece kind, the parent's release approval still active (not invalidated or withdrawn), and the attempt at InReview.
+  - Eligibility for `review_kit`: a completed `draft_kit` or `lint_repair` produced the current revision.
+  - Refuse `draft_kit` if the flagship release was withdrawn or its approval invalidated after a flagship edit (WriteArticle 155-157).
+- **Applying a kit draft**
+  - Build the document from the validated fields: one paragraph per field or post, deterministic ids, plain-text URLs (not link marks, so copied text keeps the URL).
+  - Origin `agent-initial`, mutation id `'agent-initial-'.$activity->id`. Set `proposal.applied_revision_id` so the lint chain and `agentWrittenBlockHashes` see it.
+  - On a restart, `revision_id` is frozen. If the owner saved in between, the result goes Stale (applyResult 395-405); that is the guard against overwriting.
+- **Validating kit output** (structure only; limits belong to lint)
+  - LinkedIn must be exactly `{text, first_comment}`, Bluesky `{posts: non-empty list<string>}`, and email `{subject, preview, body}`.
+  - Reject unknown or missing fields and empty strings, and respect `max_field_bytes`.
+  - Retries follow `failOrPause` (1070-1088): `run_count` up to `max_retries` (2) means Failed and retryable, beyond that Paused.
+- **Kit lint rules**
+  - Lengths in code points (`mb_strlen`, matching the packaging panel). Bluesky counts graphemes; decide whether to use `grapheme_strlen`. Say that the count includes the `i/n` prefix.
+  - LinkedIn hashtags: count `#word` tokens, never a `#` inside a URL fragment (`/walkthrough#choose-a-time`) or `#` followed by a digit. "Only at the end" means no non-hashtag text after the first hashtag in the final line.
+  - LinkedIn body URLs: detect bare `https?://` and `www.` text as well as link marks; `LintTarget.links` covers only marks.
+  - `kit-links-post`: normalize the scheme, `www.` and a trailing slash before comparing with the canonical URL (which has a trailing slash). Count exactly once across the piece, in the required field (LinkedIn first comment, Bluesky final post, email body).
+  - `email-blurb-length`: split sentences on `[.?!]` followed by whitespace or the end, but never inside a URL (`birdcar.dev/writing/...`) or a decimal number.
+  - `bluesky-numbering`: accept `i/n` at the start or end of a post, `i` must equal the post's position, and every `n` must equal the post count.
+  - `kit-no-walkthrough-cta`: a link mark matching the WalkthroughLink HREF regex, or bare text `/walkthrough` or `birdcar.dev/walkthrough`. The word "Walkthrough" alone is fine.
+  - LinkedIn: any URL in the body fires both `linkedin-link-in-comment` and possibly `kit-links-post`. Decide whether that double hit is acceptable.
+  - Body rules on kits: `stock-openers` checks the first sentence of each kit document; `exclamation-limit` allows one per piece; `unresolved-markers` stays unrepairable.
+  - Dataset fixtures: one violation row and one clean row per kit id, built with a kit-kind `LintTarget` plus context.
+- **Kit approval** (`ApprovalKind::Kit` through `ApprovePublishingStage::approve`)
+  - Input hash covers: kind, attempt id, working revision id and content hash, the lint state (hit hashes plus override reasons), and `review_kit` finding dispositions.
+  - Allowed when:
+    - the stage is InReview and the piece is a kit;
+    - a completed `review_kit` exists;
+    - a re-lint through `LintRevision::hits` plus `overrides()` leaves no hit without a reasoned override;
+    - no non-stale blocking `review_kit` finding is undecided.
+  - Store `revision_id` on the approval. The stage moves to Approved.
+  - Advisory `register` findings never block. Decide whether `channel` findings are advisory or blocking and enforce it in the validator.
+- **Mark posted**
+  - Requires `publishing.publish`, an active Kit approval on the working revision, and the flagship published (see Risks for the exact check).
+  - `posted_url` is optional; when given it must be `https://` (reject http, javascript: and the like) and at most 2048 characters. It is never fetched.
+  - Sets `posted_at = now()` and moves the kit attempt to Published. Marking twice should be idempotent or refused.
+  - When the flagship is unpublished, the refusal names the condition ("the flagship post is not published yet").
+- **Copy-out**: render each field's plain text with newlines for hardBreaks. Copy buttons use Alpine `navigator.clipboard`. No JS build is needed unless `resources/js` changes; Blade changes don't need `bun run build`.
+- **Siblings**
+  - `CreateSiblingPiece::create(actor, idea, ?note)` needs `publishing.write` (addPiece) and `publishing.develop` (develop and start). The Livewire side calls `Gate::authorize('develop', $article)`.
+  - The new piece is a `blog_post` with no parent.
+  - `sibling_context` lists the idea's other `blog_post` pieces (excluding self and kit kinds) as `{article_id, title, angle_thesis}`.
+    - `title` comes from working revision `metadata.title`, else the angle's title, else null. Never use the idea's summary title (contract G4).
+    - `angle_thesis` comes from `currentAttempt.angle.thesis`, else null.
+    - Eager-load `workingRevision` and `currentAttempt` with every column read (strict mode).
+  - Compute `sibling_context` inside StartEditorialActivity for Interview, so workspace restarts (`startInterview` 593-623, `startDevelopment`) keep it and a caller cannot forge it.
+  - The sibling cannot plan without its own angle approval (natural from `ensurePlanEligible`).
+  - The interviewer rubric must require each angle's `rationale` to state how it differs from every listed angle.
+- **Workspace kit panel**
+  - No develop or plan tabs. Show fields with copy buttons, lint and `review_kit` findings (Accept fix, override with reason, decide with reason), approve, and Mark posted (disabled with the reason until the flagship is published).
+  - A field edit saves through `WriteArticle::save(..., 'human')` and then `refreshVoiceRuleFindings()`.
+  - Show the "flagship changed since approval" and "flagship unpublished" warnings.
+  - Show "New post from this idea" on blog-post pieces.
+
+## Test Strategy (Phase 6)
+
+- **Inner loop**: `php artisan test --compact tests/Feature/Publishing/DistributionKitTest.php`, then `php artisan test --compact tests/Feature/Publishing/SiblingPieceTest.php`.
+- **Spec validation**: `php artisan test --compact tests/Feature/Publishing/DistributionKitTest.php tests/Feature/Publishing/SiblingPieceTest.php tests/Feature/Publishing/VoiceLintTest.php`
+- **Regression files** (they consume the changed code):
+  ```
+  php artisan test --compact tests/Feature/Publishing/VoiceCanonTest.php tests/Feature/Publishing/EditorialInputContractTest.php tests/Feature/Publishing/EditorialAgentsTest.php tests/Feature/Publishing/VoiceLintWorkflowTest.php tests/Feature/Publishing/ReleaseIntegrityTest.php tests/Feature/Publishing/ReleaseReadinessTest.php tests/Feature/Publishing/EditorialWorkflowTest.php tests/Feature/Publishing/PackagingTest.php tests/Feature/Publishing/AdminPublishingEditorTest.php tests/Feature/Publishing/AdminPublishingWorkspaceTest.php tests/Feature/Publishing/PublishingSessionTest.php tests/Feature/Publishing/PublishingAgentSettingsTest.php tests/Feature/Publishing/ContentIdeaTest.php tests/Feature/Publishing/ExemplarRetrievalTest.php tests/Feature/Publishing/PublicWritingTest.php tests/Feature/Publishing/PublishingJourneyTest.php tests/Feature/Publishing/EditorialReviewTest.php tests/Feature/Publishing/ReviewRubricTest.php tests/Feature/Publishing/NarrativeFrameworkTest.php
+  ```
+  Add `tests/Feature/AdminHomeTest.php` if ReadAdminHome changes.
+- **Phase check**: `php artisan test --compact tests/Feature/Publishing`
+- **Final**: `vendor/bin/pint --dirty --format agent`, then `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress`, then `composer test`.
+- **Canon checks**
+  - `test "$(grep -o '\[rule:[a-z0-9-]*\]' resources/publishing/canon/voice/kit-rules.md | sort -u | wc -l | tr -d ' ')" = 9`
+  - `! grep -rnE 'bluesky\.md|public\.md|FW/|~/.config|/Users/|[Vv]oice sample' resources/publishing/canon`
+  - `! grep -n '\[rule:' resources/publishing/canon/channels/kit.md resources/publishing/canon/exemplars/short-form.md`
+- **DistributionKitTest setup**
+  - `beforeEach`: `forgetCachedPermissions()` and `authorization:sync`.
+  - Actor: an Author-role user (every publishing permission).
+  - Flagship: `captureIdea`, then `save(releaseDocument-style doc, releaseMetadata-style metadata)` with an SEO title of 50-60 characters, a description of 150-160, and exactly one closing /walkthrough link. Then `develop(..., ['goal' => ..., 'post_type' => 'essay', 'target_query' => 'do I need another admin hire'])`, the angle and plan approvals, completed reviews, and research with claims (the PackagingTest:443-464 pattern). Then `prepare` and `approve`.
+  - Agents stay paused until the spawn assertions. Then run `setPublishingAgentsPaused(false)`, `config()->set('ai.providers.openrouter.key', 'test-key')`, `Queue::fake()` (follow-on activities are created but not dispatched) and `Http::preventStrayRequests()`.
+  - Route `Http::fake` by the decoded `messages.1.content.kind`, choosing the `draft_kit` payload by `input.piece_kind`.
+  - Run each activity with `app(RunEditorialActivity::class, ['activityId' => $id])->handle(app(EditorialOutput::class), app(WriteArticle::class))`.
+  - Map the spec experiments:
+    - (a) Three pieces with `parent_article_id` = flagship, the same `content_idea_id`, attempts at `in_review`, and three `draft_kit` activities.
+    - (b) A Bluesky post of 320 characters: a `lint_repair` starts; when the fake returns `{"patches": []}` the hit stays as a blocking lint finding, and `review_kit` then starts.
+    - (c) A `claim_outside_manifest` finding with blocking severity: Kit approval throws until it is decided.
+    - (d) `MarkKitPiecePosted` before `deliver()` throws, naming the condition; it succeeds after `deliver()`. Also cover the develop-after-publish case.
+    - (e) Prepare and approve a second flagship release: still three kit pieces; unapproved ones get a new `draft_kit`.
+    - (f) Paused: three pieces, no request (`Http::assertNothingSent()`), and drafts Pending or absent per the recorded choice.
+  - Also cover copy-out rendering, `posted_url` https validation, a kit edit after approval invalidating the approval, and ReadPublishedWriting excluding kit kinds.
+- **SiblingPieceTest**
+  - `CreateSiblingPiece::create` returns a `blog_post` with `parent_article_id` null and the same idea.
+  - Its Interview input has `sibling_context` with every other blog piece's title and angle thesis, and never the summary title.
+  - Plan approval refuses without the sibling's own angle approval ("Plan approval requires an active angle approval.").
+  - Run the interview with a fake whose `angleOptions` rationale differs, and assert that `messages.0.content` contains the interviewer rubric's new sibling sentence.
+- **VoiceLintTest**: one violation row and one clean row per kit id, built from a kit-kind target with context. Replace the "only blog posts" test. Filter the Drafter id audit to blog-applicable rules and add a KitDrafter audit. The two-way check stays as is.
+- **EditorialInputContractTest**: add `draft_kit` and `review_kit` dataset rows (rubric heading `# Core voice`; the files per roles.json), response arms, prerequisites, the updated exact-cases list, and an assertion that the kit input has `flagship.claim_manifest` and the flagship text.
+- **Environment**
+  - `birdcar_test` was confirmed on 127.0.0.1:5433 this session. No `--parallel`.
+  - Never run `tests/Manual` (paid); PHPStan still analyses it.
+  - `QUEUE_CONNECTION=sync` in phpunit.xml, so anything dispatched while unpaused runs inline. Use `Queue::fake()` when unpaused.
+
+---
+
+## Key Patterns (Phase 3)
+
+- **`app/Actions/Publishing/CheckArticleRelease.php:231-297`** (spec pattern)
+  - `unsafeDocumentLinks` and `documentText` are recursive closures (`$walk = function (mixed $node, string $path) use (&$walk, &$acc)`).
+  - They read `$node['marks']`, `data_get($mark, 'attrs.href')` and `$node['content']`.
+  - Both are private. `LintTarget::fromRevision()` needs its own walker that also tracks block id, heading level, ancestor flags and marks.
+  - Release findings use the shape `['severity', 'code', 'location', 'message', 'resolution']` (`finding()` at 176-179).
+- **`app/Services/Publishing/ArticleDocument.php`** (spec pattern)
+  - **Block nodes** (`BLOCK_NODES` 23-36): paragraph, heading, blockquote, bulletList, orderedList, listItem, codeBlock, horizontalRule, note, callout, chart, diagram. Inline nodes are `text` and `hardBreak`.
+  - **Marks** (332-355): only bold, italic, strike, code and link (`attrs.href`).
+  - **Heading level** must be 2 or 3 (`canonicalizeAttrs`, about 391-398). A level-1 heading can never be saved, and drafts are clamped to 2-3 by `RunEditorialActivity::withArticleHeadingLevels` (523-534).
+  - **Ids and protection**: every non-text node has `attrs.id` (`blk_` or `imp_` plus 16 hex) and an optional boolean `attrs.protected`.
+  - **codeBlock** text has no marks.
+  - **Attribute text**: note and callout carry `attrs.title`; chart and diagram carry `attrs.caption`. None of these is text content.
+  - Revisions are stored canonical, so the legacy paragraph `text` key has already been converted into `content[]`.
+- **`PublishingFingerprint::hash($node)`** is the subtree hash. `ApplyEditorialProposal::validatedPatchForBase` (168-184) compares it with a patch's `expected_hash`.
+  - Use the same hash for the "agent-authored" check and for the `expected_hash` in the repair input.
+  - jsonb reorders keys, so never compare block arrays with `===` (Phase 1 lesson; `WriteArticle:362` uses `canonicalJson`).
+- **`ApplyEditorialProposal.php:58-112`**: the block-patch pipeline (`findBlockInNodes`, `rejectOverlappingPatches`, `replaceBlockAtPath`, then `WriteArticle::save`).
+  - `applyLintRepair()` needs the same steps, and they are private.
+  - Prefer a small shared helper over a copy.
+- **Role agent**: copy `app/Ai/Agents/Drafter.php` by hand (`#[MaxTokens(n)]`, `model()` returning `$this->modelOverride ?? '...'`, `roleInstructions()`, `roleReasoningEffort()`).
+  - `php artisan make:agent` uses `stubs/agent.stub`, which builds a standalone SDK agent, not an `EditorialAgent` subclass.
+- **Rubric file**: `resources/publishing/canon/roles/reconciler.md` is the model: a `# Reconciler rubric` heading, a one-line job, and `## Output contract` bullets.
+  - Every `*.md` path a canon file mentions must exist inside the canon (`VoiceCanonTest:110-119`).
+  - No canon file may contain `~/.config`, `/Users/`, `FW/` or "voice sample".
+- **Schema** (`EditorialAgent::schema()` 198-270): nested JSON objects travel as `$schema->string()` whose description states the encoded shape (`document` at 242, `proposed_patch` at 318).
+  - `EditorialOutput::normalizeJsonEncodedFields` (69-90) decodes only top-level `document`, `metadataProposals` and `proposed_patch`, plus `findings[*].proposed_patch`.
+  - So `patches[*].replacement` needs its own decode in the `lint_repair` validator.
+- **Validation errors**: `EditorialOutput::validate()` throws `InvalidArgumentException('...reason')`, and `RunEditorialActivity::handle` routes it to `handleFailure` and then `failOrPause` (935-1012).
+  - `EditorialAgentsTest.php:207` runs `new EditorialOutput`, so keep EditorialOutput constructor-free.
+  - Pass the frozen hits and blocks in as arguments (an optional `validate()` parameter or a dedicated method).
+- **`#[Tag]`**: `vendor/laravel/framework/src/Illuminate/Container/Attributes/Tag.php` resolves to `$container->tagged($tag)`, a rewindable generator.
+  - Register the rules with `$this->app->tag([EmDash::class, ...], 'publishing.lint-rules')` in `AppServiceProvider::register()` (23-26), which already holds the scoped `VoiceCanon` binding.
+  - `tagged()` is used nowhere else yet. Never tag the abstract `BannedPhrasesRule`.
+- **Rule class names**: later specs name rules without a suffix (`SeoTitleLength.php` in Phase 4, `LinkedinLength.php` in Phase 6), so use `EmDash.php`, `CurlyQuotes.php` and so on.
+  - Phase 4 adds metadata rules (`blockId = null`) that `EditorialOutput` and `CheckArticleRelease` call.
+  - Phase 6 changes `appliesTo()` per kind and maps kit payloads in `LintTarget`.
+  - Phase 8 calls `VoiceLinter::ruleIds()`.
+  - Keep `VoiceLinter` able to lint one target with all applicable rules, and keep `LintTarget` easy to construct from a plain document and metadata array.
+- **Workspace (`⚡article-workspace.blade.php`)**
+  - **Human saves** go through three paths: `saveDocument` (164-219, autosave, origin `human`), `saveDetails` (110-124, via `saveDocument`) and `setBlockProtection` (670-723, a direct `WriteArticle::save` with origin `human`). `applyProposal` (534-558) is an `agent-accepted` save.
+  - **`decideFinding`** (513-532) checks the false-positive reason with `$this->addError('findingReasons.'.$id, 'Explain why this finding does not apply.')`. It only buffers dispositions in `$findingDispositions`, which are written by `finishReview` (560-578).
+  - **Errors** surface through `$this->saveError`. Gates: `update` for edits and proposals, `approve` for dispositions.
+- **Finding card (`partials/write.blade.php:59-91`)**: severity badge, lens label, statement, the "Suggested replacement" disclosure (from `proposalTexts`), "Accept change" (`applyProposal`), and the false-positive disclosure with `flux:textarea wire:model="findingReasons.{id}"` and `flux:error`. Reuse it for the "Voice rules" group.
+- **Test templates**
+  - `EditorialReviewTest.php:122-150`: `Queue::fake()`, one `Http::fake` response, start and run the Draft, then assert which lens activities were created. This is the template for the post-draft loop.
+  - `PublishingJourneyTest.php:30-84`: routes fake responses by the decoded `messages.1.content.kind`. This is the template for Draft-then-LintRepair sequences.
+  - `EditorialInputContractTest.php:166-186`: `inputContractRun` captures the system message and the input.
+  - `ReleaseReadinessTest.php`: `readinessPrerequisites` (363-412), `readinessFinding($attempt, $revision, $overrides)` (487-501) and `readinessDocument` (515-524).
+
+## Dependencies (Phase 3)
+
+- **`EditorialActivityKind::LintRepair`**: these exhaustive `match`es throw `UnhandledMatchError`, and fail PHPStan level 7, until a `LintRepair` arm is added.
+  - `app/Ai/Agents/EditorialAgent.php:46` (`forActivity`) and `:200` (`schema`).
+  - `app/Services/Publishing/EditorialOutput.php:23` (`validate`) and `:54` (`allowedKeys`).
+  - `app/Actions/Publishing/RunEditorialActivity.php:1170` (`prerequisiteApprovalFor`, returns `ApprovalKind::Plan`).
+  - `app/Actions/Publishing/StartEditorialActivity.php:128` (`ensureEligible`) and `:577` (`activityMatchesCurrentApproval`, returns Plan).
+  - `app/Actions/Publishing/ApprovePublishingStage.php:328` (`activityMatchesCurrentApproval`). **Not in the spec.**
+  - `resources/views/components/admin/settings/⚡publishing.blade.php:215` (`roleLabel`) and `:230` (`rolePurpose`). **Not in the spec.** The page iterates `cases()` (78, 92, 149, 188), and `PublishingAgentSettingsTest` renders it. Model overrides per kind just work.
+  - Already covered by a `default` arm: `⚡dashboard.blade.php:139`, `partials/session.blade.php:52` (consider adding a `lint_repair` status line), `app/Actions/Admin/ReadAdminHome.php:161`.
+- **`RunEditorialActivity::actorCanRunKind`** (1033-1040) requires `publishing.write` only for Draft. LintRepair saves revisions, so add it there. Otherwise `WriteArticle::authorize` throws inside `applyResult`, after the request was paid for.
+- **`EditorialAgent::recommendedModelFor`** (72-75) builds `new EditorialActivity(['kind' => $kind])`, so `LintRepairer::model()` must not read its input.
+- **`VoiceCanonTest.php:122-132`** iterates `cases()`, so `roles.json` needs a `lint_repair` entry whose first file starts with `# `. `voice/core.md` does.
+- **`EditorialInputContractTest.php` is not covered automatically**, contrary to the spec.
+  - The dataset is an explicit 9-row `->with([...])` (212-234). Add `'lint repair' => [LintRepair, '# Core voice', [voice/core.md, voice/mechanical-rules.md, roles/lint-repairer.md]]`.
+  - `inputContractResponse` (152-163) is exhaustive. Add a `['patches' => []]` arm.
+  - `inputContractStart` (111-139) needs LintRepair prerequisites: a completed Draft on the revision, plus `hits` and `expected_revision_id` input.
+  - The test at 236-240 asserts the exact list of 9 case values.
+  - The spec adds an assertion that the `lint_repair` input holds the hits and the blocks they touch.
+- **`EditorialAgentsTest.php`**: extend the `forActivity` chain at 36-46, and add `'lint repairer' => [EditorialActivityKind::LintRepair, 'google/gemini-3.8-flash', 'low', 16000]` to the model dataset at 146-157.
+- **Post-draft chain** (`RunEditorialActivity::applyResult`, 353-479)
+  - `queueReviewLensesAfterCompletedDraft` (1042-1063) runs inside the `applyResult` transaction, only when `proposal.applied_revision_id` is set. `applyDraft` (537-555) applies a draft only to an empty document; otherwise it stores a proposal and no lenses queue.
+  - Lenses start with input `['draft_activity_id' => ...]` and batch key `review-{cycle}-{revisionId}`. The review kinds' idempotency ignores `prompt_hash` (`idempotencyPayload` 478-503); LintRepair uses `prompt_hash` like Draft.
+- **Review eligibility after a repair (not in the spec)**
+  - `ensureReviewEligible` (170-179) calls `completedDraftExistsForRevision` (505-524). That only accepts `draft.revision_id` or `draft.proposal.applied_revision_id` equal to the working revision.
+  - After an `agent-repair` revision, starting the lenses throws "Review lenses can only start after the draft has completed for the current revision."
+  - Accept a completed same-cycle `lint_repair` whose `proposal.applied_revision_id` is the working revision, with matching plan approval.
+  - The workspace `startReviews` button (493-511) and the spec's "Skip repair and review" action go through the same check.
+- **`WriteArticle::save`** (89-165)
+  - `article_revisions.origin` is a free string with no constraint.
+  - The protected-block guard at 337 lists `agent`, `agent-initial` and `agent-accepted`; add `agent-repair` (spec).
+  - Leave `agent-repair` out of `markReviewedRevisionStale` (167-183, which stales lens work only for `human` and `agent-accepted`).
+  - Every save invalidates Release approvals and withdraws scheduled releases (155-159).
+- **Readers of lint findings** (`lens = 'lint'`, `severity = 'blocking'`)
+  - **`FinishEditorialReview.php:87-97`** throws on undisposed blocking findings. Exclude `lens = 'lint'` (spec).
+  - **`StartEditorialActivity::reviewFindings`** (246-273) freezes every lens's findings for reconciliation and recheck. Exclude `lint` (not in the spec). Otherwise the reconciler groups lint findings, and `ensureRecheckAssessedEveryFinding` (RunEditorialActivity 705-723) makes the rechecker classify them.
+  - **`CheckArticleRelease::materialEditorialBlockers`** (410-435) reports every blocking finding as `editorial.material_unresolved`. Exclude `lint`, so an unresolved hit blocks once as `lint.<id>` and the re-lint stays the source of truth.
+  - **`ApplyEditorialProposal.php:68`** requires `finding.input_hash === baseRevision.content_hash`. Lint findings keep the hit hash there, so "Accept fix" always throws "Editorial proposal output is stale." (not in the spec). For `lens = 'lint'`, skip that comparison; the patch `expected_hash` at 179-181 already guards drift. Line 176-178 rejects patches on protected blocks ("Protected passages must be unlocked before accepting this proposal."), which is the expected outcome for spec case (c).
+  - **`ApplyEditorialProposal::markOnlyInvalidatedFindingsStale`** (121-140) keeps findings whose `expected_subtree_hash` is null. Set it on lint findings, or run `LintRevision` after `applyProposal`.
+  - **`ReleaseFreshnessManifest::reviewManifest`** hashes findings together with their dispositions, so an override changes the release input hash. That is expected: a prepared release goes stale after an override.
+  - **Workspace `with()`** (822-886) lists non-stale findings for the current `review_cycle` (831-836) and builds `proposalTexts` from `proposed_patch['replacement']` (867).
+- **Consumers of `CheckArticleRelease`**: `ManageArticleRelease::prepare` (128) and `ensureReleaseReadinessIsCurrent` (375, used by approve and deliver), `PublishDueArticles`, and `findingsForRelease` (148). It is built only by DI, so adding a `VoiceLinter` constructor argument is safe.
+- **Callers of `RunEditorialActivity::handle(EditorialOutput, WriteArticle, ?PublicSourceFetcher)`**: about 20 test sites pass the first two arguments positionally, and `app()->call([new RunEditorialActivity($id), 'handle'])` appears in 4 files. Add a new dependency as a trailing nullable parameter, or resolve it with `app()`.
+- **Tests that go red, beyond the spec's list**
+  - **Why**: `walkthrough-link` fires on every BlogPost without exactly one /walkthrough link, and every test article is `blog_post` (ArticleFactory:28, `captureIdea`).
+  - **Release fixtures**: `ReleaseIntegrityTest::releaseDocument` (794), `ReleaseReadinessTest::readinessDocument` (515) and `readinessAssetDocument` (418), `EditorialWorkflowTest::editorialDocument` (592, with releases at 61 and 434), the `AdminPublishingEditorTest` release at 300, and `PublicWritingTest:76` (deliver). Their texts are otherwise clean ("Draft", "Supported body.", "Reviewed" and similar). Add one closing paragraph with a single `/walkthrough` link mark to each helper.
+  - **Draft-to-lens fixtures**: `EditorialReviewTest.php:122-150` ('Draft for review', which expects 3 lenses), `EditorialWorkflowTest.php:280-370` ('Agent drafted manuscript.' with `drainEditorialActivities(3)`, which expects 3 completed lenses), and `PublishingJourneyTest.php:56-63`, whose `match` default at 84 throws "Unexpected journey kind lint_repair". Make these draft fixtures lint-clean so they keep testing the lens path.
+  - **Metadata titles**: fixtures use Title Case titles ("Agent Plan Pipeline"). Do not apply sentence case to metadata; Phase 4 owns `title-sentence-case`.
+- **Tests that stay green**
+  - AdminPublishingEditorTest:243-262 asserts "No findings have been recorded" after workspace saves, but that article has no attempt, so `LintRevision` must be a no-op there.
+  - `PublishingSessionTest` saves likewise run without an attempt.
+
+## Conventions (Phase 3 additions)
+
+- **Namespaces**: `App\Services\Publishing\Lint\{LintRule, LintTarget, LintHit, VoiceLinter}`, `App\Services\Publishing\Lint\Rules\*`, `App\Actions\Publishing\LintRevision`, `App\Ai\Agents\LintRepairer`.
+- **Classes**: `final readonly class` for value objects (precedent `CanonSnapshot`). There is no app interface precedent in `app/Services`, so `LintRule` is the first.
+- **Generics**: use `@param iterable<LintRule> $rules` and `@return list<LintHit>`. PHPStan level 7 covers `tests/` with no baseline and no ignores.
+- **Lint finding row**:
+  - Values: `lens = 'lint'`, `kind = 'lint:<id>'`, `severity = 'blocking'`, `block_id`, `statement = message`, `input_hash = hit hash` (`string(64)`), `revision_id`, `review_cycle` set to the attempt's current cycle, and `activity_id` null for save-time findings.
+  - `proposed_patch` must be `{block_id, expected_hash, replacement}`, the shape ApplyEditorialProposal reads.
+  - `editorial_findings.attempt_id` is NOT NULL (`2026_09_22_230000_create_editorial_activity_tables.php:102`), so `LintRevision` must no-op when the article has no current attempt.
+- **Override**: `disposition = 'false_positive'` plus a trimmed, non-empty `disposition_reason`, `disposition_actor_id` and `disposed_at`. This is the rule `CheckArticleRelease::materialFindingResolved` (440-444) already applies.
+- **Test names**
+  - Helper prefixes: use `voiceLint*` in VoiceLintTest and a different prefix in VoiceLintWorkflowTest (for example `lintWorkflow*`). The spec's example `voiceLintDocument()` must exist in only one file, or Pest fatals on redeclare.
+  - The global constants `VOICE_CANON_RULE_IDS` (VoiceCanonTest:9) and `INPUT_CONTRACT_EXEMPLAR_IDS` already exist, so prefix any new ones `VOICE_LINT_`.
+- **Schema descriptions**: every rule `EditorialOutput` enforces for `lint_repair` (`hit_id` from the input, block must exist, `expected_hash` echoed, replacement keeps the block id and type, byte limit `publishing_agents.limits.max_field_bytes` = 32768) is stated in its description. This is the validator-to-schema audit from contract line 154.
+- **Agent limits** (`.ai/rules/ai.md`): `#[MaxTokens(16000)]` with low effort is a runaway guard. Do not lower it to save cost.
+
+## Risks (Phase 3)
+
+- **The spec's word lists differ from the canon statements the Drafter is told** (`voice/mechanical-rules.md:5-25`). The two-way test compares ids only.
+  - `public-vocabulary`: the canon has bare "stack" and "scale" as a hype verb; the spec has "tech stack" and "solutions". `voice/core.md:41` itself says "a stack of promises".
+  - `filler-phrases`: the canon has "it is important to note that"; the spec has "it is worth noting".
+  - `chatbot-artifacts`: the canon adds "here is an overview of", "while details are limited" and "based on available information".
+  - `stock-openers`: the canon adds "In this article", "Let's dive in", "In conclusion" and "Ultimately,".
+  - `label-headings`: the canon adds "Bottom line" and "Key takeaways"; the spec adds background, final thoughts and wrapping up.
+  - `corporate-we`: the canon adds "ourselves".
+  - `experience-claim`: the canon adds "over fifteen years".
+  - `em-dash`: the canon also covers titles and metadata.
+  - Judgment-only qualifiers: "landscape (in the abstract sense)", "leverage (as a verb)", "bandwidth (meaning capacity)".
+  - Recommendation: union the lists, leave out judgment-only items (bare "stack", hype "scale"), and record each choice in the implementation notes.
+- **Rule semantics that conflict with the canon. Pick one reading for each and record it.**
+  - `bold-limit`: the spec counts more than two bold spans per piece; the canon says at most one per H2 section.
+  - `exclamation-limit`: the canon also bans any "!" in a heading, title or meta description.
+  - `walkthrough-link`: the canon and `channels/blog.md:75,89` place it in the closing invitation paragraph; the spec says after the final H2, or in the last three blocks.
+  - `heading-order`: a level-1 heading cannot be saved, so only "H3 before any H2" can fire.
+- **Unresolved markers.** `roles/drafter.md:21` tells the Drafter to write `[NEED: proof]` and `[TODO: Nick to supply]`, so most drafts produce `unresolved-markers` hits.
+  - Sending them to the repairer invites invented proof, which breaks the never-invent rule.
+  - Leave non-repairable hits out of the repair request: `unresolved-markers`, and metadata hits (null block id, which cannot be patched). Store them straight as findings.
+  - If a pass would carry only non-repairable hits, skip repair.
+- **"Accept fix" conflict**: see `ApplyEditorialProposal.php:68` under Dependencies.
+- **Review-eligibility gap**: see Dependencies.
+  - An owner edit while a repair is pending makes the repair Stale (`passesExecutionChecks` 254-262), and the chain stops; lenses never queue.
+  - The spec's "Skip repair and review" action (Failure Modes table) is not in File Changes. Implement it in the workspace with a `develop` or `approve` gate: sync findings on the current revision and queue lenses. It also needs the eligibility fix.
+- **Validation-failure path.** The Error Handling table says that when repair output is invalid, "the activity fails ... and the lenses still queue with lint findings stored". Failures reach `handleFailure` (935-971) outside `applyResult`, and nothing hooks that today. Add a `lint_repair` branch, or decide that the owner uses Retry or "Skip repair and review", and record it.
+- **Several hits in one block.** Each patch carries the original block's `expected_hash`. After the first is applied, the rest mismatch and are skipped, which burns the 2-pass cap. Group hits by block in the input and accept one patch per block (its `hit_id` can be any hit in that block). Stop the loop early if a pass applied nothing.
+- **`expected_hash`.** The model cannot compute sha256. Freeze `{block_id, hash, node}` for every touched block in the `lint_repair` input so the model echoes the hash. The whole manuscript is already frozen under `input.manuscript` (StartEditorialActivity:72-77).
+- **Inherited protection.**
+  - A paragraph inside a protected blockquote, list, note or callout is not itself `attrs.protected`.
+  - Patching it changes the protected ancestor's subtree, so `WriteArticle` throws "Agent edits cannot modify protected blocks." (362-364).
+  - `LintTarget` must set `protected` when any ancestor is protected.
+  - `ApplyEditorialProposal::validatedPatchForBase` checks only the target node, so owner acceptance hits the same WriteArticle guard.
+- **Finding the "agent-authored" baseline.** Revisions have no `attempt_id`. Find the attempt's agent revisions through its activities (`draft.proposal.applied_revision_id`, then each `lint_repair.proposal.applied_revision_id`), and compare `PublishingFingerprint::hash` of the block. The Drafter may itself set `attrs.protected: true`; the schema at 242 requires the flag.
+- **Archive essays.**
+  - All 10 essays in `resources/writing` use "we" or "our", and two contain em dashes. They are `BlogPost` kind.
+  - Any new revision of an imported essay will be blocked by many hits, each needing a reasoned override.
+  - `channels/blog.md:5` says the canon does not apply to archive essays.
+  - This is the owner's decision. Note it in the implementation notes, and consider skipping articles whose published release has `origin = 'import'`.
+- **Override persistence and scope**
+  - `decideFinding` only buffers until `finishReview`, but release reads the database. Add an action that writes the override immediately: `Gate::authorize('approve')`, `lens = 'lint'`, current article and attempt, and a non-empty reason (else `addError`).
+  - Override lookup must not filter on `stale_at`, because `LintRevision` stales earlier revisions' findings.
+  - Scope the lookup to the article or the attempt, and record which.
+  - Copy an existing override forward onto the new revision's finding with the same hash, so the panel does not show it again.
+- **Hash collisions.** The same excerpt twice in one block yields one `input_hash`. Dedupe per hash, or add an occurrence index. For `exclamation-limit` and `bold-limit`, the excerpt needs surrounding words, not just "!".
+- **False positives verified with PCRE 10.44.** `corporate-we` with `/i` matches "US" (the country). `\p{Extended_Pictographic}` matches © ® ™ and ↔ (but not →). `sentence-case-headings` needs to exempt "I", I'm, I'd, I've, I'll, "Nick", all-caps acronyms and the allowlist.
+- **Wide test blast radius.** See the red-tests list. Fix the fixtures in each helper rather than per test.
+- **The decision log matches the code; no contradictions.**
+  - No linter exists: `rg -i lint app` finds only `VoiceReviewer.php:17`, which says "the linter owns the mechanical rules".
+  - `roles/voice-reviewer.md:3,42` already defers mechanical rules to the linter and keeps voice findings advisory.
+  - Vale is not installed.
+  - All 21 `[rule:` ids are tagged once in `mechanical-rules.md` (VoiceCanonTest:186-197).
+  - One caveat, not a Phase 3 blocker: "LLM style findings stay advisory" rests on rubric wording only. `materialEditorialBlockers` blocks any LLM finding the model marks `blocking`.
+
+## Edge Cases (Phase 3)
+
+- **LintTarget**
+  - **Blocks**: one block per text-bearing node (paragraph, heading, codeBlock), with its own `attrs.id`, in document order.
+  - **Flags**: `in_blockquote` is true under any blockquote ancestor. `protected` is true when the node or any ancestor is protected. Mark list-item paragraphs too (for `inline-header-list`).
+  - **Text**: skip `code`-marked text and every `codeBlock`. Replace a skipped span with a space so words do not fuse, and turn `hardBreak` into a space.
+  - **Merging**: adjacent text nodes that are both bold form one bold span (bold+italic splits nodes). Adjacent nodes with the same link `href` form one link; otherwise one anchor counts as two links.
+  - **Attribute text**: decide whether note/callout `attrs.title` and chart/diagram `attrs.caption` are checked; at least em dash, curly quotes and emoji apply.
+  - **Metadata**: check `title` and `description` with the character rules only (em dash, curly quotes, emoji, excluded names, unresolved markers, "!" in title or description). Skip `date` and `tags`. Never apply sentence case to metadata.
+  - **Kind**: Phase 3 rules apply only to `PieceKind::BlogPost`.
+  - **Order**: hits follow document position.
+- **Rules**
+  - **Word lists**: match on word boundaries, case-insensitive, with `/u`. Accept both `'` and `’` in "it's", "we're" and so on (curly forms also trip `curly-quotes`). `align with` fires both `ai-vocabulary` and `corporate-vocabulary` (`align`); decide whether that is acceptable.
+  - **`negative-parallelism`**: use the spec's two regexes. Check clean prose such as "It's a memory problem" (core.md:116).
+  - **`stock-openers`**: check the first sentence of the document and the first sentence after every heading.
+  - **`sentence-case-headings`**: count capitalized words after the first, excluding the allowlist, "I" and its contractions, all-caps acronyms, and words inside straight quotes. A single capitalized word (for example "What a Walkthrough report covers", from blog.md:28) passes.
+  - **`label-headings`**: compare the trimmed, case-insensitive heading text, ignoring trailing punctuation.
+  - **`inline-header-list`**: the colon can sit inside the bold ("**Performance:**") or right after it.
+  - **`corporate-we`**: skip blockquotes and straight double-quoted spans. An unbalanced quote should not swallow the rest of the block.
+  - **`walkthrough-link`**
+    - Matches `/walkthrough`, with or without a trailing slash, query or fragment (`/walkthrough#choose-a-time` is a real anchor per `.ai/rules/resources.md`), and `http(s)://(www.)birdcar.dev/walkthrough`.
+    - `/assessment`, `/contact` and `birdcar.test` do not count.
+    - Zero links, two links, or one link in the opening section each fail (spec test).
+  - **`experience-claim`**: "fifteen years" and "more than 12 years" pass (site copy uses "fifteen years").
+- **Post-draft loop**
+  - **Cap**: count completed `lint_repair` activities in this attempt and `review_cycle`. Stop at 2. Store the remaining hits with their carried unapplied patches as findings, then queue lenses with batch key `review-{cycle}-{revisionId}`.
+  - **Repair batch key**: `lint-repair-{cycle}-{revisionId}`. Its idempotency includes `prompt_hash`, which covers the hits and the revision.
+  - **Paused agents**: `StartEditorialActivity` creates the activity but does not dispatch it; recovery dispatches it once unpaused (`RecoverEditorialActivities`, every 5 minutes).
+  - **Draft applied as a proposal** (document not empty): no lint step and no lenses, as today.
+  - **Patch validation**: reject a `hit_id` that is not in the input, a block that is not in the hits, or a replacement whose `attrs.id` or type differs from the target. A hash mismatch skips that patch and keeps the hit.
+  - **Applying patches**: apply only to agent-authored, unprotected blocks, saved as a new revision through `WriteArticle::save(..., 'agent-repair-'.$activity->id, 'agent-repair')`. Patches for owner-edited or protected blocks go onto the matching findings.
+- **LintRevision**
+  - No current attempt: do nothing.
+  - Sync by `input_hash` per revision: create findings for new hits, and set `stale_at` on vanished hits and on lint findings of earlier revisions.
+  - Run it after `saveDocument`, `saveDetails`, `setBlockProtection` and `applyProposal`. It must never throw into the save response.
+  - After `restartReview` bumps the cycle, the panel shows no lint findings until the next save, but release still re-lints.
+- **Release**
+  - Re-lint the exact revision. Codes are `lint.<id>`, and the location is the block id or `$.metadata.title`/`$.metadata.description`.
+  - A hit is cleared only by a matching `input_hash` with `false_positive` and a trimmed, non-empty reason. A bare false positive does not clear it, and changed text yields a new hash that blocks again.
+  - The override recorded on revision N must still clear revision N+1 when the text is unchanged.
+
+## Test Strategy (Phase 3)
+
+- **Inner loop**: `php artisan test --compact tests/Feature/Publishing/VoiceLintTest.php`
+- **Workflow**: `php artisan test --compact tests/Feature/Publishing/VoiceLintWorkflowTest.php`
+- **Spec validation**: `php artisan test --compact tests/Feature/Publishing/VoiceLintTest.php tests/Feature/Publishing/VoiceLintWorkflowTest.php tests/Feature/Publishing/ReleaseReadinessTest.php`
+- **Regression files** (they consume the changed code):
+  ```
+  php artisan test --compact tests/Feature/Publishing/EditorialInputContractTest.php tests/Feature/Publishing/EditorialAgentsTest.php tests/Feature/Publishing/VoiceCanonTest.php tests/Feature/Publishing/EditorialReviewTest.php tests/Feature/Publishing/EditorialWorkflowTest.php tests/Feature/Publishing/PublishingJourneyTest.php tests/Feature/Publishing/ReleaseIntegrityTest.php tests/Feature/Publishing/AdminPublishingEditorTest.php tests/Feature/Publishing/PublicWritingTest.php tests/Feature/Publishing/PublishingAgentSettingsTest.php tests/Feature/Publishing/PublishingSessionTest.php tests/Feature/Publishing/AgentBudgetTest.php tests/Feature/Publishing/EditorialToolApprovalTest.php
+  ```
+- **Phase check**: `php artisan test --compact tests/Feature/Publishing`
+- **Final**: `vendor/bin/pint --dirty --format agent`, then `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress`, then `composer test`.
+- **VoiceLintTest setup**
+  - Datasets: one violation row and one clean row per id.
+  - Build targets from plain arrays: a `LintTarget::fromDocument(array $document, array $metadata, PieceKind $kind)` constructor wrapped by `fromRevision()` avoids database rows. Run a single rule by resolving `app(VoiceLinter::class)` and filtering by id, or by constructing the rule directly.
+  - Clean rows use the register examples in `voice/core.md:116-134`.
+  - Two-way check: `expect(app(VoiceLinter::class)->ruleIds())->toBe(app(VoiceCanon::class)->snapshot()->ruleIds())`. Both lists are sorted and unique.
+  - Drafter audit: every line of `mechanical-rules.md` containing `[rule:` must appear in the Draft system message `messages.0.content`. Capture it with an `inputContractRun`-style helper and a Draft started with prerequisites.
+  - Every id must appear in `(new Drafter($activity))->schema(new JsonSchemaTypeFactory)['document']->toArray()['description']`. In the HTTP body the path is `response_format.json_schema.schema.properties.document.description` (`vendor/laravel/ai/src/Gateway/OpenAiCompatible/Concerns/BuildsTextRequests.php:68-80`).
+- **VoiceLintWorkflowTest setup**
+  - Run `setPublishingAgentsPaused(false)`, `config()->set('ai.providers.openrouter.key', 'test-key')`, `Queue::fake()` (follow-on activities are created but not dispatched) and `Http::preventStrayRequests()`.
+  - Route `Http::fake` responses by the decoded `messages.1.content.kind`.
+  - Run each activity with `app(RunEditorialActivity::class, ['activityId' => $id])->handle(app(EditorialOutput::class), app(WriteArticle::class))`.
+  - The attempt must have an empty working document so the draft applies; use the `reviewAttempt` pattern from EditorialReviewTest:557.
+  - Map the spec experiments (a) through (e) to:
+    - (a) two em dashes fixed by repair 1; three lenses queue.
+    - (b) repairs that never fix the hit: exactly two `lint_repair` activities, then one blocking `lint` finding and the lenses.
+    - (c) a protected block containing "leverage": the patch is attached to the finding, never applied, and Accept shows the unlock message.
+    - (d) a workspace `saveDocument` that adds a curly quote creates one finding.
+    - (e) is covered in ReleaseReadinessTest.
+  - Also: review finish is not blocked by lint findings, and reconciliation input excludes `lint`.
+- **ReleaseReadinessTest**: create lint findings with `readinessFinding($attempt, $revision, ['lens' => 'lint', 'kind' => 'lint:em-dash', 'block_id' => ..., 'input_hash' => $hit->inputHash(), 'disposition' => 'false_positive', 'disposition_reason' => '...'])` on a document with an em dash. Add the /walkthrough closing paragraph to `readinessDocument` so the other tests stay unblocked.
+- **Environment**
+  - `birdcar_test` is confirmed on 127.0.0.1:5433.
+  - No `--parallel`.
+  - Never run `tests/Manual` (paid); PHPStan still analyses it.
+  - The workspace UI needs `bun run build` only if assets change, and Blade changes don't need it.
+
+---
 
 ## Key Patterns (Phase 2)
 
