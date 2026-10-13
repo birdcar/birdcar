@@ -41,6 +41,30 @@ test('database reader exposes only delivered release snapshots across writing pa
         ->assertDontSee('draft-only');
 });
 
+test('essay page titles the document with the SEO title and falls back to the title', function (): void {
+    publicWritingArticle('seo-titled', 'Seo Titled', 'Body.', '2024-02-01');
+    $actor = publicWritingAuthor();
+    $archive = Article::factory()->create(['author_id' => $actor->id, 'slug' => 'archive-essay']);
+    $revision = ArticleRevision::factory()->create([
+        'article_id' => $archive->id,
+        'created_by' => $actor->id,
+        'document' => publicWritingDocument('Body.'),
+        'metadata' => array_diff_key(publicWritingMetadata('Archive Essay', '2024-02-02'), ['seo_title' => true]),
+    ]);
+    $release = publicWritingRelease($archive, $revision, 'archive-essay', '2024-02-02');
+    $archive->forceFill(['working_revision_id' => $revision->id, 'published_release_id' => $release->id])->save();
+
+    $seoTitle = publicWritingSeoTitle('Seo Titled');
+
+    $this->get('/writing/seo-titled/')->assertOk()
+        ->assertSee('<title>'.$seoTitle.' — Birdcar</title>', false)
+        ->assertSee('<h1>Seo Titled</h1>', false)
+        ->assertSee('property="og:title" content="'.$seoTitle.' — Birdcar"', false);
+    $this->get('/writing/archive-essay/')->assertOk()
+        ->assertSee('<title>Archive Essay — Birdcar</title>', false)
+        ->assertSee('<h1>Archive Essay</h1>', false);
+});
+
 test('database reader does not fall back to legacy files for missing records', function (): void {
     expect(app(ReadPublishedWriting::class)->find('just-build-it-twice'))->toBeNull();
 

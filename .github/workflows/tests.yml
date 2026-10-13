@@ -80,12 +80,25 @@ jobs:
         env:
           APP_ENV: production
         run: |
+          APP_ENV=local php artisan migrate:fresh --force --no-interaction
+          php artisan authorization:sync --no-interaction
+          ACTOR_ID=$(php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $actor = App\Models\User::query()->create(['name' => 'Archive Import', 'email' => 'archive-import@example.test', 'password' => Illuminate\Support\Str::random(32)]);
+          $actor->assignRole(App\Authorization\Publishing\Role::Author->value);
+          echo $actor->id;
+          PHP
+          )
+          php artisan publishing:import-archive --write --actor="$ACTOR_ID" --confirm-production-write --no-interaction
           php <<'PHP'
           <?php
           require 'vendor/autoload.php';
           $app = require 'bootstrap/app.php';
           $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-          $articles = $app->make(App\Actions\ReadWriting::class)->all();
+          $articles = $app->make(App\Actions\Publishing\ReadPublishedWriting::class)->all();
 
           if ($articles->isEmpty()) {
               throw new RuntimeException('No published writing loaded.');

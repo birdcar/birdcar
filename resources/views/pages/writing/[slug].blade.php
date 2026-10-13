@@ -15,7 +15,7 @@ render(function (View $view, string $slug, ReadPublishedWriting $writing): View 
 });
 
 ?>
-<x-marketing.layout :title="$article['title']" :description="$article['description']" active="writing" :article="true" :published-at="$article['date']" :canonical="route('public.article', ['slug' => $article['slug']]).'/'">
+<x-marketing.layout :title="$article['title']" :seo-title="$article['seoTitle']" :description="$article['description']" active="writing" :article="true" :published-at="$article['date']" :canonical="route('public.article', ['slug' => $article['slug']]).'/'">
     <article class="essay">
         <header class="essay-heading">
             <a class="back-link" href="{{ route('public.writing') }}"><x-marketing.arrow /> All writing</a>

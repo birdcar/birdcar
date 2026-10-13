@@ -1,10 +1,10 @@
-@props(['title' => 'Make room for better work.', 'description' => 'I help businesses untangle work that’s become harder to keep up with. Start with a free Walkthrough and a written report you keep.', 'active' => '', 'article' => false, 'canonical' => null, 'home' => false, 'publishedAt' => null, 'schema' => []])
+@props(['title' => 'Make room for better work.', 'description' => 'I help businesses untangle work that’s become harder to keep up with. Start with a free Walkthrough and a written report you keep.', 'active' => '', 'article' => false, 'canonical' => null, 'home' => false, 'publishedAt' => null, 'schema' => [], 'seoTitle' => null])
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough', $schema))
+        @php(app(\App\Services\MarketingSite::class)->head($title, $description, $canonical ?? request()->getPathInfo(), $publishedAt, $active === 'walkthrough', $schema, $seoTitle))
         @head
         <link rel="icon" href="{{ asset('marketing-icon.ico') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
         <link rel="icon" href="{{ asset('marketing-icon.svg') }}" sizes="any" type="image/svg+xml">

@@ -41,9 +41,10 @@ class MarketingSite
     /**
      * @param  array<int, array<string, mixed>>  $entities  Typed schema.org entities describing the page; the first is its main entity.
      */
-    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $walkthrough = false, array $entities = []): void
+    public function head(string $title, string $description, string $path, ?CarbonInterface $publishedAt = null, bool $walkthrough = false, array $entities = [], ?string $seoTitle = null): void
     {
         $canonical = $this->url($path);
+        $searchTitle = ($seoTitle !== null && $seoTitle !== '' ? $seoTitle : $title).' — Birdcar';
         $person = ['@type' => 'Person', '@id' => $this->url().'#person', 'name' => 'Birdcar', 'url' => $this->url()];
         $website = ['@type' => 'WebSite', '@id' => $this->url().'#website', 'name' => 'Birdcar', 'url' => $this->url(), 'publisher' => ['@id' => $person['@id']]];
         $page = [
@@ -84,13 +85,13 @@ class MarketingSite
             array_push($graph, ...$entities);
         }
 
-        Head::title($title.' — Birdcar', exact: true)
+        Head::title($searchTitle, exact: true)
             ->description($description)
             ->canonical($canonical, forceHttps: false)
             ->themeColor('#edf3f0')
             ->robots($this->indexable() ? 'index, follow, max-image-preview:large' : 'noindex, nofollow')
-            ->og(type: $publishedAt ? 'article' : 'website', title: $title.' — Birdcar', description: $description, url: $canonical, siteName: 'Birdcar', locale: 'en_US')
-            ->twitter(card: 'summary', title: $title.' — Birdcar', description: $description);
+            ->og(type: $publishedAt ? 'article' : 'website', title: $searchTitle, description: $description, url: $canonical, siteName: 'Birdcar', locale: 'en_US')
+            ->twitter(card: 'summary', title: $searchTitle, description: $description);
 
         foreach ($graph as $entity) {
             Head::schema(['@context' => 'https://schema.org', ...$entity]);

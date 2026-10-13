@@ -10,7 +10,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
- * @phpstan-type PublicArticle array{slug: string, title: string, description: string, date: CarbonImmutable, tags: list<string>, html: string, readMinutes: int}
+ * @phpstan-type PublicArticle array{slug: string, title: string, seoTitle: string, description: string, date: CarbonImmutable, tags: list<string>, html: string, readMinutes: int}
  */
 class ReadPublishedWriting
 {
@@ -76,12 +76,21 @@ class ReadPublishedWriting
         return [
             'slug' => is_string($payload['canonical_slug'] ?? null) ? $payload['canonical_slug'] : (string) $article->slug,
             'title' => (string) ($metadata['title'] ?? 'Untitled'),
+            'seoTitle' => $this->seoTitle($metadata),
             'description' => (string) ($metadata['description'] ?? ''),
             'date' => $date,
             'tags' => is_array($tags) ? array_values(array_filter($tags, 'is_string')) : [],
             'html' => $html,
             'readMinutes' => $this->readMinutes($payload, $html),
         ];
+    }
+
+    /** @param array<string, mixed> $metadata */
+    private function seoTitle(array $metadata): string
+    {
+        $seoTitle = is_string($metadata['seo_title'] ?? null) ? trim($metadata['seo_title']) : '';
+
+        return $seoTitle !== '' ? $seoTitle : (string) ($metadata['title'] ?? 'Untitled');
     }
 
     /** @return array<string, mixed> */
