@@ -47,8 +47,9 @@ use Tests\TestCase;
  * Every attempt is recorded, including failures, and nothing is retried: a failed passage counts as not caught
  * (slopped) or not flagged (real), and the owner reruns the whole trial deliberately. The evidence file is rewritten
  * after each passage, so a crash keeps what was recorded; a partial run fails the contract's jq check, which needs all
- * 20 passage ids. A slopped passage is caught when a lint hit or a reviewer finding targets an injected block; a real
- * passage is flagged when the reviewer returns a voice_drift finding or lint hits it.
+ * 20 passage ids. A slopped passage is caught when a lint hit or a reviewer finding targets an injected block (hits on
+ * its clean blocks go to clean_block_hits and never count); a real passage is flagged when the reviewer returns a
+ * voice_drift finding or lint hits it.
  *
  * canon_hash is VoiceCanon's snapshot version, the value `php artisan publishing:canon-hash` prints. This run reads it
  * from a freshly migrated birdcar_test database, which holds no Admin canon versions, so it is the repository canon's
@@ -169,7 +170,7 @@ function driftTrialIndexArchive(User $owner): void
  * approved unpaused, so it retrieves exemplars for the Draft the review copies them from.
  *
  * @param  array{variant: string, id: string, blocks: list<string>, injected: list<array{block_index: int, tell: string, mechanical: bool}>}  $passage
- * @return array{passage_id: string, variant: string, caught_at_injected_span: bool, drift_flagged: bool, caught_by_lint: bool, caught_by_reviewer: bool, retrieval_status: mixed, lint_hits: list<array{rule_id: string, block_id: string|null}>, findings: list<array{kind: string, block_id: string|null, severity: string, statement: string}>, model: mixed, status: string, error: string|null}
+ * @return array{passage_id: string, variant: string, caught_at_injected_span: bool, drift_flagged: bool, caught_by_lint: bool, caught_by_reviewer: bool, clean_block_hits: list<array{source: string, block_id: string}>, retrieval_status: mixed, lint_hits: list<array{rule_id: string, block_id: string|null}>, findings: list<array{kind: string, block_id: string|null, severity: string, statement: string}>, model: mixed, status: string, error: string|null}
  */
 function driftTrialAttempt(User $owner, array $passage): array
 {
@@ -180,6 +181,7 @@ function driftTrialAttempt(User $owner, array $passage): array
         'drift_flagged' => false,
         'caught_by_lint' => false,
         'caught_by_reviewer' => false,
+        'clean_block_hits' => [],
         'retrieval_status' => null,
         'lint_hits' => [],
         'findings' => [],
@@ -219,11 +221,7 @@ function driftTrialAttempt(User $owner, array $passage): array
         return $record;
     }
 
-    $injectedBlocks = array_map(fn (array $tell): string => DriftGoldenSet::blockId($passage['id'], $tell['block_index']), $passage['injected']);
-    $record['caught_by_lint'] = array_intersect(array_column($record['lint_hits'], 'block_id'), $injectedBlocks) !== [];
-    $record['caught_by_reviewer'] = array_intersect(array_column($record['findings'], 'block_id'), $injectedBlocks) !== [];
-    $record['caught_at_injected_span'] = $passage['variant'] === 'slopped' && ($record['caught_by_lint'] || $record['caught_by_reviewer']);
-    $record['drift_flagged'] = $passage['variant'] === 'real' && ($record['lint_hits'] !== [] || in_array('voice_drift', array_column($record['findings'], 'kind'), true));
+    $record = [...$record, ...DriftGoldenSet::assess($passage['variant'], $passage['id'], $passage['injected'], $record['lint_hits'], $record['findings'])];
 
     return $record;
 }

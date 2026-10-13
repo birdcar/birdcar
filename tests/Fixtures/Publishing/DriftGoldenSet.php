@@ -108,6 +108,42 @@ final class DriftGoldenSet
         return array_values(array_filter($hits, fn (LintHit $hit): bool => ! in_array($hit->ruleId, self::EXCERPT_EXEMPT_RULES, true)));
     }
 
+    /**
+     * Scores one review of a passage. A slopped passage is caught only when a lint hit or finding lands on a block that
+     * carries an injected tell; hits on its clean blocks are misplaced flags, kept apart in clean_block_hits so they
+     * cannot count as a catch. A real passage is flagged by any lint hit or a voice_drift finding.
+     *
+     * @param  list<InjectedTell>  $injected
+     * @param  list<array{rule_id: string, block_id: string|null}>  $lintHits
+     * @param  list<array{kind: string, block_id: string|null}>  $findings
+     * @return array{caught_by_lint: bool, caught_by_reviewer: bool, caught_at_injected_span: bool, drift_flagged: bool, clean_block_hits: list<array{source: string, block_id: string}>}
+     */
+    public static function assess(string $variant, string $passageId, array $injected, array $lintHits, array $findings): array
+    {
+        $slopped = $variant === 'slopped';
+        $injectedBlocks = array_map(fn (array $tell): string => self::blockId($passageId, $tell['block_index']), $injected);
+        $lintBlocks = array_column($lintHits, 'block_id');
+        $findingBlocks = array_column($findings, 'block_id');
+        $cleanBlockHits = [];
+        foreach (['lint' => $lintBlocks, 'reviewer' => $findingBlocks] as $source => $blocks) {
+            foreach ($blocks as $blockId) {
+                if ($slopped && $blockId !== null && ! in_array($blockId, $injectedBlocks, true)) {
+                    $cleanBlockHits[] = ['source' => $source, 'block_id' => $blockId];
+                }
+            }
+        }
+        $caughtByLint = $slopped && array_intersect($lintBlocks, $injectedBlocks) !== [];
+        $caughtByReviewer = $slopped && array_intersect($findingBlocks, $injectedBlocks) !== [];
+
+        return [
+            'caught_by_lint' => $caughtByLint,
+            'caught_by_reviewer' => $caughtByReviewer,
+            'caught_at_injected_span' => $caughtByLint || $caughtByReviewer,
+            'drift_flagged' => ! $slopped && ($lintHits !== [] || in_array('voice_drift', array_column($findings, 'kind'), true)),
+            'clean_block_hits' => $cleanBlockHits,
+        ];
+    }
+
     private static function string(mixed $item, string $key): string
     {
         $value = is_array($item) ? ($item[$key] ?? null) : null;

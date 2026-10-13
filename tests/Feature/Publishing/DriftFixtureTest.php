@@ -51,6 +51,17 @@ function driftFixtureHitLocations(array $hits): array
     return array_map(fn (LintHit $hit): string => $hit->ruleId.'@'.$hit->blockId, $hits);
 }
 
+/**
+ * @param  list<array{block_index: int, tell: string, mechanical: bool}>  $injected
+ * @param  list<array{rule_id: string, block_id: string|null}>  $lintHits
+ * @param  list<array{kind: string, block_id: string|null}>  $findings
+ * @return array{caught_by_lint: bool, caught_by_reviewer: bool, caught_at_injected_span: bool, drift_flagged: bool, clean_block_hits: list<array{source: string, block_id: string}>}
+ */
+function driftFixtureAssess(string $variant, string $id, array $injected, array $lintHits, array $findings): array
+{
+    return DriftGoldenSet::assess($variant, $id, $injected, $lintHits, $findings);
+}
+
 test('the golden set pairs ten real passages with exactly one slopped rewrite each', function () {
     $set = DriftGoldenSet::load();
     $realIds = array_column($set['real'], 'id');
@@ -134,4 +145,41 @@ test('a saved passage keeps its block ids, so an injected block index still name
     $content = is_array($revision->document['content'] ?? null) ? $revision->document['content'] : [];
     expect(array_map(fn (array $block): mixed => $block['attrs']['id'] ?? null, $content))->toBe([DriftGoldenSet::blockId('slop-01', 0), DriftGoldenSet::blockId('slop-01', 1)])
         ->and(DriftGoldenSet::blockId('slop-01', 0))->not->toBe(DriftGoldenSet::blockId('slop-02', 0));
+});
+
+test('a slopped passage keeps at least one block with no injected tell, and that block is lint-clean', function (string $id) {
+    $passage = driftFixtureSlopped($id);
+    $injectedIndexes = array_unique(array_column($passage['injected'], 'block_index'));
+    $cleanIndexes = array_values(array_diff(array_keys($passage['blocks']), $injectedIndexes));
+    $cleanBlockIds = array_map(fn (int $index): string => DriftGoldenSet::blockId($id, $index), $cleanIndexes);
+
+    $hits = DriftGoldenSet::lint(DriftGoldenSet::document($id, $passage['blocks']));
+
+    expect($cleanIndexes)->not->toBeEmpty()
+        ->and(array_filter($hits, fn (LintHit $hit): bool => in_array($hit->blockId, $cleanBlockIds, true)))->toBe([]);
+})->with(fn (): array => driftFixtureIds('slopped'));
+
+test('a slopped passage is caught only by a hit on an injected block, never by one on a clean block', function () {
+    $passage = driftFixtureSlopped('slop-01');
+    $injectedIndex = $passage['injected'][0]['block_index'];
+    $injectedBlock = DriftGoldenSet::blockId('slop-01', $injectedIndex);
+    $cleanBlock = DriftGoldenSet::blockId('slop-01', count($passage['blocks']) - 1);
+
+    $misplaced = driftFixtureAssess('slopped', 'slop-01', $passage['injected'], [['rule_id' => 'stock-openers', 'block_id' => $cleanBlock]], [['kind' => 'voice_drift', 'block_id' => $cleanBlock]]);
+    $docLevel = driftFixtureAssess('slopped', 'slop-01', $passage['injected'], [], [['kind' => 'voice_drift', 'block_id' => null]]);
+    $lintCatch = driftFixtureAssess('slopped', 'slop-01', $passage['injected'], [['rule_id' => 'stock-openers', 'block_id' => $injectedBlock]], []);
+    $reviewerCatch = driftFixtureAssess('slopped', 'slop-01', $passage['injected'], [], [['kind' => 'voice_drift', 'block_id' => $injectedBlock]]);
+
+    expect($injectedBlock)->not->toBe($cleanBlock)
+        ->and($misplaced['caught_at_injected_span'])->toBeFalse()
+        ->and($misplaced['clean_block_hits'])->toBe([['source' => 'lint', 'block_id' => $cleanBlock], ['source' => 'reviewer', 'block_id' => $cleanBlock]])
+        ->and($docLevel['caught_at_injected_span'])->toBeFalse()
+        ->and($lintCatch)->toMatchArray(['caught_by_lint' => true, 'caught_by_reviewer' => false, 'caught_at_injected_span' => true, 'clean_block_hits' => []])
+        ->and($reviewerCatch)->toMatchArray(['caught_by_lint' => false, 'caught_by_reviewer' => true, 'caught_at_injected_span' => true]);
+});
+
+test('a real passage is flagged by any lint hit or a voice_drift finding, wherever it lands', function () {
+    expect(driftFixtureAssess('real', 'real-01', [], [], [['kind' => 'note', 'block_id' => 'blk_x']])['drift_flagged'])->toBeFalse()
+        ->and(driftFixtureAssess('real', 'real-01', [], [['rule_id' => 'filler-phrases', 'block_id' => 'blk_x']], [])['drift_flagged'])->toBeTrue()
+        ->and(driftFixtureAssess('real', 'real-01', [], [], [['kind' => 'voice_drift', 'block_id' => null]]))->toMatchArray(['drift_flagged' => true, 'caught_at_injected_span' => false, 'clean_block_hits' => []]);
 });

@@ -84,7 +84,8 @@
             "real_id": "real-01",
             "blocks": [
                 "Ultimately, AI agents have made it significantly cheaper and easier to build the same software more than once.",
-                "This represents the core benefit of working with these tools. It is the main area where productivity gains can be observed. All of the value that these tools provide can be summarized by this single idea."
+                "This represents the core benefit of working with these tools. It is the main area where productivity gains can be observed. All of the value that these tools provide can be summarized by this single idea.",
+                "The agent has lowered the cost of building the same thing twice."
             ],
             "injected": [
                 {"block_index": 0, "tell": "stock-openers", "mechanical": true},
@@ -97,7 +98,8 @@
             "real_id": "real-02",
             "blocks": [
                 "It is important to note that this is not a claim about productivity. Agents will not necessarily make your work twice as fast.",
-                "Rather, the key point is that for problems where the desired outcome is unclear, the cost of discovering it has decreased significantly. As a result, building throwaway drafts intentionally has become a standard part of the workflow. This shift represents a meaningful change in how software can be developed."
+                "Rather, the key point is that for problems where the desired outcome is unclear, the cost of discovering it has decreased significantly. As a result, building throwaway drafts intentionally has become a standard part of the workflow. This shift represents a meaningful change in how software can be developed.",
+                "That's the change. That's the whole pitch."
             ],
             "injected": [
                 {"block_index": 0, "tell": "filler-phrases", "mechanical": true},
@@ -110,7 +112,8 @@
             "real_id": "real-03",
             "blocks": [
                 "It would be reassuring to report that this was an isolated incident and that the lesson was learned the first time.",
-                "However, the same issue occurred 51 additional times over the following months, which highlights the importance of careful review."
+                "However, the same issue occurred 51 additional times over the following months, which highlights the importance of careful review.",
+                "It happened 51 more times."
             ],
             "injected": [
                 {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
@@ -122,7 +125,8 @@
             "id": "slop-04",
             "real_id": "real-04",
             "blocks": [
-                "This narrative is true in a sense, much like saying that a car can travel at 80 miles per hour is true. However, it does not account for real-world factors such as traffic, fuel stops, wrong turns, and unexpected delays along the way. While the top speed is accurate, the actual travel time is often quite different. In the end, it's not just about speed, it's about the whole journey."
+                "This narrative is true in a sense, much like saying that a car can travel at 80 miles per hour is true. However, it does not account for real-world factors such as traffic, fuel stops, wrong turns, and unexpected delays along the way. While the top speed is accurate, the actual travel time is often quite different. In the end, it's not just about speed, it's about the whole journey.",
+                "The destination speed is real. The journey speed is different."
             ],
             "injected": [
                 {"block_index": 0, "tell": "negative-parallelism", "mechanical": true},
@@ -134,7 +138,8 @@
             "id": "slop-05",
             "real_id": "real-05",
             "blocks": [
-                "Looking back, these early prompts resemble messages written to a new contractor. They provide instructions, explain where to find relevant files, and describe the expected output. This level of formality is common during the first week of any new role. It reflects a lack of established trust. As trust develops, communication tends to become more efficient."
+                "Looking back, these early prompts resemble messages written to a new contractor. They provide instructions, explain where to find relevant files, and describe the expected output. This level of formality is common during the first week of any new role. It reflects a lack of established trust. As trust develops, communication tends to become more efficient.",
+                "You over-explain because you haven't calibrated trust yet. You don't know what the other party knows, so you fill the gaps preemptively."
             ],
             "injected": [
                 {"block_index": 0, "tell": "flattened_rhythm", "mechanical": false},
@@ -147,7 +152,8 @@
             "real_id": "real-06",
             "blocks": [
                 "Prompt engineering is often described as a skill to be learned, a set of techniques to be applied, and a craft to be refined. While this may be accurate for casual ChatGPT users, sustained collaboration with a coding assistant works differently. Furthermore, both parties develop shared context over time, which allows messages to become shorter.",
-                "Early messages tend to be long and detailed, while later messages become brief and direct. This compression should not be mistaken for laziness. Instead, it is a reflection of the trust that has been built."
+                "Early messages tend to be long and detailed, while later messages become brief and direct. This compression should not be mistaken for laziness. Instead, it is a reflection of the trust that has been built.",
+                "I started writing paragraph-length messages to a stranger. I ended sending five-word commands to a collaborator."
             ],
             "injected": [
                 {"block_index": 0, "tell": "ai-vocabulary", "mechanical": true},
@@ -159,7 +165,8 @@
             "real_id": "real-07",
             "blocks": [
                 "When using an AI coding assistant, the typical workflow involves typing a prompt, receiving generated code, and correcting any errors. This process is then repeated. For many users, this cycle continues indefinitely.",
-                "This approach was used for approximately three months and proved to be quite useful. It made it possible to build things more quickly, explore unfamiliar codebases, and generate documentation that would otherwise not have been written. Overall, the tool performed its intended function effectively. I hope this helps illustrate the starting point."
+                "This approach was used for approximately three months and proved to be quite useful. It made it possible to build things more quickly, explore unfamiliar codebases, and generate documentation that would otherwise not have been written. Overall, the tool performed its intended function effectively. I hope this helps illustrate the starting point.",
+                "I explored codebases I didn't know. I generated documentation nobody else was going to write."
             ],
             "injected": [
                 {"block_index": 0, "tell": "neutral_reporting", "mechanical": false},
@@ -172,7 +179,8 @@
             "real_id": "real-08",
             "blocks": [
                 "Many business owners find that a wide range of questions and tasks end up on their desk. These can include quotes awaiting approval, schedule changes, and weekly reports that are compiled manually. While none of these tasks are particularly difficult, each of them requires the owner's involvement.",
-                "During a Walkthrough, the process is examined from start to finish with input from the team. Bottlenecks are identified and documented, and a report is delivered within three business days, including recommended next steps."
+                "During a Walkthrough, the process is examined from start to finish with input from the team. Bottlenecks are identified and documented, and a report is delivered within three business days, including recommended next steps.",
+                "None of it is hard. It all just needs you."
             ],
             "injected": [
                 {"block_index": 0, "tell": "flattened_rhythm", "mechanical": false},
@@ -184,7 +192,8 @@
             "real_id": "real-09",
             "blocks": [
                 "For busy business owners, it can be challenging to step back and identify what needs to change. That is why our process begins by talking with the people who do the work, rather than focusing on software.",
-                "For example, client onboarding may require numerous reminders, reporting may take an entire afternoon, or a process may only work when the owner is present to manage it. Typically, the only alternatives are to hire another coordinator, purchase another subscription, or work late. These options can be costly over time."
+                "For example, client onboarding may require numerous reminders, reporting may take an entire afternoon, or a process may only work when the owner is present to manage it. Typically, the only alternatives are to hire another coordinator, purchase another subscription, or work late. These options can be costly over time.",
+                "That's the expensive version of standing still."
             ],
             "injected": [
                 {"block_index": 0, "tell": "corporate-we", "mechanical": true},
@@ -196,7 +205,8 @@
             "id": "slop-10",
             "real_id": "real-10",
             "blocks": [
-                "Is the goal to replace existing staff? No. The aim is to free up team members to focus on higher-value work. Approaches that involve monitoring employees or that are designed solely to reduce headcount fall outside the scope of this work."
+                "Is the goal to replace existing staff? No. The aim is to free up team members to focus on higher-value work. Approaches that involve monitoring employees or that are designed solely to reduce headcount fall outside the scope of this work.",
+                "That rules out surveillance, and projects whose whole purpose is cutting people regardless of the consequences."
             ],
             "injected": [
                 {"block_index": 0, "tell": "synonym_cycling", "mechanical": false},
