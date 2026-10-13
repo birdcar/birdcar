@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\FrameworkCatalog;
 use App\Services\Publishing\VoiceCanon;
+use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -93,15 +94,36 @@ class AdvancePublishingAttempt
     {
         $this->authorize($actor, PublishingPermission::Develop->value);
 
-        return $this->updateAttempt($attempt, [
-            'parked_at' => now(),
-            'parked_reason' => $reason,
-        ]);
+        /** @var PublishingAttempt $parked */
+        $parked = DB::transaction(function () use ($attempt, $reason): PublishingAttempt {
+            $parked = $this->updateAttempt($attempt, [
+                'parked_at' => now(),
+                'parked_reason' => $reason,
+            ]);
+
+            return $this->stage($parked) === EditorialStage::Scheduled ? $this->unscheduleParkedAttempt($parked) : $parked;
+        });
+
+        return $parked;
     }
 
     /**
-     * Clears the park. Work a worker picked up while the piece was parked was paused before any provider request, so it
-     * returns to the queue unless the attempt is also paused.
+     * Parking withdraws the scheduled release, so nothing is scheduled any more. The piece returns to Approved with its
+     * release approval invalidated: unparking must not show it waiting for a time the scheduler will never deliver, and
+     * it needs a freshly prepared and approved release.
+     */
+    private function unscheduleParkedAttempt(PublishingAttempt $attempt): PublishingAttempt
+    {
+        $this->writeArticle->invalidateApprovals((int) $attempt->id, [ApprovalKind::Release]);
+        app(ManageArticleRelease::class)->withdrawScheduledReleasesForAttemptId((int) $attempt->id);
+        $attempt->forceFill(['stage' => EditorialStage::Approved])->save();
+
+        return $attempt->refresh();
+    }
+
+    /**
+     * Clears the park. Work a worker picked up while the piece was parked was paused before any provider request, so the
+     * newest of it per kind and batch returns to the queue unless the attempt is also paused.
      */
     public function unpark(User $actor, PublishingAttempt|int $attempt): PublishingAttempt
     {
@@ -394,6 +416,8 @@ class AdvancePublishingAttempt
             $lockedArticle = $this->lockedArticleForAttemptId($attemptId);
             $lockedAttempt = $this->lockedAttemptById($attemptId);
             $this->ensureAttemptCanBeMutated($lockedAttempt, $lockedArticle);
+            $parkedAt = $lockedAttempt->parked_at;
+            $unparking = array_key_exists('parked_at', $attributes) && $attributes['parked_at'] === null && $parkedAt !== null;
             $lockedAttempt->forceFill($attributes)->save();
 
             if (array_key_exists('paused_at', $attributes) && $attributes['paused_at'] !== null) {
@@ -420,23 +444,51 @@ class AdvancePublishingAttempt
                     ]);
             }
 
-            if (array_key_exists('parked_at', $attributes) && $attributes['parked_at'] === null && $lockedAttempt->paused_at === null) {
-                EditorialActivity::query()
-                    ->where('attempt_id', $lockedAttempt->id)
-                    ->where('status', EditorialActivityStatus::Paused->value)
-                    ->where('pause_reason', EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON)
-                    ->update([
-                        'status' => EditorialActivityStatus::Pending->value,
-                        'paused_at' => null,
-                        'pause_reason' => null,
-                        'available_at' => now(),
-                    ]);
+            if ($unparking && $lockedAttempt->paused_at === null) {
+                $this->requeueActivitiesBlockedByPark($lockedAttempt, $parkedAt);
             }
 
             return $lockedAttempt->refresh();
         });
 
         return $updated;
+    }
+
+    /**
+     * Requeues only the work this park blocked: activities a worker paused at or after the park. Earlier blocked rows
+     * belong to an unrelated pause, and a row with a newer activity of the same kind and batch was replaced, so it goes
+     * stale instead of re-running outdated paid work.
+     */
+    private function requeueActivitiesBlockedByPark(PublishingAttempt $attempt, DateTimeInterface $parkedAt): void
+    {
+        $blocked = EditorialActivity::query()
+            ->where('attempt_id', $attempt->id)
+            ->where('status', EditorialActivityStatus::Paused->value)
+            ->where('pause_reason', EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON)
+            ->where('paused_at', '>=', $parkedAt)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($blocked as $activity) {
+            $superseded = EditorialActivity::query()
+                ->where('attempt_id', $attempt->id)
+                ->where('kind', $activity->kind->value)
+                ->where('batch_key', $activity->batch_key)
+                ->where('id', '>', $activity->id)
+                ->where('status', '!=', EditorialActivityStatus::Stale->value)
+                ->exists();
+
+            $activity->forceFill($superseded ? [
+                'status' => EditorialActivityStatus::Stale,
+                'completed_at' => now(),
+                'error_reason' => 'Superseded by newer work while the piece was parked.',
+            ] : [
+                'status' => EditorialActivityStatus::Pending,
+                'paused_at' => null,
+                'pause_reason' => null,
+                'available_at' => now(),
+            ])->save();
+        }
     }
 
     private function lockedArticle(Article|int $article): Article
