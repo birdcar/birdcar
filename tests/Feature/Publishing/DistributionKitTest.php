@@ -7,6 +7,7 @@ use App\Actions\Publishing\MarkKitPiecePosted;
 use App\Actions\Publishing\ReadPublishedWriting;
 use App\Actions\Publishing\RunEditorialActivity;
 use App\Actions\Publishing\SpawnDistributionKit;
+use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
 use App\Authorization\Admin\Role as AdminRole;
 use App\Authorization\Publishing\Role as PublishingRole;
@@ -421,6 +422,69 @@ test('a claim outside the manifest blocks kit approval until the owner decides i
 
     expect($approval->revision_id)->toBe($linkedin->fresh()?->working_revision_id)
         ->and(distributionKitAttempt($linkedin)->stage)->toBe(EditorialStage::Approved);
+});
+
+/** @return array{0: Article, 1: EditorialFinding} the LinkedIn piece and its one blocking claim finding */
+function distributionKitBlockingClaim(User $actor): array
+{
+    $attempt = distributionKitFlagship($actor);
+    distributionKitApproveRelease($actor, $attempt);
+    $linkedin = distributionKitPieces($attempt->article_id)['linkedin_post'];
+    distributionKitFake([
+        'draft_kit' => fn (array $prompt): array => distributionKitCleanDraft($prompt),
+        'review_kit' => ['findings' => [
+            ['statement' => 'The piece says owners lose ten hours a week to reports.', 'kind' => 'claim_outside_manifest', 'severity' => 'blocking', 'block_id' => KitDocument::blockId(PieceKind::LinkedinPost, 'text'), 'rationale' => 'No manifest statement covers a ten-hour figure.', 'supporting_source_ids' => [], 'supporting_quotations' => []],
+        ]],
+    ]);
+    distributionKitRun(distributionKitActivities($linkedin, EditorialActivityKind::DraftKit)->sole());
+    $review = distributionKitRun(distributionKitActivities($linkedin, EditorialActivityKind::ReviewKit)->sole());
+    $finding = EditorialFinding::query()->where('activity_id', $review->id)->sole();
+
+    return [$linkedin, $finding];
+}
+
+test('saying a blocking claim was fixed needs the flagged text to have changed, or a reason that records an override', function () {
+    $actor = distributionKitAuthor();
+    [$linkedin, $finding] = distributionKitBlockingClaim($actor);
+    $approve = app(ApprovePublishingStage::class);
+
+    expect(fn () => $approve->decideKitFinding($actor, $finding, 'accepted'))->toThrow(ValidationException::class, 'The flagged text has not changed');
+    expect($finding->fresh()?->disposition)->toBeNull();
+
+    $approve->decideKitFinding($actor, $finding, 'accepted', 'The figure comes from the owner interview.');
+    expect($finding->fresh()?->disposition)->toBe('accepted')
+        ->and($finding->fresh()?->disposition_reason)->toBe('The figure comes from the owner interview.')
+        ->and($finding->fresh()?->disposition_actor_id)->toBe($actor->id);
+
+    $finding->forceFill(['disposition' => null, 'disposition_reason' => null])->save();
+    $revision = $linkedin->fresh()?->workingRevision()->firstOrFail() ?? throw new RuntimeException('The piece has no revision.');
+    $fields = KitDocument::fields(PieceKind::LinkedinPost, $revision->document ?? []);
+    $fields['text'] = 'A shorter post that makes no figure claim.';
+    app(WriteArticle::class)->save($actor, $linkedin, $revision->id, KitDocument::document(PieceKind::LinkedinPost, $fields), $revision->metadata ?? [], 'kit-claim-edit-'.Str::random(8));
+
+    $approve->decideKitFinding($actor, $finding, 'accepted');
+
+    expect($finding->fresh()?->disposition)->toBe('accepted')
+        ->and($finding->fresh()?->disposition_reason)->toBeNull();
+});
+
+test('a forged piece kind on a blog post input is overwritten, so approval checks still apply', function () {
+    $actor = distributionKitAuthor();
+    $attempt = distributionKitFlagship($actor);
+    $starts = app(StartEditorialActivity::class);
+
+    $activity = $starts->start($actor, $attempt, EditorialActivityKind::Draft, ['piece_kind' => PieceKind::LinkedinPost->value]);
+    $input = $activity->input ?? [];
+
+    expect($input['piece_kind'])->toBe(PieceKind::BlogPost->value)
+        ->and(StartEditorialActivity::prerequisiteApproval(EditorialActivityKind::Draft, $input))->toBe(ApprovalKind::Plan);
+
+    $unplanned = app(WriteArticle::class)->captureIdea($actor, 'Another post whose plan nobody approved');
+    $revision = app(WriteArticle::class)->save($actor, $unplanned, null, distributionKitDocument('Text.'), distributionKitMetadata(), 'kit-forged-'.Str::random(8));
+    $unplannedAttempt = app(AdvancePublishingAttempt::class)->develop($actor, $unplanned, $revision->id, ['goal' => 'Show owners what to check first', 'post_type' => 'essay', 'target_query' => DISTRIBUTION_KIT_TARGET_QUERY]);
+
+    expect(fn () => $starts->start($actor, $unplannedAttempt, EditorialActivityKind::Plan, ['piece_kind' => PieceKind::LinkedinPost->value]))
+        ->toThrow(RuntimeException::class);
 });
 
 test('a kit review that cites evidence it was never given fails instead of storing findings', function () {

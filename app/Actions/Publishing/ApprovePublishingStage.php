@@ -5,6 +5,7 @@ namespace App\Actions\Publishing;
 use App\Authorization\Publishing\Permission as PublishingPermission;
 use App\Models\Article;
 use App\Models\ArticleRelease;
+use App\Models\ArticleRevision;
 use App\Models\EditorialActivity;
 use App\Models\EditorialApproval;
 use App\Models\EditorialFinding;
@@ -15,6 +16,7 @@ use App\Models\Publishing\EditorialStage;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Services\Publishing\DocumentBlocks;
 use App\Services\Publishing\ExemplarRetriever;
 use App\Services\Publishing\Lint\LintHit;
 use App\Services\Publishing\PublishingFingerprint;
@@ -223,7 +225,9 @@ class ApprovePublishingStage
 
     /**
      * Records the owner's decision on a kit review finding at once; kit review has no finish step to buffer it for.
-     * Keeping the piece as written, or calling the finding a false positive, needs a reason.
+     * Keeping the piece as written, or calling the finding a false positive, needs a reason. "I fixed it" on a blocking
+     * finding is only believed when the flagged block is gone or changed since the finding; otherwise it needs a reason
+     * and is recorded as an explicit override.
      */
     public function decideKitFinding(User $actor, EditorialFinding $finding, string $disposition, string $reason = ''): void
     {
@@ -242,12 +246,63 @@ class ApprovePublishingStage
             throw ValidationException::withMessages(['reason' => 'Explain why the piece keeps this as written.']);
         }
 
+        if ($disposition === 'accepted' && $reason === '' && $finding->severity === 'blocking' && ! $this->flaggedTextChanged($finding)) {
+            throw ValidationException::withMessages(['reason' => 'The flagged text has not changed. Edit the piece, or explain why it stays as written.']);
+        }
+
         $finding->forceFill([
             'disposition' => $disposition,
             'disposition_reason' => $reason === '' ? null : $reason,
             'disposition_actor_id' => $actor->id,
             'disposed_at' => now(),
         ])->save();
+    }
+
+    /**
+     * Whether the piece's current text no longer carries what the finding flagged: its block was removed or rewritten, or,
+     * for a finding with no block, the piece's text differs from the revision that was reviewed.
+     */
+    private function flaggedTextChanged(EditorialFinding $finding): bool
+    {
+        $current = Article::query()->findOrFail($finding->article_id)->workingRevision()->first();
+        if ($current === null) {
+            return true;
+        }
+
+        $reviewed = $finding->revision_id === null ? null : ArticleRevision::query()->find($finding->revision_id);
+        if ($reviewed !== null && (int) $reviewed->id === (int) $current->id) {
+            return false;
+        }
+
+        $blockId = $finding->block_id;
+        if (! is_string($blockId) || $blockId === '') {
+            return $reviewed === null || $reviewed->content_hash !== $current->content_hash;
+        }
+
+        $blocks = app(DocumentBlocks::class);
+        $now = $blocks->find($this->documentOf($current), $blockId);
+        if ($now === null) {
+            return true;
+        }
+
+        $expected = $finding->expected_subtree_hash;
+        if (! is_string($expected) || $expected === '') {
+            $before = $reviewed === null ? null : $blocks->find($this->documentOf($reviewed), $blockId);
+            if ($before === null) {
+                return false;
+            }
+            $expected = $this->fingerprint->hash($before['node']);
+        }
+
+        return ! hash_equals($expected, $this->fingerprint->hash($now['node']));
+    }
+
+    /** @return array<array-key, mixed> */
+    private function documentOf(ArticleRevision $revision): array
+    {
+        $document = $revision->getAttribute('document');
+
+        return is_array($document) ? $document : [];
     }
 
     /**

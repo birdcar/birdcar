@@ -283,15 +283,17 @@ class StartEditorialActivity
     }
 
     /**
-     * What a piece's kind adds to every input, so no caller can forge it: a distribution kit piece's kind, and for its
-     * draft and review the approved flagship release it is cut from; for a blog post's interview, the idea's other posts.
+     * What a piece's kind adds to every input, so no caller can forge it: the piece's own kind, which decides whether
+     * approval checks apply, and for a kit piece's draft and review the approved flagship release it is cut from; for a
+     * blog post's interview, the idea's other posts.
      *
      * @return array<string, mixed>
      */
     private function pieceContext(PublishingAttempt $attempt, Article $article, EditorialActivityKind $kind): array
     {
+        $context = ['piece_kind' => $article->kind->value];
+
         if ($article->isKit()) {
-            $context = ['piece_kind' => $article->kind->value];
             if (in_array($kind, [EditorialActivityKind::DraftKit, EditorialActivityKind::ReviewKit], true)) {
                 $context['flagship'] = $this->flagshipContext($attempt, $article);
             }
@@ -300,12 +302,12 @@ class StartEditorialActivity
         }
 
         if ($kind !== EditorialActivityKind::Interview) {
-            return [];
+            return $context;
         }
 
         $siblings = $this->siblingContext($article);
 
-        return $siblings === [] ? [] : ['sibling_context' => $siblings];
+        return $siblings === [] ? $context : $context + ['sibling_context' => $siblings];
     }
 
     /**
