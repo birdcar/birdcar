@@ -28,3 +28,17 @@ evidence; treat entries as hints, never as a substitute for gate evidence.
 - **Pattern**: Request timeouts, token allowances and provider routing were sized for latency and cost by default even though the AI work was queued and the owner prioritised quality.
   **Evidence**: A 50-second timeout, 12k-token allowances and OpenRouter's price-first routing caused timeouts, truncated answers and 37- to 298-second swings, and prompted a model downgrade the owner later reversed.
   **Spec/interview implication**: Ask during the interview whether AI work is queued and whether quality or latency wins, then size limits as runaway guards below the worker timeout and choose provider routing deliberately.
+
+## 2026-10-13 — Consistent Voice Publishing
+
+- **Pattern**: Specs told builders to reuse or follow code that did not exist, so each phase improvised a substitute.
+  **Evidence**: Phase 7 notes (no release scheduling dialog and no toast in the admin layout), Phase 4 notes (an avoid pair naming a kishotenketsu framework with no file), Phase 1 notes (the CI step calls a non-existent ReadWriting::all()).
+  **Spec/interview implication**: When a spec says "reuse X" or "follow Y", grep for X while writing it, and name the fallback when X may not exist.
+
+- **Pattern**: The publishing editor autosaves into a new ArticleRevision about every 250 ms, so logic keyed on "the current revision" or "the owner's next save" misreads ordinary typing.
+  **Evidence**: Phase 7 notes (a literal Writing-column rule would move a reviewed piece back on the first autosave), Phase 9 notes (edit distance to "the next owner save" measures the first burst of typing).
+  **Spec/interview implication**: Specs that touch revisions compare document content or a defined editing window, never revision ids or the next save.
+
+- **Pattern**: A spec that restates rules a model-facing artifact already defines creates a second source that drifts from the one the agent obeys.
+  **Evidence**: Phase 3 notes ("canon over spec": bold-limit per section vs per piece, exclamation scope), Phase 4 notes (metadata rules had to reach the Drafter too), and a Phase 8 guard string that tripped the contract's own absence grep.
+  **Spec/interview implication**: Define each rule's semantics once in the artifact the agent reads, and have specs, lint rules and tests reference it instead of restating it.
