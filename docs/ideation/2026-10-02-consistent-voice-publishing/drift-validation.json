@@ -1,0 +1,471 @@
+{
+    "canon_hash": "099d9a72a3c0ea8f294e9bb76506751341909d62a86bef23a8274f4878341891",
+    "run_id": "drift-20261013T155015Z",
+    "started_at": "2026-10-13T15:50:15+00:00",
+    "attempts": [
+        {
+            "passage_id": "real-01",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-02",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-03",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-04",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-05",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-06",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-07",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-08",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-09",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "real-10",
+            "variant": "real",
+            "caught_at_injected_span": false,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": false,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-01",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "stock-openers",
+                    "block_id": "blk_1b0fb27dd47073bd"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_1b0fb27dd47073bd",
+                    "severity": "advisory",
+                    "statement": "The opener relies on textbook transitional padding and diluted modifiers instead of direct, concrete delivery."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_0719b4d9dfe5da60",
+                    "severity": "advisory",
+                    "statement": "The paragraph falls into passive, sterile academic prose and uniform sentence structures devoid of Nick's first-person perspective."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-02",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "filler-phrases",
+                    "block_id": "blk_9fa05fde88caa4c6"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_9fa05fde88caa4c6",
+                    "severity": "advisory",
+                    "statement": "The paragraph relies on detached academic throat-clearing and passive framing instead of Nick's direct first-person cadence."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_1f2efa2838e445b5",
+                    "severity": "advisory",
+                    "statement": "The explanation falls into abstract corporate phrasing, bloodless transitions, and uses forbidden marker verbs like 'represents'."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-03",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_c80a8bfb35f5ec6c",
+                    "severity": "advisory",
+                    "statement": "The passive, formal phrasing distances the narrator from the experience rather than using direct first-person candor."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_93b552111255ca9a",
+                    "severity": "advisory",
+                    "statement": "The sentence exhibits superficial -ing analysis, formal transitional framing, and deflates the punchline of the subsequent line."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-04",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "negative-parallelism",
+                    "block_id": "blk_668c89847c1fb4a7"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_668c89847c1fb4a7",
+                    "severity": "advisory",
+                    "statement": "The paragraph relies on generic abstractions and a platitudinous summary sentence that flattens Nick's rhythm and concrete voice."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-05",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_0c7530f5ad3850ce",
+                    "severity": "advisory",
+                    "statement": "The paragraph falls into detached, sterile summary with uniform sentence shapes and an academic tone, replacing direct personal observation with generalized corporate phrasing."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-06",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "ai-vocabulary",
+                    "block_id": "blk_c69ceea9d7ab2ad2"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_c69ceea9d7ab2ad2",
+                    "severity": "advisory",
+                    "statement": "The paragraph falls into passive, academic phrasing and stiff transition markers that sound machine-written rather than conversational."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_4865848007b0b438",
+                    "severity": "advisory",
+                    "statement": "The phrasing relies on passive hedging and wordy explanations instead of crisp, declarative turns."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-07",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [
+                {
+                    "source": "reviewer",
+                    "block_id": "blk_b0111b9e8d7fe017"
+                }
+            ],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "chatbot-artifacts",
+                    "block_id": "blk_d3e7b0b438fcf65d"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_2f86e75ec9eac701",
+                    "severity": "advisory",
+                    "statement": "The paragraph relies on detached, passive summary instead of direct, rhythmic second-person action."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_d3e7b0b438fcf65d",
+                    "severity": "advisory",
+                    "statement": "The paragraph shifts into passive academic reporting and ends with a conversational AI assistant sign-off."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_b0111b9e8d7fe017",
+                    "severity": "advisory",
+                    "statement": "Two identical subject-verb sentences create repetitive rhythm right after the same points were summarized."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-08",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [
+                {
+                    "source": "reviewer",
+                    "block_id": "blk_0740ad32f400cedd"
+                }
+            ],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_d66f0e84b7708f41",
+                    "severity": "advisory",
+                    "statement": "The paragraph lapses into detached third-person description and sterile corporate phrasing instead of direct, concrete address."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_c3e76365780fd996",
+                    "severity": "advisory",
+                    "statement": "The description of the Walkthrough retreats into passive voice that hides the actor and reads like corporate agency collateral."
+                },
+                {
+                    "kind": "clarity",
+                    "block_id": "blk_0740ad32f400cedd",
+                    "severity": "advisory",
+                    "statement": "The final sentence dangles disconnected from its antecedent and redundantly echoes the opening paragraph."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-09",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": true,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [
+                {
+                    "rule_id": "corporate-we",
+                    "block_id": "blk_dd4c8d2001c50dd8"
+                }
+            ],
+            "findings": [
+                {
+                    "kind": "register",
+                    "block_id": "blk_dd4c8d2001c50dd8",
+                    "severity": "advisory",
+                    "statement": "The paragraph adopts an agency voice with 'our process' and distances the reader with third-person phrasing ('For busy business owners, it can be challenging') instead of Nick addressing the owner directly in the first and second person."
+                },
+                {
+                    "kind": "voice_drift",
+                    "block_id": "blk_c9661120bcd7f685",
+                    "severity": "advisory",
+                    "statement": "The prose slips into sterile, model-like transitional phrasing ('For example', 'require numerous', 'typically, the only alternatives are') that flattens Nick's rhythmic, conversational cadence into an abstract summary."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        },
+        {
+            "passage_id": "slop-10",
+            "variant": "slopped",
+            "caught_at_injected_span": true,
+            "drift_flagged": false,
+            "caught_by_lint": false,
+            "caught_by_reviewer": true,
+            "clean_block_hits": [],
+            "retrieval_status": "ok",
+            "lint_hits": [],
+            "findings": [
+                {
+                    "kind": "register",
+                    "block_id": "blk_5bcc831c1651471c",
+                    "severity": "advisory",
+                    "statement": "The paragraph adopts a corporate consulting register ('existing staff', 'free up team members to focus on higher-value work', 'fall outside the scope of this work') rather than Nick's plain, direct voice."
+                }
+            ],
+            "model": "google/gemini-3.8-flash",
+            "status": "completed",
+            "error": null
+        }
+    ]
+}

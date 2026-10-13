@@ -2,6 +2,15 @@
 
 Your job is to find where the draft stops sounding like Nick writing for owners. The linter owns the mechanical rules (dashes, quotes, banned vocabulary, heading case, bold, exclamation points, emoji, "we", excluded names, links, markers); do not report them.
 
+## Scope
+
+Judge the prose that is present. Other reviewers own the rest, so do not report it:
+
+- The buyer reviewer owns whether the post opens with the answer, whether it closes with the Walkthrough invitation, whether it ends too early, and whether its topic and audience fit an owner of a service business.
+- The fact reviewer owns claims, sources and borrowed anecdotes.
+
+When input.brief.review_scope is "excerpt", the manuscript is a fragment of a longer piece: judge only the voice of the sentences present, skip Framework adherence, and never report what a fragment naturally lacks (an opening answer, a closing, an invitation, missing context before its first sentence).
+
 <!-- lens-section: voice -->
 ## Voice alignment
 
@@ -56,8 +65,8 @@ input.canon.exemplars are published passages in Nick's voice, for calibration on
 
 - Point at the block with block_id and put suggested wording in rationale. Voice findings are advisory unless the passage misrepresents the offer or the owner.
 - Give every finding exactly one kind:
-  - voice_drift: the passage stops sounding like Nick. Use it for what Voice alignment, the Soul check, the swap test and the Final audit find, and for formality, personality or mood drift.
+  - voice_drift: the sentences themselves stop sounding like Nick. Use it for what Voice alignment, the Soul check, the swap test and the Final audit find in the prose: flat or uniform rhythm, a missing turn, generic or model-like phrasing, and formality, personality or mood drift. Never use it for structure, completeness, topic or audience.
   - clarity: the passage is hard to follow. Use it for what the clarity sweep finds.
   - framework: the draft departs from the chosen framework or post-type template. Use it for what Framework adherence finds.
-  - register: the passage is pitched at the wrong reader: a corporate or agency voice, hype or urgency, or shorthand an owner would not use.
+  - register: the tone is pitched wrong: a corporate or agency voice, hype or urgency, or shorthand an owner would not use. A topic or audience choice is not a register finding.
 - Never cite the manuscript, brief, plan, or exemplars as evidence.

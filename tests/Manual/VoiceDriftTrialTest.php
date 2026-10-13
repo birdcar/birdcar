@@ -66,6 +66,7 @@ const DRIFT_TRIAL_IDEA = 'A short passage for owners about how work gets built a
 const DRIFT_TRIAL_BRIEF = [
     'summary' => 'Owners lose time to work that keeps landing on their desk, and better tools change who handles it.',
     'target_query' => 'how do I stop being the bottleneck in my business',
+    'review_scope' => 'excerpt',
 ];
 
 const DRIFT_TRIAL_PLAN = [
