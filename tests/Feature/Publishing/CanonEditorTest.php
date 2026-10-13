@@ -398,11 +398,6 @@ test('an edit that would break an agent task is refused with the rule and the fi
         fn (string $content): string => $content."\nSee /Users/nick/notes.md.\n",
         'roles/drafter.md contains “/Users/”. Remove it; agents must never see it.',
     ],
-    'the retired voice selection wording' => [
-        'voice/core.md',
-        fn (string $content): string => $content."\nMatch the Voice Sample.\n",
-        'voice/core.md contains “voice sample”. Remove it; agents must never see it.',
-    ],
     'no change at all' => [
         'voice/core.md',
         fn (string $content): string => $content,

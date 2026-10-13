@@ -28,8 +28,8 @@ final class SaveVoiceCanonVersion
 
     public const STALE = 'The canon changed since you opened it. Copy your edit, then choose Discard to load the current version.';
 
-    /** Text that must never reach an agent: local paths and the retired voice selection wording. */
-    private const FORBIDDEN = ['~/.config', '/Users/', 'voice sample'];
+    /** Local paths that must never reach an agent. */
+    private const FORBIDDEN = ['~/.config', '/Users/'];
 
     private const PATH_PATTERN = '/\A(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:md|json)\z/';
 
