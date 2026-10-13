@@ -283,7 +283,10 @@ test('status chips show running, queued, waiting and failed work with the reason
         'interview answers' => tap(publishingBoardPiece($user, 'Status piece', EditorialStage::Developing), fn (Article $piece): EditorialActivity => publishingBoardActivity($piece, EditorialActivityKind::Interview, EditorialActivityStatus::AwaitingApproval)),
         'angle options' => publishingBoardPiece($user, 'Status piece', EditorialStage::Developing, ['interview_context' => ['angle_options' => ['a' => ['thesis' => 'One thesis']]]]),
         'plan ready' => publishingBoardPiece($user, 'Status piece', EditorialStage::Drafting, ['plan' => ['outline' => ['One section'], 'visualPlan' => ['One figure'], 'source' => 'owner']]),
-        'open findings' => tap(publishingBoardDrafted($user), fn (Article $piece): EditorialFinding => EditorialFinding::factory()->create(['article_id' => $piece->id, 'attempt_id' => $piece->current_attempt_id, 'activity_id' => null, 'revision_id' => publishingBoardRevision($piece)->id, 'review_cycle' => 1])),
+        'open findings' => tap(publishingBoardDrafted($user), function (Article $piece): void {
+            $revision = publishingBoardRevision($piece);
+            EditorialFinding::factory()->create(['article_id' => $piece->id, 'attempt_id' => $piece->current_attempt_id, 'activity_id' => null, 'revision_id' => $revision->id, 'input_hash' => $revision->content_hash, 'review_cycle' => 1, 'reconciliation_state' => null]);
+        }),
         default => throw new InvalidArgumentException("Unknown status scenario [{$scenario}]."),
     };
 
@@ -521,6 +524,52 @@ test('dropping a parked piece on its stage column unparks it and requeues work a
     expect($piece->fresh()->currentAttempt?->parked_at)->toBeNull();
     expect($blocked->fresh()?->status)->toBe(EditorialActivityStatus::Pending);
     expect($owner->fresh()?->status)->toBe(EditorialActivityStatus::Paused);
+});
+
+test('unparking requeues only the work this park blocked', function (): void {
+    $user = publishingBoardAuthor();
+    $piece = publishingBoardPiece($user, 'Unpark selectively', EditorialStage::InReview, ['parked_at' => now(), 'parked_reason' => 'Waiting']);
+    $blockedReason = ['pause_reason' => EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON];
+    $older = publishingBoardActivity($piece, EditorialActivityKind::Draft, EditorialActivityStatus::Paused, [...$blockedReason, 'paused_at' => now()->subDay()]);
+    $superseded = publishingBoardActivity($piece, EditorialActivityKind::ReviewFacts, EditorialActivityStatus::Paused, [...$blockedReason, 'paused_at' => now()->addSecond(), 'batch_key' => 'cycle-1']);
+    $newest = publishingBoardActivity($piece, EditorialActivityKind::ReviewFacts, EditorialActivityStatus::Paused, [...$blockedReason, 'paused_at' => now()->addSeconds(2), 'batch_key' => 'cycle-1']);
+    $otherBatch = publishingBoardActivity($piece, EditorialActivityKind::ReviewFacts, EditorialActivityStatus::Paused, [...$blockedReason, 'paused_at' => now()->addSeconds(2), 'batch_key' => 'cycle-2']);
+
+    Livewire::actingAs($user)
+        ->test('admin.publishing.board')
+        ->call('moveCard', "{$piece->id}:parked", 0, 'writing')
+        ->assertSet('moveRefused', false);
+
+    expect($older->fresh()?->status)->toBe(EditorialActivityStatus::Paused)
+        ->and($superseded->fresh()?->status)->toBe(EditorialActivityStatus::Stale)
+        ->and($newest->fresh()?->status)->toBe(EditorialActivityStatus::Pending)
+        ->and($otherBatch->fresh()?->status)->toBe(EditorialActivityStatus::Pending);
+});
+
+test('parking a scheduled piece then unparking it leaves it approved with nothing scheduled', function (): void {
+    $user = publishingBoardAuthor();
+    $piece = publishingBoardPiece($user, 'Park scheduled', EditorialStage::Scheduled);
+    $revision = publishingBoardRevision($piece);
+    $release = ArticleRelease::factory()->create(['article_id' => $piece->id, 'attempt_id' => $piece->current_attempt_id, 'revision_id' => $revision->id, 'status' => 'scheduled', 'scheduled_at' => now()->addDay()]);
+
+    Livewire::actingAs($user)
+        ->test('admin.publishing.board')
+        ->call('moveCard', "{$piece->id}:scheduled", 0, 'parked')
+        ->set('moveReason', 'Holding the launch')
+        ->call('confirmMove')
+        ->assertHasNoErrors()
+        ->assertSee('Parked. Its scheduled release was withdrawn.');
+
+    expect($release->fresh()?->status)->toBe('withdrawn')
+        ->and($piece->fresh()->currentAttempt?->stage)->toBe(EditorialStage::Approved);
+
+    $component = Livewire::actingAs($user)
+        ->test('admin.publishing.board')
+        ->call('moveCard', "{$piece->id}:parked", 0, 'ready')
+        ->assertSet('moveRefused', false);
+
+    expect(publishingBoardColumnsOf($component->html(), $piece))->toBe([BoardColumn::Ready->value])
+        ->and(ArticleRelease::query()->where('attempt_id', $piece->current_attempt_id)->where('status', 'scheduled')->exists())->toBeFalse();
 });
 
 test('a parked piece only unparks onto its own stage column', function (): void {

@@ -191,6 +191,28 @@ test('fresh undisposed findings appear but stale or disposed findings do not', f
     'changed content' => [['input_hash' => 'old'], false],
     'disposed' => [['disposition' => 'rejected'], false],
     'duplicate' => [['reconciliation_state' => 'duplicate'], false],
+    'unreconciled state' => [['reconciliation_state' => null], true],
+    'conflicting advisory' => [['reconciliation_state' => 'conflict', 'severity' => 'advisory'], true],
+    'advisory only' => [['severity' => 'advisory'], false],
+    'voice lint' => [['lens' => 'lint'], false],
+]);
+
+test('the board chip and the Admin home agree about open findings', function (array $attributes, bool $expected): void {
+    $user = adminHomeUser();
+    $attempt = adminHomeAttempt($user, 'Shared finding rule', ['stage' => EditorialStage::InReview]);
+    $revision = ArticleRevision::factory()->for($attempt->article)->create();
+    $attempt->article->update(['working_revision_id' => $revision->id]);
+    EditorialFinding::factory()->create(['article_id' => $attempt->article_id, 'attempt_id' => $attempt->id, 'activity_id' => null, 'revision_id' => $revision->id, 'input_hash' => $revision->content_hash, 'reconciliation_state' => null, ...$attributes]);
+
+    $home = app(ReadAdminHome::class)->forUser($user)['decisions'];
+    $board = $attempt->article->fresh()->currentAttempt()->withExists(['editorialFindings as has_open_findings' => fn ($findings) => $findings->awaitingOwnerDecision()])->first();
+
+    expect($home)->toHaveCount($expected ? 1 : 0)
+        ->and((bool) $board?->getAttribute('has_open_findings'))->toBe($expected);
+})->with([
+    'unreconciled blocking' => [[], true],
+    'advisory only' => [['severity' => 'advisory'], false],
+    'stale content' => [['input_hash' => 'old'], false],
 ]);
 
 test('current releases invite the appropriate review without changing the release', function (EditorialStage $stage, string $status, string $action): void {

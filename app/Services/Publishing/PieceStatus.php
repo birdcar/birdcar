@@ -102,8 +102,8 @@ final readonly class PieceStatus
     }
 
     /**
-     * The decision the owner owes, mirroring the Admin home's "Your decision" rules plus the package, kit and
-     * finding gates the board shows.
+     * The decision the owner owes, mirroring the Admin home's "Your decision" rules plus the package and kit
+     * gates the board shows. Open findings come from EditorialFinding::awaitingOwnerDecision() on both surfaces.
      *
      * @param  Collection<int, EditorialActivity>  $activities  the latest activity of each kind, newest first
      */

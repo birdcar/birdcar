@@ -45,14 +45,7 @@ class ReadAdminHome
                 'contentIdea:id,summary_title',
                 'workingRevision:id,article_id,content_hash,metadata,updated_at',
                 'currentAttempt' => fn ($query) => $query->withExists([
-                    'editorialFindings as has_open_findings' => fn ($findings) => $findings
-                        ->whereColumn('editorial_findings.review_cycle', 'publishing_attempts.review_cycle')
-                        ->whereNull('stale_at')
-                        ->whereNull('disposition')
-                        ->whereNotIn('reconciliation_state', ['duplicate', 'superseded'])
-                        ->whereHas('article', fn ($article) => $article
-                            ->whereColumn('articles.working_revision_id', 'editorial_findings.revision_id')
-                            ->whereHas('workingRevision', fn ($revision) => $revision->whereColumn('article_revisions.content_hash', 'editorial_findings.input_hash'))),
+                    'editorialFindings as has_open_findings' => fn ($findings) => $findings->awaitingOwnerDecision(),
                     'releases as has_approved_release' => fn ($releases) => $releases
                         ->where('status', 'approved')
                         ->whereNull('withdrawn_at')

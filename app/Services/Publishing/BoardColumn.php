@@ -244,12 +244,7 @@ enum BoardColumn: string
             'editorialActivities as has_completed_draft' => fn (Builder $activities) => $activities
                 ->whereIn('kind', array_map(fn (EditorialActivityKind $kind): string => $kind->value, self::WRITING_KINDS))
                 ->where('status', EditorialActivityStatus::Completed->value),
-            'editorialFindings as has_open_findings' => fn (Builder $findings) => $findings
-                ->whereColumn('editorial_findings.review_cycle', 'publishing_attempts.review_cycle')
-                ->where('severity', 'blocking')
-                ->whereNull('stale_at')
-                ->whereNull('disposition')
-                ->where(fn (Builder $state) => $state->whereNull('reconciliation_state')->orWhereNotIn('reconciliation_state', ['duplicate', 'superseded'])),
+            'editorialFindings as has_open_findings' => fn ($findings) => $findings->awaitingOwnerDecision(),
             'releases as has_prepared_release' => fn (Builder $releases) => $releases
                 ->where('status', 'prepared')
                 ->whereNull('withdrawn_at')
