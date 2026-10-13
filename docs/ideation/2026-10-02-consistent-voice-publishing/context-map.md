@@ -1,10 +1,20 @@
 # Context Map: Consistent Voice Publishing
 
-**Phase**: 9 (Drift trial harness and edit distance)
+**Phase**: 7 (Publishing board)
 **Gates**: 5/5 ready
 **Verdict**: GO
 
-## Gates (Phase 9)
+## Gates (Phase 7)
+
+| Gate                 | Status | Evidence |
+| -------------------- | ------ | -------- |
+| Scope clarity        | ready  | The spec names 5 new files, 4 modified files and 1 deleted file. This map adds the files it misses and the change each needs: (1) `app/Actions/Publishing/AdvancePublishingAttempt.php` has no `unpark()` (only `park` 92-100 and `abandon` 102-111), and neither method withdraws a scheduled release; (2) `MoveResult` needs its own file, because the spec sketches it inline; (3) the tests that drive the deleted component: `AdminPublishingWorkspaceTest.php:139-439` (component name, composer markup, "Active writing", per-list pagination, "published is listed separately"), `ContentIdeaTest.php:255-269`, `EditorialInputContractTest.php:491-505` and `PublishingJourneyTest.php:124` (which asserts the "Publishing workspace" heading); (4) `⚡index.blade.php` already titles items by metadata or the labeled idea (88-92, 117-121) and already links `admin.publishing.dashboard` (59, 70, 106, 130), so its change is copy only; (5) optionally `resources/views/layouts/admin.blade.php` for `<flux:toast />`, since no toast exists anywhere today. |
+| Pattern familiarity  | ready  | Read the deleted `⚡dashboard.blade.php` in full: composer actions 26-60, queries 62-86, status and activity labels 105-168, and markup 172-282. Also read `AdvancePublishingAttempt`, the workspace `startDevelopment` (123-137), and the strongest eager-load precedent, `ReadAdminHome.php:38-77`, with its decision rules 105-125. Also read the Flux Pro 2.20 kanban stubs, the Livewire 4.4.6 `wire:sort` source (`livewire.esm.js` ~17090-17140), the `flux:modal wire:model.self` precedent (`⚡security.blade.php:456-469`), the session poll (`session.blade.php:56`), the release checklist, `motion.js`, and the `admin.css` publishing block (51-140) and reduced-motion block (281-285). |
+| Dependency awareness | ready  | The route name `admin.publishing.dashboard` is linked from `layouts/admin.blade.php:34`, `navigation.blade.php:7`, `session.blade.php:4` and `⚡index.blade.php` (4 places); keeping the name keeps them working. 8 tests in 3 files use the component name `admin.publishing.dashboard`, and 2 more files GET `/publishing`. `motion.js:12,60,184-186` and `admin.js:26` read `data-publishing-studio`, `publishingArrivals` and `data-publishing-enter`. Nothing in the app calls `park` or `abandon` (only EditorialWorkflowTest:424-425,454 and ContentIdeaTest:211). Every agent and release action already refuses a parked attempt: StartEditorialActivity:58, RunEditorialActivity:249,381, ApprovePublishingStage:325, ManageArticleRelease:514,644 and RecoverEditorialActivities:29. |
+| Edge case coverage   | ready  | The list below covers: column precedence (killed before parked); archive imports; published pieces with a new attempt; the literal Writing rule, which flips a piece back on every autosave; park and kill on Ideas and Published; scheduled releases when a piece is parked; unparking with activities the worker paused; interviews waiting for answers; the global agent pause; how to detect package acceptance; same-column reorders; card-id scoping; the `wire:sort` attribute order; polling during a drag; the idea-label test; ten-column width; and unbounded Ideas and Killed columns. |
+| Test strategy        | ready  | Commands, helper prefixes, factories, the query-count precedent (AdminHomeTest:270-285) and the tests to repoint are below. `birdcar_test` and `birdcar_development` were confirmed on 127.0.0.1:5433 with `psql -l` this session. Versions: Laravel 13.33.0, Livewire 4.4.6, Flux and Flux Pro 2.20.0. The scout did not run the suite. |
+
+### Phase 9 gates (reference)
 
 | Gate                 | Status | Evidence |
 | -------------------- | ------ | -------- |
@@ -79,6 +89,337 @@ When this Phase 9 scout ran, Phases 7 and 8 had no commits and no map sections. 
 - Phase 8 adds `2026_10_02_400000_create_voice_canon_versions_table.php`, so Phase 9's `2026_10_02_500000_...` still sorts last.
 - Phase 8 makes `VoiceCanon::snapshot()` read the active database version (spec-phase-8.md:17). See the Phase 9 Risks section for how this affects the drift trial's canon hash.
 - Phase 7 (the board) touches no Phase 9 file.
+
+### Phase 8 (still not implemented when the Phase 7 scout ran)
+
+- HEAD is `51a8ea5` (Phase 9). Phase 8 has no commits.
+- The only file both phases touch is `routes/admin.php`: Phase 8 adds `GET /settings/voice-canon/versions/{version}/download` (spec-phase-8.md:76), and Phase 7 edits line 36. The edits don't overlap.
+- Phase 7 adds no agent role, so the validator-to-schema audit (contract line 154) does not apply.
+
+## Key Patterns (Phase 7)
+
+- **Composer and capture actions** (the spec's pattern: the deleted `resources/views/components/admin/publishing/⚡dashboard.blade.php`)
+  - **`saveForLater` (26-37)**: `Gate::authorize(AdminPermission::View->value)`, then `Gate::authorize(PublishingPermission::Write->value)`, then `validate(['idea' => ['required', 'string', 'max:5000']])` and `captureIdea`. It flashes "Idea saved for later." and resets the ideas page.
+  - **`developIdea` (39-60)**:
+    - Authorizes View, Write and Develop.
+    - One `DB::transaction` runs `captureIdea`, then `develop($actor, $article, null, ['idea' => $body])`, then `start(..., Interview, ['idea' => $body], 'initial-interview')`.
+    - It flashes `status` and `publishing-arrival`, then calls `redirectRoute('admin.publishing.articles.show', ['article' => $article], navigate: false)`.
+  - **Form markup (178-199)**: move it over unchanged.
+    - `wire:submit` picks `developIdea` or `saveForLater` by the Develop permission.
+    - It has the `flux:composer` with `wire:model="idea"` and the two buttons with their `aria-label`s.
+    - `AdminPublishingWorkspaceTest:142-163` asserts `wire:submit="developIdea"`, `aria-label="Develop idea"`, `aria-label="Save for later"` and `data-flux-composer`.
+  - **Root**: `<section data-publishing-studio class="publishing-studio space-y-3" x-data="publishingArrivals">`, with `data-publishing-enter` on the top blocks. `motion.js` animates the first 10 of these once, on init.
+  - **Card heading**: `<x-admin.publishing.piece-heading :title="$title" :summary="$article->contentIdea->summary_title" />`. It renders the metadata title, or `idea-label` with an "Idea" badge (`idea-label.blade.php` has `data-idea-label`).
+  - **Label sources to reuse for the status chip**: the activity-kind labels (139-153: "Interview", "Voice-rule repair", "Kit draft" ...), the activity-status labels (155-165: queued, running, needs attention ...), and `statusFor` (105-129), which shows paused and parked reasons.
+- **Ideas to Shaping on an existing idea piece**
+  - Copy the workspace `startDevelopment` (`⚡article-workspace.blade.php:123-137`).
+  - In one transaction: `develop($actor, $article, $article->working_revision_id, ['idea' => $article->contentIdea->body])`, then `start($actor, $attempt, EditorialActivityKind::Interview, [], 'interview-'.$attempt->review_cycle)`.
+  - Pass the locked article's `working_revision_id` as the expected revision. Otherwise `develop` throws "The article has changed since develop was requested." (AdvancePublishingAttempt:36-38). An idea can have a working revision if the owner typed in its workspace.
+- **Park, kill and unpark** (`app/Actions/Publishing/AdvancePublishingAttempt.php`)
+  - **`park($actor, $attempt, $reason)` (92-100)** sets `parked_at` and `parked_reason`.
+  - **`abandon` (102-111)** sets stage Abandoned, `abandoned_at` and `abandoned_reason`.
+  - **Authorization**: both require **`publishing.develop`** (`authorize` 462-467, which throws `AuthorizationException('This user is not allowed to advance publishing work.')`).
+  - **Guard**: both go through `updateAttempt` (375-413) and then `ensureAttemptCanBeMutated` (451-460).
+    - The attempt must be the current one: "Only the current publishing attempt can be changed."
+    - Terminal attempts (stage Published or Abandoned, or `abandoned_at` set) throw "Terminal publishing attempts cannot be changed."
+  - **No `unpark()`**: add one beside `resume()` (82-90) as `updateAttempt($attempt, ['parked_at' => null, 'parked_reason' => null])`, with the same authorization as `park`.
+  - **Activities**: `park` leaves activities alone. Only `pause` touches them (385-394), and `resume` returns `RESUMABLE_PAUSE_REASONS` work to Pending (396-407).
+- **Board query** (closest precedent: `app/Actions/Admin/ReadAdminHome.php:38-77`)
+  - **Scope**: owner only, `where('author_id', $actor->id)`.
+  - **Column-constrained eager loads**: `contentIdea:id,summary_title` (add `body` if the card shows it) and `workingRevision:id,article_id,content_hash,metadata,updated_at`.
+  - **Latest activity per kind**: `'currentAttempt.editorialActivities' => fn ($q) => $q->select([...])->whereNotExists(<a newer row with the same attempt and kind>)->orderByDesc('id')` (66-73).
+    - The select there omits `pause_reason`, `error_reason`, `proposal` and `completed_at`.
+    - Add every column PieceStatus reads; strict mode throws on unselected attributes.
+  - **Owner-owed flags with `withExists`**:
+    - `has_open_findings` (48-55): current cycle, not stale, undisposed, not duplicate or superseded, on the working revision's content hash.
+    - `has_approved_release` (56-59).
+    - `has_prepared_release` (60-63): status `prepared`, not withdrawn, `revision_id` equal to the working revision.
+  - **Active approvals**: `'currentAttempt.approvals' => fn ($q) => $q->whereNull('invalidated_at')` (65).
+  - **Decision rules to mirror for "waiting"** (105-125):
+    - An AwaitingApproval activity started by this user (an interview waiting for answers).
+    - At Developing: a completed interview or an angle.
+    - At Drafting: `$hasPlan` (111-113), meaning outline and visualPlan are filled and, for `source = agent`, the plan activity completed.
+    - At InReview: open findings or a prepared release.
+    - At Approved: an approved release.
+  - **Do not copy `isCurrentActivity`** (145-173): it calls `ApprovePublishingStage::snapshotInputHashFor` for every activity, which queries.
+  - **Order**: `latest('updated_at')->orderByDesc('id')`. The old dashboard used `latest()->latest('id')`.
+- **Flux kanban** (Flux Pro 2.20.0, `vendor/livewire/flux-pro/stubs/resources/views/flux/kanban/`)
+  - **`flux:kanban`** renders `<div class="flex gap-4" data-flux-kanban>`.
+  - **`flux:kanban.column`** wraps an inner div with `rounded-lg w-80 max-w-80` and a zinc-100/800 background.
+  - **`flux:kanban.column.header`** takes `heading`, `subheading`, `count`, `badge` and an `actions` slot. `count` is hidden when it is 0 (`@if ($count)`).
+  - **`flux:kanban.column.cards`** is `px-2 pb-2 flex flex-col gap-2` with `data-flux-kanban-column-cards`. There is also `column.footer`.
+  - **`flux:kanban.card`** takes `heading`, `header` and `footer` slots. With `as="button"` it renders `<ui-button>`; otherwise a div with `flux-kanban-card`.
+  - All of these are `@blaze(fold: true)`.
+- **`wire:sort`** (Livewire 4.4.6; `vendor/livewire/livewire/dist/livewire.esm.js` ~17085-17140, the copy that `resources/js/admin.js` imports; the Alpine sort plugin is around `livewire.js` 12100-12200)
+  - **Each column's card container**: `wire:sort="moveCard"`, then `wire:sort:group="board"` (shared by all columns), then `wire:sort:group-id="{{ $column->value }}"`.
+  - **Each card**: `wire:sort:item="{{ $piece->id }}"`.
+  - **The call**: only the **receiving** list calls the handler, as `moveCard($item, $position, $groupId)`. A reorder inside one column calls it too.
+  - **Options**: `wire:sort:handle`, `wire:sort:ignore` (on links and buttons inside a card) and `wire:sort:config="{...}"` (SortableJS options; the default is `animation: 150`).
+  - **During a drag**: the body gets the class `sorting`, and the dragged copy gets `.sortable-ghost`.
+- **Modal precedent** (`resources/views/components/admin/settings/account/⚡security.blade.php:456-469`)
+  - `<flux:modal wire:model.self="confirmingTwoFactorDisable" class="settings-dialog">`, then a heading and text, a `<flux:modal.close>` ghost button, and an action button that calls the method.
+  - A bool property is opened with `wire:click="$set('confirmingX', true)"` and cleared by the action (171).
+- **Polling**
+  - `partials/session.blade.php:56` uses `wire:poll.5s.visible="refreshAgentWork"`, only while work runs.
+  - Livewire 4 islands (`@island(name: ...)`) re-render one region on its own (livewire-development skill, lines 101-106). Use them to limit the poll to the cards.
+- **Kit stage labels**
+  - Approved shows "Ready to post", published shows "Posted", anything else shows "In review" (`partials/distribution-kit.blade.php:10`, `partials/session.blade.php:34`). The board would be the third copy, so a shared label (for example `BoardColumn::label()` taking the piece kind) removes the duplication.
+  - `PieceKind::label()` gives "LinkedIn post", "Bluesky thread", "Email blurb" and "Blog post".
+- **Kit approval helper**: `ApprovePublishingStage::kitApprovalProblems($attempt)` (183) lists kit approval blockers, but it queries, so never call it per card.
+- **CSS** (`resources/css/admin.css`)
+  - Publishing styles are at 51-140. `.publishing-studio` is a grid capped at 88rem, with breakpoints at 1200, 1023 and 639px.
+  - Reduced motion is at 281-285.
+  - Tailwind v4 scans `@source '../views/**/*.blade.php'`.
+  - It is a Vite input (`vite.config.js:9`), so run `bun run build` after changes.
+- **JS**
+  - `motion.js` exports `createPublishingArrivals` and `installPublishingMotion`, and returns early under `prefers-reduced-motion` (`reduceMotion()` at 7-9).
+  - Its tests are `bun:test` (`motion.test.js` mocks `motion`) and are not in `composer test`.
+  - `admin.js:2` imports Livewire from `vendor/livewire/livewire/dist/livewire.esm`, which bundles SortableJS and wire:sort, so no new JS dependency is needed.
+
+## Dependencies (Phase 7)
+
+- **Route** (`routes/admin.php:36`)
+  - Today it reads `Route::livewire('/', 'admin.publishing.dashboard')->name('dashboard')`. Point it at `admin.publishing.board` and keep the name.
+  - The group middleware is `PermissionMiddleware::using(PublishingPermission::View)` (34).
+  - Links by name:
+    - `layouts/admin.blade.php:34` (the sidebar).
+    - `navigation.blade.php:7` ("Workspace"; current for `dashboard` and `articles.*`).
+    - `partials/session.blade.php:4` ("All writing").
+    - `⚡index.blade.php:59,70,106,130` ("Open Publishing ...").
+  - `AdminFortifyFlowTest:98-165` redirects to `/publishing`, which is unaffected.
+- **Tests that render the dashboard component or GET `/publishing`**
+  - Every one moves to the board. CLAUDE.md says "Do not delete tests or test files without approval", so rewrite each into its board equivalent instead of dropping it.
+  - `tests/Feature/Publishing/AdminPublishingWorkspaceTest.php`:
+    - 139 (shell markup and composer attributes) and 182 (navigation).
+    - 194 (forbidden without publishing.view).
+    - 203 and 216 (revoked permission or admission makes `saveForLater` forbidden).
+    - 229 (passive idea; asserts "Publishing workspace").
+    - 249 (developIdea creates one pending Interview and redirects).
+    - 298 (develop forbidden without the permission).
+    - 310 (asserts "Ideas", "Active writing", "In review", owner scope, and the full idea text "Final accessible sentence.").
+    - 332 (independent pagination: `paginator-ideasPage-page2`, `paginator-activePage-page2`).
+    - 353 (created_at ties broken by newest id across pages).
+    - 376 ("published work is listed separately" asserts the published piece is **not** on /publishing; the board must now show it in Published).
+    - 400 ("Draft in progress on published work").
+  - `tests/Feature/Publishing/ContentIdeaTest.php:255-269` checks that the dashboard labels idea summaries, using `contentIdeaAssertLabeledOnly` (479-490).
+  - `tests/Feature/Publishing/EditorialInputContractTest.php:491-505` checks that `developIdea` freezes the canon into the interview.
+  - `tests/Feature/Publishing/PublishingJourneyTest.php:124` GETs /publishing and asserts "Publishing workspace". Keep that heading or update the test.
+- **Global helpers in AdminPublishingWorkspaceTest**
+  - `publishingUser`, `publishingWriteOnlyUser`, `articleRevisionWithTitle`, `activeArticleFor`, `publishedArticleFor` and `workspaceXpath*`.
+  - PublishingBoardTest must not redeclare them, and it can't rely on them: a file run alone doesn't load them.
+- **JS hooks**
+  - `motion.js:12` (`rootFor` finds `[data-publishing-studio]`), 60 (`[data-publishing-enter]`) and 184-186 (`publishingArrivals` and the milestone listener).
+  - `admin.js:26`.
+  - `motion.test.js:59,103` use the same selectors.
+  - Keep the attributes on the board root.
+- **`AdvancePublishingAttempt`**: only tests call `park`, `abandon`, `pause` and `resume` (EditorialWorkflowTest:415-470,644-648; ContentIdeaTest:211; PublishingAgentSettingsTest:183; ReleaseIntegrityTest:514). Adding `unpark()` changes no existing caller.
+- **What parking does elsewhere** (why unpark matters)
+  - **Refusals**:
+    - `StartEditorialActivity:58` refuses to start work.
+    - `ApprovePublishingStage:325` and `ManageArticleRelease:514,644` refuse approvals and delivery.
+    - `RetryEditorialActivity:35` and `ResumeEditorialActivity:35` refuse.
+  - **Activities the worker pauses**:
+    - `RunEditorialActivity:249` pauses a claimed activity with "The publishing attempt is blocked or no longer current."
+    - `RunEditorialActivity:381` pauses a returning result with "The agent result returned after the publishing attempt was blocked or replaced."
+    - Neither reason is in `EditorialActivity::RESUMABLE_PAUSE_REASONS` (45), and `RecoverEditorialActivities:24-29` releases only configuration reasons.
+  - **Admin home**: `ReadAdminHome:94-98` lists parked pieces as Blocked.
+- **Scheduled releases**
+  - `publishing:publish-due` (`app/Console/Commands/PublishDueArticles.php`) delivers due `scheduled` releases.
+  - When `deliver` throws "Blocked publishing attempts cannot be delivered.", it warns and returns FAILURE on that run.
+  - `ManageArticleRelease::withdrawScheduledReleasesForAttemptId` (458) is the existing withdraw helper; rethink, selectAngleOption and chooseFramework use it.
+- **Scheduling path**
+  - The workspace has no scheduling dialog or modal. Scheduling lives in the release checklist's "Prepare a different release" disclosure (`partials/release-checklist.blade.php:40-51`): slug, `releaseScheduledAt` and `releaseScheduledTimezone`, then "Check and prepare release", which calls `prepareRelease` (workspace 458-481, `publish` gate).
+  - Next comes "Approve and schedule this release" (`approveRelease` 483-503, `approve` gate). `ManageArticleRelease:351` sets the Scheduled stage when `scheduled_at` is set.
+  - The workspace opens on the release tab for Approved, Scheduled and Published stages (`with()` 1364-1368), so redirecting there is enough.
+- **Package acceptance**
+  - Nothing on the package activity records acceptance.
+  - Accepting writes an `agent-accepted` revision with `client_mutation_id = 'package-{activityId}-{24 hex}'` (AcceptPackageProposal:54-85).
+  - The workspace's current package is the latest Completed Package in the current `review_cycle` (`latestPackage` 213-223).
+- **Kit pieces** (from the Phase 6 implementation notes)
+  - Every parentless blog post that is not an archive import spawns its own kit, so a kit nests under its `parent_article_id`, which can be a sibling.
+  - Kit attempts start at InReview. Kit approval moves them to Approved ("Ready to post"), and `MarkKitPiecePosted` moves them to Published ("Posted").
+  - A save after kit approval invalidates the approval and moves the kit back to in review.
+  - The Admin home still lists kit pieces as their own items; this spec does not change that.
+- **Archive imports**: `ImportWritingArchive` sets `published_release_id` and `first_published_at` and creates no attempt (89-141), so `current_attempt_id` is null.
+- **`first_published_at`**: set at `deliver` from `original_public_date` or the delivery time (ManageArticleRelease:431-440). Archive imports keep their original dates.
+- **Strict mode** (`AppServiceProvider::configureModelStrictness` 158-172): lazy loading, missing attributes and silently discarded attributes all throw outside production.
+- **ArticlePolicy** (`app/Policies/ArticlePolicy.php`): view, update, develop, approve and publish each require the permission **and** `author_id === user.id`.
+- **Roles**: only `publishing.author` exists (`app/Authorization/Publishing/Catalog.php`), and it holds every publishing permission.
+
+## Conventions (Phase 7 additions)
+
+- **Names**
+  - `App\Services\Publishing\BoardColumn` is a string-backed enum with TitleCase cases, per the spec. It is the first enum outside `App\Models\Publishing`, which is fine because the spec places it there.
+  - `App\Services\Publishing\PieceStatus` is a `final readonly class`, like `CanonSnapshot` and `FrameworkCatalog`.
+  - `App\Actions\Publishing\MovePublishingPiece` is a plain `class`, like the sibling actions, resolved with `app()`.
+  - Put `MoveResult` in its own file. `InviteAdministrator.php:355` declares a second class in the same file, but don't copy that: PSR-4 cannot autoload such a class by itself.
+- **Generators**
+  - `php artisan make:enum Services/Publishing/BoardColumn --no-interaction`.
+  - `make:class` for PieceStatus, MovePublishingPiece and MoveResult.
+  - `php artisan make:test --pest PublishingBoardTest --no-interaction`, then place it under `tests/Feature/Publishing/`.
+  - Check every generated namespace.
+  - For the SFC, try `php artisan make:livewire` and confirm it lands at `resources/views/components/admin/publishing/⚡board.blade.php`. There is no `config/livewire.php`, so the defaults apply. Otherwise write the file by hand, like its siblings.
+- **Livewire methods**
+  - Authorize first, then validate, then call the action. Show errors in a property (like the workspace's `$saveError`) or a toast.
+  - Authorize `PublishingPermission::View` (and `AdminPermission::View`, as the dashboard did) inside `with()` and inside every action, because `Livewire::test` skips route middleware.
+- **Use the policy, not the raw permission**: in MovePublishingPiece, call `Gate::forUser($actor)->authorize('develop', $piece)` (or `publish`), which also enforces ownership.
+- **Errors**
+  - Domain refusals are `RuntimeException`.
+  - Validate the reason with `$this->validate([...])` in the component, or `ValidationException::withMessages(['moveReason' => ...])` in the action.
+  - `parked_reason` and `abandoned_reason` are `text` columns (`2026_09_22_201057_create_publishing_tables.php:62,64`). Trim the reason and choose a max length, for example 1000.
+- **Tests**
+  - Helper prefix `publishingBoard*`, constant prefix `PUBLISHING_BOARD_*`.
+  - `beforeEach`: `app(PermissionRegistrar::class)->forgetCachedPermissions()`, then `authorization:sync`.
+  - For a user without develop, call `givePermissionTo(View, Write)` like `publishingWriteOnlyUser`.
+  - Render with `Livewire\Livewire::actingAs($u)->test('admin.publishing.board')`.
+- **Run after edits**
+  - `vendor/bin/pint --dirty --format agent`.
+  - `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress` (level 7 includes tests).
+  - `bun run build` after CSS or JS changes.
+  - `bun test resources/js/admin/publishing/motion.test.js` if `motion.js` changes.
+
+## Risks (Phase 7)
+
+- **The "existing release scheduling dialog" does not exist.**
+  - Scheduling means preparing a release with a time (`publish`) and then approving that exact release again (`approve`). Both happen in the release checklist (see Dependencies).
+  - So spec step 4's fallback applies: Ready to Scheduled returns `needsDialog('release')`, and the board redirects to the workspace, which opens on the release tab for Approved pieces. Say so in the commit.
+  - This does not contradict the decision log: "crossing a gate opens the workspace" still holds.
+- **The spec's authorization conflicts with the action.**
+  - The spec says "write for park and kill", but `AdvancePublishingAttempt::park` and `abandon` authorize `publishing.develop`. A write-only user would pass the board's check and then hit an `AuthorizationException`.
+  - Use the `develop` policy for park, kill and unpark, or change the action. Record the choice.
+- **There is no unpark, and unparking may not resume work.**
+  - Add `unpark()` (see Key Patterns).
+  - Any activity a worker claimed while the attempt was parked is left Paused with one of two reasons that cannot be resumed (RunEditorialActivity:249,381). After unparking, the piece would show "failed" with no Retry, because Retry applies only to Failed activities.
+  - Decide whether unpark returns those Paused activities to Pending (as `updateAttempt` does for `ATTEMPT_PAUSE_REASON`) or leaves them and shows the reason. Record it.
+- **Parking or killing a Scheduled piece leaves its release scheduled.**
+  - `publishing:publish-due` will warn and return FAILURE on every run until the release is withdrawn.
+  - After an unpark, a release whose time has passed publishes on the next run.
+  - Withdraw scheduled releases (`withdrawScheduledReleasesForAttemptId`) inside the park and kill moves, or refuse those moves for Scheduled pieces. Record the choice.
+- **Park and kill cannot work as written for Ideas and Published.**
+  - **Ideas**: they have no attempt, and the reason columns live on the attempt. Either refuse ("Ideas are already off the clock"), or create an attempt through `develop()` and then park or abandon it (this needs develop permission and leaves an attempt with no interview). Record the choice.
+  - **Published**: published attempts are terminal, and archive imports have no attempt, so `ensureAttemptCanBeMutated` refuses. Refuse with a message that says why.
+  - The spec's "any column to Parked or Killed" is a spec gap here, not a decision-log contradiction.
+- **Read literally, the Writing rule moves reviewed pieces back.**
+  - The spec says Writing is "in_review with no completed draft on the current revision".
+  - A completed Draft targets its own `revision_id` or `proposal.applied_revision_id`. The editor autosaves 250 ms after typing stops (`resources/js/admin/publishing/autosave.js:3`), and every owner save is a new revision. A piece in Review would drop back to Writing on the first keystroke.
+  - Read "draft done" as "a completed Draft exists in this attempt" (an applied LintRepair also counts), and keep the rule that any pending or running draft, lint_repair or draft_kit means Writing. Record the reading.
+- **Two derivations of "waiting".**
+  - ReadAdminHome ("Your decision" on Admin home) and PieceStatus will disagree unless they share rules.
+  - The spec's list leaves out an interview waiting for the owner's answers (`AwaitingApproval`, ReadAdminHome:115-118). Include it.
+- **No stored flag says a package was accepted.** Checking it means looking for a revision whose `client_mutation_id` starts with `package-{id}-`. Do that in SQL (a `withExists` or subquery) to keep the query count flat.
+- **Query count, caps and correctness.**
+  - Capping Published at 12 needs its own limited query.
+  - The SQL that separates Published from everything else must match `BoardColumn::forPiece` exactly. Otherwise a piece appears twice or not at all.
+  - Ideas and Killed have no cap; the old dashboard paginated Ideas at 12. A collapsed Killed column still loads. Consider caps and record the choice.
+  - Never call `ContentIdea::flagship()` per card; it queries (ContentIdea:77-85).
+- **`wire:sort` gotchas** (verified in the shipped bundle)
+  - **Attribute order**: Livewire's init loop returns at the first `wire:sort:group` attribute (`livewire.esm.js` ~17096-17097). `wire:sort="..."` must therefore come **before** `wire:sort:group` on the element, or the handler never binds.
+  - **Blaze folding**: `flux:kanban.column.cards` is `@blaze(fold: true)`. Confirm that the `wire:sort*` attributes and the dynamic group id survive folding, or put them on a plain wrapper div.
+  - **Refused drags**: SortableJS has already moved the DOM node when the server refuses. Don't use `.renderless`, `skipRender()` or `wire:ignore`. Give every card a `wire:key` so the re-render puts it back.
+  - **Polling mid-drag**: a poll that re-renders during a drag can fight SortableJS. Skip or defer the poll while `document.body.classList.contains('sorting')`, or poll through an island outside the sortable lists. Check this in the browser.
+  - **Clicks**: mark links and buttons inside a card `wire:sort:ignore`, or use a handle, so clicks still open the workspace and the card menu.
+  - **Reduced motion**: set `animation: 0` in `wire:sort:config` when `prefers-reduced-motion: reduce`, and turn off CSS transitions on `.sortable-ghost` and `body.sorting`.
+- **No toast exists.** `layouts/admin.blade.php` has no `<flux:toast />`. Either add it (a file the spec doesn't list) or show refusals in an in-board `role="alert"` region, which is also easier to assert. Record the choice.
+- **The idea-label test.** Never pass the idea summary as `flux:kanban.card heading=` or put it in a modal heading. Both render a bare `[data-flux-heading]`, and `contentIdeaAssertLabeledOnly` (and any board equivalent) fails. A card wrapped in an `<a>` passes only if the `<a>` contains the `[data-idea-label]` span.
+- **Width.** Ten columns at Flux's `w-80` add up to 200rem, while `.publishing-studio` caps at 88rem and `#admin-main` at 100rem (`layouts/admin.blade.php:62`). The board scrolls sideways on desktop too.
+  - Wrap the kanban in `overflow-x-auto` inside a `min-w-0` parent.
+  - Consider narrower columns and a collapsed Killed column. Flux's `w-80` class is merged with yours, so check that the override wins.
+- **Rewrite tests, don't delete them.** CLAUDE.md forbids deleting tests without approval. Turn the pagination, tie-break and "listed separately" tests into board versions: Published capped at 12, newest first with ties broken by id, and a link to the library.
+- **Mobile.** Cross-column drags are poor on touch screens. The spec's mitigation, a card menu with the same allowed moves as buttons (Failure Modes table), is missing from File Changes but required.
+- **Decision log checked against the code; no contradictions.**
+  - **"Board columns follow stage; drags only for single human actions; crossing a gate opens the workspace"**: every gate action already lives in the workspace (angle, plan and release approvals), and every action refuses parked attempts. Only the "scheduling dialog" premise is missing (above).
+  - **"Keep every current stage and gate"**: EditorialStage has 7 values. All 10 columns can be derived from them plus `parked_at`, `abandoned_at` and activities, so no new stage is needed.
+  - **"One idea owns many pieces"**: `content_idea_id`, `parent_article_id` and per-piece attempts all exist (Phases 1 and 6), and kits nest under the post that spawned them.
+
+## Edge Cases (Phase 7)
+
+- **Column precedence** (`BoardColumn::forPiece`, as one exhaustive `match`)
+  1. **Killed**: the current attempt's stage is Abandoned, or `abandoned_at` is set. EditorialWorkflowTest:424-425 parks and then abandons, so both flags can be set at once; Killed must win.
+  2. **Parked**: `parked_at` is set.
+  3. **No current attempt**: Published if `published_release_id` is set (archive imports); otherwise Ideas.
+  4. **By stage**: Developing goes to Shaping, Drafting to Planning, InReview to Writing or Review, Approved to Ready, Scheduled to Scheduled, and Published to Published.
+  - **Develop after publish**: a published piece with a new attempt follows its new stage. Keep the old "Draft in progress on published work" note (dashboard 259-261; AdminPublishingWorkspaceTest:400).
+  - **Paused attempts**: `paused_at` is not a column; show the pause reason on the status chip.
+  - **Top-level cards**: only blog posts with no parent (`kind = blog_post` and `whereNull('parent_article_id')`), so siblings get their own cards and kit pieces never do.
+- **Writing vs Review** (see Risks)
+  - **Writing**: any Draft, LintRepair or DraftKit is Pending or Running, or the attempt has no completed Draft. The second case also covers a plan approved while agents were paused, since `ApprovePublishingStage` then creates no Draft.
+  - **Review**: everything else at InReview. Package, the review lenses, reconciliation and recheck all count as Review.
+- **PieceStatus**
+  - **running**: a current activity is Pending or Running. When agents are paused globally (`PublishingAgentSettings::paused`), say "queued; agents paused", as the workspace does (`session.blade.php:62`), not "running".
+  - **failed**: the latest activity that isn't Stale is Failed or Paused. The reason is `pause_reason ?? error_reason` (`partials/activity.blade.php:10-11`). Ignore Stale activities; Declined counts as neither.
+  - **waiting**: the owner owes one of these:
+    - An answer to an AwaitingApproval interview the viewer started.
+    - An angle decision: `interview_context.angle_options` exist with no active Angle approval.
+    - A plan decision: the plan is ready (ReadAdminHome's `hasPlan`) with no active Plan approval.
+    - Undecided blocking findings: current cycle, not stale, `disposition` null, `reconciliation_state` not duplicate or superseded. The `lint` and `review_kit` lenses count.
+    - The latest completed Package in the cycle has no accepted revision.
+    - A prepared release exists on the working revision.
+    - A kit child is at InReview with a completed draft_kit and review_kit and no active Kit approval.
+  - **Precedence** when several apply: pick one (for example failed, then running, then waiting, then idle) and record it.
+- **Moves** (`MovePublishingPiece::move`)
+  - **Re-derive under a lock**: lock the article (`lockForUpdate`), reload it with the board's eager loads (share one eager-load definition so both paths stay strict-mode safe), and re-derive `from`. On a mismatch, refuse with "This piece moved; refresh".
+  - **Reorder in the same column**: do nothing and show no message.
+  - **Ideas to Shaping**: develop and start the interview (develop policy). Without develop, no attempt is created and the refusal is reported (the spec's "viewer without publishing.develop" test).
+  - **Ready to Scheduled**: return `needsDialog('release')` and redirect to the workspace (publish policy).
+  - **Any column to Parked or Killed**
+    - A reason is required: trimmed, non-empty, with a max length. An empty reason is a validation error and changes nothing.
+    - Parked to Killed is allowed (`abandon` accepts a parked attempt).
+    - Killed to anywhere is refused, because the attempt is terminal.
+  - **Out of Parked**: dropping on the piece's own stage column unparks it. Any other column is refused, and the message names the right column.
+  - **Gate crossings are refused, naming the gate**:
+    - Shaping to Planning: "Open the workspace to approve the angle".
+    - Planning to Writing or Review: approve the plan.
+    - Writing to Review: the piece moves on its own when the draft finishes.
+    - Review to Ready: approve the exact release.
+    - Ready or Scheduled to Published: publish from the workspace.
+    - Backward moves are refused.
+  - **Card ids come from the client**: look the piece up within `author_id = $actor->id` and top-level blog posts only. Refuse any other id without revealing it.
+  - **Failures**: turn `RuntimeException` and `AuthorizationException` into `refused($message)` with no state change; the card snaps back on re-render.
+- **Nesting**
+  - Eager-load `children`, filtered to kit kinds and ordered by id, each with `currentAttempt` (plus activities and approvals if the chips show status).
+  - A flagship with 3 kit pieces renders one top-level card with 3 chips (spec experiment).
+- **Killed column**: collapsed by default (Alpine `x-show` or `<details>`). Decide whether it renders on the server or loads on expand.
+- **Published column**: the 12 newest by `first_published_at desc, id desc` (archive imports keep their original dates), plus a link to `route('admin.publishing.published')`.
+- **Polling**
+  - Put `wire:poll.10s` (consider `.visible`) on the cards region only.
+  - The composer's unsaved `idea` text must survive a poll. Deferred `wire:model` sends it with the poll, so confirm the morph keeps the caret, or isolate the cards in an island.
+- **Reason modal**: one `flux:modal wire:model.self` that holds the pending piece id and target column. Cancel clears both and re-renders, so the card snaps back.
+
+## Test Strategy (Phase 7)
+
+- **Inner loop**: `php artisan test --compact tests/Feature/Publishing/PublishingBoardTest.php`
+- **Repointed tests**: `php artisan test --compact tests/Feature/Publishing/AdminPublishingWorkspaceTest.php tests/Feature/Publishing/ContentIdeaTest.php tests/Feature/Publishing/EditorialInputContractTest.php tests/Feature/Publishing/PublishingJourneyTest.php`
+- **Regression files**: `php artisan test --compact tests/Feature/Publishing/EditorialWorkflowTest.php tests/Feature/AdminHomeTest.php tests/Feature/Publishing/PublishingAuthorizationTest.php tests/Feature/Publishing/DistributionKitTest.php tests/Feature/Publishing/SiblingPieceTest.php tests/Feature/Auth/AdminFortifyFlowTest.php`
+- **Phase check**: `php artisan test --compact tests/Feature/Publishing`
+- **Final**: `vendor/bin/pint --dirty --format agent`, `env -u AI_AGENT -u CLAUDECODE vendor/bin/phpstan analyse --no-progress`, `bun run build`, then `composer test`. Run `bun test resources/js/admin/publishing/motion.test.js` if `motion.js` changes.
+- **PublishingBoardTest setup**
+  - **Fixtures**
+    - Pieces: `Article::factory()->idea($body)->create(['author_id' => $user->id])`, then `PublishingAttempt::factory()->create(['article_id', 'user_id', 'stage', 'parked_at', 'abandoned_at', ...])` and `forceFill(['current_attempt_id' => ...])->save()`.
+    - Activities: `EditorialActivity::factory()` defaults `article_id` and `attempt_id` to separate factories, so set both. Also set `kind`, `status`, `stage`, `review_cycle` and `initiating_user_id`. A `->running()` state exists.
+    - Others: `EditorialApproval::factory()` (with an `invalidated()` state), `EditorialFinding::factory()` (blocking by default; `advisory()`), and `ArticleRelease::factory()` with `status`.
+  - **Kits**: `app(WriteArticle::class)->addPiece($actor, $idea, PieceKind::LinkedinPost, $flagship)` for each kit kind, each with an attempt at InReview, Approved or Published.
+  - **Archive import**: a published release and no attempt (the `publishedArticleFor` pattern, under the new prefix).
+  - **Column mapping**: one dataset row per stage and flag combination, including parked plus abandoned, published with a new attempt, and an archive import. Assert that each piece appears in exactly one column.
+  - **Moves**
+    - Call the handler: `Livewire::actingAs($u)->test('admin.publishing.board')->call('moveCard', $id, 0, 'shaping')`, then assert a Pending Interview activity exists.
+    - Refused moves (Shaping to Planning, Planning to Writing, Review to Ready): assert the message and that the stage didn't change.
+    - Park with an empty reason: `assertHasErrors`.
+    - Unpark: `parked_at` becomes null.
+    - A user without develop: no attempt is created.
+  - **The action alone**: test `MovePublishingPiece` directly for the server-side rules, including a concurrent change (change the stage between render and call; expect "This piece moved; refresh").
+  - **Status chips**: running (a Running activity), waiting (angle options without an approval) and failed (a Failed activity with `error_reason`; assert the reason text).
+  - **Query count** (precedent AdminHomeTest:270-285)
+    - Render once to warm the permission cache.
+    - Then `DB::enableQueryLog(); DB::flushQueryLog();`, render with 3 pieces and again with 30 (mixed columns, with kits), and assert the counts are equal or below N.
+    - Strict mode makes any lazy load throw.
+  - **Authorization**: a user without publishing.view is forbidden (the check in `with()`), and another author's card id is refused.
+  - **Poll**: `assertSeeHtml('wire:poll.10s')`.
+- **Environment**
+  - `birdcar_test` on 127.0.0.1:5433 (confirmed this session). No `--parallel`.
+  - Never run `tests/Manual`.
+  - For the browser check, resolve `admin.birdcar.test/publishing` through Boost `get-absolute-url` after `bun run build`. The owner does the judgment review.
+
+---
 
 ## Key Patterns (Phase 9)
 

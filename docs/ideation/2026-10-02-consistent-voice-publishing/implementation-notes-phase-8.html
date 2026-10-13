@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 8 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Canon editor —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 8</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 8</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Canon editor</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>VoiceCanonVersion — activation is the one permitted update</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec makes the model immutable ("<code>updating</code> and <code>deleting</code> throw") but also defines rollback as re-activating an older row, which sets its <code>activated_at</code>.</dd>
+          <dt>Decision</dt>
+          <dd>The <code>updating</code> guard throws unless the only dirty attributes are <code>activated_at</code> and <code>updated_at</code>; <code>deleting</code> always throws. Every other column is fixed at insert.</dd>
+          <dt>Alternative</dt>
+          <dd>A query-builder update that bypasses model events, so <code>updating</code> could throw unconditionally. Rejected because it hides the one mutation path instead of declaring it.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>VoiceCanonVersion — activations order strictly, to the microsecond</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The active version is "the row with the most recent <code>activated_at</code>". At second precision, a save followed by a rollback in the same second ties, and the rollback could lose.</dd>
+          <dt>Decision</dt>
+          <dd><code>activated_at</code> and the timestamps are <code>timestamp(6)</code>, the model keeps microseconds (<code>$dateFormat</code>), and <code>markActive()</code> sets the later of now and the previous activation plus one microsecond. The scope orders by <code>activated_at</code> then <code>id</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>A separate activation sequence column (not in the spec's data model), or ordering ties by id (wrong for a rollback to a lower id).</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Locking — one Postgres advisory transaction lock</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Saves must reject a stale base, and the sync must not race a save, including the first sync into an empty table where there is no row to lock.</dd>
+          <dt>Decision</dt>
+          <dd>Save, activate and sync all take <code>pg_advisory_xact_lock</code> through <code>VoiceCanonVersion::lockForChange()</code> and re-read the active version under it. The unique hash still backs it up.</dd>
+          <dt>Alternative</dt>
+          <dd><code>lockForUpdate()</code> on the active row, which cannot serialize two writers while the table is empty. The app is Postgres-only (pgvector), so the advisory lock is not a portability loss.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>SaveVoiceCanonVersion — the first save records the repo baseline</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec does not say what a save does when no version exists yet (the deploy sync has not run in that environment).</dd>
+          <dt>Decision</dt>
+          <dd>The save runs the sync inside its transaction first, so the repo files become an active repo version and the Admin version is its child. Rollback to the repo baseline is then always possible, and the next deploy sync is a no-op.</dd>
+          <dt>Alternative</dt>
+          <dd>Refusing to edit until the sync has run, or saving an Admin version with no parent, which would leave no repo version to roll back to.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>SaveVoiceCanonVersion — an edit identical to an older version is refused</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>hash</code> is unique, and the spec only rules out a version equal to the active one ("no empty versions").</dd>
+          <dt>Decision</dt>
+          <dd>An edit whose hash matches an earlier version is refused with "This edit matches version X. Activate it from the version history instead." Nothing is written.</dd>
+          <dt>Alternative</dt>
+          <dd>Silently activating the earlier version, which would drop the owner's note and authorship and turn a save into a rollback.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>SaveVoiceCanonVersion — rule ids are checked against the rubric of the drafter that must pass them</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec step 3: every <code>VoiceLinter::ruleIds()</code> id appears in the draft rubric "(and kit ids in the draft_kit rubric)". Kit-only rules (for example <code>linkedin-length</code>) are not in the draft rubric, so a literal "every id in draft" check would reject the repo canon itself.</dd>
+          <dt>Decision</dt>
+          <dd>An id that lints blog posts (<code>ruleIdsFor(BlogPost)</code>) must be tagged in a draft rubric file; an id that lints any kit kind must be tagged in a draft_kit rubric file; an id that applies to both must be in both. Error messages name the rule, the role and its rubric files.</dd>
+          <dt>Alternative</dt>
+          <dd>Checking every id against the union of both rubrics, which would let a blog rule move out of the Drafter's rubric unnoticed.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>SaveVoiceCanonVersion — "every referenced file" includes the framework catalog's files</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec lists roles.json files explicitly. <code>StartEditorialActivity::structureCanon</code> silently freezes nothing when a catalog template or framework file is missing.</dd>
+          <dt>Decision</dt>
+          <dd>Save validation also requires every post-type template and framework file named in <code>frameworks/catalog.json</code>, and builds the full snapshot (goals, exemplar manifest files, archive sources) through <code>VoiceCanon::snapshotOf()</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>Validating only roles.json, which would let a catalog edit quietly drop the chosen framework from every Drafter input.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>SyncVoiceCanonFromRepo — "the previous repo version" is the newest repo row</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The auto-activation rule needs "the previous repo version". When the owner commits an Admin download, the next sync is a no-op and records nothing, so the table cannot know the repo then matched the Admin version.</dd>
+          <dt>Decision</dt>
+          <dd>A new repo version activates only when nothing is active or the active version is the most recently created repo version. Consequence for the owner: after committing an Admin download, the next repo change lands inactive and the editor shows the "repo baseline changed" notice; one click adopts it. It never overrides Admin edits.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding a column to remember which version the repo last matched (outside the spec's data model), or treating any active version whose hash once equalled the repo hash as the previous repo version.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Editor — the repo-baseline notice and what it compares</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec asks for "The repo baseline changed" with a files-changed summary and an activate button, without defining when it clears.</dd>
+          <dt>Decision</dt>
+          <dd>The notice shows while the newest repo version is not active and has never been activated. It lists files changed, added and removed between the active version and that repo version. Activating it, or any later activation of it, clears the notice for good.</dd>
+          <dt>Alternative</dt>
+          <dd>Showing it whenever the active hash differs from the repo hash, which would nag after the owner deliberately rolled back to their own edit.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Editor — one file at a time, existing files only</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says "edit one file at a time". Adding or deleting canon files is not mentioned.</dd>
+          <dt>Decision</dt>
+          <dd>The editor opens one existing file of the version it loaded, and a save changes that file. Switching files with unsaved changes asks first (Alpine <code>$wire.$dirty</code>). The save action itself accepts any complete file set and rejects paths that are not relative <code>.md</code>/<code>.json</code> paths, which keeps the download free of path traversal.</dd>
+          <dt>Alternative</dt>
+          <dd>A multi-file draft map, which the settings save bar cannot track as dirty once it lives server-side.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>ActivateVoiceCanonVersion — rollback checks readability, not lint coverage</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Save validation is specified; activation validation is not.</dd>
+          <dt>Decision</dt>
+          <dd>Activation refuses a version that is already active or whose archive exemplar hashes no longer match the files on disk (the snapshot would throw). It does not re-run the lint-rule coverage check, so rolling back to a version older than a newly registered lint rule is allowed.</dd>
+          <dt>Alternative</dt>
+          <dd>Running full save validation on activation, which could block a rollback in exactly the moment the owner needs it.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>VoiceCanon — no fallback when the table is missing</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Rollout: "revert; <code>VoiceCanon</code> falls back to repo files when the table is absent."</dd>
+          <dt>Decision</dt>
+          <dd>Read as describing the reverted code. <code>snapshot()</code> queries the table without a <code>Schema::hasTable</code> check, so an environment must run migrations before this code serves requests (Cloud runs them in the deploy commands). <code>VoiceCanon::forget()</code> was added so a save or activation in the same scope is visible to the next read.</dd>
+          <dt>Alternative</dt>
+          <dd>A <code>hasTable</code> check (one more query per request and job) or catching the missing-table error, which would abort an enclosing Postgres transaction such as <code>StartEditorialActivity</code>'s.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Tests — the settings rail order changed</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>tests/Feature/Settings/SettingsShellTest.php</code> pins the rail to Mail, Publishing, Profile, Security, Preferences.</dd>
+          <dt>Decision</dt>
+          <dd>Updated the expectation to include "Voice canon" after Publishing, matching the registry order in <code>config/admin.php</code>.</dd>
+          <dt>Alternative</dt>
+          <dd>None: the spec requires the section after <code>PublishingSection</code>.</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  Implementation-notes shell — copied VERBATIM by execute-spec on the first logged entry.
+  This file is the single owner of the implementation-notes format. Do not restate its
+  structure or styles elsewhere; change the format here and every future phase inherits it.
+  Copier substitutes: 7 (phase number, twice), Consistent Voice Publishing, 2026-10-12, Publishing board —
+  then deletes the example entry and appends real ones inside <main class="doc-content">.
+-->
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Notes — Phase 7</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f3;
+        --fg: #191b1d;
+        --muted: #50555a;
+        --border: #dededf;
+        --accent: #2b46c7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --fg: #e9e9e4;
+          --muted: #a8aaa6;
+          --border: #2d3036;
+          --accent: #93a7ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .doc-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; }
+      .doc-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .doc-meta { margin: 0; color: var(--muted); font-size: 0.875rem; }
+      .note-entry { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+      .note-entry h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+      .note-entry dl { margin: 0; }
+      .note-entry dt { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 0.75rem; }
+      .note-entry dt:first-child { margin-top: 0; }
+      .note-entry dd { margin: 0.15rem 0 0; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="doc-header">
+      <h1>Implementation Notes — Phase 7</h1>
+      <p class="doc-meta">Consistent Voice Publishing · 2026-10-12 · Publishing board</p>
+    </header>
+    <main class="doc-content">
+      <section class="note-entry">
+        <h3>Moves — Ready to Scheduled hands over to the workspace</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Spec step 4 says to reuse the workspace's release scheduling dialog. No such dialog exists: scheduling is preparing a release with a publish time (<code>publish</code>) and then approving that exact release (<code>approve</code>), both in the release checklist.</dd>
+          <dt>Decision</dt>
+          <dd>Took the spec's fallback. <code>MovePublishingPiece</code> returns <code>needsDialog('release')</code> after a <code>publish</code> policy check, and the board redirects to the workspace, which opens on the release tab for Approved pieces, with a status line explaining the two steps. Say so in the commit.</dd>
+          <dt>Alternative</dt>
+          <dd>Building a scheduling modal on the board, which would duplicate the checklist and its readiness checks.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Moves — park, kill and unpark use the develop policy</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says to authorize park and kill with <code>write</code>, but <code>AdvancePublishingAttempt::park</code> and <code>abandon</code> require <code>publishing.develop</code>, so a write-only user would pass the board check and then fail inside the action.</dd>
+          <dt>Decision</dt>
+          <dd>Park, kill and unpark call <code>Gate::forUser($actor)->authorize('develop', $piece)</code>, which also enforces ownership. Ideas to Shaping uses <code>develop</code>; Ready to Scheduled uses <code>publish</code>. The card menu only offers moves the viewer's policy allows.</dd>
+          <dt>Alternative</dt>
+          <dd>Loosening <code>AdvancePublishingAttempt</code> to accept <code>write</code>, which would widen who can stop agent work.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>AdvancePublishingAttempt — new unpark() requeues work a worker paused</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>No <code>unpark()</code> existed. A worker that claims an activity while its attempt is parked pauses it with “The publishing attempt is blocked or no longer current.” before any provider request, and nothing resumes that reason, so an unparked piece would show a failure with no Retry.</dd>
+          <dt>Decision</dt>
+          <dd>Added <code>unpark()</code> beside <code>resume()</code> (develop permission, same mutation guard). When the park clears and the attempt is not also paused, activities paused with that exact reason return to Pending, like <code>resume()</code> does for its reasons. The reason became <code>EditorialActivity::BLOCKED_ATTEMPT_PAUSE_REASON</code>, used by <code>RunEditorialActivity::passesExecutionChecks</code>. Results that came back after a park (“…returned after the publishing attempt was blocked or replaced.”) are not requeued, because requeueing would pay for the request again.</dd>
+          <dt>Alternative</dt>
+          <dd>Leaving those activities paused and only showing the reason on the card.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Moves — parking or killing withdraws a scheduled release</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Parking or killing a Scheduled piece left its release scheduled, so <code>publishing:publish-due</code> would fail on every run, and after an unpark a past-due release would publish on the next run.</dd>
+          <dt>Decision</dt>
+          <dd>Park and kill call <code>ManageArticleRelease::withdrawScheduledReleasesForAttemptId</code>, the helper the workspace's own withdraw button uses, and the message says so when a release was withdrawn. Like the workspace button, the stage is left as it is; an unparked Scheduled piece is rescheduled from the release checklist.</dd>
+          <dt>Alternative</dt>
+          <dd>Refusing park and kill for Scheduled pieces until the owner withdraws the release in the workspace.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Moves — Ideas and Published can't be parked or killed</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec says “any column to Parked or Killed”, but ideas have no attempt to hold the reason, published attempts are terminal, and archive imports have no attempt at all.</dd>
+          <dt>Decision</dt>
+          <dd>Both are refused with a message that says why (“Ideas are already off the clock…”, “Published work is already live…”). Killed pieces can't be moved either; the workspace's “Develop this idea” starts them again. A parked piece can be killed, and only unparks onto its own stage column (the message names it).</dd>
+          <dt>Alternative</dt>
+          <dd>Creating an attempt for an idea just to park it, which would leave an attempt with no interview.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>BoardColumn — reading of the Writing rule</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Read literally, “in_review with no completed draft on the current revision” would move a reviewed piece back to Writing on the owner's first autosave, because every save is a new revision.</dd>
+          <dt>Decision</dt>
+          <dd>Writing means a draft, voice-rule repair or kit draft is pending or running, or no draft (draft, lint_repair or draft_kit) has completed in the attempt at all. Everything else at in_review is Review. The completed-draft flag is a <code>withExists</code> on the attempt, so it is exact even when the latest draft row failed. A plan approved while agents were paused (no Draft created) shows in Writing.</dd>
+          <dt>Alternative</dt>
+          <dd>Comparing the draft's target revision with the working revision.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>PieceStatus — precedence and rules</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec lists the states but not which wins, and leaves out an interview waiting for the owner's answers.</dd>
+          <dt>Decision</dt>
+          <dd>Failed beats running, running beats waiting, waiting beats idle. Failed means the newest non-stale activity is failed or paused (reason <code>pause_reason ?? error_reason</code>). Running says “Running” for a running activity and “Queued; agents paused” for pending work while agents are paused globally. Waiting covers interview answers, the angle, a ready plan, undecided blocking findings, an unaccepted package (checked in SQL against the <code>package-{id}-</code> mutation id), a prepared release on the working revision, and a drafted and reviewed kit piece without a kit approval. A paused attempt shows as waiting with its pause reason; parked, killed and published pieces are idle (the card shows the parked or killed reason). Kit statuses show on their chips; the flagship's status is its own.</dd>
+          <dt>Alternative</dt>
+          <dd>Rolling kit statuses up into the flagship card's status.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Board — refusals show in an in-board alert, not a toast</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's error handling says “Toast with the action's error”, but the admin layout has no <code>&lt;flux:toast /&gt;</code>.</dd>
+          <dt>Decision</dt>
+          <dd>Refusals and confirmations render in a dismissible <code>flux:callout</code> above the board (<code>role="alert"</code> for refusals, <code>role="status"</code> otherwise), which keeps the layout untouched and is easy to assert. The card snaps back because the handler always re-renders from server state.</dd>
+          <dt>Alternative</dt>
+          <dd>Adding <code>&lt;flux:toast /&gt;</code> to <code>layouts/admin.blade.php</code>, a file the spec doesn't list.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Board — caps and stale-board detection</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Only the Published column has a cap in the spec. Each card's column is what the server must compare against, but <code>wire:sort</code> only sends the item key, the position and the receiving group id.</dd>
+          <dt>Decision</dt>
+          <dd>Published is a separate query capped at 12 (newest <code>first_published_at</code>, then id) plus a count, with a link to the library. Ideas and Killed are uncapped, because nothing else lists saved ideas or killed pieces; Killed is collapsed by default on the client. Each card's sort key is <code>{id}:{column}</code>, so <code>MovePublishingPiece</code> re-derives the column under a row lock and refuses with “This piece moved; refresh the board…” on a mismatch. The board loads in a fixed number of queries (asserted with 3 and 30 pieces).</dd>
+          <dt>Alternative</dt>
+          <dd>Paginating Ideas as the old dashboard did.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Board — polling and drag behavior</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The board polls every ten seconds; a poll during a drag can fight SortableJS, and Flux's kanban parts are Blaze-folded.</dd>
+          <dt>Decision</dt>
+          <dd><code>wire:poll.10s.visible</code> sits on the board region, and the component's script cancels poll actions while <code>body.sorting</code> is set. The <code>wire:sort</code> attributes live on plain divs (handler first, then group, group id and config) rather than on folded Flux components, use <code>wire:sort.ghost</code> so the drop placeholder is visible, restrict dragging to cards, and turn the animation off under reduced motion. The card menu repeats every allowed move as buttons for touch screens.</dd>
+          <dt>Alternative</dt>
+          <dd>Isolating the cards in a Livewire island, which would also scope the move actions and the reason modal to the island.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Tests — dashboard tests rewritten, not deleted</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>Eight tests drove the deleted dashboard component, and three asserted list behavior the board replaces (independent pagination, created_at tie-breaks, published work hidden from <code>/publishing</code>).</dd>
+          <dt>Decision</dt>
+          <dd>They point at <code>admin.publishing.board</code>. The pagination test now checks that every idea shows and Published is capped at 12 with a library link; the tie-break test checks newest-first order with id tie-breaks; the “listed separately” and “terminal live title” assertions now expect published work in the Published column. The heading “Publishing workspace” and the route name <code>admin.publishing.dashboard</code> are kept, so the Journey test and every link keep working.</dd>
+          <dt>Alternative</dt>
+          <dd>Deleting the obsolete list tests.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Codebase surprise — ReadAdminHome's open-findings filter skips most findings</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd><code>ReadAdminHome</code> filters findings with <code>whereNotIn('reconciliation_state', ['duplicate', 'superseded'])</code>. The column is nullable and only reconciliation sets it, so in SQL that excludes every finding with a NULL state.</dd>
+          <dt>Decision</dt>
+          <dd>The board's own filter treats NULL as not reconciled. <code>ReadAdminHome</code> is unchanged because it is out of this phase's scope; the owner may want the same fix there.</dd>
+          <dt>Alternative</dt>
+          <dd>Changing ReadAdminHome in this phase.</dd>
+        </dl>
+      </section>
+      <section class="note-entry">
+        <h3>Manual review still owed</h3>
+        <dl>
+          <dt>Context</dt>
+          <dd>The spec's manual checks (widths, light and dark, drag feedback, chip updates, reduced motion) need the owner's browser session.</dd>
+          <dt>Decision</dt>
+          <dd>Assets are built with <code>bun run build</code>; the rendered markup was checked for attribute order and the sort configuration, but no interactive drag was run. The owner's judgment review at <code>admin.birdcar.test/publishing</code> is still to do.</dd>
+          <dt>Alternative</dt>
+          <dd>—</dd>
+        </dl>
+      </section>
+    </main>
+  </body>
+</html>
