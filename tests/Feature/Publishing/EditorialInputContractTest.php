@@ -241,7 +241,7 @@ function inputContractResponse(EditorialActivityKind $kind): array
         EditorialActivityKind::Reconciliation => ['groups' => [], 'conflicts' => []],
         EditorialActivityKind::Recheck => ['resolved' => [], 'unresolved' => [], 'newBlockingFindings' => []],
         EditorialActivityKind::Package => [
-            'titleOptions' => array_map(fn (int $number): string => 'Check the chores first, option '.$number, range(1, 10)),
+            'titleOptions' => ['Check the chores first', ...array_map(fn (int $number): string => 'Check the chores first, option '.$number, range(2, 10))],
             'title' => 'Check the chores first',
             'seoTitle' => 'Do you need another admin hire? What to check first',
             'description' => 'When the team is full and the work keeps coming back to you, a new hire often adds a person to the same chores. Here is what to check before you post the job.',
