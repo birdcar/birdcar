@@ -396,6 +396,11 @@ class EditorialOutput
             throw new InvalidArgumentException(implode(' ', array_map(static fn (LintHit $hit): string => $hit->message, $hits)));
         }
 
+        $title = trim((string) $payload['title']);
+        if (! in_array($title, array_map(static fn (string $option): string => trim($option), $options), true)) {
+            throw new InvalidArgumentException('Package title "'.$title.'" must be copied exactly from one of the title options, compared after trimming whitespace and case-sensitive.');
+        }
+
         return $payload;
     }
 

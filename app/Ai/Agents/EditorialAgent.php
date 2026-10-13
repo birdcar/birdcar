@@ -220,7 +220,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
                     'audience' => $schema->string()->nullable(),
                     'goal' => $schema->string()->nullable(),
                     'missingAnswers' => $schema->array()->items($schema->string())->required(),
-                    'postType' => $schema->string()->enum($this->catalog()->postTypeSlugs())->description('The one post type the idea fits: '.implode(', ', $this->catalog()->postTypeSlugs()).'. Null only when the answers cannot tell yet.')->nullable(),
+                    'postType' => $schema->string()->enum([...$this->catalog()->postTypeSlugs(), null])->description('The one post type the idea fits: '.implode(', ', $this->catalog()->postTypeSlugs()).'. Null only when the answers cannot tell yet.')->nullable(),
                     'targetQuery' => $schema->string()->description('The one search query, in the owner\'s words, that this post answers.')->nullable(),
                     'ideaTitle' => $schema->string()->max(ContentIdea::DERIVED_TITLE_LIMIT)->description('A plain name for the idea itself, at most '.ContentIdea::DERIVED_TITLE_LIMIT.' characters, in sentence case. Never a headline.')->nullable(),
                 ])->required(),
@@ -293,7 +293,7 @@ abstract class EditorialAgent implements Agent, Conversational, HasProviderOptio
             ],
             EditorialActivityKind::Package => [
                 'titleOptions' => $schema->array()->min(EditorialOutput::PACKAGE_TITLE_OPTIONS)->max(EditorialOutput::PACKAGE_TITLE_OPTIONS)->items($schema->string()->min(1))->description('Exactly '.EditorialOutput::PACKAGE_TITLE_OPTIONS.' distinct title options (no two the same ignoring case), each a different shape, each in sentence case.')->required(),
-                'title' => $schema->string()->min(1)->description('The on-page H1, chosen from titleOptions. Sentence case: capitalize the first word and proper nouns only [rule:title-sentence-case]. No em dash, curly quotes, emoji or exclamation point.')->required(),
+                'title' => $schema->string()->min(1)->description('The on-page H1, copied exactly from one of titleOptions (compared after trimming surrounding whitespace, case-sensitive). Sentence case: capitalize the first word and proper nouns only [rule:title-sentence-case]. No em dash, curly quotes, emoji or exclamation point.')->required(),
                 'seoTitle' => $schema->string()->min(50)->max(60)->description('The search-result title: 50 to 60 characters counted as written, phrased the way an owner searches, primary phrase near the start [rule:seo-title-length]. No em dash, curly quotes, emoji or exclamation point.')->required(),
                 'description' => $schema->string()->min(150)->max(160)->description('The meta description: 150 to 160 characters counted as written, a reason to click in the owner\'s search phrasing [rule:meta-description-length]. No em dash, curly quotes, emoji or exclamation point.')->required(),
                 'slug' => $schema->string()->description('Four to six lowercase words of a to z and 0 to 9 joined by single hyphens [rule:slug-shape], never the slug of an archive essay or any other piece [rule:slug-archive-reuse].')->required(),

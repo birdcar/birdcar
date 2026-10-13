@@ -267,3 +267,20 @@ test('it keeps historical array outputs valid while decoding SDK JSON strings be
             'angleOptions' => [['angle' => 'Practical guide']],
         ])['brief']['summary'])->toBe('Stored array result');
 });
+
+test('the interview schema lets post type be null and the validator accepts it', function () {
+    $schema = (new Interviewer(editorialActivity(EditorialActivityKind::Interview)))->schema(new JsonSchemaTypeFactory);
+    $postType = $schema['brief']->toArray()['properties']['postType'];
+
+    expect($postType['type'])->toContain('null')
+        ->and($postType['enum'])->toContain(null)
+        ->and($postType['enum'])->toContain('essay');
+
+    $validated = (new EditorialOutput)->validate(EditorialActivityKind::Interview, [
+        'questions' => ['Who is this for?'],
+        'brief' => ['summary' => 'Not enough yet', 'missingAnswers' => [], 'postType' => null],
+        'angleOptions' => [['title' => 'A', 'thesis' => 'B']],
+    ]);
+
+    expect($validated['brief']['postType'])->toBeNull();
+});

@@ -308,8 +308,21 @@ test('a package that breaks a metadata rule fails the activity with the measured
     'a Title Case title' => [['title' => 'Another Admin Hire Will Not Fix It'], 'Write the title "Another Admin Hire Will Not Fix It" in sentence case'],
     'nine title options' => [['titleOptions' => array_fill(0, 9, 'One option')], 'exactly 10 title options; it had 9'],
     'repeated title options' => [['titleOptions' => [...array_map(fn (int $number): string => 'Option '.$number, range(1, 9)), 'option 1']], 'Package title options must be distinct; "option 1" appears twice.'],
+    'a title outside the options' => [['title' => 'A brand new headline nobody proposed'], 'Package title "A brand new headline nobody proposed" must be copied exactly from one of the title options'],
+    'an option title with different case' => [['title' => 'another admin hire will not fix it'], 'must be copied exactly from one of the title options'],
     'an em dash in the SEO title' => [['seoTitle' => 'Another admin hire — what to check before you post it'], 'Replace the em dash'],
 ]);
+
+test('a package title matches an option after trimming surrounding whitespace', function () {
+    $actor = packagingAuthor();
+    $attempt = packagingReviewedAttempt($actor);
+    app(FinishEditorialReview::class)->finish($actor, $attempt, packagingRevision($attempt)->id);
+    $package = EditorialActivity::query()->where('attempt_id', $attempt->id)->where('kind', EditorialActivityKind::Package->value)->sole();
+
+    $completed = packagingRun($package, packagingPayload(['title' => '  Check the chores before you hire ']));
+
+    expect($completed->status)->toBe(EditorialActivityStatus::Completed);
+});
 
 test('accepting an edited package saves a metadata-only revision that keeps the review lineage through approval', function () {
     $actor = packagingAuthor();
