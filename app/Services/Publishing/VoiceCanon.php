@@ -2,13 +2,15 @@
 
 namespace App\Services\Publishing;
 
+use App\Models\VoiceCanonVersion;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
 /**
- * Reads the repo-owned voice and goals canon. Bound as scoped, so each request or queued job reads the files once
- * and a long-running worker never serves a canon from before a deploy.
+ * Reads the voice and goals canon: the active database version, or the repo files while no version exists. Bound as
+ * scoped, so each request or queued job reads the canon once and a long-running worker never serves a canon from
+ * before a deploy or an Admin save.
  */
 final class VoiceCanon
 {
@@ -18,22 +20,42 @@ final class VoiceCanon
 
     public function snapshot(): CanonSnapshot
     {
-        return $this->snapshot ??= $this->read();
+        return $this->snapshot ??= $this->activeSnapshot() ?? $this->repoSnapshot();
     }
 
-    private function read(): CanonSnapshot
+    /**
+     * The canon as the repo files hold it, whatever version is active. The deploy sync compares its hash.
+     */
+    public function repoSnapshot(): CanonSnapshot
     {
         $canonPath = rtrim((string) config('publishing_agents.canon.path'), '/');
-        $archivePath = rtrim((string) config('publishing_agents.canon.archive_path'), '/');
         if (! $this->files->isDirectory($canonPath)) {
             throw new RuntimeException("The voice canon directory {$canonPath} does not exist.");
         }
 
-        $contents = [];
+        $files = [];
         foreach ($this->files->allFiles($canonPath) as $file) {
             if (in_array($file->getExtension(), ['md', 'json'], true)) {
-                $contents[CanonSnapshot::CANON_PREFIX.$this->relativePath($file)] = $file->getContents();
+                $files[$this->relativePath($file)] = $file->getContents();
             }
+        }
+
+        return $this->snapshotOf($files);
+    }
+
+    /**
+     * Builds the snapshot of a canon file set, reading its archive exemplars from disk. A stored version passes the
+     * archive hashes it was saved with, and an exemplar whose source no longer matches fails with its path.
+     *
+     * @param  array<string, string>  $files  canon-relative path => content
+     * @param  array<string, string>|null  $externalHashes  archive source path => sha256, or null to take the sources as they are
+     */
+    public function snapshotOf(array $files, ?array $externalHashes = null): CanonSnapshot
+    {
+        $archivePath = rtrim((string) config('publishing_agents.canon.archive_path'), '/');
+        $contents = [];
+        foreach ($files as $relative => $content) {
+            $contents[CanonSnapshot::CANON_PREFIX.$relative] = $content;
         }
 
         $roles = $this->roles($contents);
@@ -54,7 +76,12 @@ final class VoiceCanon
             if (! $this->files->isFile($source)) {
                 throw new RuntimeException("The voice canon exemplar {$slug} has no archive source file.");
             }
-            $contents[CanonSnapshot::ARCHIVE_PREFIX.$slug.'.md'] = $this->files->get($source);
+            $path = CanonSnapshot::ARCHIVE_PREFIX.$slug.'.md';
+            $content = $this->files->get($source);
+            if ($externalHashes !== null && ($externalHashes[$path] ?? null) !== hash('sha256', $content)) {
+                throw new RuntimeException("The voice canon exemplar source {$path} changed since this canon version was saved. Run php artisan publishing:canon-sync, then activate a version that matches it.");
+            }
+            $contents[$path] = $content;
         }
 
         $hashes = array_map(static fn (string $content): string => hash('sha256', $content), $contents);
@@ -67,6 +94,29 @@ final class VoiceCanon
         ksort($hashes, SORT_STRING);
 
         return new CanonSnapshot(hash('sha256', implode("\n", $lines)), $contents, $hashes, $roles, $exemplars);
+    }
+
+    /**
+     * Drops the snapshot this scope has read, so the next read sees a version saved or activated since.
+     */
+    public function forget(): void
+    {
+        $this->snapshot = null;
+    }
+
+    private function activeSnapshot(): ?CanonSnapshot
+    {
+        $active = VoiceCanonVersion::query()->active()->first(['id', 'hash', 'files', 'external_hashes']);
+        if ($active === null) {
+            return null;
+        }
+
+        $snapshot = $this->snapshotOf($active->files, $active->external_hashes);
+        if ($snapshot->version !== $active->hash) {
+            throw new RuntimeException("The active voice canon version {$active->shortHash()} does not hash to its recorded version.");
+        }
+
+        return $snapshot;
     }
 
     private function relativePath(SplFileInfo $file): string

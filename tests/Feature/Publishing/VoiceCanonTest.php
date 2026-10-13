@@ -1,10 +1,17 @@
 <?php
 
+use App\Actions\Publishing\SaveVoiceCanonVersion;
+use App\Actions\Publishing\SyncVoiceCanonFromRepo;
+use App\Authorization\Admin\Role as AdminRole;
+use App\Authorization\Publishing\Role as PublishingRole;
 use App\Models\Publishing\EditorialActivityKind;
+use App\Models\User;
+use App\Models\VoiceCanonVersion;
 use App\Services\Publishing\CanonSnapshot;
 use App\Services\Publishing\VoiceCanon;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 const VOICE_CANON_RULE_IDS = [
     'ai-vocabulary', 'bluesky-numbering', 'bluesky-post-length', 'bold-limit', 'chatbot-artifacts', 'corporate-vocabulary',
@@ -209,4 +216,30 @@ test('the canon hash command prints exactly the snapshot version', function () {
     $this->artisan('publishing:canon-hash')
         ->expectsOutput(voiceCanonSnapshot()->version)
         ->assertSuccessful();
+});
+
+test('the snapshot reads the repo files while no canon version exists', function () {
+    expect(VoiceCanonVersion::query()->exists())->toBeFalse()
+        ->and(voiceCanonSnapshot()->version)->toBe((new VoiceCanon(new Filesystem))->repoSnapshot()->version)
+        ->and(voiceCanonSnapshot()->canonFiles())->toEqual(voiceCanonFiles());
+});
+
+test('the snapshot reads the active canon version instead of the repo files once one exists', function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->artisan('authorization:sync')->assertSuccessful();
+    $owner = User::factory()->create();
+    $owner->assignRole([AdminRole::Access->value, PublishingRole::Author->value]);
+    app(SyncVoiceCanonFromRepo::class)->sync();
+    $repoVersion = voiceCanonSnapshot()->version;
+    $files = voiceCanonFiles();
+    $files['roles/drafter.md'] .= "\nAn Admin-only drafting rule.\n";
+
+    $version = app(SaveVoiceCanonVersion::class)->save($owner, (int) VoiceCanonVersion::query()->active()->value('id'), $files);
+
+    $snapshot = voiceCanonSnapshot();
+    expect($snapshot->version)->toBe($version->hash)
+        ->and($snapshot->version)->not->toBe($repoVersion)
+        ->and($snapshot->rubricFor(EditorialActivityKind::Draft)['text'])->toContain('An Admin-only drafting rule.')
+        ->and((new VoiceCanon(new Filesystem))->repoSnapshot()->version)->toBe($repoVersion)
+        ->and(file_get_contents(resource_path('publishing/canon/roles/drafter.md')))->not->toContain('An Admin-only drafting rule.');
 });

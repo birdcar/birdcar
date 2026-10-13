@@ -79,7 +79,7 @@ test('the rail groups application sections before account sections in registered
     $html = settingsShellHtml($this->actingAs(settingsShellUser([MailRole::Operator->value, PublishingRole::Author->value]))->get('http://admin.birdcar.test/settings/account/security'));
 
     expect(settingsShellTexts($html, '//nav[@aria-label="Settings sections"]//h2'))->toBe(['Application', 'Your account'])
-        ->and(settingsShellTexts($html, '//nav[@aria-label="Settings sections"]//a'))->toBe(['Mail', 'Publishing', 'Profile', 'Security', 'Preferences'])
+        ->and(settingsShellTexts($html, '//nav[@aria-label="Settings sections"]//a'))->toBe(['Mail', 'Publishing', 'Voice canon', 'Profile', 'Security', 'Preferences'])
         ->and(settingsShellTexts($html, '//nav[@aria-label="Settings sections"]//a[@aria-current="page"]'))->toBe(['Security']);
 });
 

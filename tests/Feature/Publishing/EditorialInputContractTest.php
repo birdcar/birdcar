@@ -4,6 +4,7 @@ use App\Actions\Publishing\AdvancePublishingAttempt;
 use App\Actions\Publishing\ApprovePublishingStage;
 use App\Actions\Publishing\LintRevision;
 use App\Actions\Publishing\RunEditorialActivity;
+use App\Actions\Publishing\SaveVoiceCanonVersion;
 use App\Actions\Publishing\SpawnDistributionKit;
 use App\Actions\Publishing\StartEditorialActivity;
 use App\Actions\Publishing\WriteArticle;
@@ -19,6 +20,7 @@ use App\Models\Publishing\EditorialActivityStatus;
 use App\Models\Publishing\PieceKind;
 use App\Models\PublishingAttempt;
 use App\Models\User;
+use App\Models\VoiceCanonVersion;
 use App\Services\Publishing\EditorialOutput;
 use App\Services\Publishing\KitDocument;
 use App\Services\Publishing\PublishingFingerprint;
@@ -456,6 +458,19 @@ test('a frozen activity keeps its canon after the live canon changes', function 
         ->and($sent['system'])->toContain("## Your rubric\n\n# Interviewer rubric")
         ->and($sent['system'])->not->toContain('A live rule added after freezing.')
         ->and($sent['input']['canon']['version'] ?? null)->toBe($activity->input['canon']['version'] ?? null);
+});
+
+test('an activity started after an Admin save sends the active version hash as its canon version', function () {
+    $actor = inputContractAuthor();
+    $files = app(VoiceCanon::class)->repoSnapshot()->canonFiles();
+    $files['roles/interviewer.md'] .= "\nAsk which report the owner rebuilds by hand.\n";
+    $saved = app(SaveVoiceCanonVersion::class)->save($actor, null, $files);
+
+    $sent = inputContractRun(inputContractStart($actor, EditorialActivityKind::Interview));
+
+    expect(VoiceCanonVersion::query()->active()->value('hash'))->toBe($saved->hash)
+        ->and($sent['input']['canon']['version'] ?? null)->toBe($saved->hash)
+        ->and($sent['system'])->toContain('Ask which report the owner rebuilds by hand.');
 });
 
 test('a caller cannot replace the canon an activity freezes', function () {

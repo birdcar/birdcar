@@ -147,6 +147,12 @@
                 <p class="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">Using material with an agent does not grant permission to publish it.</p>
             </div>
         </details>
-        <p class="text-xs text-zinc-600 dark:text-zinc-300" data-voice-canon>Voice canon <span class="font-mono">{{ $voiceCanonVersion }}</span></p>
+        <p class="text-xs text-zinc-600 dark:text-zinc-300" data-voice-canon>
+            @can(\App\Authorization\Publishing\Permission::ConfigureAgents->value)
+                <a href="{{ route('admin.settings.voice-canon') }}" wire:navigate class="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:decoration-zinc-600 dark:hover:text-white" data-voice-canon-link>Voice canon <span class="font-mono">{{ $voiceCanonVersion }}</span></a>
+            @else
+                Voice canon <span class="font-mono">{{ $voiceCanonVersion }}</span>
+            @endcan
+        </p>
     </aside>
 </div>

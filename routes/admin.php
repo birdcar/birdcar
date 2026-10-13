@@ -1,6 +1,7 @@
 <?php
 
 use App\Authorization\Publishing\Permission as PublishingPermission;
+use App\Http\Controllers\Admin\DownloadVoiceCanonController;
 use App\Http\Controllers\Admin\PreviewArticleController;
 use App\Settings\SettingsSections;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,11 @@ Route::prefix('settings')
                 $route->middleware(PermissionMiddleware::using($permission));
             }
         }
+
+        Route::get('/voice-canon/versions/{version}/download', DownloadVoiceCanonController::class)
+            ->middleware(PermissionMiddleware::using(PublishingPermission::ConfigureAgents))
+            ->whereNumber('version')
+            ->name('voice-canon.download');
     });
 
 Route::permanentRedirect('/mail', '/settings/mail');

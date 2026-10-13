@@ -8,6 +8,7 @@ use App\Settings\Sections\PreferencesSection;
 use App\Settings\Sections\ProfileSection;
 use App\Settings\Sections\PublishingSection;
 use App\Settings\Sections\SecuritySection;
+use App\Settings\Sections\VoiceCanonSection;
 
 $configuredUrl = env('BIRDCAR_ADMIN_URL', 'https://admin.birdcar.dev');
 $url = is_string($configuredUrl) && $configuredUrl !== '' ? $configuredUrl : 'https://admin.birdcar.dev';
@@ -33,6 +34,7 @@ return [
         'sections' => [
             MailSection::class,
             PublishingSection::class,
+            VoiceCanonSection::class,
             ProfileSection::class,
             SecuritySection::class,
             PreferencesSection::class,

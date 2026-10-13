@@ -26,6 +26,33 @@ final readonly class CanonSnapshot
         public array $exemplarManifest,
     ) {}
 
+    /**
+     * The canon directory's files, the part a canon version stores and the editor edits.
+     *
+     * @return array<string, string> canon-relative path => content
+     */
+    public function canonFiles(): array
+    {
+        $files = [];
+        foreach ($this->files as $path => $content) {
+            if (str_starts_with($path, self::CANON_PREFIX)) {
+                $files[substr($path, strlen(self::CANON_PREFIX))] = $content;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * The archive sources the exemplars are read from, which a canon version references by hash.
+     *
+     * @return array<string, string> repo-relative archive path => sha256
+     */
+    public function externalHashes(): array
+    {
+        return array_filter($this->hashes, static fn (string $path): bool => str_starts_with($path, self::ARCHIVE_PREFIX), ARRAY_FILTER_USE_KEY);
+    }
+
     /** @return array{files: array<string, string>, text: string} */
     public function rubricFor(EditorialActivityKind $kind): array
     {
